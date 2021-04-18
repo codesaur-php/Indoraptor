@@ -182,7 +182,7 @@ class AccountController extends \Indoraptor\IndoController
             $names[] = $data['name'];
         }
         if (empty($names)) {
-            return $this->notFound();            
+            return $this->notFound();
         }
         $this->respond($names);
     }
