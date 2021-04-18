@@ -154,7 +154,7 @@ class AccountController extends \Indoraptor\IndoController
         
         $result = $accounts->updateById($account['id'], array('password' => $payload['password']));
         if (!$result) {
-            return $this->error("Can't reset account [{$account['username']}] password!", AccountErrorCode::UPDATE_PASSWORD_FAILURE);
+            return $this->error("Can't reset account [{$account['username']}] password", AccountErrorCode::UPDATE_PASSWORD_FAILURE);
         }
         
         $forgot->deleteByID($record['id']);

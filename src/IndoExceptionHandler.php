@@ -23,8 +23,7 @@ class IndoExceptionHandler implements ExceptionHandlerInterface
                     && !headers_sent()
             ) {
                 http_response_code($code);
-            }
-            
+            }            
             $title .= " $code";
         }
         

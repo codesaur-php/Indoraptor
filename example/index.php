@@ -99,7 +99,7 @@ if ($request->getServerParams()['HTTP_HOST'] === 'localhost'
     $temporary_jwt = JWT::encode($payload, $key);
     putenv("INDO_JWT=$temporary_jwt"); // For testing purpose we authorized into INDO
 } else {
-    throw new Error('This experimental example only works on local development enviroment!');
+    throw new Error('This experimental example only works on local development enviroment');
 }
 
 $uri_path = rawurldecode($request->getUri()->getPath());
