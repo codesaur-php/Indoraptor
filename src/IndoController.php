@@ -98,7 +98,7 @@ class IndoController extends Controller
     
     final public function isInternal(): bool
     {
-        return $this->getRequest()->getAttribute('indo_internal') === true;
+        return $this->getAttribute('indo_internal') === true;
     }
 
     final public function respond($response, $status = null)
