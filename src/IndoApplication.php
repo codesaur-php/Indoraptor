@@ -10,8 +10,6 @@ class IndoApplication extends Application
     {
         parent::__construct();
         
-        $this->setPipe('/indo');
-
         // import account rules
         $this->merge(new Account\AccountRouter());
 

@@ -102,14 +102,4 @@ if ($request->getServerParams()['HTTP_HOST'] === 'localhost'
     throw new Error('This experimental example only works on local development enviroment');
 }
 
-$uri_path = rawurldecode($request->getUri()->getPath());
-$script_path = dirname($request->getServerParams()['SCRIPT_NAME']);                
-$target_path = str_replace($script_path, '', $uri_path);
-$target_segments = explode('/', $target_path);
-if (($target_segments[1] ?? '') !== 'indo') {
-    $indo_path = $script_path . '/indo' . $target_path;    
-    $target = $indo_path . (empty($request->getUri()->getQuery()) ? '' : '?' . rawurldecode($request->getUri()->getQuery()));
-    $request = $request->withUri($request->getUri()->withPath($indo_path))->withRequestTarget($target);
-}
-
 (new IndoApplication())->handle($request);
