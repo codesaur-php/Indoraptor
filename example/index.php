@@ -84,9 +84,14 @@ function getRemoteAddr(array $serverParams): string
     return $serverParams['REMOTE_ADDR'] ?? '';
 }
 
-if ($request->getServerParams()['HTTP_HOST'] === 'localhost'
-        && in_array(getRemoteAddr($request->getServerParams()), array('127.0.0.1', '::1'))
+if ($request->getServerParams()['HTTP_HOST'] != 'localhost'
+        || !in_array(getRemoteAddr($request->getServerParams()), array('127.0.0.1', '::1'))
 ) {
+    throw new Error('This experimental example only works on local development enviroment');
+}
+
+if (empty($request->getServerParams()['HTTP_JWT'])) {
+    // For testing purpose we authorizing into Indoraptor
     $issuedAt = time();
     $expirationTime = $issuedAt + 300;
     $payload = array(
@@ -95,11 +100,9 @@ if ($request->getServerParams()['HTTP_HOST'] === 'localhost'
         'account_id' => 1,
         'organization_id' => 1
     );
-    $key = 'codesaur-indoraptor-not-so-secret';
-    $temporary_jwt = JWT::encode($payload, $key);
-    putenv("INDO_JWT=$temporary_jwt"); // For testing purpose we authorized into INDO
-} else {
-    throw new Error('This experimental example only works on local development enviroment');
+    $key = 'codesaur-indoraptor-not-so-secret';    
+    $jwt = JWT::encode($payload, $key);
+    $request = $request->withHeader('INDO_JWT', $jwt);
 }
 
 (new IndoApplication())->handle($request);

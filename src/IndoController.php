@@ -68,20 +68,25 @@ class IndoController extends Controller
     final public function validate($jwt = null, $secret = null, $algs = null)
     {
         try {
-            if (!isset($jwt)) { 
-                $jwt = getenv('INDO_JWT', true);
-            } elseif (empty($jwt)) {
-                throw new Exception('Undefined JWT!');
+            if (empty($jwt)) {
+                $header_jwt = $this->getRequest()->getHeader('INDO_JWT');
+                if (!empty($header_jwt)) {
+                    $jwt = current($header_jwt);
+                } elseif (!empty($this->getRequest()->getServerParams()['HTTP_JWT'])) {
+                    $jwt = $this->getRequest()->getServerParams()['HTTP_JWT'];
+                } else {
+                    throw new Exception('Undefined JWT!');
+                }
             }
             
             $result = (array) JWT::decode($jwt,
                     $secret ?? INDO_JWT_SECRET,
-                    $algs ?? array(INDO_JWT_ALGORITHM));            
+                    $algs ?? array(INDO_JWT_ALGORITHM));
             if ($result['account_id'] ?? false &&
                 !getenv('CODESAUR_ACCOUNT_ID', true)) {
                 putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");
-            }            
-            return $result;            
+            }
+            return $result;
         } catch (Exception $ex) {
             if ($this->isDevelopment()) {
                 error_log($ex->getMessage());
@@ -115,7 +120,7 @@ class IndoController extends Controller
             if (defined("$reasonPhraseInterface::$prhase")) {
                 http_response_code($status);
             }
-        }        
+        }
         exit(json_encode($response));
     }
     
