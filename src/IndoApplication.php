@@ -21,10 +21,6 @@ class IndoApplication extends Application
         
         $this->get('/', function()
         {
-            if (!headers_sent()) {
-                header('Content-Type: application/json');
-            }
-                        
             echo json_encode(array('application' => __CLASS__));
         });
     }

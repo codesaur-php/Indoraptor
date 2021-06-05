@@ -10,7 +10,7 @@ use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\Http\Application\Controller;
-use codesaur\Http\Message\ReasonPrhaseInterface;
+use codesaur\Http\Message\Response;
 
 define('INDO_JWT_LIFETIME', getenv('INDO_JWT_LIFETIME', true) ?: 2592000);
 define('INDO_JWT_ALGORITHM', getenv('INDO_JWT_ALGORITHM', true) ?: 'HS256');
@@ -103,25 +103,23 @@ class IndoController extends Controller
     
     final public function isInternal(): bool
     {
-        return $this->getAttribute('indo_internal') === true;
+        return $this->getAttribute('indo-internal-request') === true;
     }
 
-    final public function respond($response, $status = null)
+    final public function respond($data, $status = null)
     {
-        if ($this->isInternal()) {
-            echo json_encode($response);
-            return;
-        }
+        $response = new Response();
         
-        header('Content-Type: application/json');        
-        if (is_int($status)) {
-            $prhase = "STATUS_$status";
-            $reasonPhraseInterface = ReasonPrhaseInterface::class;
-            if (defined("$reasonPhraseInterface::$prhase")) {
-                http_response_code($status);
-            }
+        echo json_encode($data);
+        // well actually if we use $response->getBody()->write(json_encode($data));
+        // it will look more understandable, but since Response class uses output buffering as
+        // stream body, anything we output (echo,print) is automatically writes into response body
+        
+        try {
+            return $response->withStatus($status);
+        } catch (Exception $ex) {
+            return $response;
         }
-        exit(json_encode($response));
     }
     
     final public function error($message, $status)

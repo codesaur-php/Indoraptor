@@ -15,6 +15,7 @@ use codesaur\Http\Message\ServerRequest;
 
 use Indoraptor\IndoApplication;
 use Indoraptor\IndoExceptionHandler;
+use Indoraptor\JsonResponseMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
 
@@ -102,7 +103,9 @@ if (empty($request->getServerParams()['HTTP_JWT'])) {
     );
     $key = 'codesaur-indoraptor-not-so-secret';    
     $jwt = JWT::encode($payload, $key);
-    $request = $request->withHeader('INDO_JWT', $jwt);
+    //$request = $request->withHeader('INDO_JWT', $jwt);
 }
 
-(new IndoApplication())->handle($request);
+$indo = new IndoApplication();
+$indo->use(new JsonResponseMiddleware());
+$indo->handle($request);
