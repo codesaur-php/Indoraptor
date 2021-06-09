@@ -103,7 +103,7 @@ if (empty($request->getServerParams()['HTTP_JWT'])) {
     );
     $key = 'codesaur-indoraptor-not-so-secret';    
     $jwt = JWT::encode($payload, $key);
-    //$request = $request->withHeader('INDO_JWT', $jwt);
+    $request = $request->withHeader('INDO_JWT', $jwt);
 }
 
 $indo = new IndoApplication();

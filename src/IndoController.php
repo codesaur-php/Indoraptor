@@ -113,7 +113,7 @@ class IndoController extends Controller
         echo json_encode($data);
         // well actually if we use $response->getBody()->write(json_encode($data));
         // it will look more understandable, but since Response class uses output buffering as
-        // stream body, anything we output (echo,print) is automatically writes into response body
+        // stream body, anything we output (echo,print) is automatically writes onto response body
         
         try {
             return $response->withStatus($status);
