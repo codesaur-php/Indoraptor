@@ -101,7 +101,7 @@ if (empty($request->getServerParams()['HTTP_JWT'])) {
         'account_id' => 1,
         'organization_id' => 1
     );
-    $key = 'codesaur-indoraptor-not-so-secret';    
+    $key = 'codesaur-indoraptor-not-so-secret';
     $jwt = JWT::encode($payload, $key);
     $request = $request->withHeader('INDO_JWT', $jwt);
 }
