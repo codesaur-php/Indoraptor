@@ -7,6 +7,11 @@ namespace Indoraptor\Example;
  * This is an example script!
  */
 
+define('CODESAUR_DEVELOPMENT', true);
+
+ini_set('display_errors', 'On');
+error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
+
 use Error;
 
 use Firebase\JWT\JWT;
@@ -19,10 +24,6 @@ use Indoraptor\JsonResponseMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
 
-define('CODESAUR_DEVELOPMENT', true);
-
-ini_set('display_errors', 'On');
-error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 set_exception_handler(array(new IndoExceptionHandler(), 'exception'));
 
 $request = new ServerRequest();
