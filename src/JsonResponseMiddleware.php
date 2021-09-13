@@ -18,8 +18,9 @@ class JsonResponseMiddleware implements MiddlewareInterface
         
         $response = $handler->handle($request);
         
-        if ($response->getStatusCode() != StatusCodeInterface::STATUS_OK) {
-            http_response_code($response->getStatusCode());
+        $status = $response->getStatusCode();
+        if ($status != StatusCodeInterface::STATUS_OK) {
+            http_response_code($status);
         }
         
         return $response;
