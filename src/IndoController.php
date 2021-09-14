@@ -100,11 +100,6 @@ class IndoController extends Controller
     {
         return is_array($this->validate());
     }
-    
-    final public function isInternal(): bool
-    {
-        return $this->getAttribute('indo-internal-request') === true;
-    }
 
     final public function respond($data, $status = null)
     {
@@ -118,6 +113,8 @@ class IndoController extends Controller
         try {
             return $response->withStatus($status);
         } catch (Exception $ex) {
+            unset($ex);
+            
             return $response;
         }
     }

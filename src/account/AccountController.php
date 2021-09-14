@@ -170,8 +170,8 @@ class AccountController extends \Indoraptor\IndoController
     
     public function getOrganizationsNames()
     {
-        if (!$this->isInternal() && !$this->isAuthorized()) {
-            return $this->forbidden('Getting organizations names will work on internal environment or authorized requests only');
+        if ($this->getRequest()->getMethod() !== 'OPTIONS' && !$this->isAuthorized()) {
+            return $this->forbidden('Getting organizations names will work on authorized requests only');
         }
         
         $model = new OrganizationModel($this->pdo);
