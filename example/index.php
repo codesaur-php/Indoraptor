@@ -20,6 +20,7 @@ use codesaur\Http\Message\ServerRequest;
 
 use Indoraptor\IndoApplication;
 use Indoraptor\IndoExceptionHandler;
+use Indoraptor\PDOConnectMiddleware;
 use Indoraptor\JsonResponseMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
@@ -108,5 +109,6 @@ if (empty($request->getServerParams()['HTTP_JWT'])) {
 }
 
 $indo = new IndoApplication();
+$indo->use(new PDOConnectMiddleware());
 $indo->use(new JsonResponseMiddleware());
 $indo->handle($request);

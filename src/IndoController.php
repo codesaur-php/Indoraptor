@@ -2,7 +2,6 @@
 
 namespace Indoraptor;
 
-use PDO;
 use Exception;
 
 use Firebase\JWT\JWT;
@@ -24,31 +23,7 @@ class IndoController extends Controller
     {
         parent::__construct($request);
         
-        $driver = getenv('INDO_DB_DRIVER', true) ?: 'mysql';
-        $host = getenv('INDO_DB_HOST', true) ?: 'localhost';
-        $username =  getenv('INDO_DB_USERNAME', true) ?: 'root';
-        $passwd = getenv('INDO_DB_PASSWORD', true) ?: '';
-        $charset = getenv('INDO_DB_CHARSET', true) ?: 'utf8';
-        $options = array(
-            PDO::ATTR_PERSISTENT => getenv('INDO_DB_PERSISTENT', true) == 'true',
-            PDO::ATTR_ERRMODE => !$this->isDevelopment() ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_WARNING
-        );
-        
-        $dsn = "$driver:host=$host;charset=$charset";
-        $this->pdo = new PDO($dsn, $username, $passwd, $options);
-
-        $database = getenv('INDO_DB_NAME', true) ?: 'indoraptor';
-        if ($request->getServerParams()['HTTP_HOST'] === 'localhost'
-                && in_array($request->getServerParams()['REMOTE_ADDR'], array('127.0.0.1', '::1'))
-        ) {
-            $collation = getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci';
-            $this->exec("CREATE DATABASE IF NOT EXISTS $database COLLATE " . $this->quote($collation));
-        }
-        $this->exec("USE $database");
-        
-        if (getenv('INDO_TIME_ZONE_UTC', true)) {
-            $this->exec('SET time_zone = ' . $this->quote(getenv('INDO_TIME_ZONE_UTC', true)));
-        }
+        $this->pdo = $request->getAttribute('pdo');
     }
     
     final public function generate(array $data)
