@@ -5,7 +5,7 @@ namespace Indoraptor;
 use Throwable;
 use Exception;
 
-use codesaur\Http\Message\ReasonPrhaseInterface;
+use codesaur\Http\Message\ReasonPrhase;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
 class IndoExceptionHandler implements ExceptionHandlerInterface
@@ -18,8 +18,8 @@ class IndoExceptionHandler implements ExceptionHandlerInterface
         
         if ($code !== 0) {
             $status = "STATUS_$code";
-            $reasonPhraseInterface = ReasonPrhaseInterface::class;
-            if (defined("$reasonPhraseInterface::$status")
+            $reasonPhrase = ReasonPrhase::class;
+            if (defined("$reasonPhrase::$status")
                     && !headers_sent()
             ) {
                 http_response_code($code);
