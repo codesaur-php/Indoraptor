@@ -18,6 +18,6 @@ class AccountRouter extends Router
         $this->post('/account/forgot', [AccountController::class, 'forgot']);
         $this->post('/account/get/forgot', [AccountController::class, 'getForgot']);
         $this->post('/account/set/password', [AccountController::class, 'setPassword']);
-        $this->get('/account/get/organizations/names', [AccountController::class, 'getOrganizationsNames']);
+        $this->options('/account/get/organizations/names', [AccountController::class, 'getOrganizationsNames']);
     }
 }
