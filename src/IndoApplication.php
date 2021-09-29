@@ -11,13 +11,13 @@ class IndoApplication extends Application
         parent::__construct();
         
         // import account rules
-        $this->merge(new Account\AccountRouter());
+        $this->use(new Account\AccountRouter());
 
         // import localization rules
-        $this->merge(new Localization\LocalizationRouter());
+        $this->use(new Localization\LocalizationRouter());
 
         // import logger rules
-        $this->merge(new Logger\LoggerRouter());
+        $this->use(new Logger\LoggerRouter());
         
         $this->get('/', function()
         {
