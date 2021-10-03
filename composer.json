@@ -26,8 +26,7 @@
             "Indoraptor\\": "src/",
             "Indoraptor\\Account\\": "src/account/",
             "Indoraptor\\Localization\\": "src/localization/",
-            "Indoraptor\\Logger\\": "src/logger/",
-            "Indoraptor\\RBAC\\": "src/rbac/"
+            "Indoraptor\\Logger\\": "src/logger/"
         }
     },
     "license": "MIT",
