@@ -9,7 +9,7 @@ namespace Indoraptor\Example;
 
 define('CODESAUR_DEVELOPMENT', true);
 
-ini_set('display_errors', 'On');
+ini_set('display_errors', 'Off');
 error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 
 use Indoraptor\IndoApplication;
