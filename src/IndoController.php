@@ -9,7 +9,7 @@ use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\Http\Application\Controller;
-use codesaur\Http\Message\Response;
+use codesaur\Http\Message\NonBodyResponse;
 
 define('INDO_JWT_LIFETIME', getenv('INDO_JWT_LIFETIME', true) ?: 2592000);
 define('INDO_JWT_ALGORITHM', getenv('INDO_JWT_ALGORITHM', true) ?: 'HS256');
@@ -78,12 +78,9 @@ class IndoController extends Controller
 
     final public function respond($data, $status = null)
     {
-        $response = new Response();
+        $response = new NonBodyResponse();
         
         echo json_encode($data);
-        // well actually if we use $response->getBody()->write(json_encode($data));
-        // it will look more understandable, but since Response class uses output buffering as
-        // stream body, anything we output (echo,print) is automatically writes onto response body
         
         try {
             return $response->withStatus($status);
