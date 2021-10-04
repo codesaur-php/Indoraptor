@@ -21,7 +21,7 @@ class ContentController extends \Indoraptor\IndoController
             $keywords = array($payload['keyword']);
         }
 
-        $content = new ContentModel($this->conn);
+        $content = new ContentModel($this->pdo);
         $content->setTable($payload['table']);
         
         $values = array();
