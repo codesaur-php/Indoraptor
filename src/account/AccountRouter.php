@@ -9,15 +9,15 @@ class AccountRouter extends Router
     function __construct()
     {
         // Authorization rules
-        $this->post('/auth/jwt', [AuthController::class, 'jwt']);
-        $this->post('/auth/try', [AuthController::class, 'entry']);
-        $this->post('/auth/jwt/org', [AuthController::class, 'jwtOrganization']);
+        $this->POST('/auth/jwt', [AuthController::class, 'jwt']);
+        $this->POST('/auth/try', [AuthController::class, 'entry']);
+        $this->POST('/auth/jwt/org', [AuthController::class, 'jwtOrganization']);
         
         // Account rules
-        $this->post('/account/signup', [AccountController::class, 'signup']);
-        $this->post('/account/forgot', [AccountController::class, 'forgot']);
-        $this->post('/account/get/forgot', [AccountController::class, 'getForgot']);
-        $this->post('/account/set/password', [AccountController::class, 'setPassword']);
-        $this->local('/account/organizations/names', [AccountController::class, 'getOrganizationsNames']);
+        $this->POST('/account/signup', [AccountController::class, 'signup']);
+        $this->POST('/account/forgot', [AccountController::class, 'forgot']);
+        $this->POST('/account/get/forgot', [AccountController::class, 'getForgot']);
+        $this->POST('/account/set/password', [AccountController::class, 'setPassword']);
+        $this->INTERNAL('/account/organizations/names', [AccountController::class, 'getOrganizationsNames']);
     }
 }

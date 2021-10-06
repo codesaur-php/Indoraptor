@@ -22,7 +22,7 @@ class IndoApplication extends Application
         // import logger rules
         $this->use(new Logger\LoggerRouter());
         
-        $this->get('/', function()
+        $this->GET('/', function()
         {
             echo json_encode(array('application' => __CLASS__));
         });

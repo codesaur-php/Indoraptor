@@ -9,6 +9,6 @@ class ContentsRouter extends Router
     function __construct()
     {
         // ContentModel rules
-        $this->local('/content', [ContentController::class]);
+        $this->INTERNAL('/content', [ContentController::class, 'index']);
     }
 }

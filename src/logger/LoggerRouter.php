@@ -8,10 +8,10 @@ class LoggerRouter extends Router
 {
     function __construct()
     {
-        $this->get('/log/{table}', [LoggerController::class]);
-        $this->get('/log/{table}/{int:id}', [LoggerController::class]);
-        $this->post('/log/{table}', [LoggerController::class, 'insert']);
-        $this->get('/log/get/names', [LoggerController::class, 'names']);
-        $this->post('/log/{table}/select', [LoggerController::class, 'select']);
+        $this->GET('/log/{table}', [LoggerController::class, 'index']);
+        $this->GET('/log/{table}/{int:id}', [LoggerController::class, 'index']);
+        $this->POST('/log/{table}', [LoggerController::class, 'insert']);
+        $this->GET('/log/get/names', [LoggerController::class, 'names']);
+        $this->POST('/log/{table}/select', [LoggerController::class, 'select']);
     }
 }
