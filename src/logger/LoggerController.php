@@ -57,6 +57,11 @@ class LoggerController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
+        return $this->internal();
+    }
+    
+    public function internal()
+    {
         $payload = $this->getParsedBody();
         if (empty($payload['table'])
                 || empty($payload['message'])
