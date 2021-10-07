@@ -10,12 +10,20 @@ use codesaur\Logger\Logger;
 
 class LoggerController extends \Indoraptor\IndoController
 {
-    public function index($table, $id = null)
+    public function index()
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }
         
+        if (empty($this->getQueryParam('table'))) {
+            return $this->badRequest();
+        } elseif (!empty($this->getQueryParam('id'))
+                && filter_var($this->getQueryParam('id'), FILTER_VALIDATE_INT, array('options' => array('min_range' => 0))) !== false) {
+            $id = (int)$this->getQueryParam('id');
+        }
+        
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParam('table'));
         if ($this->hasTable($table . '_log')) {
             $logger = new Logger($this->pdo);
             $logger->setTable($table, 'utf8_unicode_ci');
@@ -43,25 +51,28 @@ class LoggerController extends \Indoraptor\IndoController
         return $this->notFound();
     }
     
-    public function insert($table)
+    public function insert()
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }
         
-        $payload = $this->getParsedBody(true);
-        if (empty($payload['message']) || empty($payload['context'])) {
+        $payload = $this->getParsedBody();
+        if (empty($payload['table'])
+                || empty($payload['message'])
+                || empty($payload['context'])
+        ) {
             return $this->badRequest('Invalid payload');
         }
         
         $logger = new Logger($this->pdo, array('rbac_accounts', 'id'));
-        $logger->setTable($table, 'utf8_unicode_ci');
+        $logger->setTable($payload['table'], 'utf8_unicode_ci');
         if (isset($payload['created_by'])) {
             $logger->prepareCreatedBy($payload['created_by']);
         }
         $level = $payload['level'] ?? LogLevel::NOTICE;
-        $message = $payload['message'] ?? '';
-        $context = $payload['context'] ?? array();
+        $message = $payload['message'];
+        $context = $payload['context'];
         $logger->log($level, $message, $context);
 
         if ($logger->lastInsertId()) {
@@ -90,16 +101,24 @@ class LoggerController extends \Indoraptor\IndoController
         return $this->respond($names);
     }
     
-    public function select($table)
+    public function select()
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized('Not allowed');
         }
         
+        $payload = $this->getParsedBody();
+        if (empty($payload['table'])) {
+            return $this->badRequest('Invalid payload');
+        }
+
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table']);
+        unset($payload['table']);
+        
         if ($this->hasTable($table . '_log')) {
             $logger = new Logger($this->pdo);
             $logger->setTable($table, 'utf8_unicode_ci');
-            $data = $logger->getLogs($this->getParsedBody() ?? array());
+            $data = $logger->getLogs($payload);
         }        
         if (empty($data)) {
             return $this->notFound();
