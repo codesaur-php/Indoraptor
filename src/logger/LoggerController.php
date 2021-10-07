@@ -75,8 +75,7 @@ class LoggerController extends \Indoraptor\IndoController
         if (isset($payload['created_by'])) {
             $logger->prepareCreatedBy($payload['created_by']);
         }
-        $logger->log($payload['level'] ?? LogLevel::NOTICE, $payload['message'], $payload['context']);
-
+        $logger->log($payload['level'] ?? LogLevel::NOTICE, $payload['message'], json_decode($payload['context'], true));
         if ($logger->lastInsertId()) {
             return $this->respond($logger->getLogById($logger->lastInsertId()));
         }
