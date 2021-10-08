@@ -16,12 +16,15 @@ class IndoApplication extends Application
         // import localization rules
         $this->use(new Localization\LocalizationRouter());
 
-        // import contents rules
-        $this->use(new Contents\ContentsRouter());
-
         // import logger rules
         $this->use(new Logger\LoggerRouter());
         
+        // import contents rules
+        $this->use(new Contents\ContentsRouter());
+
+        // import contents rules
+        $this->use(new Record\RecordRouter());
+
         $this->GET('/', function()
         {
             echo json_encode(array('application' => __CLASS__));
