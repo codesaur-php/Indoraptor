@@ -9,9 +9,14 @@ class RecordController extends \Indoraptor\IndoController
         $model = $this->grabmodel();
         $payload = $this->getParsedBody();
         if ($payload['record']
+                && !empty($payload['condition'])
                 && method_exists($model, 'update')
         ) {
-            $id = $model->update($payload['record']);
+            if (isset($payload['content'])) {
+                $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
+            } else {
+                $id = $model->update($payload['record'], $payload['condition']);
+            }            
         }
 
         if ($id === false) {
