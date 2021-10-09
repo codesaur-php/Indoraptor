@@ -35,7 +35,7 @@ class EmailController extends \Indoraptor\IndoController
             // TODO: email-succesfully-sent iig translation deer nemeh
             $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
-            $this->error($th->getMessage());
+            $this->error($th->getMessage(), $e->getCode());
         }
     }
     
@@ -90,7 +90,7 @@ class EmailController extends \Indoraptor\IndoController
             
             $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
-            $this->error($th->getMessage());
+            $this->error($th->getMessage(), $e->getCode());
         }
     }
     
