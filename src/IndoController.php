@@ -123,7 +123,7 @@ class IndoController extends Controller
         if (!empty($cls)) {
             $class = str_replace(' ', '', $cls);
             if (class_exists($class)) {
-                $model = new $class($this->pdo);
+                $model = new $class($this->pdo, array('rbac_accounts', 'id'));
                 if (method_exists($model, 'setTable')) {
                     $table = $this->getQueryParam('table')
                             ?? $this->getPostParam('table', FILTER_SANITIZE_STRING);

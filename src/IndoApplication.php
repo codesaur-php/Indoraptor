@@ -25,6 +25,9 @@ class IndoApplication extends Application
         // import contents rules
         $this->use(new Record\RecordRouter());
 
+        // import emailing rules
+        $this->use(new Mail\EmailRouter());
+
         $this->GET('/', function()
         {
             echo json_encode(array('application' => __CLASS__));

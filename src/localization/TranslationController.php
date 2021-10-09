@@ -53,7 +53,7 @@ class TranslationController extends \Indoraptor\IndoController
         $translations = array();
         $code = $payload['code'] ?? null;
 
-        $model = new TranslationModel($this->pdo, array('rbac_accounts', 'id'));            
+        $model = new TranslationModel($this->pdo, array('rbac_accounts', 'id'));
         foreach (array_unique($tables) as $table) {
             if (!in_array("translation_$table", $initial)
                     && !$this->hasTable("translation_$table")
