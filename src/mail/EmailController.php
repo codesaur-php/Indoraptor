@@ -39,7 +39,7 @@ class EmailController extends \Indoraptor\IndoController
         }
     }
     
-    public function sendSMTPEmail()
+    public function sendSMTP()
     {
         try {
             $payload = $this->getParsedBody();
