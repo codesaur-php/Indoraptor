@@ -83,6 +83,7 @@ class IndoController extends Controller
             public function setStatus(int $code)
             {
                 $this->status = (int)$code;
+                return $this;
             }
         };
         
