@@ -22,7 +22,7 @@ class EmailController extends \Indoraptor\IndoController
                 throw new Exception('Invalid Request');
             }
             
-            $translation = new TranslationModel($this->conn);
+            $translation = new TranslationModel($this->pdo);
             $translation->setTable('dashboard');
             $text = $translation->retrieve($payload['code'] ?? 'en');
             
@@ -49,11 +49,11 @@ class EmailController extends \Indoraptor\IndoController
                 throw new Exception('Invalid Request');
             }
         
-            $model = new MailerModel($this->conn, array('rbac_accounts', 'id'));
+            $model = new MailerModel($this->pdo, array('rbac_accounts', 'id'));
             $rows = $model->getRows();
             $record = end($rows);
 
-            $translation = new TranslationModel($this->conn);
+            $translation = new TranslationModel($this->pdo);
             $translation->setTable('dashboard');
             $text = $translation->retrieve($payload['flag'] ?? 'en');
 
