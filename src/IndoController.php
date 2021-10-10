@@ -80,22 +80,23 @@ class IndoController extends Controller
     {
         $response = new class extends NonBodyResponse
         {
-            public function setStatus(int $code)
+            public function setStatus($code)
             {
-                $this->status = (int)$code;
-                return $this;
+                if (!empty($code)) {
+                    $this->status = (int)$code;
+                }
             }
         };
         
         echo json_encode($data);
         
         try {
-            return $response->setStatus($status);
+            $response->setStatus($status);
         } catch (Exception $ex) {
             unset($ex);
-            
-            return $response;
         }
+        
+        return $response;
     }
     
     final public function error($message, $status)
