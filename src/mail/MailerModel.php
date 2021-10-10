@@ -2,7 +2,10 @@
 
 namespace Indoraptor\Mail;
 
+use PDO;
+
 use codesaur\DataObject\Model;
+use codesaur\DataObject\Column;
 
 class MailerModel extends Model
 {
