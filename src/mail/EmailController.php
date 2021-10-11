@@ -55,7 +55,7 @@ class EmailController extends \Indoraptor\IndoController
 
             $translation = new TranslationModel($this->pdo);
             $translation->setTable('dashboard');
-            $text = $translation->retrieve($payload['flag'] ?? 'en');
+            $text = $translation->retrieve($payload['code'] ?? 'en');
 
             if (empty($record) || !isset($record['charset'])
                     || !isset($record['host']) || !isset($record['port'])
