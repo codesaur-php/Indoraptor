@@ -168,6 +168,27 @@ class AccountController extends \Indoraptor\IndoController
         $this->respond($account);
     }
     
+    public function getOrganizationUser()
+    {
+        $payload = $this->getParsedBody();
+        if (empty($payload['account_id'])
+                || empty($payload['organization_id'])
+        ) {
+            return $this->badRequest();
+        }
+        
+        $model = new OrganizationUserModel($this->pdo);
+        $record = $model->getRowBy(array(
+            'is_active' => 1,
+            'account_id' => $payload['account_id'],
+            'organization_id' => $payload['organization_id']
+        ));
+        if (empty($record)) {
+            return $this->notFound();
+        }
+        $this->respond($record);
+    }
+    
     public function getOrganizationsNames()
     {
         $model = new OrganizationModel($this->pdo);
