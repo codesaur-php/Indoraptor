@@ -117,7 +117,7 @@ class AuthController extends \Indoraptor\IndoController
         }
     }
     
-    final public function jwtOrganization()
+    public function organization()
     {
         try {
             $current_login = $this->validate();
@@ -167,7 +167,7 @@ class AuthController extends \Indoraptor\IndoController
         }
     }
     
-    public function getLastLoginOrg(int $account_id)
+    function getLastLoginOrg(int $account_id)
     {
         if (!$this->hasTable('dashboard_log')) {
             return null;

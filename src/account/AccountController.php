@@ -109,7 +109,7 @@ class AccountController extends \Indoraptor\IndoController
         }
     }
     
-    public function setPassword()
+    public function password()
     {
         $payload = $this->getParsedBody();
         if (empty($payload['use_id'])
