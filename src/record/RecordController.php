@@ -6,9 +6,51 @@ class RecordController extends \Indoraptor\IndoController
 {
     public function internal()
     {
+        $payload = $this->getParsedBody();
+        if (empty($payload['values'])) {
+            return $this->badRequest();
+        }
+        
+        $model = $this->grabmodel();
+        if (method_exists($model, 'getRowBy')) {
+            $record = $model->getRowBy($payload['values'], $payload['orderBy'] ?? null);
+        }
+
+        if (empty($record)) {
+            return $this->notFound();
+        }
+        
+        $this->respond(array(
+            'record' => $record,
+            'model'  => $this->getClass($model),
+            'table'  => $model->getName()
+        ));
+    }
+    
+    public function internal_rows()
+    {
         $model = $this->grabmodel();
         $payload = $this->getParsedBody();
-        if ($payload['record']
+        if (method_exists($model, 'getRows')) {
+            $rows = $model->getRows($payload);
+        }
+
+        if (empty($rows)) {
+            return $this->notFound();
+        }
+        
+        $this->respond(array(
+            'rows'  => $rows,
+            'model' => $this->getClass($model),
+            'table' => $model->getName()
+        ));
+    }
+    
+    public function internal_update()
+    {
+        $model = $this->grabmodel();
+        $payload = $this->getParsedBody();
+        if (isset($payload['record'])
                 && !empty($payload['condition'])
                 && method_exists($model, 'update')
         ) {
@@ -19,14 +61,14 @@ class RecordController extends \Indoraptor\IndoController
             }            
         }
 
-        if ($id === false) {
-            return $this->notFound();
+        if ($id ?? false) {
+            $this->respond(array(
+                'id'    => $id,
+                'model' => $this->getClass($model),
+                'table' => $model->getName()
+            ));
         }
         
-        $this->respond(array(
-            'id'    => $id,
-            'model' => $this->getClass($model),
-            'table' => $model->getName()
-        ));
+        return $this->notFound();
     }
 }
