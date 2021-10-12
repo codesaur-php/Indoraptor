@@ -109,23 +109,6 @@ class AccountController extends \Indoraptor\IndoController
         }
     }
     
-    public function getForgot()
-    {
-        $payload = $this->getParsedBody();
-        if (empty($payload['use_id'])) {
-            throw new Exception('Invalid use id', StatusCodeInterface::STATUS_BAD_REQUEST);
-        }
-        
-        $forgot = new ForgotModel($this->pdo);
-        $record = $forgot->getRowBy(array('use_id' => $payload['use_id']));
-
-        if ($record['is_active'] == 1) {
-            return $this->respond($record);
-        }
-        
-        return $this->notFound();
-    }
-    
     public function setPassword()
     {
         $payload = $this->getParsedBody();
@@ -166,41 +149,5 @@ class AccountController extends \Indoraptor\IndoController
         unset($account['updated_by']);            
 
         $this->respond($account);
-    }
-    
-    public function getOrganizationUser()
-    {
-        $payload = $this->getParsedBody();
-        if (empty($payload['account_id'])
-                || empty($payload['organization_id'])
-        ) {
-            return $this->badRequest();
-        }
-        
-        $model = new OrganizationUserModel($this->pdo);
-        $record = $model->getRowBy(array(
-            'is_active' => 1,
-            'account_id' => $payload['account_id'],
-            'organization_id' => $payload['organization_id']
-        ));
-        if (empty($record)) {
-            return $this->notFound();
-        }
-        $this->respond($record);
-    }
-    
-    public function getOrganizationsNames()
-    {
-        $model = new OrganizationModel($this->pdo);
-        $stmt = $this->prepare("SELECT name FROM {$model->getName()} WHERE is_active=1 ORDER BY name");
-        $stmt->execute();
-        $names = array();
-        while ($data = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $names[] = $data['name'];
-        }
-        if (empty($names)) {
-            return $this->notFound();
-        }
-        $this->respond($names);
     }
 }
