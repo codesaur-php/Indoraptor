@@ -22,7 +22,7 @@ class RecordController extends \Indoraptor\IndoController
         
         $this->respond(array(
             'record' => $record,
-            'model'  => $this->getClass($model),
+            'model'  => get_class($model),
             'table'  => $model->getName()
         ));
     }
@@ -41,7 +41,7 @@ class RecordController extends \Indoraptor\IndoController
         
         $this->respond(array(
             'rows'  => $rows,
-            'model' => $this->getClass($model),
+            'model' => get_class($model),
             'table' => $model->getName()
         ));
     }
@@ -64,7 +64,7 @@ class RecordController extends \Indoraptor\IndoController
         if ($id ?? false) {
             $this->respond(array(
                 'id'    => $id,
-                'model' => $this->getClass($model),
+                'model' => get_class($model),
                 'table' => $model->getName()
             ));
         }
