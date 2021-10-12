@@ -5,7 +5,7 @@ namespace Indoraptor;
 use codesaur\Http\Message\ServerRequest;
 use codesaur\Http\Message\Uri;
 
-class LocalRequest extends ServerRequest
+class InternalRequest extends ServerRequest
 {
     function __construct(string $method, string $pattern, $payload = array(), $token = null)
     {
