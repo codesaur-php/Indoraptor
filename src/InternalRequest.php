@@ -24,7 +24,7 @@ class InternalRequest extends ServerRequest
         $this->parsedBody = $payload;
         
         if (isset($token)) {
-            //$this->setToken($token);
+            $this->serverParams['HTTP_JWT'] = $token;
         }
     }
 }

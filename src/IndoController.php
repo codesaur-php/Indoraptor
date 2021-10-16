@@ -44,13 +44,15 @@ class IndoController extends Controller
     {
         try {
             if (empty($jwt)) {
-                $header_jwt = $this->getRequest()->getHeader('INDO_JWT');
-                if (!empty($header_jwt)) {
-                    $jwt = current($header_jwt);
-                } elseif (!empty($this->getRequest()->getServerParams()['HTTP_JWT'])) {
+                if (!empty($this->getRequest()->getServerParams()['HTTP_JWT'])) {
                     $jwt = $this->getRequest()->getServerParams()['HTTP_JWT'];
                 } else {
-                    throw new Exception('Undefined JWT!');
+                    $header_jwt = $this->getRequest()->getHeader('INDO_JWT');
+                    if (!empty($header_jwt)) {
+                        $jwt = current($header_jwt);
+                    } else {
+                        throw new Exception('Undefined JWT!');
+                    }
                 }
             }
             
