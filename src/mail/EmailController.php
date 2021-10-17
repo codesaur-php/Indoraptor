@@ -31,7 +31,6 @@ class EmailController extends \Indoraptor\IndoController
             }
             
             (new Mail())->send(getenv('MAIL_SENDER', true), $payload['to'], $payload['subject'], $payload['message']);
-            // TODO: email-succesfully-sent iig translation deer nemeh
             $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
             $this->error($th->getMessage(), $th->getCode());
