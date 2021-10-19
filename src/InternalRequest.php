@@ -10,6 +10,8 @@ class InternalRequest extends ServerRequest
     function __construct(string $method, string $pattern, $payload = array(), $token = null)
     {
         $this->serverParams['SCRIPT_NAME'] = '/index.php';
+        $this->serverParams['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
+        $this->serverParams['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
         
         $this->method = $method;
         

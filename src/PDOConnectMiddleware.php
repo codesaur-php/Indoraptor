@@ -27,7 +27,7 @@ class PDOConnectMiddleware implements MiddlewareInterface
         $pdo = new PDO($dsn, $username, $passwd, $options);
 
         $database = getenv('INDO_DB_NAME', true) ?: 'indoraptor';
-        if ($request->getServerParams()['HTTP_HOST'] === 'localhost'
+        if ($request->getServerParams()['HTTP_HOST'] == 'localhost'
                 && in_array($request->getServerParams()['REMOTE_ADDR'], array('127.0.0.1', '::1'))
         ) {
             $collation = getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci';
