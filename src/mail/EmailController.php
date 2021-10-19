@@ -49,7 +49,7 @@ class EmailController extends \Indoraptor\IndoController
                 throw new Exception('Invalid Request');
             }
         
-            $model = new MailerModel($this->pdo, array('rbac_accounts', 'id'));
+            $model = new MailerModel($this->pdo);
             $rows = $model->getRows();
             $record = end($rows);
 

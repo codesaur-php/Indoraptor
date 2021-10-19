@@ -6,7 +6,6 @@ use PDO;
 
 use Psr\Log\LogLevel;
 
-
 class LoggerController extends \Indoraptor\IndoController
 {
     public function index()
@@ -69,7 +68,7 @@ class LoggerController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
         
-        $logger = new Logger($this->pdo, array('rbac_accounts', 'id'));
+        $logger = new LoggerModel($this->pdo);
         $logger->setTable($payload['table'], getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
         if (isset($payload['created_by'])) {
             $logger->prepareCreatedBy($payload['created_by']);
@@ -116,7 +115,7 @@ class LoggerController extends \Indoraptor\IndoController
         unset($payload['table']);
         
         if ($this->hasTable($table . '_log')) {
-            $logger = new Logger($this->pdo);
+            $logger = new LoggerModel($this->pdo);
             $logger->setTable($table, getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
             $data = $logger->getLogs($payload);
         }        

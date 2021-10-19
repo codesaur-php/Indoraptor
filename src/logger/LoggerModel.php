@@ -6,6 +6,8 @@ class LoggerModel extends \codesaur\Logger\Logger
 {
     function __initial()
     {
+        parent::__initial();
+        
         $this->setForeignKeyChecks(false);
         
         $table = $this->getName();
