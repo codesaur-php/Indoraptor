@@ -4,7 +4,6 @@ namespace Indoraptor\Localization;
 
 use PDO;
 
-use codesaur\Localization\TranslationModel;
 use codesaur\Localization\TranslationInitial;
 
 class TranslationController extends \Indoraptor\IndoController
@@ -53,7 +52,7 @@ class TranslationController extends \Indoraptor\IndoController
         $translations = array();
         $code = $payload['code'] ?? null;
 
-        $model = new TranslationModel($this->pdo, array('rbac_accounts', 'id'));
+        $model = new TranslationModel($this->pdo);
         foreach (array_unique($tables) as $table) {
             if (!in_array("translation_$table", $initial)
                     && !$this->hasTable("translation_$table")

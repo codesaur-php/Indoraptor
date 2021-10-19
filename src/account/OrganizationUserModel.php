@@ -13,14 +13,14 @@ class OrganizationUserModel extends Model
         
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-           (new Column('account_id', 'bigint', 20))->notNull()->foreignKey('rbac_accounts', 'id', 'CASCADE'),
-           (new Column('organization_id', 'bigint', 20))->notNull()->foreignKey('organizations', 'id', 'CASCADE'),
+           (new Column('account_id', 'bigint', 20))->notNull()->constraints('CONSTRAINT organization_users_fk_account_id FOREIGN KEY (account_id) REFERENCES rbac_accounts(id) ON DELETE CASCADE ON UPDATE CASCADE'),
+           (new Column('organization_id', 'bigint', 20))->notNull()->constraints('CONSTRAINT organization_users_fk_organization_id FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE ON UPDATE CASCADE'),
             new Column('status', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-           (new Column('created_by', 'bigint', 20))->foreignKey('organizations', 'id'),
+           (new Column('created_by', 'bigint', 20))->constraints('CONSTRAINT organization_users_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE'),
             new Column('updated_at', 'datetime'),
-           (new Column('updated_by', 'bigint', 20))->foreignKey('organizations', 'id')
+           (new Column('updated_by', 'bigint', 20))->constraints('CONSTRAINT organization_users_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE')
         ));
         
         $this->setTable('organization_users', 'utf8_unicode_ci');

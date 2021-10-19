@@ -6,7 +6,6 @@ use PDO;
 
 use Psr\Log\LogLevel;
 
-use codesaur\Logger\Logger;
 
 class LoggerController extends \Indoraptor\IndoController
 {
@@ -25,7 +24,7 @@ class LoggerController extends \Indoraptor\IndoController
         
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParam('table'));
         if ($this->hasTable($table . '_log')) {
-            $logger = new Logger($this->pdo);
+            $logger = new LoggerModel($this->pdo);
             $logger->setTable($table, 'utf8_unicode_ci');
             if (isset($id)) {
                 $data = $logger->getLogById($id);

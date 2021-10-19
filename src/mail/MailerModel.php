@@ -9,21 +9,9 @@ use codesaur\DataObject\Column;
 
 class MailerModel extends Model
 {
-    function __construct(PDO $pdo, $accountForeignRef = null)
+    function __construct(PDO $pdo)
     {
-        parent::__construct($pdo);
-        
-        $created_by = new Column('created_by', 'bigint', 20);
-        $updated_by = new Column('updated_by', 'bigint', 20);
-        if (!empty($accountForeignRef)) {
-            if (is_array($accountForeignRef)) {
-                call_user_func_array(array($created_by, 'foreignKey'), $accountForeignRef);
-                call_user_func_array(array($updated_by, 'foreignKey'), $accountForeignRef);
-            } else {
-                $created_by->foreignKey($accountForeignRef, 'id');
-                $updated_by->foreignKey($accountForeignRef, 'id');
-            }
-        }
+        parent::__construct($pdo);        
         
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
@@ -38,9 +26,9 @@ class MailerModel extends Model
             new Column('name', 'varchar', 255),
             new Column('email', 'varchar', 128),
             new Column('created_at', 'datetime'),
-            $created_by,
+           (new Column('created_by', 'bigint', 20))->constraints('CONSTRAINT mailer_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE'),
             new Column('updated_at', 'datetime'),
-            $updated_by
+           (new Column('updated_by', 'bigint', 20))->constraints('CONSTRAINT mailer_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE')
         ));
         
         $this->setTable('mailer');

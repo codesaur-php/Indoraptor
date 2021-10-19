@@ -15,7 +15,7 @@ class ForgotModel extends Model
         
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-           (new Column('account', 'bigint', 20))->foreignKey('rbac_accounts', 'id'),
+           (new Column('account', 'bigint', 20))->constraints('CONSTRAINT forgot_fk_account FOREIGN KEY (account) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE'),
             new Column('use_id', 'varchar', 256),
             new Column('username', 'varchar', 256),
             new Column('first_name', 'varchar', 256),

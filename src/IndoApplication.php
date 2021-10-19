@@ -19,10 +19,7 @@ class IndoApplication extends Application
         // import logger rules
         $this->use(new Logger\LoggerRouter());
         
-        // import contents rules
-        $this->use(new Contents\ContentsRouter());
-
-        // import contents rules
+        // import record rules
         $this->use(new Record\RecordRouter());
 
         // import emailing rules

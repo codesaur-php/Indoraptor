@@ -2,8 +2,6 @@
 
 namespace Indoraptor\Localization;
 
-use codesaur\Localization\CountriesModel;
-
 class CountriesController extends \Indoraptor\IndoController
 {
     public function index()
@@ -13,7 +11,7 @@ class CountriesController extends \Indoraptor\IndoController
         }
         
         $code = $this->getQueryParam('code');
-        $model = new CountriesModel($this->pdo, array('rbac_accounts', 'id'));
+        $model = new CountriesModel($this->pdo);
         $rows = $model->retrieve($code);        
         if (empty($rows)) {
             return $this->notFound();

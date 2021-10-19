@@ -4,8 +4,6 @@ namespace Indoraptor\Localization;
 
 use PDO;
 
-use codesaur\Localization\LanguageModel;
-
 class LanguageController extends \Indoraptor\IndoController
 {
     public function index()
@@ -13,7 +11,7 @@ class LanguageController extends \Indoraptor\IndoController
         $app = $this->getQueryParam('app');
         $is_active = $this->getQueryParam('is_active');
         
-        $model = new LanguageModel($this->pdo, array('rbac_accounts', 'id'));
+        $model = new LanguageModel($this->pdo);
         $rows = $model->retrieve($app ?? 'common', $is_active ?? 1);
         if (empty($rows)) {
             return $this->notFound();
@@ -140,7 +138,7 @@ class LanguageController extends \Indoraptor\IndoController
             }
         }
         
-        $this->setForeignKeyChecks();
+        $this->setForeignKeyChecks(true);
         
         if (empty($translated)) {
             return $this->notFound('Nothing changed');

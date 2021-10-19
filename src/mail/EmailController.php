@@ -6,7 +6,8 @@ use Throwable;
 use Exception;
 
 use codesaur\Http\Client\Mail;
-use codesaur\Localization\TranslationModel;
+
+use Indoraptor\Localization\TranslationModel;
 
 class EmailController extends \Indoraptor\IndoController
 {

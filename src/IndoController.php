@@ -126,14 +126,14 @@ class IndoController extends Controller
         return $this->error($message, StatusCodeInterface::STATUS_NOT_FOUND);
     }
     
-    final public function grabModel()
+    public function grabModel()
     {
         $cls = $this->getQueryParam('model')
                 ?? $this->getPostParam('model', FILTER_SANITIZE_STRING);
         if (!empty($cls)) {
             $class = str_replace(' ', '', $cls);
             if (class_exists($class)) {
-                $model = new $class($this->pdo, array('rbac_accounts', 'id'));
+                $model = new $class($this->pdo);
                 if (method_exists($model, 'setTable')) {
                     $table = $this->getQueryParam('table')
                             ?? $this->getPostParam('table', FILTER_SANITIZE_STRING);
