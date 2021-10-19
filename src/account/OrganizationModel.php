@@ -27,7 +27,7 @@ class OrganizationModel extends Model
            (new Column('updated_by', 'bigint', 20))->constraints('CONSTRAINT organizations_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE')
         ));
         
-        $this->setTable('organizations', 'utf8_unicode_ci');
+        $this->setTable('organizations', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
     }
     
     public function setTable(string $name, $collate = null)

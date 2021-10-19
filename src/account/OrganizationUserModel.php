@@ -23,7 +23,7 @@ class OrganizationUserModel extends Model
            (new Column('updated_by', 'bigint', 20))->constraints('CONSTRAINT organization_users_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE')
         ));
         
-        $this->setTable('organization_users', 'utf8_unicode_ci');
+        $this->setTable('organization_users', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
     }
     
     function __initial()

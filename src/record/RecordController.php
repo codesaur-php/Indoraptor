@@ -7,13 +7,13 @@ class RecordController extends \Indoraptor\IndoController
     public function internal()
     {
         $payload = $this->getParsedBody();
-        if (empty($payload['values'])) {
+        if (empty($payload)) {
             return $this->badRequest();
         }
         
         $model = $this->grabmodel();
         if (method_exists($model, 'getRowBy')) {
-            $record = $model->getRowBy($payload['values'], $payload['orderBy'] ?? null);
+            $record = $model->getRowBy($payload);
         }
 
         if (empty($record)) {

@@ -138,7 +138,8 @@ class IndoController extends Controller
                     $table = $this->getQueryParam('table')
                             ?? $this->getPostParam('table', FILTER_SANITIZE_STRING);
                     if (!empty($table)) {
-                        $model->setTable((string)$table, 'utf8_unicode_ci');
+                        $model->setTable((string)$table,
+                                getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
                     }
                     return $model;
                 }
