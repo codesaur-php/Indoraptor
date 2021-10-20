@@ -26,11 +26,23 @@ class MailerModel extends Model
             new Column('name', 'varchar', 255),
             new Column('email', 'varchar', 128),
             new Column('created_at', 'datetime'),
-           (new Column('created_by', 'bigint', 20))->constraints('CONSTRAINT mailer_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE'),
+            new Column('created_by', 'bigint', 20),
             new Column('updated_at', 'datetime'),
-           (new Column('updated_by', 'bigint', 20))->constraints('CONSTRAINT mailer_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE')
+            new Column('updated_by', 'bigint', 20)
         ));
         
         $this->setTable('mailer');
+    }
+    
+    function __initial()
+    {
+        parent::__initial();
+        
+        $table = $this->getName();
+        
+        $this->setForeignKeyChecks(false);
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->setForeignKeyChecks(true);
     }
 }

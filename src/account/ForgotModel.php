@@ -15,7 +15,7 @@ class ForgotModel extends Model
         
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-           (new Column('account', 'bigint', 20))->constraints('CONSTRAINT forgot_fk_account FOREIGN KEY (account) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE'),
+            new Column('account', 'bigint', 20),
             new Column('use_id', 'varchar', 256),
             new Column('username', 'varchar', 256),
             new Column('first_name', 'varchar', 256),
@@ -27,5 +27,14 @@ class ForgotModel extends Model
         ));
         
         $this->setTable('forgot', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+    }
+    
+    function __initial()
+    {
+        parent::__initial();
+        
+        $this->setForeignKeyChecks(false);
+        $this->exec("ALTER TABLE {$this->getName()} ADD CONSTRAINT {$this->getName()}_fk_account FOREIGN KEY (account) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->setForeignKeyChecks(true);
     }
 }

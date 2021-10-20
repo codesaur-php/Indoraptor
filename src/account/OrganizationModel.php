@@ -22,30 +22,26 @@ class OrganizationModel extends Model
             new Column('status', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-           (new Column('created_by', 'bigint', 20))->constraints('CONSTRAINT organizations_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE'),
+            new Column('created_by', 'bigint', 20),
             new Column('updated_at', 'datetime'),
-           (new Column('updated_by', 'bigint', 20))->constraints('CONSTRAINT organizations_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE')
+            new Column('updated_by', 'bigint', 20)
         ));
         
         $this->setTable('organizations', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
     }
     
-    public function setTable(string $name, $collate = null)
-    {
-        $this->name = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
-        
-        if ($this->hasTable($this->name)) {
-            return;
-        }
-        
-        $this->createTable($this->name, $this->columns, $collate);
-        $this->exec("ALTER TABLE $this->name ADD CONSTRAINT {$this->name}_fk_parent_id FOREIGN KEY (parent_id) REFERENCES $this->name(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->__initial();
-    }
-    
     function __initial()
     {
+        parent::__initial();
+
         $table = $this->getName();
+        
+        $this->setForeignKeyChecks(false);
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_parent_id FOREIGN KEY (parent_id) REFERENCES $table(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->setForeignKeyChecks(true);
+
         if ($table != 'organizations') {
             return;
         }
