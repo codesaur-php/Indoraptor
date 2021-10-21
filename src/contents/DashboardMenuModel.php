@@ -4,10 +4,10 @@ namespace Indoraptor\Contents;
 
 use PDO;
 
-use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\MultiModel;
 
-class DashboardMenuModel extends Model
+class DashboardMenuModel extends MultiModel
 {
     function __construct(PDO $pdo)
     {
@@ -17,7 +17,6 @@ class DashboardMenuModel extends Model
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
             new Column('parent_id', 'int', 20, 0),
             new Column('feather', 'varchar', 6),
-            new Column('title', 'varchar', 6),
             new Column('href', 'varchar', 255),
             new Column('position', 'int', 8, 100),
             new Column('is_active', 'tinyint', 1, 1),
@@ -26,6 +25,8 @@ class DashboardMenuModel extends Model
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 20)
         ));
+        
+        $this->setContentColumns(array(new Column('title', 'varchar', 128)));
         
         $this->setTable('dashboard_menu');
     }
