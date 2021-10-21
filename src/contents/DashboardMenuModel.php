@@ -16,8 +16,8 @@ class DashboardMenuModel extends MultiModel
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
             new Column('parent_id', 'int', 20, 0),
-            new Column('feather', 'varchar', 6),
-            new Column('href', 'varchar', 255),
+            new Column('feather', 'varchar', 64),
+            new Column('href', 'varchar', 1024),
             new Column('position', 'int', 8, 100),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
