@@ -48,17 +48,17 @@ class DashboardMenuModel extends MultiModel
         }
         
         $idMain = $this->insert(array('position' => '10'), array('mn' => array('title' => 'Үндсэн'), 'en' => array('title' => 'Main')));
-        $this->insert(array('parent_id' => $idMain, 'position' => '11', 'icon' => 'home', 'href' => '/'), array('mn' => array('title' => 'Нүүр хуудасруу зочлох'), 'en' => array('title' => 'Go to homepage')));
+        $this->insert(array('parent_id' => $idMain, 'position' => '11', 'icon' => 'bi bi-house-fill', 'href' => '/'), array('mn' => array('title' => 'Нүүр хуудасруу зочлох'), 'en' => array('title' => 'Go to homepage')));
 
         $idContent = $this->insert(array('position' => '200'), array('mn' => array('title' => 'Агуулгууд'), 'en' => array('title' => 'Contents')));
-        $this->insert(array('parent_id' => $idContent, 'position' => '210', 'icon' => 'flag', 'href' => '/language'), array('mn' => array('title' => 'Хэл'), 'en' => array('title' => 'Language')));
-        $this->insert(array('parent_id' => $idContent, 'position' => '220', 'icon' => 'globe', 'href' => '/translation'), array('mn' => array('title' => 'Орчуулга'), 'en' => array('title' => 'Translation')));
-        $this->insert(array('parent_id' => $idContent, 'position' => '230', 'icon' => 'archive', 'href' => '/templates'), array('mn' => array('title' => 'Баримт бичгийн загварууд'), 'en' => array('title' => 'Document Templates')));
+        $this->insert(array('parent_id' => $idContent, 'position' => '210', 'icon' => 'bi bi-flag-fill', 'href' => '/language'), array('mn' => array('title' => 'Хэл'), 'en' => array('title' => 'Language')));
+        $this->insert(array('parent_id' => $idContent, 'position' => '220', 'icon' => 'bi bi-translate', 'href' => '/translation'), array('mn' => array('title' => 'Орчуулга'), 'en' => array('title' => 'Translation')));
+        $this->insert(array('parent_id' => $idContent, 'position' => '230', 'icon' => 'bi bi-file-post-fill', 'href' => '/templates'), array('mn' => array('title' => 'Баримт бичгийн загварууд'), 'en' => array('title' => 'Document Templates')));
 
         $idSystem = $this->insert(array('position' => '300'), array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')));
-        $this->insert(array('parent_id' => $idSystem, 'position' => '310', 'icon' => 'users', 'href' => '/accounts'), array('mn' => array('title' => 'Хэрэглэгчид'), 'en' => array('title' => 'Accounts')));
-        $this->insert(array('parent_id' => $idSystem, 'position' => '320', 'icon' => 'list', 'href' => '/organizations'), array('mn' => array('title' => 'Байгууллага'), 'en' => array('title' => 'Organization')));
-        $this->insert(array('parent_id' => $idSystem, 'position' => '330', 'icon' => 'list', 'href' => '/mailer'), array('mn' => array('title' => 'Шууданч'), 'en' => array('title' => 'Mail carrier')));
-        $this->insert(array('parent_id' => $idSystem, 'position' => '340', 'icon' => 'list', 'href' => '/log'), array('mn' => array('title' => 'Хандалтын протокол'), 'en' => array('title' => 'Access log')));
+        $this->insert(array('parent_id' => $idSystem, 'position' => '310', 'icon' => 'bi bi-people-fill', 'href' => '/accounts'), array('mn' => array('title' => 'Хэрэглэгчид'), 'en' => array('title' => 'Accounts')));
+        $this->insert(array('parent_id' => $idSystem, 'position' => '320', 'icon' => 'bi bi-bank2', 'href' => '/organizations'), array('mn' => array('title' => 'Байгууллага'), 'en' => array('title' => 'Organization')));
+        $this->insert(array('parent_id' => $idSystem, 'position' => '330', 'icon' => 'bi bi-mailbox2', 'href' => '/mailer'), array('mn' => array('title' => 'Шууданч'), 'en' => array('title' => 'Mail carrier')));
+        $this->insert(array('parent_id' => $idSystem, 'position' => '340', 'icon' => 'bi bi-list-stars', 'href' => '/log'), array('mn' => array('title' => 'Хандалтын протокол'), 'en' => array('title' => 'Access log')));
     }
 }
