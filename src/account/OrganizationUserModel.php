@@ -38,7 +38,7 @@ class OrganizationUserModel extends Model
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         
-        if ($table != 'organization_users') {
+        if ($table == 'organization_users') {
             $nowdate = date('Y-m-d H:i:s');
             $this->exec("INSERT INTO $table(id,created_at,account_id,organization_id) VALUES(1,'$nowdate',1,1)");
         }
