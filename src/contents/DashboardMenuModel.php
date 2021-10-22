@@ -36,9 +36,9 @@ class DashboardMenuModel extends MultiModel
         parent::__initial();
         
         $table = $this->getName();        
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_parent_id FOREIGN KEY (parent_id) REFERENCES $table(id) ON DELETE SET NULL ON UPDATE CASCADE");
         
         $this->setForeignKeyChecks(false);
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_parent_id FOREIGN KEY (parent_id) REFERENCES $table(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
