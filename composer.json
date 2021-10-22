@@ -30,7 +30,6 @@
             "Indoraptor\\Localization\\": "src/localization/",
             "Indoraptor\\Logger\\": "src/logger/",
             "Indoraptor\\Record\\": "src/record/",
-            "Indoraptor\\Contents\\": "src/contents/",
             "Indoraptor\\Mail\\": "src/mail/"
         }
     },

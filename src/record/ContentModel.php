@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\Contents;
+namespace Indoraptor\Record;
 
 class ContentModel extends \codesaur\Contents\ContentModel
 {
