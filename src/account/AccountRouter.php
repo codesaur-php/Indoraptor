@@ -17,5 +17,6 @@ class AccountRouter extends Router
         $this->POST('/account/signup', [AccountController::class, 'signup']);
         $this->POST('/account/forgot', [AccountController::class, 'forgot']);
         $this->POST('/account/password', [AccountController::class, 'password']);
+        $this->GET('/account/get/menu', [AccountController::class, 'getMenu']);
     }
 }

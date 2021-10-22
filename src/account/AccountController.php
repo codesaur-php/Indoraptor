@@ -146,8 +146,27 @@ class AccountController extends \Indoraptor\IndoController
         unset($account['created_at']);
         unset($account['created_by']);
         unset($account['updated_at']);
-        unset($account['updated_by']);            
+        unset($account['updated_by']);
 
         return $this->respond($account);
+    }
+    
+    public function getMenu()
+    {
+        $auth = $this->validate();        
+        if (!isset($auth['account_id'])) {
+            return $this->unauthorized();
+        }
+        
+        $model = new MenuModel($this->pdo);
+        $sql = "select exists(select 1 from {$model->getName()})";
+        $stmt = $model->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_NUM);
+        if ($result[0][0] == '0') {
+            return $this->notFound();
+        }
+        
+        return $this->respond($model->getRows());
     }
 }
