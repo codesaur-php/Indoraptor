@@ -48,7 +48,8 @@ class DashboardMenuModel extends MultiModel
         }
         
         $idMain = $this->insert(array('position' => '10'), array('mn' => array('title' => 'Үндсэн'), 'en' => array('title' => 'Main')));
-        $this->insert(array('parent_id' => $idMain, 'position' => '11', 'icon' => 'bi bi-house-fill', 'href' => '/'), array('mn' => array('title' => 'Нүүр хуудасруу зочлох'), 'en' => array('title' => 'Go to homepage')));
+        $this->insert(array('parent_id' => $idMain, 'position' => '11', 'icon' => 'bi bi-house-door', 'href' => '/'), array('mn' => array('title' => 'Хянах самбар'), 'en' => array('title' => 'Dashboard')));
+        $this->insert(array('parent_id' => $idMain, 'position' => '12', 'icon' => 'bi bi-house-fill', 'href' => '/'), array('mn' => array('title' => 'Нүүр хуудас'), 'en' => array('title' => 'Homepage')));
 
         $idContent = $this->insert(array('position' => '200'), array('mn' => array('title' => 'Агуулгууд'), 'en' => array('title' => 'Contents')));
         $this->insert(array('parent_id' => $idContent, 'position' => '210', 'icon' => 'bi bi-flag-fill', 'href' => '/language'), array('mn' => array('title' => 'Хэл'), 'en' => array('title' => 'Language')));
