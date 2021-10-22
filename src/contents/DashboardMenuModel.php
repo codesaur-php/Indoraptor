@@ -54,7 +54,7 @@ class DashboardMenuModel extends MultiModel
         $idContent = $this->insert(array('position' => '200'), array('mn' => array('title' => 'Агуулгууд'), 'en' => array('title' => 'Contents')));
         $this->insert(array('parent_id' => $idContent, 'position' => '210', 'icon' => 'bi bi-flag-fill', 'href' => '/language'), array('mn' => array('title' => 'Хэл'), 'en' => array('title' => 'Language')));
         $this->insert(array('parent_id' => $idContent, 'position' => '220', 'icon' => 'bi bi-translate', 'href' => '/translation'), array('mn' => array('title' => 'Орчуулга'), 'en' => array('title' => 'Translation')));
-        $this->insert(array('parent_id' => $idContent, 'position' => '230', 'icon' => 'bi bi-file-post-fill', 'href' => '/templates'), array('mn' => array('title' => 'Баримт бичгийн загварууд'), 'en' => array('title' => 'Document Templates')));
+        $this->insert(array('parent_id' => $idContent, 'position' => '230', 'icon' => 'bi bi-file-post-fill', 'href' => '/templates'), array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document Templates')));
 
         $idSystem = $this->insert(array('position' => '300'), array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')));
         $this->insert(array('parent_id' => $idSystem, 'position' => '310', 'icon' => 'bi bi-people-fill', 'href' => '/accounts'), array('mn' => array('title' => 'Хэрэглэгчид'), 'en' => array('title' => 'Accounts')));
