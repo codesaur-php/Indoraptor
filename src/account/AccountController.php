@@ -164,7 +164,7 @@ class AccountController extends \Indoraptor\IndoController
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_NUM);
         if ($result[0][0] == '0') {
-            return $this->notFound();
+            return $this->notFound('Menu not defined');
         }
         
         return $this->respond($model->getRows());
