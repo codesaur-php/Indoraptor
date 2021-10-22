@@ -62,7 +62,7 @@ class AccountController extends \Indoraptor\IndoController
                 throw new Exception('Failed to insert request to an account creation table', AccountErrorCode::INSERT_NEWBIE_FAILURE);
             }
             
-            $this->respond(array('id' => $id));
+            return $this->respond(array('id' => $id));
         } catch (Exception $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
@@ -148,6 +148,6 @@ class AccountController extends \Indoraptor\IndoController
         unset($account['updated_at']);
         unset($account['updated_by']);            
 
-        $this->respond($account);
+        return $this->respond($account);
     }
 }

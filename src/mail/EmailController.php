@@ -32,9 +32,9 @@ class EmailController extends \Indoraptor\IndoController
             }
             
             (new Mail())->send(getenv('MAIL_SENDER', true), $payload['to'], $payload['subject'], $payload['message']);
-            $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
+            return $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
-            $this->error($th->getMessage(), $th->getCode());
+            return $this->error($th->getMessage(), $th->getCode());
         }
     }
     
@@ -71,9 +71,9 @@ class EmailController extends \Indoraptor\IndoController
                     $record['host'], $record['port'], $record['username'], $record['password'],
                     ((int)$record['is_smtp']) == 1, (bool)((int)$record['smtp_auth']), $record['smtp_secure']);
             
-            $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
+            return $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
-            $this->error($th->getMessage(), $th->getCode());
+            return $this->error($th->getMessage(), $th->getCode());
         }
     }
 }
