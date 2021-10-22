@@ -71,4 +71,13 @@ class RecordController extends \Indoraptor\IndoController
         
         return $this->notFound();
     }
+    
+    public function update()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->internal_update();
+    }
 }

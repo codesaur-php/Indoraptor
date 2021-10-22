@@ -6,6 +6,7 @@ use PDO;
 use Exception;
 
 use Fig\Http\Message\StatusCodeInterface;
+use Psr\Log\LogLevel;
 
 use codesaur\RBAC\RBACUser;
 use codesaur\RBAC\Accounts;
@@ -172,34 +173,30 @@ class AuthController extends \Indoraptor\IndoController
         if (!$this->hasTable('dashboard_log')) {
             return null;
         }
-        
-        $level = 'critical';
-        $login_like = json_encode(array('login-to-organization' => '%'));
+        $level = LogLevel::INFO;
+        $login_like = '{"reason":"login-to-organization"%';
         $stmt = $this->prepare('SELECT context FROM dashboard_log WHERE created_by=:id AND context LIKE :co AND level=:le ORDER BY id Desc LIMIT 1');
-        $stmt->bindParam(':id', $account_id, PDO::PARAM_INT);
-        $stmt->bindParam(':co', $login_like);
         $stmt->bindParam(':le', $level);
+        $stmt->bindParam(':co', $login_like);
+        $stmt->bindParam(':id', $account_id, PDO::PARAM_INT);
         $stmt->execute();
         if ($stmt->rowCount() != 1) {
             return null;
         }
-        
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $context = json_decode($result['context'], true);
-        
+        $context = json_decode($result['context'], true);        
         $org_user_model = new OrganizationUserModel($this->pdo);        
         $org_user_query = "SELECT id FROM {$org_user_model->getName()}"
                 . ' WHERE organization_id=:org AND account_id=:acc AND status=1 AND is_active=1'
                 . ' ORDER By id Desc LIMIT 1';
         $org_user_stmt = $this->prepare($org_user_query);
-        $org_user_stmt->bindParam(':org', $context['login-to-organization']);
+        $org_user_stmt->bindParam(':org', $context['enter']);
         $org_user_stmt->bindParam(':acc', $account_id, PDO::PARAM_INT);
         $org_user_stmt->execute();
-
         if ($org_user_stmt->rowCount() != 1) {
             return null;
         }
 
-        return (int)$context['login-to-organization'];
+        return (int)$context['enter'];
     }
 }
