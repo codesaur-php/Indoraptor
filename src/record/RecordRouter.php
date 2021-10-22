@@ -8,10 +8,12 @@ class RecordRouter extends Router
 {
     function __construct()
     {
+        $this->POST('/record', [RecordController::class, 'insert']);
+        $this->PUT('/record', [RecordController::class, 'update']);
+
         $this->INTERNAL('/record', [RecordController::class, 'internal']);
         $this->INTERNAL('/record/rows', [RecordController::class, 'internal_rows']);
+        $this->INTERNAL('/record/insert', [RecordController::class, 'internal_insert']);
         $this->INTERNAL('/record/update', [RecordController::class, 'internal_update']);
-
-        $this->PUT('/record', [RecordController::class, 'update']);
     }
 }
