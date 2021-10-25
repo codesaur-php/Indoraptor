@@ -24,7 +24,7 @@ class EmailController extends \Indoraptor\IndoController
             }
             
             $translation = new TranslationModel($this->pdo);
-            $translation->setTable('dashboard');
+            $translation->setTable('dashboard', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
             $text = $translation->retrieve($payload['code'] ?? 'en');
             
             if (!getenv('MAIL_SENDER', true)) {
@@ -54,7 +54,7 @@ class EmailController extends \Indoraptor\IndoController
             $record = end($rows);
 
             $translation = new TranslationModel($this->pdo);
-            $translation->setTable('dashboard');
+            $translation->setTable('dashboard', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
             $text = $translation->retrieve($payload['code'] ?? 'en');
 
             if (empty($record) || !isset($record['charset'])

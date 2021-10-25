@@ -42,7 +42,7 @@ class AccountController extends \Indoraptor\IndoController
                 throw new Exception('It looks like information belongs to an existing account', AccountErrorCode::INSERT_DUPLICATE_USERNAME);
             }
             
-            $accounts->setTable('newbie');
+            $accounts->setTable('newbie', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
             $requested_email = $accounts->getRowBy(array('email' => $payload['email']));
             if ($requested_email) {
                 throw new Exception('It looks like information belongs to an existing request', AccountErrorCode::INSERT_DUPLICATE_NEWBIE);
