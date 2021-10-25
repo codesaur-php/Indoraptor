@@ -117,10 +117,6 @@ class RecordController extends \Indoraptor\IndoController
     
     public function lookup()
     {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
         $payload = $this->getParsedBody();
         if (empty($payload['table'])) {
             return $this->badRequest();
