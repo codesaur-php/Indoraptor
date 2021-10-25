@@ -2,7 +2,7 @@
 
 namespace Indoraptor\Record;
 
-class ContentModel extends \codesaur\Contents\ContentModel
+class LookupModel extends \codesaur\Contents\LookupModel
 {
     function __initial()
     {

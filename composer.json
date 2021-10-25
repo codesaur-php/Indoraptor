@@ -17,10 +17,10 @@
     "require": {
         "firebase/php-jwt": ">=5.2.0",
         "codesaur/http-application": ">=5.1.4",
-        "codesaur/rbac": ">=2.0.1",
-        "codesaur/localization": ">=1.3.5",
-        "codesaur/logger": ">=1.2.8",
-        "codesaur/contents": ">=1.0.4",
+        "codesaur/rbac": ">=2.0.3",
+        "codesaur/localization": ">=1.3.7",
+        "codesaur/logger": ">=1.3",
+        "codesaur/contents": ">=1.0.6",
         "codesaur/http-client": ">=1.0.2"
     },
     "autoload": {
