@@ -114,4 +114,26 @@ class RecordController extends \Indoraptor\IndoController
         
         return $this->notFound();
     }
+    
+    public function lookup()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $payload = $this->getParsedBody();
+        if (empty($payload['table'])) {
+            return $this->badRequest();
+        }
+        
+        $lookup = new LookupModel($this->pdo);
+        $lookup->setTable("lookup_{$payload['table']}",
+                getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+        $rows = $lookup->getRows($payload['condition'] ?? []);
+        $records = array();
+        foreach ($rows as $row) {
+            $records[$row['keyword']] = $row['content'];
+        }        
+        return $this->respond($records);
+    }
 }
