@@ -82,7 +82,7 @@ class AccountController extends \Indoraptor\IndoController
             if (!$account) {
                 throw new Exception('No account with that email address exists', AccountErrorCode::ACCOUNT_NOT_FOUND);
             }
-            if ($account['is_active'] == 0) {
+            if ($account['is_active'] != 1) {
                 throw new Exception('User is not active', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
             }
 
