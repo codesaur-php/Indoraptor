@@ -19,8 +19,8 @@ class PDOConnectMiddleware implements MiddlewareInterface
         $passwd = getenv('INDO_DB_PASSWORD', true) ?: '';
         $charset = getenv('INDO_DB_CHARSET', true) ?: 'utf8';
         $options = array(
-            PDO::ATTR_PERSISTENT => getenv('INDO_DB_PERSISTENT', true) == 'true',
-            PDO::ATTR_ERRMODE => defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT ? PDO::ERRMODE_WARNING : PDO::ERRMODE_EXCEPTION
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_PERSISTENT => getenv('INDO_DB_PERSISTENT', true) == 'true'
         );
         
         $dsn = "$driver:host=$host;charset=$charset";
