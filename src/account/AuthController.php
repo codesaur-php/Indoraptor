@@ -190,7 +190,7 @@ class AuthController extends \Indoraptor\IndoController
         $context = json_decode($result['context'], true);        
         $org_user_model = new OrganizationUserModel($this->pdo);        
         $org_user_query = "SELECT id FROM {$org_user_model->getName()}"
-                . ' WHERE organization_id=:org AND account_id=:acc AND status=1 AND is_active=1'
+                . ' WHERE organization_id=:org AND account_id=:acc AND is_active=1'
                 . ' ORDER By id Desc LIMIT 1';
         $org_user_stmt = $this->prepare($org_user_query);
         $org_user_stmt->bindParam(':org', $context['enter']);
