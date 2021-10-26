@@ -8,6 +8,8 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Fig\Http\Message\StatusCodeInterface;
 
+use codesaur\Http\Message\ReasonPrhase;
+
 class JsonResponseMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -18,9 +20,13 @@ class JsonResponseMiddleware implements MiddlewareInterface
         
         $response = $handler->handle($request);
         
-        $status = $response->getStatusCode();
-        if ($status != StatusCodeInterface::STATUS_OK) {
-            http_response_code($status);
+        $code = $response->getStatusCode();
+        if ($code != StatusCodeInterface::STATUS_OK) {
+            $status_code = "STATUS_$code";
+            $reasonPhraseClass = ReasonPrhase::class;
+            if (defined("$reasonPhraseClass::$status_code")) {
+                http_response_code($code);
+            }
         }
         
         return $response;

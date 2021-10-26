@@ -19,7 +19,6 @@ class OrganizationModel extends Model
             new Column('home_url', 'varchar', 512),
             new Column('external', 'varchar', 255),
             new Column('alias', 'varchar', 16, 'common'),
-            new Column('status', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 20),

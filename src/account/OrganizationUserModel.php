@@ -15,7 +15,6 @@ class OrganizationUserModel extends Model
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
             new Column('account_id', 'bigint', 20),
             new Column('organization_id', 'bigint', 20),
-            new Column('status', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 20),
@@ -53,7 +52,7 @@ class OrganizationUserModel extends Model
         $stmt->bindParam(':1', $account_id, PDO::PARAM_INT);        
         $stmt->bindParam(':2', $organization_id, PDO::PARAM_INT);        
         $stmt->execute();
-        if ($stmt->rowCount() > 0) {
+        if ($stmt->rowCount() == 1) {
             $record = $stmt->fetch(PDO::FETCH_ASSOC);
             foreach ($this->getColumns() as $column) {
                 if (isset($record[$column->getName()])) {
@@ -61,9 +60,6 @@ class OrganizationUserModel extends Model
                         $record[$column->getName()] = (int)$record[$column->getName()];
                     }
                 }
-            }
-            if ($record['status'] == 0) {
-                return false;
             }
         } else {
             $record = array(
@@ -74,7 +70,6 @@ class OrganizationUserModel extends Model
             $id = $this->insert($record);            
             if ($id !== false) {
                 $record['id'] = $id;
-                $record['status'] = 1;
                 $record['is_active'] = 1;
             }
         }

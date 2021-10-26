@@ -31,6 +31,9 @@ class AuthController extends \Indoraptor\IndoController
             if (!isset($account['id'])) {
                 throw new Exception('Account not found', AccountErrorCode::ACCOUNT_NOT_FOUND);
             }
+            if ($account['status'] != 1) {
+                throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
+            }
             unset($account['password']);
 
             $organizations = array();            
@@ -39,7 +42,7 @@ class AuthController extends \Indoraptor\IndoController
             $stmt = $this->prepare(
                     'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external'
                     . " FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id"
-                    . ' WHERE t1.account_id=:id AND t1.is_active=1 AND t1.status=1 AND t2.is_active=1 AND t2.status!=0 ORDER BY t2.name');
+                    . ' WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt->bindParam(':id', $account['id'], PDO::PARAM_INT);
             if ($stmt->execute()) {
                 $index = 0;
@@ -95,13 +98,11 @@ class AuthController extends \Indoraptor\IndoController
                 if (isset($account[$column->getName()])) {
                     if ($column->isInt()) {
                         $account[$column->getName()] = (int)$account[$column->getName()];
-                    } elseif ($column->getType() == 'decimal') {
-                        $account[$column->getName()] = (float)$account[$column->getName()];
                     }
                 }
             }
-            if ($account['status'] == 0) {
-                throw new Exception('User is not active', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
+            if ($account['status'] != 1) {
+                throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
             }
             unset($account['password']);
             
@@ -109,7 +110,7 @@ class AuthController extends \Indoraptor\IndoController
             $last = $this->getLastLoginOrg($account['id']);
             if ($last !== null) {
                 $login_info['organization_id'] = $last;
-            }            
+            }
             $account['jwt'] = $this->generate($login_info);
             
             return $this->respond(array('account' => $account));
@@ -141,6 +142,8 @@ class AuthController extends \Indoraptor\IndoController
                     || $account['id'] != $payload['account_id']
             ) {
                 throw new Exception('Invalid account', AccountErrorCode::ACCOUNT_NOT_FOUND);
+            } elseif ($account['status'] != 1) {
+                throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
             }
             
             $org_model = new OrganizationModel($this->pdo);
@@ -157,7 +160,7 @@ class AuthController extends \Indoraptor\IndoController
                     throw new Exception('Account does not belong to an organization', StatusCodeInterface::STATUS_FORBIDDEN);
                 }
             }
-
+            
             $account_org_jwt = array(
                 'account_id' => $account['id'],
                 'organization_id' => $organization['id']
