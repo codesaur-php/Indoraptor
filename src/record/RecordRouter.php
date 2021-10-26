@@ -17,5 +17,7 @@ class RecordRouter extends Router
         $this->INTERNAL('/record/update', [RecordController::class, 'internal_update']);
         
         $this->INTERNAL('/lookup', [RecordController::class, 'lookup']);
+
+        $this->INTERNAL('/statement', [RecordController::class, 'statement']);
     }
 }

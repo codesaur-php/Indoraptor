@@ -2,6 +2,8 @@
 
 namespace Indoraptor\Record;
 
+use PDO;
+
 class RecordController extends \Indoraptor\IndoController
 {
     public function internal()
@@ -11,7 +13,7 @@ class RecordController extends \Indoraptor\IndoController
             return $this->badRequest();
         }
         
-        $model = $this->grabmodel();
+        $model = $this->grabModel();
         if (method_exists($model, 'getRowBy')) {
             $record = $model->getRowBy($payload);
         }
@@ -29,7 +31,7 @@ class RecordController extends \Indoraptor\IndoController
     
     public function internal_rows()
     {
-        $model = $this->grabmodel();
+        $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (method_exists($model, 'getRows')) {
             $rows = $model->getRows($payload);
@@ -57,7 +59,7 @@ class RecordController extends \Indoraptor\IndoController
     
     public function internal_insert()
     {
-        $model = $this->grabmodel();
+        $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (isset($payload['record'])
                 && method_exists($model, 'insert')
@@ -66,7 +68,7 @@ class RecordController extends \Indoraptor\IndoController
                 $id = $model->insert($payload['record'], $payload['content']);
             } else {
                 $id = $model->insert($payload['record']);
-            }            
+            }
         }
 
         if ($id ?? false) {
@@ -91,7 +93,7 @@ class RecordController extends \Indoraptor\IndoController
     
     public function internal_update()
     {
-        $model = $this->grabmodel();
+        $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (isset($payload['record'])
                 && !empty($payload['condition'])
@@ -101,7 +103,7 @@ class RecordController extends \Indoraptor\IndoController
                 $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
             } else {
                 $id = $model->update($payload['record'], $payload['condition']);
-            }            
+            }
         }
 
         if ($id ?? false) {
@@ -129,7 +131,46 @@ class RecordController extends \Indoraptor\IndoController
         $records = array();
         foreach ($rows as $row) {
             $records[$row['keyword']] = $row['content'];
-        }        
+        }
         return $this->respond($records);
+    }
+    
+    public function statement()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $payload = $this->getParsedBody();
+        if (!isset($payload['query'])) {
+            return $this->badRequest('Invalid payload');
+        }
+        
+        $stmt = $this->pdo->prepare($payload['query']);
+        if (isset($payload['bind'])) {
+            foreach ($payload['bind'] as $parametr => $values) {
+                if (isset($values['var'])) {
+                    if (isset($values['length'])) {
+                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? PDO::PARAM_STR, $values['length']);
+                    } else {
+                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? PDO::PARAM_STR);
+                    }
+                }
+            }
+        }        
+        $stmt->execute();
+        
+        $result = array();
+        if ($stmt->rowCount() > 0) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (isset($row['id'])) {
+                    $result[$row['id']] = $row;
+                } else {
+                    $result[] = $row;
+                }
+            }
+        }
+
+        return $this->respond($result);
     }
 }

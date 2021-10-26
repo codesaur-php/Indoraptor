@@ -145,6 +145,6 @@ class IndoController extends Controller
                 }
             }
         }
-        return $this->badRequest();
+        return null;
     }
 }
