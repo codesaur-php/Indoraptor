@@ -11,13 +11,13 @@ class RecordRouter extends Router
         $this->POST('/record', [RecordController::class, 'insert']);
         $this->PUT('/record', [RecordController::class, 'update']);
 
-        $this->INTERNAL('/record', [RecordController::class, 'internal']);
-        $this->INTERNAL('/record/rows', [RecordController::class, 'internal_rows']);
-        $this->INTERNAL('/record/insert', [RecordController::class, 'internal_insert']);
-        $this->INTERNAL('/record/update', [RecordController::class, 'internal_update']);
+        $this->INDO('/record', [RecordController::class, 'internal']);
+        $this->INDO('/record/rows', [RecordController::class, 'internal_rows']);
+        $this->INDO('/record/insert', [RecordController::class, 'internal_insert']);
+        $this->INDO('/record/update', [RecordController::class, 'internal_update']);
         
-        $this->INTERNAL('/lookup', [RecordController::class, 'lookup']);
+        $this->INDO('/lookup', [RecordController::class, 'lookup']);
 
-        $this->INTERNAL('/statement', [RecordController::class, 'statement']);
+        $this->INDO('/statement', [RecordController::class, 'statement']);
     }
 }
