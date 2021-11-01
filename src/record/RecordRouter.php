@@ -10,6 +10,7 @@ class RecordRouter extends Router
     {
         $this->POST('/record', [RecordController::class, 'insert']);
         $this->PUT('/record', [RecordController::class, 'update']);
+        $this->DELETE('/record', [RecordController::class, 'delete']);
 
         $this->INDO('/record', [RecordController::class, 'internal']);
         $this->INDO('/record/rows', [RecordController::class, 'internal_rows']);

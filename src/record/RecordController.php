@@ -117,6 +117,31 @@ class RecordController extends \Indoraptor\IndoController
         return $this->notFound();
     }
     
+    public function delete()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $model = $this->grabModel();
+        $payload = $this->getParsedBody();
+        if (method_exists($model, 'delete')
+                && !empty($payload['WHERE'])
+        ) {
+            $id = $model->delete($payload);
+        }
+
+        if ($id ?? false) {
+            return $this->respond(array(
+                'id'    => $id,
+                'model' => get_class($model),
+                'table' => $model->getName()
+            ));
+        }
+        
+        return $this->notFound();
+    }
+    
     public function lookup()
     {
         $payload = $this->getParsedBody();
