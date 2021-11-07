@@ -10,7 +10,7 @@ class LoggerRouter extends Router
     {
         $this->GET('/log', [LoggerController::class, 'index']);
         $this->POST('/log', [LoggerController::class, 'insert']);
-        $this->INDO('/log', [LoggerController::class, 'internal']);
+        $this->INTERNAL('/log', [LoggerController::class, 'internal']);
         $this->POST('/log/select', [LoggerController::class, 'select']);
         $this->GET('/log/get/names', [LoggerController::class, 'names']);
     }

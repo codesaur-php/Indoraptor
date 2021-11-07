@@ -24,6 +24,12 @@ class IndoController extends Controller
         parent::__construct($request);
         
         $this->pdo = $request->getAttribute('pdo');
+        
+        if ($request->getMethod('INTERNAL')
+                && !$request instanceof InternalRequest
+        ) {
+            return $this->unauthorized();
+        }
     }
     
     final public function generate(array $data)
