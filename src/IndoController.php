@@ -25,10 +25,11 @@ class IndoController extends Controller
         
         $this->pdo = $request->getAttribute('pdo');
         
-        if ($request->getMethod('INTERNAL')
+        if ($request->getMethod() == 'INTERNAL'
                 && !$request instanceof InternalRequest
         ) {
-            return $this->unauthorized();
+             $this->unauthorized();
+             exit;
         }
     }
     
