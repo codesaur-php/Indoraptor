@@ -167,6 +167,6 @@ class AccountController extends \Indoraptor\IndoController
             return $this->notFound('Menu not defined');
         }
         
-        return $this->respond($model->getRows(array('ORDER BY' => 'p.position')));
+        return $this->respond($model->getRows(array('ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1')));
     }
 }
