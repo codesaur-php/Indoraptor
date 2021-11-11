@@ -27,11 +27,11 @@ class EmailController extends \Indoraptor\IndoController
             $translation->setTable('dashboard', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
             $text = $translation->retrieve($payload['code'] ?? 'en');
             
-            if (!getenv('MAIL_SENDER', true)) {
+            if (!getenv('CODESAUR_MAIL_ADDR', true)) {
                 throw new Exception($text['emailer-not-set'] ?? 'Email sender not found!');
             }
             
-            (new Mail())->send(getenv('MAIL_SENDER', true), $payload['to'], $payload['subject'], $payload['message']);
+            (new Mail())->send(getenv('CODESAUR_MAIL_ADDR', true), $payload['to'], $payload['subject'], $payload['message']);
             return $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
             return $this->error($th->getMessage(), $th->getCode());

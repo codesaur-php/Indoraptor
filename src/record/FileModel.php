@@ -56,9 +56,9 @@ class FileModel extends MultiModel
         }
         $rows = $files->getRows(
                 array(
-                    'WHERE'    => $condition,
+                    'WHERE' => $condition,
                     'ORDER BY' => 'id desc',
-                    'LIMIT'    => 1
+                    'LIMIT' => 1
                 )
         );
         
@@ -68,10 +68,10 @@ class FileModel extends MultiModel
 
             if ($data) {
                 $data['files_id'] = $files_record['id'];
-                $data['record']   = $files_record['record'];
-                $data['type']     = $files_record['type'] ?? null;
-                $data['code']     = $files_record['code'] ?? null;
-                $data['rank']     = $files_record['rank'] ?? null;
+                $data['record'] = $files_record['record'];
+                $data['type'] = $files_record['type'] ?? null;
+                $data['code'] = $files_record['code'] ?? null;
+                $data['rank'] = $files_record['rank'] ?? null;
             }
             
             return $data;

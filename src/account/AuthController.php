@@ -36,13 +36,13 @@ class AuthController extends \Indoraptor\IndoController
             }
             unset($account['password']);
 
-            $organizations = array();            
+            $organizations = array();
             $org_model = new OrganizationModel($this->pdo);
-            $org_user_model = new OrganizationUserModel($this->pdo);            
+            $org_user_model = new OrganizationUserModel($this->pdo);
             $stmt = $this->prepare(
-                    'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external'
-                    . " FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id"
-                    . ' WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
+                    'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external ' .
+                    "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                    'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt->bindParam(':id', $account['id'], PDO::PARAM_INT);
             if ($stmt->execute()) {
                 $index = 0;
@@ -105,6 +105,20 @@ class AuthController extends \Indoraptor\IndoController
                 throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
             }
             unset($account['password']);
+            
+            $org_model = new OrganizationModel($this->pdo);
+            $org_user_model = new OrganizationUserModel($this->pdo);
+            $stmt_check_org = $this->prepare(
+                    'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external ' .
+                    "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                    'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
+            $stmt_check_org->bindParam(':id', $account['id'], PDO::PARAM_INT);
+            if ($stmt->execute()) {
+                $has_organization = $stmt_check_org->rowCount() > 0;
+            }            
+            if (!isset($has_organization) || !$has_organization) {
+                throw new Exception('Account doesn\'t belong to an organization', StatusCodeInterface::STATUS_FORBIDDEN);
+            }
             
             $login_info = array('account_id' => $account['id']);
             $last = $this->getLastLoginOrg($account['id']);
@@ -189,9 +203,9 @@ class AuthController extends \Indoraptor\IndoController
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $context = json_decode($result['context'], true);        
         $org_user_model = new OrganizationUserModel($this->pdo);        
-        $org_user_query = "SELECT id FROM {$org_user_model->getName()}"
-                . ' WHERE organization_id=:org AND account_id=:acc AND is_active=1'
-                . ' ORDER By id Desc LIMIT 1';
+        $org_user_query = "SELECT id FROM {$org_user_model->getName()} " .
+                'WHERE organization_id=:org AND account_id=:acc AND is_active=1 ' .
+                'ORDER By id Desc LIMIT 1';
         $org_user_stmt = $this->prepare($org_user_query);
         $org_user_stmt->bindParam(':org', $context['enter']);
         $org_user_stmt->bindParam(':acc', $account_id, PDO::PARAM_INT);
