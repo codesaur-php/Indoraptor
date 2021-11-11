@@ -113,7 +113,7 @@ class AuthController extends \Indoraptor\IndoController
                     "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
                     'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt_check_org->bindParam(':id', $account['id'], PDO::PARAM_INT);
-            if ($stmt->execute()) {
+            if ($stmt_check_org->execute()) {
                 $has_organization = $stmt_check_org->rowCount() > 0;
             }            
             if (!isset($has_organization) || !$has_organization) {
