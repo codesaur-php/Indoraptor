@@ -11,9 +11,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use codesaur\Http\Application\Controller;
 use codesaur\Http\Message\NonBodyResponse;
 
-define('INDO_JWT_LIFETIME', getenv('INDO_JWT_LIFETIME', true) ?: 2592000);
-define('INDO_JWT_ALGORITHM', getenv('INDO_JWT_ALGORITHM', true) ?: 'HS256');
-define('INDO_JWT_SECRET', getenv('INDO_JWT_SECRET', true) ?: 'codesaur-indoraptor-not-so-secret');
+define('INDO_JWT_ALGORITHM', $_ENV['INDO_JWT_ALGORITHM'] ?? 'HS256');
+define('INDO_JWT_SECRET', $_ENV['INDO_JWT_SECRET'] ?? 'codesaur-indoraptor-not-so-secret');
 
 class IndoController extends Controller
 {
@@ -36,7 +35,8 @@ class IndoController extends Controller
     final public function generate(array $data)
     {
         $issuedAt = time();
-        $expirationTime = $issuedAt + INDO_JWT_LIFETIME;
+        $expirationTime = $issuedAt;
+        $expirationTime += (int)($_ENV['INDO_JWT_LIFETIME'] ?? 2592000);
         $payload = array(
             'iat' => $issuedAt,
             'exp' => $expirationTime
@@ -146,7 +146,7 @@ class IndoController extends Controller
                             ?? $this->getPostParam('table', FILTER_SANITIZE_STRING);
                     if (!empty($table)) {
                         $model->setTable((string)$table,
-                                getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+                                $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
                     }
                     return $model;
                 }

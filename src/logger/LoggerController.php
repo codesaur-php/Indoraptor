@@ -24,7 +24,7 @@ class LoggerController extends \Indoraptor\IndoController
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParam('table'));
         if ($this->hasTable($table . '_log')) {
             $logger = new LoggerModel($this->pdo);
-            $logger->setTable($table, getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+            $logger->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             if (isset($id)) {
                 $data = $logger->getLogById($id);
             } else {
@@ -69,7 +69,7 @@ class LoggerController extends \Indoraptor\IndoController
         }
         
         $logger = new LoggerModel($this->pdo);
-        $logger->setTable($payload['table'], getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+        $logger->setTable($payload['table'], $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         if (isset($payload['created_by'])) {
             $logger->prepareCreatedBy($payload['created_by']);
         }
@@ -116,7 +116,7 @@ class LoggerController extends \Indoraptor\IndoController
         
         if ($this->hasTable($table . '_log')) {
             $logger = new LoggerModel($this->pdo);
-            $logger->setTable($table, getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+            $logger->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $data = $logger->getLogs($payload);
         }        
         if (empty($data)) {

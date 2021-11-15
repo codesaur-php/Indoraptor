@@ -26,7 +26,7 @@ class ForgotModel extends Model
             new Column('created_at', 'datetime')
         ));
         
-        $this->setTable('forgot', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+        $this->setTable('forgot', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()

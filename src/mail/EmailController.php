@@ -24,14 +24,14 @@ class EmailController extends \Indoraptor\IndoController
             }
             
             $translation = new TranslationModel($this->pdo);
-            $translation->setTable('dashboard', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+            $translation->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $text = $translation->retrieve($payload['code'] ?? 'en');
             
-            if (!getenv('CODESAUR_MAIL_ADDR', true)) {
+            if (empty($_ENV['CODESAUR_MAIL_ADDRESS'])) {
                 throw new Exception($text['emailer-not-set'] ?? 'Email sender not found!');
             }
             
-            (new Mail())->send(getenv('CODESAUR_MAIL_ADDR', true), $payload['to'], $payload['subject'], $payload['message']);
+            (new Mail())->send($_ENV['CODESAUR_MAIL_ADDRESS'], $payload['to'], $payload['subject'], $payload['message']);
             return $this->respond(array('success' => array('message' => $text['email-succesfully-sent'] ?? 'Email successfully sent to destination')));
         } catch (Throwable $th) {
             return $this->error($th->getMessage(), $th->getCode());
@@ -54,7 +54,7 @@ class EmailController extends \Indoraptor\IndoController
             $record = end($rows);
 
             $translation = new TranslationModel($this->pdo);
-            $translation->setTable('dashboard', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+            $translation->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $text = $translation->retrieve($payload['code'] ?? 'en');
 
             if (empty($record) || !isset($record['charset'])

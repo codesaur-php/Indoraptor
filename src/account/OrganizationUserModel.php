@@ -22,7 +22,7 @@ class OrganizationUserModel extends Model
             new Column('updated_by', 'bigint', 20)
         ));
         
-        $this->setTable('organization_users', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+        $this->setTable('organization_users', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()

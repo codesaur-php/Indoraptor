@@ -60,7 +60,7 @@ class TranslationController extends \Indoraptor\IndoController
                 continue;
             }
 
-            $model->setTable($table, getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+            $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $text = $model->retrieve($code);
 
             if (!empty($text)) {

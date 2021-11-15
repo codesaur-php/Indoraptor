@@ -151,7 +151,7 @@ class RecordController extends \Indoraptor\IndoController
         
         $lookup = new LookupModel($this->pdo);
         $lookup->setTable("lookup_{$payload['table']}",
-                getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+                $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $rows = $lookup->getRows($payload['condition'] ?? []);
         $records = array();
         foreach ($rows as $row) {

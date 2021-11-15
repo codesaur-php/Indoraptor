@@ -28,7 +28,7 @@ class MenuModel extends MultiModel
         
         $this->setContentColumns(array(new Column('title', 'varchar', 128)));
         
-        $this->setTable('account_menu', getenv('INDO_DB_COLLATION', true) ?: 'utf8_unicode_ci');
+        $this->setTable('account_menu', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()
