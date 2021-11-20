@@ -128,7 +128,7 @@ class AccountController extends \Indoraptor\IndoController
         if (!$record
                 || $record['account'] != $payload['account']
         ) {
-            return $this->badRequest();
+            return $this->unauthorized();
         }
         
         $accounts = new Accounts($this->pdo);
