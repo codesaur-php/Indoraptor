@@ -102,7 +102,7 @@ class AccountController extends \Indoraptor\IndoController
             if (!$id) {
                 throw new Exception('Error occurred while inserting forgot record', AccountErrorCode::INSERT_FORGOT_FAILURE);
             }
-            $forgot['id'] = (int)$id;
+            $forgot['id'] = $id;
             return $this->respond($forgot);
         } catch (Exception $e) {
             return $this->error($e->getMessage(), $e->getCode());
