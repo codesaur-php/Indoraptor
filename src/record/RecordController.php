@@ -53,25 +53,19 @@ class RecordController extends \Indoraptor\IndoController
     {
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
-        if (isset($payload['record'])
-                && method_exists($model, 'insert')
+        if (empty($payload['record'])
+                || !method_exists($model, 'insert')
         ) {
-            if (isset($payload['content'])) {
-                $id = $model->insert($payload['record'], $payload['content']);
-            } else {
-                $id = $model->insert($payload['record']);
-            }
-        }
-
-        if ($id ?? false) {
-            return $this->respond(array(
-                'id'    => $id,
-                'model' => get_class($model),
-                'table' => $model->getName()
-            ));
+            return $this->badRequest();
         }
         
-        return $this->notFound();
+        if (isset($payload['content'])) {
+            $id = $model->insert($payload['record'], $payload['content']);
+        } else {
+            $id = $model->insert($payload['record']);
+        }
+        
+        return $this->respond($id);
     }
     
     public function update()
@@ -87,26 +81,20 @@ class RecordController extends \Indoraptor\IndoController
     {
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
-        if (isset($payload['record'])
-                && !empty($payload['condition'])
-                && method_exists($model, 'update')
+        if (!isset($payload['record'])
+                || empty($payload['condition'])
+                || !method_exists($model, 'update')
         ) {
-            if (isset($payload['content'])) {
-                $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
-            } else {
-                $id = $model->update($payload['record'], $payload['condition']);
-            }
-        }
-
-        if ($id ?? false) {
-            return $this->respond(array(
-                'id'    => $id,
-                'model' => get_class($model),
-                'table' => $model->getName()
-            ));
+            $this->badRequest();
         }
         
-        return $this->notFound();
+        if (isset($payload['content'])) {
+            $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
+        } else {
+            $id = $model->update($payload['record'], $payload['condition']);
+        }
+        
+        return $this->respond($id);
     }
     
     public function delete()
@@ -117,21 +105,13 @@ class RecordController extends \Indoraptor\IndoController
         
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
-        if (method_exists($model, 'delete')
-                && !empty($payload['WHERE'])
+        if (empty($payload['WHERE'])
+                || !method_exists($model, 'delete')
         ) {
-            $id = $model->delete($payload);
-        }
-
-        if ($id ?? false) {
-            return $this->respond(array(
-                'id'    => $id,
-                'model' => get_class($model),
-                'table' => $model->getName()
-            ));
+            return $this->badRequest();
         }
         
-        return $this->notFound();
+        return $this->respond($model->delete($payload));
     }
     
     public function lookup()
