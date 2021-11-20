@@ -115,29 +115,25 @@ class AccountController extends \Indoraptor\IndoController
         if (empty($payload['use_id'])
                 || empty($payload['account'])
                 || empty($payload['password'])
-                || empty($payload['created_at'])
         ) {
             return $this->badRequest();
         }
         
         $forgot = new ForgotModel($this->pdo);
-        $record = $forgot->getRowBy(array(
-            'use_id' => $payload['use_id'],
-            'created_at' => $payload['created_at']
-        ));
+        $record = $forgot->getRowBy(array('use_id' => $payload['use_id']));
         if (!$record
                 || $record['account'] != $payload['account']
         ) {
             return $this->unauthorized();
         }
         
-        $accounts = new Accounts($this->pdo);
-        $account = $accounts->getById($payload['account']);
+        $model = new Accounts($this->pdo);
+        $account = $model->getById($payload['account']);
         if (!$account) {
             return $this->error('Invalid account', AccountErrorCode::ACCOUNT_NOT_FOUND);
         }
         
-        $result = $accounts->updateById($account['id'], array('password' => $payload['password']));
+        $result = $model->updateById($account['id'], array('password' => $payload['password']));
         if (!$result) {
             return $this->error("Can't reset account [{$account['username']}] password", AccountErrorCode::UPDATE_PASSWORD_FAILURE);
         }
@@ -145,10 +141,6 @@ class AccountController extends \Indoraptor\IndoController
         $forgot->deleteByID($record['id']);
 
         unset($account['password']);
-        unset($account['created_at']);
-        unset($account['created_by']);
-        unset($account['updated_at']);
-        unset($account['updated_by']);
 
         return $this->respond($account);
     }
