@@ -125,7 +125,9 @@ class AccountController extends \Indoraptor\IndoController
             'use_id' => $payload['use_id'],
             'created_at' => $payload['created_at']
         ));
-        if (!$record) {
+        if (!$record
+                || $record['account'] != $payload['account']
+        ) {
             return $this->badRequest();
         }
         
