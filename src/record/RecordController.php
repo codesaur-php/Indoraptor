@@ -22,11 +22,7 @@ class RecordController extends \Indoraptor\IndoController
             return $this->notFound();
         }
         
-        return $this->respond(array(
-            'record' => $record,
-            'model'  => get_class($model),
-            'table'  => $model->getName()
-        ));
+        return $this->respond($record);
     }
     
     public function internal_rows()
@@ -41,11 +37,7 @@ class RecordController extends \Indoraptor\IndoController
             return $this->notFound();
         }
         
-        return $this->respond(array(
-            'rows'  => $rows,
-            'model' => get_class($model),
-            'table' => $model->getName()
-        ));
+        return $this->respond($rows);
     }
     
     public function insert()
