@@ -127,7 +127,7 @@ class AuthController extends \Indoraptor\IndoController
             }
             $account['jwt'] = $this->generate($login_info);
             
-            return $this->respond(array('account' => $account));
+            return $this->respond($account);
         } catch (Exception $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
