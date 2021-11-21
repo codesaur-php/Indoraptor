@@ -30,7 +30,7 @@ class LanguageController extends \Indoraptor\IndoController
         $from = $payload['from'] ?? false;
         $to = $payload['to'] ?? false;
 
-        if (!$from || !$to ){
+        if (!$from || !$to) {
             return $this->badRequest('Invalid payload');
         }
 
