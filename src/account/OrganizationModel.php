@@ -14,7 +14,7 @@ class OrganizationModel extends Model
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
             new Column('parent_id', 'bigint', 20),
-            new Column('name', 'varchar', 512),
+           (new Column('name', 'varchar', 528))->unique(),
             new Column('logo', 'varchar', 512),
             new Column('home_url', 'varchar', 512),
             new Column('external', 'varchar', 255),

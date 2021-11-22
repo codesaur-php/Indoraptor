@@ -154,7 +154,7 @@ class RecordController extends \Indoraptor\IndoController
                     }
                 }
             }
-        }        
+        }
         $stmt->execute();
         
         $result = array();
