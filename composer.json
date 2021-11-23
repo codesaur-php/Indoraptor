@@ -16,11 +16,11 @@
     ],
     "require": {
         "firebase/php-jwt": ">=5.2.0",
-        "codesaur/http-application": ">=5.1.7",
-        "codesaur/rbac": ">=2.0.8",
-        "codesaur/localization": ">=1.4.1",
-        "codesaur/logger": ">=1.3.1",
-        "codesaur/contents": ">=1.0.8",
+        "codesaur/http-application": ">=5.1.8",
+        "codesaur/rbac": ">=2.0.9",
+        "codesaur/localization": ">=1.4.3",
+        "codesaur/logger": ">=1.3.2",
+        "codesaur/contents": ">=1.1",
         "codesaur/http-client": ">=1.0.1"
     },
     "autoload": {
