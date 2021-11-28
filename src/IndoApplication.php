@@ -6,10 +6,17 @@ use codesaur\Http\Application\Application;
 
 class IndoApplication extends Application
 {
-    function __construct()
+    function __construct(bool $json_response)
     {
         parent::__construct();
         
+        if ($json_response) {
+            $this->use(new JsonExceptionHandler());
+            $this->use(new JsonResponseMiddleware());
+        }
+        
+        $this->use(new PDOConnectMiddleware());
+
         // import account rules
         $this->use(new Account\AccountRouter());
 

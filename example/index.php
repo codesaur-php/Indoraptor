@@ -13,15 +13,9 @@ ini_set('display_errors', 'On');
 error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 
 use Indoraptor\IndoApplication;
-use Indoraptor\IndoExceptionHandler;
-use Indoraptor\PDOConnectMiddleware;
-use Indoraptor\JsonResponseMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
 $autoload->addPsr4(__NAMESPACE__ . '\\', dirname(__FILE__));
 
-$application = new IndoApplication();
-$application->use(new IndoExceptionHandler());
-$application->use(new PDOConnectMiddleware());
-$application->use(new JsonResponseMiddleware());
+$application = new IndoApplication(true);
 $application->handle(new ExampleRequest());

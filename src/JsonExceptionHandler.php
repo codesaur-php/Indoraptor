@@ -8,7 +8,7 @@ use Exception;
 use codesaur\Http\Message\ReasonPrhase;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
-class IndoExceptionHandler implements ExceptionHandlerInterface
+class JsonExceptionHandler implements ExceptionHandlerInterface
 {
     public function exception(Throwable $throwable)
     {
