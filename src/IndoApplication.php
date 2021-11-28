@@ -6,11 +6,11 @@ use codesaur\Http\Application\Application;
 
 class IndoApplication extends Application
 {
-    function __construct(bool $json_response)
+    function __construct(bool $is_application_json)
     {
         parent::__construct();
         
-        if ($json_response) {
+        if ($is_application_json) {
             $this->use(new JsonExceptionHandler());
             $this->use(new JsonResponseMiddleware());
         }
