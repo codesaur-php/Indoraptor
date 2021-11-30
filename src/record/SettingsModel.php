@@ -16,7 +16,6 @@ class SettingsModel extends MultiModel
         $this->setColumns(array(
            (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
             new Column('alias', 'varchar', 16),
-            new Column('logo', 'varchar', 256),
             new Column('keywords', 'varchar', 256),
             new Column('email', 'varchar', 70),
             new Column('phone', 'varchar', 70),
@@ -39,6 +38,7 @@ class SettingsModel extends MultiModel
         
         $this->setContentColumns(array(
             new Column('title', 'varchar', 70),
+            new Column('logo', 'varchar', 256),
             new Column('description', 'varchar', 155),
             new Column('contact', 'varchar', 512),
             new Column('address', 'varchar', 512),
