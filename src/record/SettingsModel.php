@@ -18,7 +18,8 @@ class SettingsModel extends MultiModel
             new Column('alias', 'varchar', 16),
             new Column('logo', 'varchar', 256),
             new Column('keywords', 'varchar', 256),
-            new Column('description', 'varchar', 155),
+            new Column('email', 'varchar', 70),
+            new Column('phone', 'varchar', 70),
             new Column('favico', 'varchar', 256),
             new Column('shortcut_icon', 'varchar', 256),
             new Column('apple_touch_icon', 'varchar', 256),
@@ -38,8 +39,7 @@ class SettingsModel extends MultiModel
         
         $this->setContentColumns(array(
             new Column('title', 'varchar', 70),
-            new Column('email', 'varchar', 70),
-            new Column('phone', 'varchar', 70),
+            new Column('description', 'varchar', 155),
             new Column('contact', 'varchar', 512),
             new Column('address', 'varchar', 512),
             new Column('copyright', 'varchar', 256)
