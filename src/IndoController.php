@@ -3,6 +3,7 @@
 namespace Indoraptor;
 
 use Exception;
+use Throwable;
 
 use Firebase\JWT\JWT;
 use Fig\Http\Message\StatusCodeInterface;
@@ -71,12 +72,12 @@ class IndoController extends Controller
                 putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");
             }
             return $result;
-        } catch (Exception $ex) {
+        } catch (Throwable $e) {
             if ($this->isDevelopment()) {
-                error_log($ex->getMessage());
+                error_log($e->getMessage());
             }
             
-            return $ex->getMessage();
+            return $e->getMessage();
         }
     }
     
@@ -101,8 +102,8 @@ class IndoController extends Controller
         
         try {
             $response->setStatus($status);
-        } catch (Exception $ex) {
-            unset($ex);
+        } catch (Throwable $e) {
+            unset($e);
         }
         
         return $response;

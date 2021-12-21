@@ -14,9 +14,7 @@ class ExampleRequest extends ServerRequest
     {
         $this->initFromGlobal();
         
-        if ($this->getServerParams()['HTTP_HOST'] != 'localhost'
-                || !in_array($this->getRemoteAddr(), array('127.0.0.1', '::1'))
-        ) {
+        if (!in_array($this->getRemoteAddr(), array('127.0.0.1', '::1'))) {
             throw new Error('This experimental example only works on local development enviroment');
         }
 
@@ -77,16 +75,20 @@ class ExampleRequest extends ServerRequest
         }
 
         if (!empty($this->getServerParams()['HTTP_X_FORWARDED'])
-                && $this->isValidIP($this->getServerParams()['HTTP_X_FORWARDED'])) {
+                && $this->isValidIP($this->getServerParams()['HTTP_X_FORWARDED'])
+        ) {
             return $this->getServerParams()['HTTP_X_FORWARDED'];
         } elseif (!empty($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
-                && $this->isValidIP($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])) {
+                && $this->isValidIP($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
+        ) {
             return $this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'];
         } elseif (!empty($this->getServerParams()['HTTP_FORWARDED_FOR'])
-                && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED_FOR'])) {
+                && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED_FOR'])
+        ) {
             return $this->getServerParams()['HTTP_FORWARDED_FOR'];
         } elseif (!empty($this->getServerParams()['HTTP_FORWARDED'])
-                && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED'])) {
+                && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED'])
+        ) {
             return $this->getServerParams()['HTTP_FORWARDED'];
         }
 

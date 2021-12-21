@@ -4,6 +4,7 @@ namespace Indoraptor\Account;
 
 use PDO;
 use Exception;
+use Throwable;
 
 use Fig\Http\Message\StatusCodeInterface;
 
@@ -63,7 +64,7 @@ class AccountController extends \Indoraptor\IndoController
             }
             
             return $this->respond($id);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
     }
@@ -104,7 +105,7 @@ class AccountController extends \Indoraptor\IndoController
             }
             $forgot['id'] = $id;
             return $this->respond($forgot);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
     }

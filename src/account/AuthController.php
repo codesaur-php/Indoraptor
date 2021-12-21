@@ -4,6 +4,7 @@ namespace Indoraptor\Account;
 
 use PDO;
 use Exception;
+use Throwable;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Log\LogLevel;
@@ -68,7 +69,7 @@ class AuthController extends \Indoraptor\IndoController
                 'organizations' => $organizations,
                 'rbac' => new RBACUser($this->pdo, $account['id'], $organizations[0]['alias'])
             ));
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
     }
@@ -128,7 +129,7 @@ class AuthController extends \Indoraptor\IndoController
             $account['jwt'] = $this->generate($login_info);
             
             return $this->respond($account);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
     }
@@ -180,7 +181,7 @@ class AuthController extends \Indoraptor\IndoController
                 'organization_id' => $organization['id']
             );            
             return $this->respond(array('jwt' => $this->generate($account_org_jwt)));
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }
     }
