@@ -17,7 +17,7 @@ class OrganizationModel extends Model
            (new Column('name', 'varchar', 528))->unique(),
             new Column('logo', 'varchar', 512),
             new Column('home_url', 'varchar', 512),
-            new Column('external', 'varchar', 255),
+            new Column('external', 'varchar', 256),
             new Column('alias', 'varchar', 16, 'common'),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
