@@ -6,6 +6,7 @@ use Exception;
 use Throwable;
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -64,9 +65,9 @@ class IndoController extends Controller
                 }
             }
             
-            $result = (array) JWT::decode($jwt,
-                    $secret ?? INDO_JWT_SECRET,
-                    $algs ?? array(INDO_JWT_ALGORITHM));
+            $result = (array) JWT::decode($jwt, new Key(
+                    $secret ?? INDO_JWT_SECRET, $algs ?? INDO_JWT_ALGORITHM
+                    ));
             if ($result['account_id'] ?? false &&
                 !getenv('CODESAUR_ACCOUNT_ID', true)) {
                 putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");

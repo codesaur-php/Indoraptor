@@ -29,7 +29,7 @@ class ExampleRequest extends ServerRequest
                 'organization_id' => 1
             );
             $key = 'codesaur-indoraptor-not-so-secret';
-            $jwt = JWT::encode($payload, $key);
+            $jwt = JWT::encode($payload, $key, $_ENV['INDO_JWT_ALGORITHM'] ?? 'HS256');
             $this->setHeader('INDO_JWT', $jwt);
         }
     }
