@@ -37,11 +37,13 @@ class IndoController extends Controller
     final public function generate(array $data)
     {
         $issuedAt = time();
+        $lifeSeconds = (int)($_ENV['INDO_JWT_LIFETIME'] ?? 2592000);
         $expirationTime = $issuedAt;
-        $expirationTime += (int)($_ENV['INDO_JWT_LIFETIME'] ?? 2592000);
+        $expirationTime += $lifeSeconds;
         $payload = array(
             'iat' => $issuedAt,
-            'exp' => $expirationTime
+            'exp' => $expirationTime,
+            'seconds' => $lifeSeconds,
         ) + $data;
         $key = INDO_JWT_SECRET;
         $alg = INDO_JWT_ALGORITHM;
@@ -53,21 +55,20 @@ class IndoController extends Controller
     {
         try {
             if (empty($jwt)) {
-                if (!empty($this->getRequest()->getServerParams()['HTTP_JWT'])) {
-                    $jwt = $this->getRequest()->getServerParams()['HTTP_JWT'];
-                } else {
-                    $header_jwt = $this->getRequest()->getHeader('INDO_JWT');
-                    if (!empty($header_jwt)) {
-                        $jwt = current($header_jwt);
-                    } else {
-                        throw new Exception('Undefined JWT!');
-                    }
+                if (empty($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'])
+                        || substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 0, 7) !== 'Bearer '
+                ) {
+                    throw new Exception('Undefined JWT!');
                 }
+                $jwt = trim(substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 7));
             }
             
-            $result = (array) JWT::decode($jwt, new Key(
-                    $secret ?? INDO_JWT_SECRET, $algs ?? INDO_JWT_ALGORITHM
-                    ));
+            $result = (array) JWT::decode($jwt,
+                    new Key($secret ?? INDO_JWT_SECRET, $algs ?? INDO_JWT_ALGORITHM));
+            $expirationTime = $result['exp'] ?? 0;
+            if ($expirationTime < time()) {
+                throw new Exception('Invalid JWT data or expired!');
+            }
             if ($result['account_id'] ?? false &&
                 !getenv('CODESAUR_ACCOUNT_ID', true)) {
                 putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");

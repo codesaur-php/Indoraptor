@@ -18,19 +18,22 @@ class ExampleRequest extends ServerRequest
             throw new Error('This experimental example only works on local development enviroment');
         }
 
-        if (empty($this->getServerParams()['HTTP_JWT'])) {
+        if (empty($this->getServerParams()['HTTP_AUTHORIZATION'])) {
             // For testing purpose we authorizing into Indoraptor
             $issuedAt = time();
-            $expirationTime = $issuedAt + 300;
+            $lifeSeconds = 300;
+            $expirationTime = $issuedAt + $lifeSeconds;
             $payload = array(
                 'iat' => $issuedAt,
                 'exp' => $expirationTime,
+                'seconds' => $lifeSeconds,
                 'account_id' => 1,
                 'organization_id' => 1
             );
             $key = 'codesaur-indoraptor-not-so-secret';
-            $jwt = JWT::encode($payload, $key, $_ENV['INDO_JWT_ALGORITHM'] ?? 'HS256');
-            $this->setHeader('INDO_JWT', $jwt);
+            
+            $jwt = JWT::encode($payload, $key, 'HS256');
+            $this->serverParams['HTTP_AUTHORIZATION'] = "Bearer $jwt";
         }
     }
     

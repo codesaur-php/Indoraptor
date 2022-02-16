@@ -31,7 +31,7 @@ class InternalRequest extends ServerRequest
         $this->parsedBody = $payload;
         
         if (isset($token)) {
-            $this->serverParams['HTTP_JWT'] = $token;
+            $this->serverParams['HTTP_AUTHORIZATION'] = "Bearer $token";
         }
     }
 }
