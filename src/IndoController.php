@@ -88,7 +88,7 @@ class IndoController extends Controller
         return is_array($this->validate());
     }
 
-    final public function respond($data, $status = null)
+    public function respond($data, $status = null)
     {
         $response = new class extends NonBodyResponse
         {
@@ -111,7 +111,7 @@ class IndoController extends Controller
         return $response;
     }
     
-    final public function error($message, $status)
+    public function error($message, $status)
     {
         return $this->respond(array('error' => array('code' => $status, 'message' => $message)), $status);
     }
