@@ -14,16 +14,16 @@ class MenuModel extends MultiModel
         parent::__construct($pdo);
         
         $this->setColumns(array(
-           (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-            new Column('parent_id', 'int', 20, 0),
+           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
+            new Column('parent_id', 'bigint', 8, 0),
             new Column('icon', 'varchar', 64),
-            new Column('href', 'varchar', 1024),
+            new Column('href', 'varchar', 255),
             new Column('position', 'int', 8, 100),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 20),
+            new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint', 20)
+            new Column('updated_by', 'bigint', 8)
         ));
         
         $this->setContentColumns(array(new Column('title', 'varchar', 128)));

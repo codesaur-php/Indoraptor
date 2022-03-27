@@ -14,7 +14,7 @@ class MailerModel extends Model
         parent::__construct($pdo);        
         
         $this->setColumns(array(
-           (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
+           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('is_smtp', 'tinyint', 1),
             new Column('charset', 'varchar', 6),
             new Column('smtp_auth', 'tinyint', 1),
@@ -26,9 +26,9 @@ class MailerModel extends Model
             new Column('name', 'varchar', 255),
             new Column('email', 'varchar', 128),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 20),
+            new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint', 20)
+            new Column('updated_by', 'bigint', 8)
         ));
         
         $this->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');

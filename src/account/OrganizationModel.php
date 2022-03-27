@@ -12,18 +12,18 @@ class OrganizationModel extends Model
         parent::__construct($pdo);
         
         $this->setColumns(array(
-           (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-            new Column('parent_id', 'bigint', 20),
-           (new Column('name', 'varchar', 528))->unique(),
-            new Column('logo', 'varchar', 512),
-            new Column('home_url', 'varchar', 512),
-            new Column('external', 'varchar', 256),
+           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
+            new Column('parent_id', 'bigint', 8),
+           (new Column('name', 'varchar', 255))->unique(),
+            new Column('logo', 'varchar', 255),
+            new Column('home_url', 'varchar', 255),
+            new Column('external', 'varchar', 255),
             new Column('alias', 'varchar', 16, 'common'),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 20),
+            new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint', 20)
+            new Column('updated_by', 'bigint', 8)
         ));
         
         $this->setTable('organizations', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');

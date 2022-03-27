@@ -14,12 +14,12 @@ class ForgotModel extends Model
         parent::__construct($pdo);
         
         $this->setColumns(array(
-           (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-            new Column('account', 'bigint', 20),
-            new Column('use_id', 'varchar', 256),
-            new Column('username', 'varchar', 256),
-            new Column('first_name', 'varchar', 256),
-            new Column('last_name', 'varchar', 256),
+           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
+            new Column('account', 'bigint', 8),
+            new Column('use_id', 'varchar', 255),
+            new Column('username', 'varchar', 255),
+            new Column('first_name', 'varchar', 255),
+            new Column('last_name', 'varchar', 255),
             new Column('email', 'varchar', 128),
             new Column('code', 'varchar', 6),
             new Column('is_active', 'tinyint', 1, 1),

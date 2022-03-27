@@ -12,14 +12,14 @@ class OrganizationUserModel extends Model
         parent::__construct($pdo);
         
         $this->setColumns(array(
-           (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-            new Column('account_id', 'bigint', 20),
-            new Column('organization_id', 'bigint', 20),
+           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
+            new Column('account_id', 'bigint', 8),
+            new Column('organization_id', 'bigint', 8),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 20),
+            new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint', 20)
+            new Column('updated_by', 'bigint', 8)
         ));
         
         $this->setTable('organization_users', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');

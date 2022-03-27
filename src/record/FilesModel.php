@@ -14,17 +14,17 @@ class FilesModel extends Model
         parent::__construct($pdo);
         
         $this->setColumns(array(
-           (new Column('id', 'bigint', 20))->auto()->primary()->unique()->notNull(),
-           (new Column('record', 'bigint', 20))->notNull(),
-           (new Column('file', 'bigint', 20))->notNull(),
+           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
+           (new Column('record', 'bigint', 8))->notNull(),
+           (new Column('file', 'bigint', 8))->notNull(),
             new Column('type', 'int', 5),
             new Column('code', 'varchar', 6, ''),
-            new Column('rank', 'int', 8, 10),
+            new Column('rank', 'int', 4, 10),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 20),
+            new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint', 20)
+            new Column('updated_by', 'bigint', 8)
         ));
         
         $this->setTable('file');
