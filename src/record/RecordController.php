@@ -54,7 +54,7 @@ class RecordController extends \Indoraptor\IndoController
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (empty($payload['record'])
-                || !method_exists($model, 'insert')
+            || !method_exists($model, 'insert')
         ) {
             return $this->badRequest();
         }
@@ -82,8 +82,8 @@ class RecordController extends \Indoraptor\IndoController
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (!isset($payload['record'])
-                || empty($payload['condition'])
-                || !method_exists($model, 'update')
+            || empty($payload['condition'])
+            || !method_exists($model, 'update')
         ) {
             $this->badRequest();
         }
@@ -106,7 +106,7 @@ class RecordController extends \Indoraptor\IndoController
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (empty($payload['WHERE'])
-                || !method_exists($model, 'delete')
+            || !method_exists($model, 'delete')
         ) {
             return $this->badRequest();
         }
@@ -123,7 +123,7 @@ class RecordController extends \Indoraptor\IndoController
         
         $lookup = new LookupModel($this->pdo);
         $lookup->setTable("lookup_{$payload['table']}",
-                $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+            $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $rows = $lookup->getRows($payload['condition'] ?? []);
         $records = array();
         foreach ($rows as $row) {

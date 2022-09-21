@@ -29,9 +29,10 @@ class OrganizationUserModel extends Model
     {
         parent::__initial();
         
+        $table = $this->getName();
+        
         $this->setForeignKeyChecks(false);
         
-        $table = $this->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_account_id FOREIGN KEY (account_id) REFERENCES rbac_accounts(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_organization_id FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
@@ -48,7 +49,7 @@ class OrganizationUserModel extends Model
     public function retrieve(int $organization_id, int $account_id)
     {
         $stmt = $this->prepare(
-                "SELECT * FROM {$this->getName()} WHERE account_id=:1 AND organization_id=:2 AND is_active=1 LIMIT 1");        
+            "SELECT * FROM {$this->getName()} WHERE account_id=:1 AND organization_id=:2 AND is_active=1 LIMIT 1");        
         $stmt->bindParam(':1', $account_id, PDO::PARAM_INT);        
         $stmt->bindParam(':2', $organization_id, PDO::PARAM_INT);        
         $stmt->execute();

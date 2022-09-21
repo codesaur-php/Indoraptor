@@ -14,21 +14,23 @@ class LoggerController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        if (empty($this->getQueryParam('table'))) {
+        $params = $this->getQueryParams();
+        if (empty($params['table'])) {
             return $this->badRequest();
-        } elseif (!empty($this->getQueryParam('id'))
-                && filter_var($this->getQueryParam('id'), FILTER_VALIDATE_INT, array('options' => array('min_range' => 0))) !== false) {
-            $id = (int)$this->getQueryParam('id');
+        } elseif (!empty($params['id'])
+            && filter_var($params['id'], FILTER_VALIDATE_INT, array('options' => array('min_range' => 0))) !== false
+        ) {
+            $id = (int)$params['id'];
         }
         
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParam('table'));
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $params['table']);
         if ($this->hasTable($table . '_log')) {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             if (isset($id)) {
                 $data = $logger->getLogById($id);
             } else {
-                $limit = $this->getQueryParam('limit');
+                $limit = $params['limit'] ?? false;
                 $condition = array('ORDER BY' => 'id Desc');
                 if ($limit) {
                     $condition['LIMIT'] = $limit;
@@ -62,8 +64,8 @@ class LoggerController extends \Indoraptor\IndoController
     {
         $payload = $this->getParsedBody();
         if (empty($payload['table'])
-                || empty($payload['message'])
-                || empty($payload['context'])
+            || empty($payload['message'])
+            || empty($payload['context'])
         ) {
             return $this->badRequest('Invalid payload');
         }

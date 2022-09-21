@@ -10,7 +10,7 @@ class CountriesController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $code = $this->getQueryParam('code');
+        $code = $this->getQueryParams()['code'] ?? null;
         $model = new CountriesModel($this->pdo);
         $rows = $model->retrieve($code);        
         if (empty($rows)) {

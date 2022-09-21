@@ -67,7 +67,8 @@ class ExampleRequest extends ServerRequest
     {
         if (!empty($this->getServerParams()['HTTP_X_FORWARDED_FOR'])) {
             if (!empty($this->getServerParams()['HTTP_CLIENT_IP'])
-                    && $this->isValidIP($this->getServerParams()['HTTP_CLIENT_IP'])) {
+                && $this->isValidIP($this->getServerParams()['HTTP_CLIENT_IP'])
+            ) {
                 return $this->getServerParams()['HTTP_CLIENT_IP'];
             }            
             foreach (explode(',', $this->getServerParams()['HTTP_X_FORWARDED_FOR']) as $ip) {
@@ -78,19 +79,19 @@ class ExampleRequest extends ServerRequest
         }
 
         if (!empty($this->getServerParams()['HTTP_X_FORWARDED'])
-                && $this->isValidIP($this->getServerParams()['HTTP_X_FORWARDED'])
+            && $this->isValidIP($this->getServerParams()['HTTP_X_FORWARDED'])
         ) {
             return $this->getServerParams()['HTTP_X_FORWARDED'];
         } elseif (!empty($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
-                && $this->isValidIP($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
+            && $this->isValidIP($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
         ) {
             return $this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'];
         } elseif (!empty($this->getServerParams()['HTTP_FORWARDED_FOR'])
-                && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED_FOR'])
+            && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED_FOR'])
         ) {
             return $this->getServerParams()['HTTP_FORWARDED_FOR'];
         } elseif (!empty($this->getServerParams()['HTTP_FORWARDED'])
-                && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED'])
+            && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED'])
         ) {
             return $this->getServerParams()['HTTP_FORWARDED'];
         }

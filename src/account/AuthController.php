@@ -41,9 +41,9 @@ class AuthController extends \Indoraptor\IndoController
             $org_model = new OrganizationModel($this->pdo);
             $org_user_model = new OrganizationUserModel($this->pdo);
             $stmt = $this->prepare(
-                    'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external ' .
-                    "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
-                    'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
+                'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external ' .
+                "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt->bindParam(':id', $account['id'], PDO::PARAM_INT);
             if ($stmt->execute()) {
                 $index = 0;
@@ -78,7 +78,9 @@ class AuthController extends \Indoraptor\IndoController
     {
         try {
             $payload = $this->getParsedBody();
-            if (empty($payload['username']) || empty($payload['password'])) {
+            if (empty($payload['username'])
+                || empty($payload['password'])
+            ) {
                 throw new Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
@@ -110,9 +112,9 @@ class AuthController extends \Indoraptor\IndoController
             $org_model = new OrganizationModel($this->pdo);
             $org_user_model = new OrganizationUserModel($this->pdo);
             $stmt_check_org = $this->prepare(
-                    'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external ' .
-                    "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
-                    'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
+                'SELECT t2.id, t2.name, t2.logo, t2.alias, t2.external ' .
+                "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt_check_org->bindParam(':id', $account['id'], PDO::PARAM_INT);
             if ($stmt_check_org->execute()) {
                 $has_organization = $stmt_check_org->rowCount() > 0;
@@ -144,9 +146,9 @@ class AuthController extends \Indoraptor\IndoController
             
             $payload = $this->getParsedBody();
             if (!isset($payload['account_id'])
-                    || !is_int($payload['account_id'])
-                    || !isset($payload['organization_id'])
-                    || !is_int($payload['organization_id'])
+                || !is_int($payload['account_id'])
+                || !isset($payload['organization_id'])
+                || !is_int($payload['organization_id'])
             ) {
                 throw new Exception('Invalid request', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
@@ -154,7 +156,7 @@ class AuthController extends \Indoraptor\IndoController
             $accounts = new Accounts($this->pdo);
             $account = $accounts->getById($current_login['account_id']);
             if (!isset($account['id'])
-                    || $account['id'] != $payload['account_id']
+                || $account['id'] != $payload['account_id']
             ) {
                 throw new Exception('Invalid account', AccountErrorCode::ACCOUNT_NOT_FOUND);
             } elseif ($account['status'] != 1) {
@@ -204,9 +206,10 @@ class AuthController extends \Indoraptor\IndoController
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $context = json_decode($result['context'], true);        
         $org_user_model = new OrganizationUserModel($this->pdo);        
-        $org_user_query = "SELECT id FROM {$org_user_model->getName()} " .
-                'WHERE organization_id=:org AND account_id=:acc AND is_active=1 ' .
-                'ORDER By id Desc LIMIT 1';
+        $org_user_query =
+            "SELECT id FROM {$org_user_model->getName()} " .
+            'WHERE organization_id=:org AND account_id=:acc AND is_active=1 ' .
+            'ORDER By id Desc LIMIT 1';
         $org_user_stmt = $this->prepare($org_user_query);
         $org_user_stmt->bindParam(':org', $context['enter']);
         $org_user_stmt->bindParam(':acc', $account_id, PDO::PARAM_INT);

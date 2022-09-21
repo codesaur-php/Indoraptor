@@ -17,9 +17,9 @@ class AccountController extends \Indoraptor\IndoController
         try {
             $payload = $this->getParsedBody();
             if (empty($payload['code'])
-                    || empty($payload['email'])
-                    || empty($payload['username'])
-                    || empty($payload['password'])
+                || empty($payload['email'])
+                || empty($payload['username'])
+                || empty($payload['password'])
                     
             ) {
                 throw new Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
@@ -74,7 +74,8 @@ class AccountController extends \Indoraptor\IndoController
         try {
             $payload = $this->getParsedBody();
             if (empty($payload['email'])
-                    || filter_var($payload['email'], FILTER_VALIDATE_EMAIL) === false) {
+                || filter_var($payload['email'], FILTER_VALIDATE_EMAIL) === false
+            ) {
                 throw new Exception('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
@@ -114,8 +115,8 @@ class AccountController extends \Indoraptor\IndoController
     {
         $payload = $this->getParsedBody();
         if (empty($payload['use_id'])
-                || empty($payload['account'])
-                || empty($payload['password'])
+            || empty($payload['account'])
+            || empty($payload['password'])
         ) {
             return $this->badRequest();
         }
@@ -123,7 +124,7 @@ class AccountController extends \Indoraptor\IndoController
         $forgot = new ForgotModel($this->pdo);
         $record = $forgot->getRowBy(array('use_id' => $payload['use_id']));
         if (!$record
-                || $record['account'] != $payload['account']
+            || $record['account'] != $payload['account']
         ) {
             return $this->unauthorized();
         }

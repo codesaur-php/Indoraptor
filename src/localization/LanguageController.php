@@ -8,11 +8,9 @@ class LanguageController extends \Indoraptor\IndoController
 {
     public function index()
     {
-        $app = $this->getQueryParam('app');
-        $is_active = $this->getQueryParam('is_active');
-        
+        $params = $this->getQueryParams();
         $model = new LanguageModel($this->pdo);
-        $rows = $model->retrieve($app ?? 'common', $is_active ?? 1);
+        $rows = $model->retrieve($params['app'] ?? 'common', $params['is_active'] ?? 1);
         if (empty($rows)) {
             return $this->notFound();
         }
@@ -52,7 +50,9 @@ class LanguageController extends \Indoraptor\IndoController
             $field = $param = array();
             foreach ($columns as $column) {
                 $name = $column['Field'];
-                if ($name == 'id' && $column['Extra'] == 'auto_increment') {
+                if ($name == 'id'
+                    && $column['Extra'] == 'auto_increment'
+                ) {
                     $id = true;
                 } elseif ($name == 'parent_id') {
                     $parent_id = true;
@@ -64,7 +64,12 @@ class LanguageController extends \Indoraptor\IndoController
                 }
             }
             
-            if (!$id || !$parent_id || !$code || empty($field)) {
+            if (
+                !$id
+                || !$parent_id
+                || !$code
+                || empty($field)
+            ) {
                 continue;
             }
             
@@ -114,7 +119,9 @@ class LanguageController extends \Indoraptor\IndoController
             while ($row = $select->fetch(PDO::FETCH_ASSOC)) {                
                 $existing = $this->prepare("SELECT id FROM $contentTable WHERE parent_id=:1 AND code=:2");
                 $parameters = array(':1' => $row['parent_id'], ':2' => $to);
-                if ($existing->execute($parameters) && $existing->rowCount() > 0) {
+                if ($existing->execute($parameters)
+                    && $existing->rowCount() > 0
+                ) {
                     continue;
                 }
                 

@@ -54,13 +54,11 @@ class FileModel extends MultiModel
         if (isset($code)) {
             $condition .= " AND code='$code'";
         }
-        $rows = $files->getRows(
-                array(
-                    'WHERE' => $condition,
-                    'ORDER BY' => 'id desc',
-                    'LIMIT' => 1
-                )
-        );
+        $rows = $files->getRows(array(
+            'WHERE' => $condition,
+            'ORDER BY' => 'id desc',
+            'LIMIT' => 1
+        ));
         
         $files_record = end($rows);
         if (isset($files_record['file'])) {

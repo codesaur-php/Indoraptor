@@ -20,7 +20,7 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
             $status = "STATUS_$code";
             $reasonPhrase = ReasonPrhase::class;
             if (defined("$reasonPhrase::$status")
-                    && !headers_sent()
+                && !headers_sent()
             ) {
                 http_response_code($code);
             }            
@@ -36,7 +36,7 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
         $error = array('code' => $code, 'title' => $title, 'message' => $message);
         
         if (defined('CODESAUR_DEVELOPMENT')
-                && CODESAUR_DEVELOPMENT
+            && CODESAUR_DEVELOPMENT
         ) {
             $error['trace'] = $throwable->getTrace();
         }

@@ -27,7 +27,7 @@ class IndoController extends Controller
         $this->pdo = $request->getAttribute('pdo');
         
         if ($request->getMethod() == 'INTERNAL'
-                && !$request instanceof InternalRequest
+            && !$request instanceof InternalRequest
         ) {
              $this->unauthorized();
              exit;
@@ -56,7 +56,7 @@ class IndoController extends Controller
         try {
             if (empty($jwt)) {
                 if (empty($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'])
-                        || substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 0, 7) !== 'Bearer '
+                    || substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 0, 7) !== 'Bearer '
                 ) {
                     throw new Exception('Undefined JWT!');
                 }
@@ -70,7 +70,8 @@ class IndoController extends Controller
                 throw new Exception('Invalid JWT data or expired!');
             }
             if ($result['account_id'] ?? false &&
-                !getenv('CODESAUR_ACCOUNT_ID', true)) {
+                !getenv('CODESAUR_ACCOUNT_ID', true)
+            ) {
                 putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");
             }
             return $result;
@@ -138,23 +139,32 @@ class IndoController extends Controller
     
     public function grabModel()
     {
-        $cls = $this->getQueryParam('model')
-                ?? $this->getPostParam('model', FILTER_SANITIZE_STRING);
-        if (!empty($cls)) {
-            $class = str_replace(' ', '', $cls);
-            if (class_exists($class)) {
-                $model = new $class($this->pdo);
-                if (method_exists($model, 'setTable')) {
-                    $table = $this->getQueryParam('table')
-                            ?? $this->getPostParam('table', FILTER_SANITIZE_STRING);
-                    if (!empty($table)) {
-                        $model->setTable((string)$table,
-                                $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-                    }
-                    return $model;
-                }
-            }
+        $params = $this->getQueryParams();
+        $cls = $params['model'] ?? null;
+        if (empty($cls)) {
+            $cls = $this->getParsedBody()['model'] ?? null;
         }
-        return null;
+        if (!empty($cls)) {
+            return null;
+        }
+        
+        $class = str_replace(' ', '', $cls);
+        if (!class_exists($class)) {
+            return null;
+        }
+        
+        $model = new $class($this->pdo);
+        if (!method_exists($model, 'setTable')) {
+            return null;
+        }
+        
+        $table = $params['table'] ?? null;
+        if (empty($table)) {
+            $table = $this->getParsedBody()['table'] ?? '';
+        }
+        if (!empty($table)) {
+            $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        }
+        return $model;
     }
 }
