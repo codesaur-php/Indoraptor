@@ -144,7 +144,7 @@ class IndoController extends Controller
         if (empty($cls)) {
             $cls = $this->getParsedBody()['model'] ?? null;
         }
-        if (!empty($cls)) {
+        if (empty($cls)) {
             return null;
         }
         
