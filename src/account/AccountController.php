@@ -19,8 +19,7 @@ class AccountController extends \Indoraptor\IndoController
             if (empty($payload['code'])
                 || empty($payload['email'])
                 || empty($payload['username'])
-                || empty($payload['password'])
-                    
+                || empty($payload['password'])                    
             ) {
                 throw new Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
