@@ -55,8 +55,7 @@ class AccountController extends \Indoraptor\IndoController
                 'code' => $payload['code'],
                 'email' => $payload['email'],
                 'username' => $payload['username'],
-                'password' => $payload['password'],
-                'address' => $payload['organization'] ?? ''
+                'password' => $payload['password']
             ));
             if (!$id) {
                 throw new Exception('Failed to insert request to an account creation table', AccountErrorCode::INSERT_NEWBIE_FAILURE);
