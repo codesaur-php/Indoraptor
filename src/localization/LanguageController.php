@@ -10,7 +10,7 @@ class LanguageController extends \Indoraptor\IndoController
     {
         $params = $this->getQueryParams();
         $model = new LanguageModel($this->pdo);
-        $rows = $model->retrieve($params['app'] ?? 'common', $params['is_active'] ?? 1);
+        $rows = $model->retrieve($params['is_active'] ?? 1);
         if (empty($rows)) {
             return $this->notFound();
         }
