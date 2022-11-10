@@ -16,7 +16,7 @@ class OrganizationModel extends Model
             new Column('parent_id', 'bigint', 8),
            (new Column('name', 'varchar', 255))->unique(),
             new Column('logo', 'varchar', 255),
-            new Column('alias', 'varchar', 16, 'common'),
+            new Column('alias', 'varchar', 64, 'common'),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),

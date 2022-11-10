@@ -18,6 +18,8 @@ class MenuModel extends MultiModel
             new Column('parent_id', 'bigint', 8, 0),
             new Column('icon', 'varchar', 64),
             new Column('href', 'varchar', 255),
+            new Column('alias', 'varchar', 64),
+            new Column('permission', 'varchar', 128),
             new Column('position', 'int', 8, 100),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
