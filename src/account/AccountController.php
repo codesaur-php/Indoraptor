@@ -16,8 +16,7 @@ class AccountController extends \Indoraptor\IndoController
     {
         try {
             $payload = $this->getParsedBody();
-            if (empty($payload['code'])
-                || empty($payload['email'])
+            if (empty($payload['email'])
                 || empty($payload['username'])
                 || empty($payload['password'])                    
             ) {
@@ -28,40 +27,43 @@ class AccountController extends \Indoraptor\IndoController
             }
             
             $accounts = new Accounts($this->pdo);
-            $stmt_e = $this->prepare("SELECT email FROM {$accounts->getName()} WHERE email=:eml");
-            $stmt_e->bindParam(':eml', $payload['email'], PDO::PARAM_STR, $accounts->getColumn('email')->getLength());
-            $stmt_e->execute();
-            if ($stmt_e->rowCount() == 1) {
-                throw new Exception('It looks like email address belongs to an existing account', AccountErrorCode::INSERT_DUPLICATE_EMAIL);
+            $stmt_account = $this->prepare("SELECT id FROM {$accounts->getName()} WHERE email=:eml OR username=:usr LIMIT 1");
+            $stmt_account->bindParam(':eml', $payload['email'], PDO::PARAM_STR, $accounts->getColumn('email')->getLength());
+            $stmt_account->bindParam(':usr', $payload['username'], PDO::PARAM_STR, $accounts->getColumn('username')->getLength());
+            $stmt_account->execute();
+            if ($stmt_account->rowCount() > 0) {
+                throw new Exception('It looks information belongs to an existing account', AccountErrorCode::INSERT_DUPLICATE_ACCOUNT);
             }
             
-            $stmt_u = $this->prepare("SELECT username FROM {$accounts->getName()} WHERE username=:usr");
-            $stmt_u->bindParam(':usr', $payload['username'], PDO::PARAM_STR, $accounts->getColumn('username')->getLength());
-            $stmt_u->execute();
-            if ($stmt_u->rowCount() == 1) {
-                throw new Exception('It looks like information belongs to an existing account', AccountErrorCode::INSERT_DUPLICATE_USERNAME);
+            $columns = $accounts->getColumns();
+            foreach ($columns as $key => &$value) {
+                if ($key !== 'id') {
+                    $value->unique(false);
+                }
+            }
+            $accounts->setTable($accounts->getName() . '_requests', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+            $stmt_newbie = $this->prepare("SELECT id FROM {$accounts->getName()} WHERE (email=:eml OR username=:usr) AND status=1 AND is_active=1");
+            $stmt_newbie->bindParam(':eml', $payload['email'], PDO::PARAM_STR, $accounts->getColumn('email')->getLength());
+            $stmt_newbie->bindParam(':usr', $payload['username'], PDO::PARAM_STR, $accounts->getColumn('username')->getLength());
+            $stmt_newbie->execute();
+            if ($stmt_newbie->rowCount() > 0) {
+                throw new Exception('It looks information belongs to an existing request', AccountErrorCode::INSERT_DUPLICATE_NEWBIE);
             }
             
-            $accounts->setTable('newbie', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $requested_email = $accounts->getRowBy(array('email' => $payload['email']));
-            if ($requested_email) {
-                throw new Exception('It looks like information belongs to an existing request', AccountErrorCode::INSERT_DUPLICATE_NEWBIE);
-            }
-            $requested_email_username = $accounts->getRowBy(array('username' => $payload['username']));
-            if ($requested_email_username) {
-                throw new Exception('It looks like information belongs to an existing request', AccountErrorCode::INSERT_DUPLICATE_NEWBIE);
-            }
-            $id = $accounts->insert(array(
-                'code' => $payload['code'],
+            $newbie = array(
                 'email' => $payload['email'],
                 'username' => $payload['username'],
                 'password' => $payload['password']
-            ));
+            );
+            if (!empty($payload['code'])) {
+                $newbie['code'] = $payload['code'];
+            }
+            $id = $accounts->insert($newbie);
             if (!$id) {
                 throw new Exception('Failed to insert request to an account creation table', AccountErrorCode::INSERT_NEWBIE_FAILURE);
             }
             
-            return $this->respond($id);
+            return $this->respond(array('id' => $id));
         } catch (Throwable $e) {
             return $this->error($e->getMessage(), $e->getCode());
         }

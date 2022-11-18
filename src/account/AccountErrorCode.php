@@ -13,8 +13,7 @@ interface AccountErrorCode
     const INCORRECT_CREDENTIALS = 5100;
     
     // Account creation error
-    const INSERT_DUPLICATE_EMAIL = 5200;
-    const INSERT_DUPLICATE_USERNAME = 5201;
+    const INSERT_DUPLICATE_ACCOUNT = 5200;
     const INSERT_DUPLICATE_NEWBIE = 5202;
     const INSERT_NEWBIE_FAILURE = 5203; // it also throws SQL 23000 error when PDO error mode set to PDO::ERRMODE_EXCEPTION
     
