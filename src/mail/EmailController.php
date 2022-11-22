@@ -7,7 +7,7 @@ use Exception;
 
 use codesaur\Http\Client\Mail;
 
-use Indoraptor\Localization\TranslationModel;
+use Indoraptor\Localization\TextModel;
 
 class EmailController extends \Indoraptor\IndoController
 {
@@ -24,9 +24,9 @@ class EmailController extends \Indoraptor\IndoController
                 throw new Exception('Invalid Request');
             }
             
-            $translation = new TranslationModel($this->pdo);
-            $translation->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $text = $translation->retrieve($payload['code'] ?? 'en');
+            $texts = new TextModel($this->pdo);
+            $texts->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+            $text = $texts->retrieve($payload['code'] ?? 'en');
             
             if (empty($_ENV['CODESAUR_MAIL_ADDRESS'])) {
                 throw new Exception($text['emailer-not-set'] ?? 'Email sender not found!');
@@ -56,9 +56,9 @@ class EmailController extends \Indoraptor\IndoController
             $rows = $model->getRows();
             $record = end($rows);
 
-            $translation = new TranslationModel($this->pdo);
-            $translation->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $text = $translation->retrieve($payload['code'] ?? 'en');
+            $texts = new TextModel($this->pdo);
+            $texts->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+            $text = $texts->retrieve($payload['code'] ?? 'en');
 
             if (empty($record) || !isset($record['charset'])
                 || !isset($record['host']) || !isset($record['port'])

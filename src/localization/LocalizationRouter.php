@@ -12,11 +12,11 @@ class LocalizationRouter extends Router
         $this->GET('/language', [LanguageController::class, 'index']);
         $this->POST('/language/copy/multimodel/content', [LanguageController::class, 'copyMultiModelContent']);
         
-        // Translation rules
-        $this->GET('/translation', [TranslationController::class, 'index']);        
-        $this->POST('/translation/retrieve', [TranslationController::class, 'retrieve']);
-        $this->POST('/translation/find/keyword', [TranslationController::class, 'findKeyword']);
-        $this->GET('/translation/initial/methods', [TranslationController::class, 'getInitialMethods']);
+        // Text rules
+        $this->GET('/text', [TextController::class, 'index']);        
+        $this->POST('/text/retrieve', [TextController::class, 'retrieve']);
+        $this->POST('/text/find/keyword', [TextController::class, 'findKeyword']);
+        $this->GET('/text/initial/methods', [TextController::class, 'getInitialMethods']);
 
         // Countries rules
         $this->GET('/countries', [CountriesController::class, 'index']);        

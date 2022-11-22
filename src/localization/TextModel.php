@@ -2,7 +2,7 @@
 
 namespace Indoraptor\Localization;
 
-class TranslationModel extends \codesaur\Localization\TranslationModel
+class TextModel extends \codesaur\Localization\TextModel
 {
     function __initial()
     {

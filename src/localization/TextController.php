@@ -4,9 +4,9 @@ namespace Indoraptor\Localization;
 
 use PDO;
 
-use codesaur\Localization\TranslationInitial;
+use codesaur\Localization\TextInitial;
 
-class TranslationController extends \Indoraptor\IndoController
+class TextController extends \Indoraptor\IndoController
 {
     public function index()
     {
@@ -14,7 +14,7 @@ class TranslationController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
             
-        $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('translation_%'));
+        $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('text_%'));
         $pdostmt->execute();
 
         $likeness = array();
@@ -25,7 +25,7 @@ class TranslationController extends \Indoraptor\IndoController
         $names = array();
         foreach ($likeness as $name) {
             if (in_array($name . '_content', $likeness)) {
-                $names[] = substr($name, strlen('translation_'));
+                $names[] = substr($name, strlen('text_'));
             }
         }
         if (empty($names)) {
@@ -48,14 +48,14 @@ class TranslationController extends \Indoraptor\IndoController
             $tables = array($payload['table']);
         }            
 
-        $initial = get_class_methods(TranslationInitial::class);
-        $translations = array();
+        $initial = get_class_methods(TextInitial::class);
+        $texts = array();
         $code = $payload['code'] ?? null;
 
-        $model = new TranslationModel($this->pdo);
+        $model = new TextModel($this->pdo);
         foreach (array_unique($tables) as $table) {
-            if (!in_array("translation_$table", $initial)
-                    && !$this->hasTable("translation_$table")
+            if (!in_array("text_$table", $initial)
+                    && !$this->hasTable("text_$table")
             ) {
                 continue;
             }
@@ -64,15 +64,15 @@ class TranslationController extends \Indoraptor\IndoController
             $text = $model->retrieve($code);
 
             if (!empty($text)) {
-                $translations[$table] = $text;
+                $texts[$table] = $text;
             }
         }
 
-        if (!empty($translations)) {
-            return $this->respond($translations);
+        if (!empty($texts)) {
+            return $this->respond($texts);
         }
         
-        return $this->notFound('Translation not found');
+        return $this->notFound('Texts not found');
     }
     
     public function findKeyword()
@@ -82,9 +82,9 @@ class TranslationController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
         
-        $show_tables = $this->prepare('SHOW TABLES LIKE ' . $this->quote('translation_%_content'));
+        $show_tables = $this->prepare('SHOW TABLES LIKE ' . $this->quote('text_%_content'));
         if (!$show_tables->execute()) {
-            return $this->notFound('No translation tables found');
+            return $this->notFound('No text tables found');
         }
         
         while ($name = $show_tables->fetch(PDO::FETCH_NUM)) {
@@ -112,6 +112,6 @@ class TranslationController extends \Indoraptor\IndoController
     
     public function getInitialMethods()
     {
-        return $this->respond(get_class_methods(TranslationInitial::class));
+        return $this->respond(get_class_methods(TextInitial::class));
     }
 }

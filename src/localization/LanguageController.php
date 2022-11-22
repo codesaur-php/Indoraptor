@@ -40,7 +40,7 @@ class LanguageController extends \Indoraptor\IndoController
         
         $this->setForeignKeyChecks(false);
 
-        $translated = array();
+        $copied = array();
         while ($rows = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $contentTable = current($rows);
             
@@ -141,16 +141,16 @@ class LanguageController extends \Indoraptor\IndoController
             }
             
             if ($copied) {
-                $translated[] = array($table => $contentTable);
+                $copied[] = array($table => $contentTable);
             }
         }
         
         $this->setForeignKeyChecks(true);
         
-        if (empty($translated)) {
+        if (empty($copied)) {
             return $this->notFound('Nothing changed');
         }
         
-        return $this->respond($translated);
+        return $this->respond($copied);
     }
 }
