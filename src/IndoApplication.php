@@ -6,14 +6,9 @@ use codesaur\Http\Application\Application;
 
 class IndoApplication extends Application
 {
-    function __construct(bool $is_application_json)
+    function __construct()
     {
         parent::__construct();
-        
-        if ($is_application_json) {
-            $this->use(new JsonExceptionHandler());
-            $this->use(new JsonResponseMiddleware());
-        }
         
         $this->use(new PDOConnectMiddleware());
 

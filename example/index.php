@@ -13,9 +13,13 @@ ini_set('display_errors', 'On');
 error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 
 use Indoraptor\IndoApplication;
+use Indoraptor\JsonExceptionHandler;
+use Indoraptor\JsonResponseMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
 $autoload->addPsr4(__NAMESPACE__ . '\\', dirname(__FILE__));
 
-$application = new IndoApplication(true);
+$application = new IndoApplication();
+$application->use(new JsonExceptionHandler());
+$application->use(new JsonResponseMiddleware());
 $application->handle(new ExampleRequest());
