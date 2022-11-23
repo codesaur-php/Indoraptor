@@ -11,7 +11,6 @@ use Indoraptor\Localization\TextModel;
 
 class EmailController extends \Indoraptor\IndoController
 {
-    
     public function send()
     {
         try {
