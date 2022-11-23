@@ -42,7 +42,7 @@ class LoggerController extends \Indoraptor\IndoController
                 array_walk_recursive($data, function (&$v, $k) {
                     $key = strtoupper($k);
                     if (!empty($key) 
-                        && (in_array($key, array('JWT', 'TOKEN', 'PIN'))
+                        && (in_array($key, array('JWT', 'TOKEN', 'PIN', 'USE_ID'))
                             || strpos($key, 'PASSWORD') !== false)
                     ) {
                         $v = '*** hidden info ***'; 
