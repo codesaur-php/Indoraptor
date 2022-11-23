@@ -9,6 +9,7 @@ use Throwable;
 use Fig\Http\Message\StatusCodeInterface;
 
 use codesaur\RBAC\Accounts;
+use codesaur\Globals\Server;
 
 class AccountController extends \Indoraptor\IndoController
 {
@@ -90,12 +91,13 @@ class AccountController extends \Indoraptor\IndoController
 
             $forgotModel = new ForgotModel($this->pdo);
             $forgot = array(
-                'use_id'     => uniqid('use'),
-                'account'    => $account['id'],
-                'email'      => $account['email'],
-                'username'   => $account['username'],
-                'last_name'  => $account['last_name'],
-                'first_name' => $account['first_name']
+                'use_id'      => uniqid('use'),
+                'account'     => $account['id'],
+                'email'       => $account['email'],
+                'username'    => $account['username'],
+                'last_name'   => $account['last_name'],
+                'first_name'  => $account['first_name'],
+                'remote_addr' => (new Server())->getRemoteAddr()
             );
             if (!empty($payload['code'])) {
                 $forgot['code'] = $payload['code'];
@@ -122,7 +124,9 @@ class AccountController extends \Indoraptor\IndoController
         }
         
         $forgot = new ForgotModel($this->pdo);
-        $record = $forgot->getRowBy(array('use_id' => $payload['use_id']));
+        $record = $forgot->getRowBy(array(
+            'use_id' => $payload['use_id'],
+            'remote_addr' => (new Server())->getRemoteAddr()));
         if (!$record
             || $record['account'] != $payload['account']
         ) {

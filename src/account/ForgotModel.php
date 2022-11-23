@@ -21,6 +21,7 @@ class ForgotModel extends Model
             new Column('first_name', 'varchar', 255),
             new Column('last_name', 'varchar', 255),
             new Column('email', 'varchar', 128),
+            new Column('remote_addr', 'varchar', 46),
             new Column('code', 'varchar', 6),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime')
