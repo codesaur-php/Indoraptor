@@ -103,6 +103,11 @@ class RecordController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
+        return $this->internal_delete();
+    }
+    
+    public function internal_delete()
+    {
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (empty($payload['WHERE'])
