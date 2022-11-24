@@ -13,7 +13,7 @@ class IndoApplication extends Application
         $this->use(new PDOConnectMiddleware());
 
         // import account rules
-        $this->use(new Account\AccountRouter());
+        $this->use(new Auth\AuthRouter());
 
         // import localization rules
         $this->use(new Localization\LocalizationRouter());
@@ -25,7 +25,7 @@ class IndoApplication extends Application
         $this->use(new Record\RecordRouter());
 
         // import emailing rules
-        $this->use(new Mail\EmailRouter());
+        $this->use(new Mailer\MailerRouter());
 
         $this->GET('/', function()
         {

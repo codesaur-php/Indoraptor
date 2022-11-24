@@ -1,4 +1,6 @@
-<?php namespace Indoraptor\Account;
+<?php
+
+namespace Indoraptor\Auth;
 
 use PDO;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\Account;
+namespace Indoraptor\Auth;
 
 use PDO;
 use Exception;
@@ -30,10 +30,10 @@ class AuthController extends \Indoraptor\IndoController
             $accounts = new Accounts($this->pdo);
             $account = $accounts->getById($validation['account_id']);
             if (!isset($account['id'])) {
-                throw new Exception('Account not found', AccountErrorCode::ACCOUNT_NOT_FOUND);
+                throw new Exception('Account not found', StatusCodeInterface::STATUS_NOT_FOUND);
             }
             if ($account['status'] != 1) {
-                throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
+                throw new Exception('Inactive account', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
             }
             unset($account['password']);
 
@@ -58,7 +58,7 @@ class AuthController extends \Indoraptor\IndoController
             }
             
             if (empty($organizations)) {
-                throw new Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_FORBIDDEN);
+                throw new Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
             } elseif (!isset($organizations[0])) {
                 $organizations[0] = $organizations[1];
                 unset($organizations[1]);
@@ -90,11 +90,11 @@ class AuthController extends \Indoraptor\IndoController
             $stmt->bindParam(':usr', $payload['username'], PDO::PARAM_STR, $accounts->getColumn('username')->getLength());
             $stmt->execute();
             if ($stmt->rowCount() != 1) {
-                throw new Exception('Invalid username or password', AccountErrorCode::INCORRECT_CREDENTIALS);
+                throw new Exception('Invalid username or password', StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
             $account = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!password_verify($payload['password'], $account['password'])) {
-                throw new Exception('Invalid username or password', AccountErrorCode::INCORRECT_CREDENTIALS);
+                throw new Exception('Invalid username or password', StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
             
             foreach ($accounts->getColumns() as $column) {
@@ -105,7 +105,7 @@ class AuthController extends \Indoraptor\IndoController
                 }
             }
             if ($account['status'] != 1) {
-                throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
+                throw new Exception('Inactive account', StatusCodeInterface::STATUS_FORBIDDEN);
             }
             unset($account['password']);
             
@@ -120,7 +120,7 @@ class AuthController extends \Indoraptor\IndoController
                 $has_organization = $stmt_check_org->rowCount() > 0;
             }            
             if (!isset($has_organization) || !$has_organization) {
-                throw new Exception('Account doesn\'t belong to an organization', StatusCodeInterface::STATUS_FORBIDDEN);
+                throw new Exception('Account doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
             }
             
             $login_info = array('account_id' => $account['id']);
@@ -158,15 +158,15 @@ class AuthController extends \Indoraptor\IndoController
             if (!isset($account['id'])
                 || $account['id'] != $payload['account_id']
             ) {
-                throw new Exception('Invalid account', AccountErrorCode::ACCOUNT_NOT_FOUND);
+                throw new Exception('Invalid account', StatusCodeInterface::STATUS_NOT_FOUND);
             } elseif ($account['status'] != 1) {
-                throw new Exception('Inactive account', AccountErrorCode::ACCOUNT_NOT_ACTIVE);
+                throw new Exception('Inactive account', StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
             $org_model = new OrganizationModel($this->pdo);
             $organization = $org_model->getById($payload['organization_id']);
             if (!isset($organization['id'])) {
-                throw new Exception('Invalid organization', AccountErrorCode::ORGANIZATION_NOT_FOUND);
+                throw new Exception('Invalid organization', StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
             $org_user_model = new OrganizationUserModel($this->pdo);
@@ -174,7 +174,7 @@ class AuthController extends \Indoraptor\IndoController
             if (empty($user['id'])) {
                 $rbacUser = new RBACUser($this->pdo, $account['id']);
                 if (!$rbacUser->hasRole('system_coder')) {
-                    throw new Exception('Account does not belong to an organization', StatusCodeInterface::STATUS_FORBIDDEN);
+                    throw new Exception('Account does not belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
                 }
             }
             

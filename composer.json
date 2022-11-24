@@ -27,11 +27,11 @@
     "autoload": {
         "psr-4": {
             "Indoraptor\\": "src/",
-            "Indoraptor\\Account\\": "src/account/",
+            "Indoraptor\\Auth\\": "src/auth/",
             "Indoraptor\\Localization\\": "src/localization/",
             "Indoraptor\\Logger\\": "src/logger/",
             "Indoraptor\\Record\\": "src/record/",
-            "Indoraptor\\Mail\\": "src/mail/"
+            "Indoraptor\\Mailer\\": "src/mailer/"
         }
     },
     "license": "MIT",

@@ -24,7 +24,7 @@ class LoggerController extends \Indoraptor\IndoController
         }
         
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $params['table']);
-        if ($this->hasTable($table . '_log')) {
+        if ($this->hasTable("indo_{$table}_log")) {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             if (isset($id)) {
@@ -92,12 +92,11 @@ class LoggerController extends \Indoraptor\IndoController
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }
-        
-        $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('%_log'));
+        $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('indo_%_log'));
         $pdostmt->execute();
         $names = array();
         while ($rows = $pdostmt->fetch(PDO::FETCH_ASSOC)) {
-            $names[] = substr(current($rows), 0, -strlen('_log'));
+            $names[] = substr(current($rows), 5, -strlen('_log'));
         }
         if (empty($names)) {
             return $this->notFound();
