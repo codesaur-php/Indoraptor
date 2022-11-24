@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\Mail;
+namespace Indoraptor\Mailer;
 
 use PDO;
 
@@ -31,7 +31,7 @@ class MailerModel extends Model
             new Column('updated_by', 'bigint', 8)
         ));
         
-        $this->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->setTable('indo_mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()

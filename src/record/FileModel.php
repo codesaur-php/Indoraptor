@@ -30,7 +30,7 @@ class FileModel extends MultiModel
         
         $this->setContentColumns(array(new Column('title', 'varchar', 255)));
         
-        $this->setTable('file');
+        $this->setTable('indo_file');
     }
     
     function __initial()

@@ -26,8 +26,6 @@ class FilesModel extends Model
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
         ));
-        
-        $this->setTable('file');
     }
     
     function __initial()
@@ -38,7 +36,7 @@ class FilesModel extends Model
         $record_table_name = $this->getNameClean();
         
         $this->setForeignKeyChecks(false);
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file FOREIGN KEY (file) REFERENCES file(id) ON DELETE CASCADE ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file FOREIGN KEY (file) REFERENCES indo_file(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record FOREIGN KEY (record) REFERENCES $record_table_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
@@ -47,11 +45,11 @@ class FilesModel extends Model
     
     public function setTable(string $name) : bool
     {
-        return parent::setTable(preg_replace('/[^A-Za-z0-9_-]/', '', $name) . '_files');
+        return parent::setTable('indo_' . preg_replace('/[^A-Za-z0-9_-]/', '', $name) . '_files');
     }
 
     public function getNameClean()
     {
-        return substr($this->getTable(), 0, -(strlen('_files')));
+        return substr($this->getTable(), 5, -(strlen('_files')));
     }
 }

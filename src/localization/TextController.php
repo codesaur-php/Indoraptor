@@ -14,7 +14,7 @@ class TextController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
             
-        $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('text_%'));
+        $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('localization_text_%'));
         $pdostmt->execute();
 
         $likeness = array();
@@ -25,7 +25,7 @@ class TextController extends \Indoraptor\IndoController
         $names = array();
         foreach ($likeness as $name) {
             if (in_array($name . '_content', $likeness)) {
-                $names[] = substr($name, strlen('text_'));
+                $names[] = substr($name, strlen('localization_text_'));
             }
         }
         if (empty($names)) {
@@ -54,8 +54,8 @@ class TextController extends \Indoraptor\IndoController
 
         $model = new TextModel($this->pdo);
         foreach (array_unique($tables) as $table) {
-            if (!in_array("text_$table", $initial)
-                    && !$this->hasTable("text_$table")
+            if (!in_array("localization_text_$table", $initial)
+                    && !$this->hasTable("localization_text_$table")
             ) {
                 continue;
             }
@@ -82,7 +82,7 @@ class TextController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
         
-        $show_tables = $this->prepare('SHOW TABLES LIKE ' . $this->quote('text_%_content'));
+        $show_tables = $this->prepare('SHOW TABLES LIKE ' . $this->quote('localization_text_%_content'));
         if (!$show_tables->execute()) {
             return $this->notFound('No text tables found');
         }

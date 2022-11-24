@@ -45,7 +45,7 @@ class SettingsModel extends MultiModel
             new Column('copyright', 'varchar', 255)
         ));
         
-        $this->setTable('settings', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->setTable('indo_settings', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()

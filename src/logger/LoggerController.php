@@ -42,7 +42,7 @@ class LoggerController extends \Indoraptor\IndoController
                 array_walk_recursive($data, function (&$v, $k) {
                     $key = strtoupper($k);
                     if (!empty($key) 
-                        && (in_array($key, array('JWT', 'TOKEN', 'PIN', 'USE_ID'))
+                        && (in_array($key, array('JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'))
                             || strpos($key, 'PASSWORD') !== false)
                     ) {
                         $v = '*** hidden info ***'; 
@@ -119,11 +119,11 @@ class LoggerController extends \Indoraptor\IndoController
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table']);
         unset($payload['table']);
         
-        if ($this->hasTable($table . '_log')) {
+        if ($this->hasTable("indo_{$table}_log")) {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $data = $logger->getLogs($payload);
-        }        
+        }
         if (empty($data)) {
             return $this->notFound();
         }

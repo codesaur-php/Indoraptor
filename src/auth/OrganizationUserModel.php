@@ -24,7 +24,7 @@ class OrganizationUserModel extends Model
             new Column('updated_by', 'bigint', 8)
         ));
         
-        $this->setTable('organization_users', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->setTable('indo_organization_users', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     public function retrieve(int $organization_id, int $account_id)
