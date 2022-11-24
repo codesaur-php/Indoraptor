@@ -40,7 +40,7 @@ class OrganizationModel extends Model
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
 
-        if ($table != 'organizations') {
+        if ($table != 'indo_organizations') {
             return;
         }
         
