@@ -27,6 +27,10 @@ class TextController extends \Indoraptor\IndoController
             return $this->badRequest(__NAMESPACE__ . " table [$table] creation failed!");
         }
         
+        foreach ($payload['values'] ?? array() as $record) {
+            $model->insert($record[0], $record[1]);
+        }
+        
         return $this->respond(array(
             'status' => 'success',
             'message' => __NAMESPACE__ . " have created a table [$table]!"
