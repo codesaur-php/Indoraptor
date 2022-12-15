@@ -8,16 +8,9 @@ class StatementController extends \Indoraptor\IndoController
 {
     public function index()
     {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
-        return $this->statement();
-    }
-    
-    public function statement()
-    {
-        if (!$this->isAuthorized()) {
+        if ($this->getRequest()->getMethod() != 'INTERNAL'
+            && !$this->isAuthorized()
+        ) {
             return $this->unauthorized();
         }
         

@@ -8,7 +8,6 @@ class StatementRouter extends Router
 {
     function __construct()
     {
-        $this->POST('/reference', [StatementController::class, 'index']);
-        $this->INTERNAL('/reference', [StatementController::class, 'internal']);
+        $this->POST_INTERNAL('/statement', [StatementController::class, 'index']);
     }
 }
