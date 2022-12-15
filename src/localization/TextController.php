@@ -6,6 +6,33 @@ use PDO;
 
 class TextController extends \Indoraptor\IndoController
 {
+    public function create()
+    {
+        $payload = $this->getParsedBody();
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table'] ?? '');
+        if (empty($table)) {
+            return $this->badRequest();
+        }
+        $localization_table = "localization_text_$table";
+        
+        $model = new TextModel($this->pdo);
+        $is_exist = $model->query('SHOW TABLES LIKE ' .  $this->quote($localization_table))->rowCount() > 0;
+        if ($is_exist) {
+            return $this->badRequest(__NAMESPACE__ . " table [$table] is already exists!");
+        }
+
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $is_created = $model->query('SHOW TABLES LIKE ' .  $this->quote($localization_table))->rowCount() > 0;
+        if (!$is_created) {
+            return $this->badRequest(__NAMESPACE__ . " table [$table] creation failed!");
+        }
+        
+        return $this->respond(array(
+            'status' => 'success',
+            'message' => __NAMESPACE__ . " have created a table [$table]!"
+        ));
+    }
+    
     public function retrieve()
     {
         $payload = $this->getParsedBody();
@@ -24,7 +51,8 @@ class TextController extends \Indoraptor\IndoController
         $code = $payload['code'] ?? null;
 
         $model = new TextModel($this->pdo);
-        foreach (array_unique($tables) as $table) {
+        foreach (array_unique($tables) as $table) {            
+            $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
             if (!in_array("localization_text_$table", $initial)
                 && !$this->hasTable("localization_text_$table")
             ) {
