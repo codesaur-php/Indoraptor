@@ -138,7 +138,7 @@ class IndoController extends Controller
         return $this->error($message, StatusCodeInterface::STATUS_NOT_FOUND);
     }
     
-    public function grabModel(): ?TableTrait
+    public function grabModel()
     {
         $params = $this->getQueryParams();
         $cls = $params['model'] ?? null;
