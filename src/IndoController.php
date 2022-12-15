@@ -10,6 +10,7 @@ use Firebase\JWT\Key;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
+use codesaur\DataObject\TableTrait;
 use codesaur\Http\Application\Controller;
 use codesaur\Http\Message\NonBodyResponse;
 
@@ -137,7 +138,7 @@ class IndoController extends Controller
         return $this->error($message, StatusCodeInterface::STATUS_NOT_FOUND);
     }
     
-    public function grabModel()
+    public function grabModel(): ?TableTrait
     {
         $params = $this->getQueryParams();
         $cls = $params['model'] ?? null;
@@ -153,18 +154,6 @@ class IndoController extends Controller
             return null;
         }
         
-        $model = new $class($this->pdo);
-        if (!method_exists($model, 'setTable')) {
-            return null;
-        }
-        
-        $table = $params['table'] ?? null;
-        if (empty($table)) {
-            $table = $this->getParsedBody()['table'] ?? '';
-        }
-        if (!empty($table)) {
-            $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        }
-        return $model;
+        return new $class($this->pdo);
     }
 }

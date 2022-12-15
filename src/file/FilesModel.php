@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\Record;
+namespace Indoraptor\File;
 
 use PDO;
 
@@ -28,6 +28,21 @@ class FilesModel extends Model
         ));
     }
     
+    public function setTable(string $name) : bool
+    {
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
+        if (empty($table)) {
+            throw new Exception(__CLASS__ . ': Table name must be provided', 1103);
+        }
+        
+        return parent::setTable('indo_' . $table . '_files');
+    }
+
+    public function getNameClean()
+    {
+        return substr($this->getTable(), 5, -(strlen('_files')));
+    }
+    
     function __initial()
     {
         parent::__initial();
@@ -41,15 +56,5 @@ class FilesModel extends Model
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
-    }
-    
-    public function setTable(string $name) : bool
-    {
-        return parent::setTable('indo_' . preg_replace('/[^A-Za-z0-9_-]/', '', $name) . '_files');
-    }
-
-    public function getNameClean()
-    {
-        return substr($this->getTable(), 5, -(strlen('_files')));
     }
 }

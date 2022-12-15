@@ -24,6 +24,12 @@ class IndoApplication extends Application
         // import record rules
         $this->use(new Record\RecordRouter());
 
+        // import contents rules
+        $this->use(new Contents\ContentsRouter());
+
+        // import statement rules
+        $this->use(new Statement\StatementRouter());
+
         // import emailing rules
         $this->use(new Mailer\MailerRouter());
 

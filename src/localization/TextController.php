@@ -4,11 +4,49 @@ namespace Indoraptor\Localization;
 
 use PDO;
 
-use codesaur\Localization\TextInitial;
-
 class TextController extends \Indoraptor\IndoController
 {
-    public function index()
+    public function retrieve()
+    {
+        $payload = $this->getParsedBody();
+        if (empty($payload['table'])) {
+            return $this->badRequest();
+        }
+        
+        if (is_array($payload['table'])) {
+            $tables = array_values($payload['table']);
+        } else {
+            $tables = array($payload['table']);
+        }            
+
+        $initial = get_class_methods(TextInitial::class);
+        $texts = array();
+        $code = $payload['code'] ?? null;
+
+        $model = new TextModel($this->pdo);
+        foreach (array_unique($tables) as $table) {
+            if (!in_array("localization_text_$table", $initial)
+                && !$this->hasTable("localization_text_$table")
+            ) {
+                continue;
+            }
+
+            $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+            $text = $model->retrieve($code);
+
+            if (!empty($text)) {
+                $texts[$table] = $text;
+            }
+        }
+
+        if (!empty($texts)) {
+            return $this->respond($texts);
+        }
+        
+        return $this->notFound('Texts not found');
+    }
+    
+    public function names()
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -33,46 +71,6 @@ class TextController extends \Indoraptor\IndoController
         }
 
         return $this->respond($names);
-    }
-
-    public function retrieve()
-    {
-        $payload = $this->getParsedBody();
-        if (empty($payload['table'])) {
-            return $this->badRequest();
-        }
-        
-        if (is_array($payload['table'])) {
-            $tables = array_values($payload['table']);
-        } else {
-            $tables = array($payload['table']);
-        }            
-
-        $initial = get_class_methods(TextInitial::class);
-        $texts = array();
-        $code = $payload['code'] ?? null;
-
-        $model = new TextModel($this->pdo);
-        foreach (array_unique($tables) as $table) {
-            if (!in_array("localization_text_$table", $initial)
-                    && !$this->hasTable("localization_text_$table")
-            ) {
-                continue;
-            }
-
-            $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $text = $model->retrieve($code);
-
-            if (!empty($text)) {
-                $texts[$table] = $text;
-            }
-        }
-
-        if (!empty($texts)) {
-            return $this->respond($texts);
-        }
-        
-        return $this->notFound('Texts not found');
     }
     
     public function findKeyword()
@@ -108,10 +106,5 @@ class TextController extends \Indoraptor\IndoController
         }
         
         return $this->notFound('Keyword not found');
-    }    
-    
-    public function getInitialMethods()
-    {
-        return $this->respond(get_class_methods(TextInitial::class));
     }
 }

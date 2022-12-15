@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\Record;
+namespace Indoraptor\Contents;
 
 use PDO;
 
