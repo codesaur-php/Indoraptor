@@ -8,6 +8,6 @@ class ContentsRouter extends Router
 {
     function __construct()
     {
-        $this->POST_INTERNAL('/reference', [ReferenceController::class, 'internal']);
+        $this->POST_INTERNAL('/reference', [ReferenceController::class, 'index']);
     }
 }
