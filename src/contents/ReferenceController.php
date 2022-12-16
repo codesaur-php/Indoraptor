@@ -34,32 +34,6 @@ class ReferenceController extends \Indoraptor\IndoController
         return $this->respond($records);
     }
     
-    public function record(string $table)
-    {
-        if ($this->getRequest()->getMethod() != 'INTERNAL'
-            && !$this->isAuthorized()
-        ) {
-            return $this->unauthorized();
-        }
-        
-        $with_values = $this->getParsedBody();
-        if (empty($with_values)
-            || !$this->isExists($table)
-        ) {
-            return $this->badRequest();
-        }
-        
-        $model = new ReferenceModel($this->pdo);
-        $model->setTable($table);
-        $record = $model->getRowBy($with_values);
-        
-        if (empty($record)) {
-            return $this->notFound();
-        }
-        
-        return $this->respond($record);
-    }
-    
     public function insert(string $table)
     {
         if (!$this->isAuthorized()) {
