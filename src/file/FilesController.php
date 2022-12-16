@@ -2,8 +2,6 @@
 
 namespace Indoraptor\File;
 
-use Exception;
-
 class FilesController extends \Indoraptor\IndoController
 {
     public function index(string $table)
@@ -23,9 +21,7 @@ class FilesController extends \Indoraptor\IndoController
         
         $files = new FilesModel($this->pdo);
         $files->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        $rows = $files->getRows($condition);
-        
-        return $this->respond($rows);
+        return $this->respond($files->getRows($condition));
     }
     
     public function record(string $table)
@@ -69,13 +65,7 @@ class FilesController extends \Indoraptor\IndoController
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table);
-        $id = $model->insert($record);
-        
-        if (empty($id)) {
-            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
-        }        
-        
-        return $this->respond($id);
+        return $this->respond($model->insert($record));
     }
     
     public function update(string $table)
@@ -94,13 +84,8 @@ class FilesController extends \Indoraptor\IndoController
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table);
-        $id = $model->update($payload['record'],  $payload['condition']);
-        
-        if (empty($id)) {
-            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
-        }        
-        
-        return $this->respond($id);
+        return $this->respond($model->update(
+            $payload['record'],  $payload['condition']));
     }
     
     public function delete(string $table)
@@ -118,13 +103,7 @@ class FilesController extends \Indoraptor\IndoController
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table);
-        $id = $model->delete($condition);
-        
-        if (empty($id)) {
-            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
-        }        
-        
-        return $this->respond($id);
+        return $this->respond($model->delete($condition));
     }
     
     function isExists(string &$table): bool

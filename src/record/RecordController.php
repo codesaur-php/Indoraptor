@@ -2,6 +2,11 @@
 
 namespace Indoraptor\Record;
 
+use Exception;
+
+use codesaur\DataObject\Model;
+use codesaur\DataObject\MultiModel;
+
 class RecordController extends \Indoraptor\IndoController
 {
     public function record()
@@ -86,20 +91,23 @@ class RecordController extends \Indoraptor\IndoController
     public function internal_insert()
     {
         $model = $this->grabModel();
-        $payload = $this->getParsedBody();
-        if (empty($payload['record'])
-            || !method_exists($model, 'insert')
-        ) {
+        $record = $this->getParsedBody();
+        if (empty($record)) {
             return $this->badRequest();
         }
         
-        if (isset($payload['content'])) {
-            $id = $model->insert($payload['record'], $payload['content']);
-        } else {
-            $id = $model->insert($payload['record']);
+        if ($model instanceof Model) {
+            return $this->respond($model->insert($record));
+        } elseif (
+            $model instanceof MultiModel
+            && !empty($record['record'])
+            && !empty($record['content'])
+        ) {
+            return $this->respond($model->insert(
+                $record['record'], $record['content']));
         }
         
-        return $this->respond($id);
+        throw new Exception(__CLASS__. ':insert failed!');
     }
     
     public function internal_update()
@@ -108,18 +116,22 @@ class RecordController extends \Indoraptor\IndoController
         $payload = $this->getParsedBody();
         if (!isset($payload['record'])
             || empty($payload['condition'])
-            || !method_exists($model, 'update')
         ) {
             $this->badRequest();
         }
         
-        if (isset($payload['content'])) {
-            $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
-        } else {
-            $id = $model->update($payload['record'], $payload['condition']);
+        if ($model instanceof Model) {
+            return $this->respond($model->update(
+                $payload['record'], $payload['condition']));
+        } elseif (
+            $model instanceof MultiModel
+            && isset($payload['content'])
+        ) {
+            return $this->respond($model->update(
+                $payload['record'], $payload['content'], $payload['condition']));
         }
         
-        return $this->respond($id);
+        throw new Exception(__CLASS__. ':update failed!');
     }
     
     public function internal_delete()

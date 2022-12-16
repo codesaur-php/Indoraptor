@@ -2,8 +2,6 @@
 
 namespace Indoraptor\Contents;
 
-use Exception;
-
 class ReferenceController extends \Indoraptor\IndoController
 {
     public function index(string $table)
@@ -78,13 +76,8 @@ class ReferenceController extends \Indoraptor\IndoController
         
         $model = new ReferenceModel($this->pdo);
         $model->setTable($table);
-        $id = $model->insert($payload['record'], $payload['content']);
-        
-        if (empty($id)) {
-            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
-        }        
-        
-        return $this->respond($id);
+        return $this->respond($model->insert(
+            $payload['record'], $payload['content']));
     }
     
     public function update(string $table)
@@ -104,13 +97,8 @@ class ReferenceController extends \Indoraptor\IndoController
         
         $model = new ReferenceModel($this->pdo);
         $model->setTable($table);
-        $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
-        
-        if (empty($id)) {
-            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
-        }        
-        
-        return $this->respond($id);
+        $this->respond($model->update(
+            $payload['record'], $payload['content'], $payload['condition']));
     }
     
     public function delete(string $table)
@@ -128,13 +116,7 @@ class ReferenceController extends \Indoraptor\IndoController
         
         $model = new ReferenceModel($this->pdo);
         $model->setTable($table);
-        $id = $model->delete($condition);
-        
-        if (empty($id)) {
-            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
-        }        
-        
-        return $this->respond($id);
+        return $this->respond($model->delete($condition));
     }
     
     function isExists(string &$table): bool
