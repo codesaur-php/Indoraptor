@@ -31,7 +31,6 @@ class ExampleRequest extends ServerRequest
                 'organization_id' => 1
             );
             $key = 'codesaur-indoraptor-not-so-secret';
-            
             $jwt = JWT::encode($payload, $key, 'HS256');
             $this->serverParams['HTTP_AUTHORIZATION'] = "Bearer $jwt";
         }

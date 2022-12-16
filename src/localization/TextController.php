@@ -3,37 +3,46 @@
 namespace Indoraptor\Localization;
 
 use PDO;
+use Exception;
 
 class TextController extends \Indoraptor\IndoController
 {
-    public function create()
+    public function create(string $table)
     {
-        $payload = $this->getParsedBody();
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table'] ?? '');
-        if (empty($table)) {
+        if ($this->getRequest()->getMethod() != 'INTERNAL'
+            && !$this->isAuthorized()
+        ) {
+            return $this->unauthorized();
+        }
+        
+        $values = $this->getParsedBody();
+        $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        if (empty($tbl)) {
             return $this->badRequest();
         }
-        $localization_table = "localization_text_$table";
+        $localization_table = "localization_text_$tbl";
         
         $model = new TextModel($this->pdo);
         $is_exist = $model->query('SHOW TABLES LIKE ' .  $this->quote($localization_table))->rowCount() > 0;
         if ($is_exist) {
-            return $this->badRequest(__NAMESPACE__ . " table [$table] is already exists!");
+            return $this->badRequest(__NAMESPACE__ . " table [$tbl] is already exists!");
         }
 
-        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $model->setTable($tbl, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $is_created = $model->query('SHOW TABLES LIKE ' .  $this->quote($localization_table))->rowCount() > 0;
         if (!$is_created) {
-            return $this->badRequest(__NAMESPACE__ . " table [$table] creation failed!");
+            return $this->badRequest(__NAMESPACE__ . " table [$tbl] creation failed!");
         }
         
-        foreach ($payload['values'] ?? array() as $record) {
-            $model->insert($record[0], $record[1]);
+        foreach ($values ?? array() as $value) {
+            if (isset($value['record']) && isset($value['content'])) {
+                $model->insert($value['record'], $value['content']);
+            }
         }
         
         return $this->respond(array(
             'status' => 'success',
-            'message' => __NAMESPACE__ . " have created a table [$table]!"
+            'message' => __NAMESPACE__ . " have created a table [$tbl]!"
         ));
     }
     
@@ -83,7 +92,7 @@ class TextController extends \Indoraptor\IndoController
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }
-            
+        
         $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('localization_text_%'));
         $pdostmt->execute();
 
@@ -138,5 +147,110 @@ class TextController extends \Indoraptor\IndoController
         }
         
         return $this->notFound('Keyword not found');
+    }
+    
+    public function record(string $table)
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $with_values = $this->getParsedBody();
+        if (empty($with_values)
+            || !$this->isExists($table)
+        ) {
+            return $this->badRequest();
+        }
+        
+        $model = new TextModel($this->pdo);
+        $model->setTable($table);
+        $record = $model->getRowBy($with_values);
+        
+        if (empty($record)) {
+            return $this->notFound();
+        }
+        
+        return $this->respond($record);
+    }
+    
+    public function insert(string $table)
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $payload = $this->getParsedBody();
+        if (empty($payload['record'])
+            || empty($payload['content'])
+            || !$this->isExists($table)
+        ) {
+            return $this->badRequest();
+        }
+        
+        $model = new TextModel($this->pdo);
+        $model->setTable($table);
+        $id = $model->insert($payload['record'], $payload['content']);
+        
+        if (empty($id)) {
+            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
+        }        
+        
+        return $this->respond($id);
+    }
+    
+    public function update(string $table)
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $payload = $this->getParsedBody();
+        if (empty($payload['record'])
+            || empty($payload['content'])
+            || empty($payload['condition'])
+            || !$this->isExists($table)
+        ) {
+            return $this->badRequest();
+        }
+        
+        $model = new TextModel($this->pdo);
+        $model->setTable($table);
+        $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
+        
+        if (empty($id)) {
+            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
+        }        
+        
+        return $this->respond($id);
+    }
+    
+    public function delete(string $table)
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        $condition = $this->getParsedBody();
+        if (empty($condition)
+            || !$this->isExists($table)
+        ) {
+            return $this->badRequest();
+        }
+        
+        $model = new TextModel($this->pdo);
+        $model->setTable($table);
+        $id = $model->delete($condition);
+        
+        if (empty($id)) {
+            throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
+        }        
+        
+        return $this->respond($id);
+    }
+    
+    function isExists(string &$table): bool
+    {
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        return $this->hasTable("localization_text_$table");
     }
 }

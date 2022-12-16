@@ -10,7 +10,6 @@ use Firebase\JWT\Key;
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-use codesaur\DataObject\TableTrait;
 use codesaur\Http\Application\Controller;
 use codesaur\Http\Message\NonBodyResponse;
 

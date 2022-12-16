@@ -13,12 +13,17 @@ class LocalizationRouter extends Router
         $this->POST('/language/copy/multimodel/content', [LanguageController::class, 'copyMultiModelContent']);
         
         // Text rules
-        $this->INTERNAL('/text/table/create', [TextController::class, 'create']);
+        $this->POST_INTERNAL('/text/table/create/{table}', [TextController::class, 'create']);
         $this->GET('/text/table/names', [TextController::class, 'names']);
         $this->POST('/text/retrieve', [TextController::class, 'retrieve']);
         $this->POST('/text/find/keyword', [TextController::class, 'findKeyword']);
         
+        $this->GET('/text/{table}', [TextController::class, 'record']);        
+        $this->POST('/text/{table}', [TextController::class, 'insert']);
+        $this->PUT('/text/{table}', [TextController::class, 'update']);
+        $this->DELETE('/text/{table}', [TextController::class, 'delete']);
+        
         // Countries rules
-        $this->GET('/countries', [CountriesController::class, 'index']);        
+        $this->GET_INTERNAL('/countries', [CountriesController::class, 'index']);        
     }
 }

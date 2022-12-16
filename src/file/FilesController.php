@@ -1,10 +1,10 @@
 <?php
 
-namespace Indoraptor\Contents;
+namespace Indoraptor\File;
 
 use Exception;
 
-class ReferenceController extends \Indoraptor\IndoController
+class FilesController extends \Indoraptor\IndoController
 {
     public function index(string $table)
     {
@@ -15,25 +15,17 @@ class ReferenceController extends \Indoraptor\IndoController
         }
         
         $condition = $this->getParsedBody();
-        if (empty($condition)) {
+        if (empty($condition)
+            || !$this->isExists($table)
+        ) {
             return $this->badRequest();
         }
         
-        $records = array();
-        $initial = get_class_methods(ReferenceInitial::class);
-        $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        if (in_array("reference_$tbl", $initial)
-            || $this->hasTable("reference_$tbl")
-        ) {
-            $reference = new ReferenceModel($this->pdo);
-            $reference->setTable($tbl, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $rows = $reference->getRows($condition);
-            foreach ($rows as $row) {
-                $records[$row['keyword']] = $row['content'];
-            }
-        }
+        $files = new FilesModel($this->pdo);
+        $files->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $rows = $files->getRows($condition);
         
-        return $this->respond($records);
+        return $this->respond($rows);
     }
     
     public function record(string $table)
@@ -51,7 +43,7 @@ class ReferenceController extends \Indoraptor\IndoController
             return $this->badRequest();
         }
         
-        $model = new ReferenceModel($this->pdo);
+        $model = new FilesModel($this->pdo);
         $model->setTable($table);
         $record = $model->getRowBy($with_values);
         
@@ -68,17 +60,16 @@ class ReferenceController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $payload = $this->getParsedBody();
-        if (empty($payload['record'])
-            || empty($payload['content'])
+        $record = $this->getParsedBody();
+        if (empty($record)
             || !$this->isExists($table)
         ) {
             return $this->badRequest();
         }
         
-        $model = new ReferenceModel($this->pdo);
+        $model = new FilesModel($this->pdo);
         $model->setTable($table);
-        $id = $model->insert($payload['record'], $payload['content']);
+        $id = $model->insert($record);
         
         if (empty($id)) {
             throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
@@ -95,16 +86,15 @@ class ReferenceController extends \Indoraptor\IndoController
         
         $payload = $this->getParsedBody();
         if (empty($payload['record'])
-            || empty($payload['content'])
             || empty($payload['condition'])
             || !$this->isExists($table)
         ) {
             return $this->badRequest();
         }
         
-        $model = new ReferenceModel($this->pdo);
+        $model = new FilesModel($this->pdo);
         $model->setTable($table);
-        $id = $model->update($payload['record'], $payload['content'], $payload['condition']);
+        $id = $model->update($payload['record'],  $payload['condition']);
         
         if (empty($id)) {
             throw new Exception(__CLASS__. ':' . __FUNCTION__ . ' failed!');
@@ -126,7 +116,7 @@ class ReferenceController extends \Indoraptor\IndoController
             return $this->badRequest();
         }
         
-        $model = new ReferenceModel($this->pdo);
+        $model = new FilesModel($this->pdo);
         $model->setTable($table);
         $id = $model->delete($condition);
         
@@ -140,6 +130,6 @@ class ReferenceController extends \Indoraptor\IndoController
     function isExists(string &$table): bool
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        return $this->hasTable("reference_$table");
+        return $this->hasTable("indo_{$table}_files");
     }
 }

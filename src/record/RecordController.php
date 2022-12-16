@@ -4,22 +4,61 @@ namespace Indoraptor\Record;
 
 class RecordController extends \Indoraptor\IndoController
 {
-    public function index()
+    public function record()
     {
-        if ($this->getRequest()->getMethod() != 'INTERNAL'
-            && !$this->isAuthorized()
-        ) {
+        if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }
         
-        $payload = $this->getParsedBody();
-        if (empty($payload)) {
+        return $this->internal_record();
+    }
+    
+    public function records()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->internal_records();
+    }
+    
+    public function insert()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->internal_insert();
+    }
+    
+    public function update()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->internal_update();
+    }
+    
+    public function delete()
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->internal_delete();
+    }
+    
+    public function internal_record()
+    {
+        $with_values = $this->getParsedBody();
+        if (empty($with_values)) {
             return $this->badRequest();
         }
         
         $model = $this->grabModel();
         if (method_exists($model, 'getRowBy')) {
-            $record = $model->getRowBy($payload);
+            $record = $model->getRowBy($with_values);
         }
 
         if (empty($record)) {
@@ -29,18 +68,12 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function rows()
+    public function internal_records()
     {
-        if ($this->getRequest()->getMethod() != 'INTERNAL'
-            && !$this->isAuthorized()
-        ) {
-            return $this->unauthorized();
-        }
-         
         $model = $this->grabModel();
-        $payload = $this->getParsedBody();
+        $condition = $this->getParsedBody();
         if (method_exists($model, 'getRows')) {
-            $rows = $model->getRows($payload);
+            $rows = $model->getRows($condition);
         }
 
         if (empty($rows)) {
@@ -50,14 +83,8 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($rows);
     }
     
-    public function insert()
+    public function internal_insert()
     {
-        if ($this->getRequest()->getMethod() != 'INTERNAL'
-            && !$this->isAuthorized()
-        ) {
-            return $this->unauthorized();
-        }
-        
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (empty($payload['record'])
@@ -75,14 +102,8 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($id);
     }
     
-    public function update()
+    public function internal_update()
     {
-        if ($this->getRequest()->getMethod() != 'INTERNAL'
-            && !$this->isAuthorized()
-        ) {
-            return $this->unauthorized();
-        }
-        
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
         if (!isset($payload['record'])
@@ -101,22 +122,16 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($id);
     }
     
-    public function delete()
+    public function internal_delete()
     {
-        if ($this->getRequest()->getMethod() != 'INTERNAL'
-            && !$this->isAuthorized()
-        ) {
-            return $this->unauthorized();
-        }
-        
         $model = $this->grabModel();
-        $payload = $this->getParsedBody();
-        if (empty($payload['WHERE'])
+        $condition = $this->getParsedBody();
+        if (empty($condition)
             || !method_exists($model, 'delete')
         ) {
             return $this->badRequest();
         }
         
-        return $this->respond($model->delete($payload));
+        return $this->respond($model->delete($condition));
     }
 }

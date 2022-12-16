@@ -35,7 +35,7 @@ class FilesModel extends Model
             throw new Exception(__CLASS__ . ': Table name must be provided', 1103);
         }
         
-        return parent::setTable('indo_' . $table . '_files');
+        return parent::setTable("indo_{$table}_files");
     }
 
     public function getNameClean()
