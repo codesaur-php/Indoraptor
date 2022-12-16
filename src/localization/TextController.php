@@ -14,7 +14,6 @@ class TextController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $values = $this->getParsedBody();
         $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         if (empty($tbl)) {
             return $this->badRequest();
@@ -33,6 +32,7 @@ class TextController extends \Indoraptor\IndoController
             return $this->badRequest(__NAMESPACE__ . " table [$tbl] creation failed!");
         }
         
+        $values = $this->getParsedBody();
         foreach ($values ?? array() as $value) {
             if (isset($value['record']) && isset($value['content'])) {
                 $model->insert($value['record'], $value['content']);

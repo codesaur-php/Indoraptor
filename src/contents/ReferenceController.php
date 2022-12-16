@@ -12,12 +12,8 @@ class ReferenceController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $condition = $this->getParsedBody();
-        if (empty($condition)) {
-            return $this->badRequest();
-        }
-        
         $records = array();
+        $condition = $this->getParsedBody();
         $initial = get_class_methods(ReferenceInitial::class);
         $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         if (in_array("reference_$tbl", $initial)
@@ -97,5 +93,27 @@ class ReferenceController extends \Indoraptor\IndoController
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("reference_$table");
+    }
+    
+    public function records(string $table)
+    {
+        if ($this->getRequest()->getMethod() != 'INTERNAL'
+            && !$this->isAuthorized()
+        ) {
+            return $this->unauthorized();
+        }
+        
+        $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        $initial = get_class_methods(ReferenceInitial::class);
+        if (!in_array("reference_$tbl", $initial)
+            && !$this->hasTable("reference_$tbl")
+        ) {
+            return $this->notFound('Invalid refence table name!');
+        }
+        
+        $model = new ReferenceModel($this->pdo);
+        $model->setTable($tbl);
+        $condition = $this->getParsedBody();
+        return $this->respond($model->getRows($condition));
     }
 }
