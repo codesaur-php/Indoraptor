@@ -26,7 +26,7 @@ class LanguageModel extends Model
             new Column('updated_by', 'bigint', 8)
         ));
         
-        $this->setTable('localization_language', 'utf8_unicode_ci');
+        $this->setTable('localization_language', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     public function retrieve(int $is_active = 1)

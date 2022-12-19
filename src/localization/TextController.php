@@ -162,7 +162,7 @@ class TextController extends \Indoraptor\IndoController
         }
         
         $model = new TextModel($this->pdo);
-        $model->setTable($table);
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $record = $model->getRowBy($with_values);
         
         if (empty($record)) {
@@ -187,9 +187,8 @@ class TextController extends \Indoraptor\IndoController
         }
         
         $model = new TextModel($this->pdo);
-        $model->setTable($table);
-        return $this->respond($model->insert(
-            $payload['record'], $payload['content']));
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        return $this->respond($model->insert($payload['record'], $payload['content']));
     }
     
     public function update(string $table)
@@ -208,9 +207,8 @@ class TextController extends \Indoraptor\IndoController
         }
         
         $model = new TextModel($this->pdo);
-        $model->setTable($table);
-        return $this->respond($model->update(
-            $payload['record'], $payload['content'], $payload['condition']));
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        return $this->respond($model->update($payload['record'], $payload['content'], $payload['condition']));
     }
     
     public function delete(string $table)
@@ -227,7 +225,7 @@ class TextController extends \Indoraptor\IndoController
         }
         
         $model = new TextModel($this->pdo);
-        $model->setTable($table);
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->delete($condition));
     }
     

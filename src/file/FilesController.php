@@ -20,7 +20,7 @@ class FilesController extends \Indoraptor\IndoController
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table);
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $record = $model->getRowBy($with_values);
         
         if (empty($record)) {
@@ -44,7 +44,7 @@ class FilesController extends \Indoraptor\IndoController
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table);
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->insert($record));
     }
     
@@ -63,9 +63,8 @@ class FilesController extends \Indoraptor\IndoController
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table);
-        return $this->respond($model->update(
-            $payload['record'],  $payload['condition']));
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        return $this->respond($model->update($payload['record'],  $payload['condition']));
     }
     
     public function delete(string $table)
@@ -82,14 +81,8 @@ class FilesController extends \Indoraptor\IndoController
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table);
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->delete($condition));
-    }
-    
-    function isExists(string &$table): bool
-    {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        return $this->hasTable("indo_{$table}_files");
     }
     
     public function records(string $table)
@@ -106,5 +99,11 @@ class FilesController extends \Indoraptor\IndoController
         $files = new FilesModel($this->pdo);
         $files->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($files->getRows($condition));
-    }    
+    }
+    
+    function isExists(string &$table): bool
+    {
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        return $this->hasTable("indo_{$table}_files");
+    }
 }

@@ -30,7 +30,7 @@ class FileModel extends MultiModel
         
         $this->setContentColumns(array(new Column('title', 'varchar', 255)));
         
-        $this->setTable('indo_file');
+        $this->setTable('indo_file', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()
@@ -48,7 +48,7 @@ class FileModel extends MultiModel
     public function getTableRecord(string $table, int $record, int $type, $code = null)
     {
         $files = new FilesModel($this->pdo);
-        $files->setTable($table);
+        $files->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         
         $condition = "record=$record AND type=$type AND is_active=1";
         if (isset($code)) {

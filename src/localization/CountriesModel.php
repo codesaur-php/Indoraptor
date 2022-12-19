@@ -25,7 +25,7 @@ class CountriesModel extends MultiModel
         
         $this->setContentColumns(array(new Column('title', 'varchar', 255)));
         
-        $this->setTable('localization_countries', 'utf8_unicode_ci');
+        $this->setTable('localization_countries', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     public function retrieve(?string $code = null): array
