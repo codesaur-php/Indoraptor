@@ -150,7 +150,9 @@ class TextController extends \Indoraptor\IndoController
     
     public function record(string $table)
     {
-        if (!$this->isAuthorized()) {
+        if ($this->getRequest()->getMethod() != 'INTERNAL'
+            && !$this->isAuthorized()
+        ) {
             return $this->unauthorized();
         }
         
