@@ -229,6 +229,24 @@ class TextController extends \Indoraptor\IndoController
         return $this->respond($model->delete($condition));
     }
     
+    public function records(string $table)
+    {
+        if ($this->getRequest()->getMethod() != 'INTERNAL'
+            && !$this->isAuthorized()
+        ) {
+            return $this->unauthorized();
+        }
+        
+        if (!$this->isExists($table)) {
+            return $this->badRequest();
+        }
+        
+        $model = new TextModel($this->pdo);
+        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $condition = $this->getParsedBody();
+        return $this->respond($model->getRows($condition));
+    }
+    
     function isExists(string &$table): bool
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);

@@ -87,12 +87,6 @@ class ReferenceController extends \Indoraptor\IndoController
         return $this->respond($model->delete($condition));
     }
     
-    function isExists(string &$table): bool
-    {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        return $this->hasTable("reference_$table");
-    }
-    
     public function records(string $table)
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
@@ -113,5 +107,11 @@ class ReferenceController extends \Indoraptor\IndoController
         $model->setTable($tbl, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $condition = $this->getParsedBody();
         return $this->respond($model->getRows($condition));
+    }
+    
+    function isExists(string &$table): bool
+    {
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        return $this->hasTable("reference_$table");
     }
 }
