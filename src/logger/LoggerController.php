@@ -2,13 +2,12 @@
 
 namespace Indoraptor\Logger;
 
-use PDO;
-
 use Psr\Log\LogLevel;
+use Psr\Http\Message\ResponseInterface;
 
 class LoggerController extends \Indoraptor\IndoController
 {
-    public function index()
+    public function index(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -18,9 +17,9 @@ class LoggerController extends \Indoraptor\IndoController
         if (empty($params['table'])) {
             return $this->badRequest();
         } elseif (!empty($params['id'])
-            && filter_var($params['id'], FILTER_VALIDATE_INT, array('options' => array('min_range' => 0))) !== false
+            && filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) !== false
         ) {
-            $id = (int)$params['id'];
+            $id = (int) $params['id'];
         }
         
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $params['table']);
@@ -31,7 +30,7 @@ class LoggerController extends \Indoraptor\IndoController
                 $data = $logger->getLogById($id);
             } else {
                 $limit = $params['limit'] ?? false;
-                $condition = array('ORDER BY' => 'id Desc');
+                $condition = ['ORDER BY' => 'id Desc'];
                 if ($limit) {
                     $condition['LIMIT'] = $limit;
                 }
@@ -42,8 +41,8 @@ class LoggerController extends \Indoraptor\IndoController
                 array_walk_recursive($data, function (&$v, $k) {
                     $key = strtoupper($k);
                     if (!empty($key) 
-                        && (in_array($key, array('JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'))
-                            || strpos($key, 'PASSWORD') !== false)
+                        && (in_array($key, ['JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'])
+                            || str_contains('PASSWORD', $key))
                     ) {
                         $v = '*** hidden info ***'; 
                     }
@@ -55,7 +54,7 @@ class LoggerController extends \Indoraptor\IndoController
         return $this->notFound();
     }
     
-    public function insert()
+    public function insert(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -64,7 +63,7 @@ class LoggerController extends \Indoraptor\IndoController
         return $this->internal();
     }
     
-    public function internal()
+    public function internal(): ResponseInterface
     {
         $payload = $this->getParsedBody();
         if (empty($payload['table'])
@@ -87,15 +86,15 @@ class LoggerController extends \Indoraptor\IndoController
         return $this->notFound('Not completed');
     }
     
-    public function names()
+    public function names(): ResponseInterface
     {        
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }
         $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('indo_%_log'));
         $pdostmt->execute();
-        $names = array();
-        while ($rows = $pdostmt->fetch(PDO::FETCH_ASSOC)) {
+        $names = [];
+        while ($rows = $pdostmt->fetch(\PDO::FETCH_ASSOC)) {
             $names[] = substr(current($rows), 5, -strlen('_log'));
         }
         if (empty($names)) {
@@ -105,7 +104,7 @@ class LoggerController extends \Indoraptor\IndoController
         return $this->respond($names);
     }
     
-    public function select()
+    public function select(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized('Not allowed');

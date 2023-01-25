@@ -2,9 +2,11 @@
 
 namespace Indoraptor\Localization;
 
+use Psr\Http\Message\ResponseInterface;
+
 class CountriesController extends \Indoraptor\IndoController
 {
-    public function index()
+    public function index(): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()

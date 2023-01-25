@@ -2,18 +2,16 @@
 
 namespace Indoraptor\Auth;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class OrganizationUserModel extends Model
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('account_id', 'bigint', 8),
             new Column('organization_id', 'bigint', 8),
@@ -22,7 +20,7 @@ class OrganizationUserModel extends Model
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
         $this->setTable('indo_organization_users', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
@@ -30,26 +28,26 @@ class OrganizationUserModel extends Model
     public function retrieve(int $organization_id, int $account_id)
     {
         $stmt = $this->prepare(
-            "SELECT * FROM {$this->getName()} WHERE account_id=:1 AND organization_id=:2 AND is_active=1 LIMIT 1");        
-        $stmt->bindParam(':1', $account_id, PDO::PARAM_INT);        
-        $stmt->bindParam(':2', $organization_id, PDO::PARAM_INT);        
+            "SELECT * FROM {$this->getName()} WHERE account_id=:1 AND organization_id=:2 AND is_active=1 LIMIT 1");
+        $stmt->bindParam(':1', $account_id, \PDO::PARAM_INT);
+        $stmt->bindParam(':2', $organization_id, \PDO::PARAM_INT);
         $stmt->execute();
         if ($stmt->rowCount() == 1) {
-            $record = $stmt->fetch(PDO::FETCH_ASSOC);
+            $record = $stmt->fetch(\PDO::FETCH_ASSOC);
             foreach ($this->getColumns() as $column) {
                 if (isset($record[$column->getName()])) {
                     if ($column->isInt()) {
-                        $record[$column->getName()] = (int)$record[$column->getName()];
+                        $record[$column->getName()] = (int) $record[$column->getName()];
                     }
                 }
             }
         } else {
-            $record = array(
+            $record = [
                 'account_id' => $account_id,
                 'organization_id' => $organization_id
-            );
+            ];
             
-            $id = $this->insert($record);            
+            $id = $this->insert($record);
             if ($id !== false) {
                 $record['id'] = $id;
                 $record['is_active'] = 1;

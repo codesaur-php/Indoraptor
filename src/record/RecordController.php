@@ -2,14 +2,14 @@
 
 namespace Indoraptor\Record;
 
-use Exception;
+use Psr\Http\Message\ResponseInterface;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\MultiModel;
 
 class RecordController extends \Indoraptor\IndoController
 {
-    public function record()
+    public function record(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -18,7 +18,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->internal_record();
     }
     
-    public function records()
+    public function records(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -27,7 +27,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->internal_records();
     }
     
-    public function insert()
+    public function insert(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -36,7 +36,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->internal_insert();
     }
     
-    public function update()
+    public function update(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -45,7 +45,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->internal_update();
     }
     
-    public function delete()
+    public function delete(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -54,7 +54,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->internal_delete();
     }
     
-    public function internal_record()
+    public function internal_record(): ResponseInterface
     {
         $with_values = $this->getParsedBody();
         if (empty($with_values)) {
@@ -73,7 +73,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function internal_records()
+    public function internal_records(): ResponseInterface
     {
         $model = $this->grabModel();
         $condition = $this->getParsedBody();
@@ -88,7 +88,7 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($rows);
     }
     
-    public function internal_insert()
+    public function internal_insert(): ResponseInterface
     {
         $model = $this->grabModel();
         $record = $this->getParsedBody();
@@ -107,10 +107,10 @@ class RecordController extends \Indoraptor\IndoController
                 $record['record'], $record['content']));
         }
         
-        throw new Exception(__CLASS__. ':insert failed!');
+        throw new \Exception(__CLASS__. ':insert failed!');
     }
     
-    public function internal_update()
+    public function internal_update(): ResponseInterface
     {
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
@@ -122,19 +122,19 @@ class RecordController extends \Indoraptor\IndoController
         
         if ($model instanceof Model) {
             return $this->respond($model->update(
-                $payload['record'], $payload['condition']));
+                        $payload['record'], $payload['condition']));
         } elseif (
             $model instanceof MultiModel
             && isset($payload['content'])
         ) {
             return $this->respond($model->update(
-                $payload['record'], $payload['content'], $payload['condition']));
+                        $payload['record'], $payload['content'], $payload['condition']));
         }
         
-        throw new Exception(__CLASS__. ':update failed!');
+        throw new \Exception(__CLASS__. ':update failed!');
     }
     
-    public function internal_delete()
+    public function internal_delete(): ResponseInterface
     {
         $model = $this->grabModel();
         $condition = $this->getParsedBody();

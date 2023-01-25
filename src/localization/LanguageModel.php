@@ -2,18 +2,16 @@
 
 namespace Indoraptor\Localization;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class LanguageModel extends Model
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);
 
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('code', 'varchar', 6),
             new Column('full', 'varchar', 128),
@@ -24,32 +22,32 @@ class LanguageModel extends Model
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
         $this->setTable('localization_language', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     public function retrieve(int $is_active = 1)
     {
-        $languages = array();
-        $condition = array(
+        $languages = [];
+        $condition = [
             'WHERE' => "is_active=$is_active",
             'ORDER BY' => 'is_default Desc'
-        );
+        ];
         $stmt = $this->select('*', $condition);
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $languages[$row['code']] = $row['full'];
-        }        
+        }
         return $languages;
     }
 
     public function getByCode(string $code, int $is_active = 1)
     {
-        $codeCleaned = preg_replace('/[^A-Za-z0-9_-]/', '', $code);
-        return reset($this->getRows(array(
+        $codeCleaned = preg_replace('/[^A-Za-z]/', '', $code);
+        return reset($this->getRows([
             'WHERE' => 'code=' . $this->quote($codeCleaned) . " AND is_active=$is_active",
             'ORDER BY' => 'is_default Desc'
-        ))) ?: null;
+        ])) ?: null;
     }
 
     function __initial()
@@ -64,8 +62,9 @@ class LanguageModel extends Model
         $this->setForeignKeyChecks(true);
         
         $nowdate = date('Y-m-d H:i:s');
-        $query =  "INSERT INTO $table(created_at,code,full,is_default)"
-            . " VALUES('$nowdate','mn','Монгол',1),('$nowdate','en','English',0)";
+        $query =
+            "INSERT INTO $table(created_at,code,full,is_default) " .
+            "VALUES('$nowdate','mn','Монгол',1),('$nowdate','en','English',0)";
         $this->exec($query);
     }
 }

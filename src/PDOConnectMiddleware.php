@@ -2,8 +2,6 @@
 
 namespace Indoraptor;
 
-use PDO;
-
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -18,16 +16,16 @@ class PDOConnectMiddleware implements MiddlewareInterface
         $username = $_ENV['INDO_DB_USERNAME'] ?? 'root';
         $passwd = $_ENV['INDO_DB_PASSWORD'] ?? '';
         $charset = $_ENV['INDO_DB_CHARSET'] ?? 'utf8';
-        $options = array(
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_PERSISTENT => $_ENV['INDO_DB_PERSISTENT'] ?? false
-        );
+        $options = [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_PERSISTENT => $_ENV['INDO_DB_PERSISTENT'] ?? false
+        ];
         
         $dsn = "$driver:host=$host;charset=$charset";
-        $pdo = new PDO($dsn, $username, $passwd, $options);
+        $pdo = new \PDO($dsn, $username, $passwd, $options);
 
         $database = $_ENV['INDO_DB_NAME'] ?? 'indoraptor';
-        if (in_array($request->getServerParams()['REMOTE_ADDR'], array('127.0.0.1', '::1'))) {
+        if (in_array($request->getServerParams()['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
             $collation = $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci';
             $pdo->exec("CREATE DATABASE IF NOT EXISTS $database COLLATE " . $pdo->quote($collation));
         }

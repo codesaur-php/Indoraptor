@@ -2,11 +2,11 @@
 
 namespace Indoraptor\Statement;
 
-use PDO;
+use Psr\Http\Message\ResponseInterface;
 
 class StatementController extends \Indoraptor\IndoController
 {
-    public function index()
+    public function index(): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
@@ -24,18 +24,18 @@ class StatementController extends \Indoraptor\IndoController
             foreach ($payload['bind'] as $parametr => $values) {
                 if (isset($values['var'])) {
                     if (isset($values['length'])) {
-                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? PDO::PARAM_STR, $values['length']);
+                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? \PDO::PARAM_STR, $values['length']);
                     } else {
-                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? PDO::PARAM_STR);
+                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? \PDO::PARAM_STR);
                     }
                 }
             }
         }
         $stmt->execute();
         
-        $result = array();
+        $result = [];
         if ($stmt->rowCount() > 0) {
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                 if (isset($row['id'])) {
                     $result[$row['id']] = $row;
                 } else {

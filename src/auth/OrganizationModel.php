@@ -2,18 +2,16 @@
 
 namespace Indoraptor\Auth;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class OrganizationModel extends Model
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('parent_id', 'bigint', 8),
            (new Column('name', 'varchar', 255))->unique(),
@@ -24,7 +22,7 @@ class OrganizationModel extends Model
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
         $this->setTable('indo_organizations', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }

@@ -2,18 +2,16 @@
 
 namespace Indoraptor\File;
 
-use PDO;
-
 use codesaur\DataObject\Column;
 use codesaur\DataObject\MultiModel;
 
 class FileModel extends MultiModel
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('file', 'varchar', 255),
             new Column('path', 'varchar', 255, ''),
@@ -26,9 +24,9 @@ class FileModel extends MultiModel
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
-        $this->setContentColumns(array(new Column('title', 'varchar', 255)));
+        $this->setContentColumns([new Column('title', 'varchar', 255)]);
         
         $this->setTable('indo_file', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
@@ -45,20 +43,21 @@ class FileModel extends MultiModel
         $this->setForeignKeyChecks(true);
     }
     
-    public function getTableRecord(string $table, int $record, int $type, $code = null)
+    public function getTableRecord(string $table, int $record, int $type, ?string $code = null): array|null
     {
         $files = new FilesModel($this->pdo);
         $files->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         
         $condition = "record=$record AND type=$type AND is_active=1";
-        if (isset($code)) {
+        if (!empty($code)) {
+            $code = preg_replace('/[^A-Za-z]/', '', $code);
             $condition .= " AND code='$code'";
         }
-        $rows = $files->getRows(array(
+        $rows = $files->getRows([
             'WHERE' => $condition,
             'ORDER BY' => 'id desc',
             'LIMIT' => 1
-        ));
+        ]);
         
         $files_record = end($rows);
         if (isset($files_record['file'])) {

@@ -10,23 +10,31 @@ use codesaur\Http\Message\Uri;
 
 class InternalRequest implements ServerRequestInterface
 {
-    protected $protocolVersion = '1.1';
-    protected $headers = array();
-    protected $body;
-
-    protected $method;
-    protected $uri;
-    protected $requestTarget;
-
-    protected $serverParams = array();
-    protected $cookies = array();
-    protected $attributes = array();
-
-    protected $queryParams;
-    protected $parsedBody;
-    protected $uploadedFiles = array();
+    protected array $headers = [];
     
-    function __construct(string $method, string $pattern, $payload = array(), $token = null)
+    protected ?StreamInterface $body = null;
+    
+    protected string $protocolVersion = '1.1';
+
+    protected UriInterface $uri;
+    
+    protected string $method;
+    
+    protected string $requestTarget;
+
+    protected array $serverParams = [];
+    
+    protected array $cookies = [];
+    
+    protected array $attributes = [];
+
+    protected array $parsedBody;
+    
+    protected array $uploadedFiles = [];
+    
+    protected ?array $queryParams = null;
+    
+    function __construct(string $method, string $pattern, array $payload = [], ?string $token = null)
     {
         $this->serverParams['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
         $this->serverParams['REQUEST_URI'] = $pattern;
@@ -65,40 +73,54 @@ class InternalRequest implements ServerRequestInterface
         return $this->attributes[$name];
     }
 
-    public function getAttributes(): array
+    public function getAttributes()
     {
-        return $this->attributes ?? array();
+        return $this->attributes;
     }
 
-    public function getBody(): ?StreamInterface
+    public function getBody()
     {
         return $this->body;
     }
 
-    public function getCookieParams(): array
+    public function getCookieParams()
     {
         return $this->cookies;
     }
 
-    public function getHeader($name): array
+    public function getHeader($name)
     {
-        return $this->headers[strtoupper($name)] ?? array();
+        return $this->headers[strtoupper($name)] ?? [];
     }
 
-    public function getHeaderLine($name): string
+    public function getHeaderLine($name)
     {
         $values = $this->getHeader($name);        
         return implode(',', $values);
     }
 
-    public function getHeaders(): array
+    public function getHeaders()
     {
         return $this->headers;
     }
 
-    public function getMethod(): string
+    public function hasHeader($name)
     {
-        return $this->method ?? '';
+        return isset($this->headers[strtoupper($name)]);
+    }
+    
+    function setHeader($name, $value)
+    {
+        if (is_array($value)) {
+            $this->headers[strtoupper($name)] = $value;
+        } else {
+            $this->headers[strtoupper($name)] = [$value];
+        }
+    }
+
+    public function getMethod()
+    {
+        return $this->method;
     }
 
     public function getParsedBody()
@@ -106,19 +128,19 @@ class InternalRequest implements ServerRequestInterface
         return $this->parsedBody;
     }
 
-    public function getProtocolVersion(): string
+    public function getProtocolVersion()
     {
         return $this->protocolVersion;
     }
 
-    public function getQueryParams(): array
+    public function getQueryParams()
     {
         if (is_array($this->queryParams)) {
             return $this->queryParams;
         }
 
         if (!$this->getUri() instanceof UriInterface) {
-            return array();
+            return [];
         }
         
         $query = rawurldecode($this->getUri()->getQuery());
@@ -126,7 +148,7 @@ class InternalRequest implements ServerRequestInterface
         return $this->queryParams;
     }
 
-    public function getRequestTarget(): string
+    public function getRequestTarget()
     {
         if (!empty($this->requestTarget)) {
             return $this->requestTarget;
@@ -138,43 +160,42 @@ class InternalRequest implements ServerRequestInterface
         $requestTarget = '/' . ltrim($path, '/');
         
         $query = $this->getUri()->getQuery();
-        if ($query !== '') {
+        if ($query != '') {
             $requestTarget .= '?' . rawurldecode($query);
         }
         
         $fragment = $this->getUri()->getFragment();
-        if ($fragment !== '') {
+        if ($fragment != '') {
             $requestTarget .= '#' . rawurldecode($fragment);
         }
 
         return $requestTarget;
     }
 
-    public function getServerParams(): array
+    public function getServerParams()
     {
         return $this->serverParams;
     }
 
-    public function getUploadedFiles(): array
+    public function getUploadedFiles()
     {
         return $this->uploadedFiles;
     }
 
-    public function getUri(): UriInterface
+    public function getUri()
     {
         return $this->uri;
-    }
-
-    public function hasHeader($name): bool
-    {
-        return isset($this->headers[strtoupper($name)]);
     }
 
     public function withAddedHeader($name, $value)
     {
         $clone = clone $this;
         if ($this->hasHeader($name)) {
-            $this->headers[strtoupper($name)][] = $value;
+            if (is_array($value)) {
+                $this->headers[strtoupper($name)] += $value;
+            } else {
+                $this->headers[strtoupper($name)][] = $value;
+            }
         } else {
             $this->setHeader($name, $value);
         }
@@ -258,15 +279,15 @@ class InternalRequest implements ServerRequestInterface
         $clone->uri = $uri;
         
         if (!$preserveHost) {
-            if ($uri->getHost() !== '') {
+            if ($uri->getHost() != '') {
                 $clone->setHeader('Host', $uri->getHost());
             }
             
             return $clone;
         }
 
-        if ($this->getHeaderLine('Host') === ''
-            && $uri->getHost() !== ''
+        if ($this->getHeaderLine('Host') == ''
+            && $uri->getHost() != ''
         ) {
             $clone->setHeader('Host', $uri->getHost());
         }

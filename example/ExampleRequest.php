@@ -2,8 +2,6 @@
 
 namespace Indoraptor\Example;
 
-use Error;
-
 use Firebase\JWT\JWT;
 
 use codesaur\Http\Message\ServerRequest;
@@ -14,22 +12,22 @@ class ExampleRequest extends ServerRequest
     {
         $this->initFromGlobal();
         
-        if (!in_array($this->getRemoteAddr(), array('127.0.0.1', '::1'))) {
-            throw new Error('This experimental example only works on local development enviroment');
+        if (!in_array($this->getRemoteAddr(), ['127.0.0.1', '::1'])) {
+            throw new \Error('This experimental example only works on local development enviroment');
         }
 
         if (empty($this->getServerParams()['HTTP_AUTHORIZATION'])) {
-            // For testing purpose we authorizing into Indoraptor
+            // For a testing purpose we authorizing into Indoraptor
             $issuedAt = time();
             $lifeSeconds = 300;
             $expirationTime = $issuedAt + $lifeSeconds;
-            $payload = array(
+            $payload = [
                 'iat' => $issuedAt,
                 'exp' => $expirationTime,
                 'seconds' => $lifeSeconds,
                 'account_id' => 1,
                 'organization_id' => 1
-            );
+            ];
             $key = 'codesaur-indoraptor-not-so-secret';
             $jwt = JWT::encode($payload, $key, 'HS256');
             $this->serverParams['HTTP_AUTHORIZATION'] = "Bearer $jwt";
@@ -39,11 +37,11 @@ class ExampleRequest extends ServerRequest
     function isValidIP(string $ip): bool
     {
         $real = ip2long($ip);
-        if (empty($ip) || $real === -1 || $real === false) {
+        if (empty($ip) || $real == -1 || $real === false) {
             return false;
         }
 
-        $private_ips = array(
+        $private_ips = [
             ['0.0.0.0', '2.255.255.255'],
             ['10.0.0.0', '10.255.255.255'],
             ['127.0.0.0', '127.255.255.255'],
@@ -51,9 +49,11 @@ class ExampleRequest extends ServerRequest
             ['172.16.0.0', '172.31.255.255'],
             ['192.0.2.0', '192.0.2.255'],
             ['192.168.0.0', '192.168.255.255'],
-            ['255.255.255.0', '255.255.255.255']);
+            ['255.255.255.0', '255.255.255.255']
+        ];
         foreach ($private_ips as $r) {
-            $min = ip2long($r[0]); $max = ip2long($r[1]);
+            $min = ip2long($r[0]);
+            $max = ip2long($r[1]);
             if ($real >= $min && $real <= $max) {
                 return false;
             }

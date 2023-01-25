@@ -2,18 +2,16 @@
 
 namespace Indoraptor\Logger;
 
-use Exception;
-
 class LoggerModel extends \codesaur\Logger\Logger
 {
-    public function setTable(string $name, $collate = null)
+    public function setTable(string $name, ?string $collate = null)
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
-            throw new Exception(__CLASS__ . ': Logger table name must be provided', 1103);
+            throw new \Exception(__CLASS__ . ': Logger table name must be provided', 1103);
         }
         
-        parent::setTable("indo_$table", $collate);
+        parent::setTable("indo_$table", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     function __initial()

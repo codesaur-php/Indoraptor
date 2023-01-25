@@ -2,11 +2,11 @@
 
 namespace Indoraptor\Localization;
 
-use PDO;
+use Psr\Http\Message\ResponseInterface;
 
 class TextController extends \Indoraptor\IndoController
 {
-    public function create(string $table)
+    public function create(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
@@ -33,19 +33,19 @@ class TextController extends \Indoraptor\IndoController
         }
         
         $values = $this->getParsedBody();
-        foreach ($values ?? array() as $value) {
+        foreach ($values ?? [] as $value) {
             if (isset($value['record']) && isset($value['content'])) {
                 $model->insert($value['record'], $value['content']);
             }
         }
         
-        return $this->respond(array(
+        return $this->respond([
             'status' => 'success',
             'message' => __NAMESPACE__ . " have created a table [$tbl]!"
-        ));
+        ]);
     }
     
-    public function retrieve()
+    public function retrieve(): ResponseInterface
     {
         $payload = $this->getParsedBody();
         if (empty($payload['table'])) {
@@ -55,11 +55,11 @@ class TextController extends \Indoraptor\IndoController
         if (is_array($payload['table'])) {
             $tables = array_values($payload['table']);
         } else {
-            $tables = array($payload['table']);
+            $tables = [$payload['table']];
         }            
 
         $initial = get_class_methods(TextInitial::class);
-        $texts = array();
+        $texts = [];
         $code = $payload['code'] ?? null;
 
         $model = new TextModel($this->pdo);
@@ -86,7 +86,7 @@ class TextController extends \Indoraptor\IndoController
         return $this->notFound('Texts not found');
     }
     
-    public function names()
+    public function names(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -95,12 +95,12 @@ class TextController extends \Indoraptor\IndoController
         $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('localization_text_%'));
         $pdostmt->execute();
 
-        $likeness = array();
-        while ($rows = $pdostmt->fetch(PDO::FETCH_ASSOC)) {
+        $likeness = [];
+        while ($rows = $pdostmt->fetch(\PDO::FETCH_ASSOC)) {
             $likeness[] = current($rows);
         }
 
-        $names = array();
+        $names = [];
         foreach ($likeness as $name) {
             if (in_array($name . '_content', $likeness)) {
                 $names[] = substr($name, strlen('localization_text_'));
@@ -113,10 +113,10 @@ class TextController extends \Indoraptor\IndoController
         return $this->respond($names);
     }
     
-    public function findKeyword()
+    public function findKeyword(): ResponseInterface
     {
         $payload = $this->getParsedBody();
-        if (!isset($payload['keyword'])) {
+        if (empty($payload['keyword'])) {
             return $this->badRequest('Invalid payload');
         }
         
@@ -125,7 +125,7 @@ class TextController extends \Indoraptor\IndoController
             return $this->notFound('No text tables found');
         }
         
-        while ($name = $show_tables->fetch(PDO::FETCH_NUM)) {
+        while ($name = $show_tables->fetch(\PDO::FETCH_NUM)) {
             $table = substr($name[0], 0, strlen($name[0]) - strlen('_content'));
             $select = $this->prepare("SELECT * FROM $table WHERE keyword=:1 LIMIT 1");
             $select->bindParam(':1', $payload['keyword']);
@@ -134,11 +134,11 @@ class TextController extends \Indoraptor\IndoController
             }
             
             if ($select->rowCount() == 1) {
-                $result = array('table' => $table);
-                $result += $select->fetch(PDO::FETCH_ASSOC);                
-                foreach (array('id', 'type', 'is_active', 'created_by', 'updated_by') as $column) {
+                $result = ['table' => $table];
+                $result += $select->fetch(\PDO::FETCH_ASSOC);                
+                foreach (['id', 'type', 'is_active', 'created_by', 'updated_by'] as $column) {
                     if (isset($result[$column])) {
-                        $result[$column] = (int)$result[$column];
+                        $result[$column] = (int) $result[$column];
                     }
                 }
                 return $this->respond($result);
@@ -148,7 +148,7 @@ class TextController extends \Indoraptor\IndoController
         return $this->notFound('Keyword not found');
     }
     
-    public function record(string $table)
+    public function record(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
@@ -174,7 +174,7 @@ class TextController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function insert(string $table)
+    public function insert(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -193,7 +193,7 @@ class TextController extends \Indoraptor\IndoController
         return $this->respond($model->insert($payload['record'], $payload['content']));
     }
     
-    public function update(string $table)
+    public function update(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -213,7 +213,7 @@ class TextController extends \Indoraptor\IndoController
         return $this->respond($model->update($payload['record'], $payload['content'], $payload['condition']));
     }
     
-    public function delete(string $table)
+    public function delete(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -231,7 +231,7 @@ class TextController extends \Indoraptor\IndoController
         return $this->respond($model->delete($condition));
     }
     
-    public function records(string $table)
+    public function records(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()

@@ -2,19 +2,16 @@
 
 namespace Indoraptor\Contents;
 
-use PDO;
-use Exception;
-
 use codesaur\DataObject\Column;
 use codesaur\DataObject\MultiModel;
 
 class ReferenceModel extends MultiModel
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
            (new Column('keyword', 'varchar', 128))->unique(),
             new Column('category', 'varchar', 32),
@@ -23,20 +20,20 @@ class ReferenceModel extends MultiModel
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
-        $this->setContentColumns(array(
+        $this->setContentColumns([
             new Column('title', 'varchar', 255),
             new Column('short', 'text'),
             new Column('full', 'text')
-        ));
+        ]);
     }
     
-    public function setTable(string $name, $collate = null)
+    public function setTable(string $name, ?string $collate = null)
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
-            throw new Exception(__CLASS__ . ': Table name must be provided', 1103);
+            throw new \Exception(__CLASS__ . ': Table name must be provided', 1103);
         }
         
         parent::setTable("reference_$table", $collate ?? 'utf8_unicode_ci');

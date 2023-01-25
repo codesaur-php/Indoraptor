@@ -2,10 +2,8 @@
 
 namespace Indoraptor\Mailer;
 
-use Throwable;
-use Exception;
-
 use Psr\Log\LogLevel;
+use Psr\Http\Message\ResponseInterface;
 
 use codesaur\Globals\Server;
 use codesaur\Http\Client\Mail;
@@ -15,18 +13,18 @@ use Indoraptor\Localization\TextModel;
 
 class MailerController extends \Indoraptor\IndoController
 {
-    public function send()
+    public function send(): ResponseInterface
     {
         try {
-            $context = array('origin' => (new Server())->getRemoteAddr());
+            $context = ['origin' => (new Server())->getRemoteAddr()];
             
             $payload = $this->getParsedBody();
             if (!isset($payload['to'])
                 || !isset($payload['subject'])
                 || !isset($payload['message'])
-                || filter_var($payload['to'], FILTER_VALIDATE_EMAIL) === false
+                || filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
             ) {
-                throw new Exception('Invalid Request');
+                throw new \Exception('Invalid Request');
             } else {
                 $context['to'] = $payload['to'];
                 $context['subject'] = $payload['subject'];
@@ -37,7 +35,7 @@ class MailerController extends \Indoraptor\IndoController
             $text = $texts->retrieve($payload['code'] ?? 'en');
             
             if (empty($_ENV['CODESAUR_MAIL_ADDRESS'])) {
-                throw new Exception($text['emailer-not-set'] ?? 'Email sender not found!');
+                throw new \Exception($text['emailer-not-set'] ?? 'Email sender not found!');
             } else {
                 $context['from'] = $_ENV['CODESAUR_MAIL_ADDRESS'];
             }
@@ -45,17 +43,17 @@ class MailerController extends \Indoraptor\IndoController
             (new Mail())->send($_ENV['CODESAUR_MAIL_ADDRESS'], $payload['to'], $payload['subject'], $payload['message']);
             
             $context['response'] = $text['email-succesfully-sent'] ?? 'Email successfully sent to destination';
-            return $this->respond(array('success' => array('message' => $context['response'])));
-        } catch (Throwable $e) {
+            return $this->respond(['success' => ['message' => $context['response']]]);
+        } catch (\Throwable $th) {
             $level = LogLevel::ERROR;
-            $context['response'] = $e->getMessage();
-            return $this->error($context['response'], $e->getCode());
+            $context['response'] = $th->getMessage();
+            return $this->error($context['response'], $th->getCode());
         } finally {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $by_account = getenv('CODESAUR_ACCOUNT_ID', true);
             if ($by_account !== false && is_int($by_account)) {
-                $logger->prepareCreatedBy((int)$by_account);
+                $logger->prepareCreatedBy((int) $by_account);
             }
             $to = $context['to'] ?? 'Unknown recipient';
             $subject = $context['subject'] ?? 'Unknown message';
@@ -63,18 +61,18 @@ class MailerController extends \Indoraptor\IndoController
         }
     }
     
-    public function sendSMTP()
+    public function sendSMTP(): ResponseInterface
     {
         try {
-            $context = array('origin' => (new Server())->getRemoteAddr());
+            $context = ['origin' => (new Server())->getRemoteAddr()];
             
             $payload = $this->getParsedBody();
             if (!isset($payload['to'])
                 || !isset($payload['subject'])
                 || !isset($payload['message'])
-                || filter_var($payload['to'], FILTER_VALIDATE_EMAIL) === false
+                || filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
             ) {
-                throw new Exception('Invalid Request');
+                throw new \Exception('Invalid Request');
             } else {
                 $context['to'] = $payload['to'];
                 if (!empty($payload['name'])) {
@@ -97,32 +95,32 @@ class MailerController extends \Indoraptor\IndoController
                 || !isset($record['username']) || !isset($record['password'])
                 || !isset($record['is_smtp']) || !isset($record['smtp_auth']) || !isset($record['smtp_secure'])
             ) {
-                throw new Exception($text['emailer-not-set'] ?? 'Email carrier not found!');
+                throw new \Exception($text['emailer-not-set'] ?? 'Email carrier not found!');
             } else {
                 $context['from'] = $record['email'];
                 $context['host'] = $record['host'];
                 $context['port'] = $record['port'];
-                $context['username'] = $record['username'];                
+                $context['username'] = $record['username'];
             }
             
             (new Mail())->sendSMTP(
                 $record['email'], $record['name'], $payload['to'], $payload['name'] ?? '',
                 $payload['subject'], $payload['message'], $record['charset'],
                 $record['host'], $record['port'], $record['username'], $record['password'],
-                ((int)$record['is_smtp']) == 1, (bool)((int)$record['smtp_auth']), $record['smtp_secure']);
+                ((int) $record['is_smtp']) == 1, (bool) ((int) $record['smtp_auth']), $record['smtp_secure']);
             
             $context['response'] = $text['email-succesfully-sent'] ?? 'Email successfully sent to destination';
-            return $this->respond(array('success' => array('message' => $context['response'])));
-        } catch (Throwable $e) {
+            return $this->respond(['success' => ['message' => $context['response']]]);
+        } catch (\Throwable $th) {
             $level = LogLevel::ERROR;
-            $context['response'] = $e->getMessage();
-            return $this->error($context['response'], $e->getCode());
+            $context['response'] = $th->getMessage();
+            return $this->error($context['response'], $th->getCode());
         } finally {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $by_account = getenv('CODESAUR_ACCOUNT_ID', true);
             if ($by_account !== false && is_int($by_account)) {
-                $logger->prepareCreatedBy((int)$by_account);
+                $logger->prepareCreatedBy((int) $by_account);
             }
             $to = $context['to'] ?? 'Unknown recipient';
             $subject = $context['subject'] ?? 'Unknown message';

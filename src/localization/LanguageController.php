@@ -2,11 +2,11 @@
 
 namespace Indoraptor\Localization;
 
-use PDO;
+use Psr\Http\Message\ResponseInterface;
 
 class LanguageController extends \Indoraptor\IndoController
 {
-    public function index()
+    public function index(): ResponseInterface
     {
         $params = $this->getQueryParams();
         $model = new LanguageModel($this->pdo);
@@ -18,7 +18,7 @@ class LanguageController extends \Indoraptor\IndoController
         return $this->respond($rows);
     }
     
-    public function copyMultiModelContent()
+    public function copyMultiModelContent(): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -40,14 +40,14 @@ class LanguageController extends \Indoraptor\IndoController
         
         $this->setForeignKeyChecks(false);
 
-        $copied = array();
-        while ($rows = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $copied = [];
+        while ($rows = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $contentTable = current($rows);
             
             $query = $this->query("SHOW COLUMNS FROM $contentTable");
-            $columns = $query->fetchAll(PDO::FETCH_ASSOC);
+            $columns = $query->fetchAll(\PDO::FETCH_ASSOC);
             $id = $parent_id = $code = false;
-            $field = $param = array();
+            $field = $param = [];
             foreach ($columns as $column) {
                 $name = $column['Field'];
                 if ($name == 'id'
@@ -79,11 +79,11 @@ class LanguageController extends \Indoraptor\IndoController
             }
             
             $table_query = $this->query("SHOW COLUMNS FROM $table");
-            $table_columns = $table_query->fetchAll(PDO::FETCH_ASSOC);
+            $table_columns = $table_query->fetchAll(\PDO::FETCH_ASSOC);
             $update = null;
             $primary = false;
-            $updates = array();
-            $update_arguments = array();
+            $updates = [];
+            $update_arguments = [];
             $by_account = getenv('CODESAUR_ACCOUNT_ID', true);
             foreach ($table_columns as $column) {
                 $name = $column['Field'];
@@ -95,7 +95,7 @@ class LanguageController extends \Indoraptor\IndoController
                         && $by_account !== false
                 ) {
                     $updates[] = 'updated_by=:by';
-                    $update_arguments = array(':by' => $by_account);
+                    $update_arguments = [':by' => $by_account];
                 }
             }
             
@@ -110,15 +110,15 @@ class LanguageController extends \Indoraptor\IndoController
             
             $fields = implode(', ', $field);
             $select = $this->prepare("SELECT parent_id, code, $fields FROM $contentTable WHERE code=:1");
-            if (!$select->execute(array(':1' => $from))) {
+            if (!$select->execute([':1' => $from])) {
                 continue;
             }
             
             $copied = false;
             $params = implode(', ', $param);
-            while ($row = $select->fetch(PDO::FETCH_ASSOC)) {                
+            while ($row = $select->fetch(\PDO::FETCH_ASSOC)) {                
                 $existing = $this->prepare("SELECT id FROM $contentTable WHERE parent_id=:1 AND code=:2");
-                $parameters = array(':1' => $row['parent_id'], ':2' => $to);
+                $parameters = [':1' => $row['parent_id'], ':2' => $to];
                 if ($existing->execute($parameters)
                     && $existing->rowCount() > 0
                 ) {
@@ -141,7 +141,7 @@ class LanguageController extends \Indoraptor\IndoController
             }
             
             if ($copied) {
-                $copied[] = array($table => $contentTable);
+                $copied[] = [$table => $contentTable];
             }
         }
         

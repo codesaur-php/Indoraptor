@@ -2,9 +2,11 @@
 
 namespace Indoraptor\File;
 
+use Psr\Http\Message\ResponseInterface;
+
 class FilesController extends \Indoraptor\IndoController
 {
-    public function index(string $table)
+    public function index(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
@@ -30,7 +32,7 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function insert(string $table)
+    public function insert(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -48,7 +50,7 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($model->insert($record));
     }
     
-    public function update(string $table)
+    public function update(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -67,7 +69,7 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($model->update($payload['record'],  $payload['condition']));
     }
     
-    public function delete(string $table)
+    public function delete(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -85,7 +87,7 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($model->delete($condition));
     }
     
-    public function records(string $table)
+    public function records(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()

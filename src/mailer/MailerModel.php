@@ -2,18 +2,16 @@
 
 namespace Indoraptor\Mailer;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class MailerModel extends Model
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);        
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('is_smtp', 'tinyint', 1),
             new Column('charset', 'varchar', 6),
@@ -29,7 +27,7 @@ class MailerModel extends Model
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
         $this->setTable('indo_mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }

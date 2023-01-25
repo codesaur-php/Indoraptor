@@ -2,18 +2,16 @@
 
 namespace Indoraptor\File;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class FilesModel extends Model
 {
-    function __construct(PDO $pdo)
+    function __construct(\PDO $pdo)
     {
         parent::__construct($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
            (new Column('record', 'bigint', 8))->notNull(),
            (new Column('file', 'bigint', 8))->notNull(),
@@ -25,22 +23,22 @@ class FilesModel extends Model
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
     }
     
-    public function setTable(string $name) : bool
+    public function setTable(string $name, ?string $collate = null)
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
-            throw new Exception(__CLASS__ . ': Table name must be provided', 1103);
+            throw new \Exception(__CLASS__ . ': Table name must be provided', 1103);
         }
         
-        return parent::setTable("indo_{$table}_files");
+        parent::setTable("indo_{$table}_files", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
 
-    public function getNameClean()
+    public function getNameClean(): string
     {
-        return substr($this->getTable(), 5, -(strlen('_files')));
+        return substr($this->getName(), 5, -(strlen('_files')));
     }
     
     function __initial()

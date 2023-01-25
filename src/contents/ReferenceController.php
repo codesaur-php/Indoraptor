@@ -2,9 +2,11 @@
 
 namespace Indoraptor\Contents;
 
+use Psr\Http\Message\ResponseInterface;
+
 class ReferenceController extends \Indoraptor\IndoController
 {
-    public function index(string $table)
+    public function index(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
@@ -12,7 +14,7 @@ class ReferenceController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $records = array();
+        $records = [];
         $condition = $this->getParsedBody();
         $initial = get_class_methods(ReferenceInitial::class);
         $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
@@ -30,7 +32,7 @@ class ReferenceController extends \Indoraptor\IndoController
         return $this->respond($records);
     }
     
-    public function insert(string $table)
+    public function insert(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -49,7 +51,7 @@ class ReferenceController extends \Indoraptor\IndoController
         return $this->respond($model->insert($payload['record'], $payload['content']));
     }
     
-    public function update(string $table)
+    public function update(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -69,7 +71,7 @@ class ReferenceController extends \Indoraptor\IndoController
         $this->respond($model->update($payload['record'], $payload['content'], $payload['condition']));
     }
     
-    public function delete(string $table)
+    public function delete(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
@@ -87,7 +89,7 @@ class ReferenceController extends \Indoraptor\IndoController
         return $this->respond($model->delete($condition));
     }
     
-    public function records(string $table)
+    public function records(string $table): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
