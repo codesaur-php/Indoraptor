@@ -103,7 +103,7 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($files->getRows($condition));
     }
     
-    function isExists(string &$table): bool
+    private function isExists(string &$table): bool
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("indo_{$table}_files");

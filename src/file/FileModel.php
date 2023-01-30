@@ -7,9 +7,9 @@ use codesaur\DataObject\MultiModel;
 
 class FileModel extends MultiModel
 {
-    function __construct(\PDO $pdo)
+    public function __construct(\PDO $pdo)
     {
-        parent::__construct($pdo);
+        $this->setInstance($pdo);
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
@@ -31,15 +31,14 @@ class FileModel extends MultiModel
         $this->setTable('indo_file', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
-    function __initial()
+    protected function __initial()
     {
-        parent::__initial();
-        
-        $table = $this->getName();
-        
         $this->setForeignKeyChecks(false);
+
+        $table = $this->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+
         $this->setForeignKeyChecks(true);
     }
     

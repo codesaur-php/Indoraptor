@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class MailerRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->INTERNAL('/send/email', [MailerController::class, 'send']);
         $this->INTERNAL('/send/smtp/email', [MailerController::class, 'sendSMTP']);

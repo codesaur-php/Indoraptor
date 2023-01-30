@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class FilesRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET_INTERNAL('/files/{table}', [FilesController::class, 'index']);
         $this->POST('/files/{table}', [FilesController::class, 'insert']);

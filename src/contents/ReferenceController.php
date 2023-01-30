@@ -111,7 +111,7 @@ class ReferenceController extends \Indoraptor\IndoController
         return $this->respond($model->getRows($condition));
     }
     
-    function isExists(string &$table): bool
+    private function isExists(string &$table): bool
     {
         $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("reference_$table");

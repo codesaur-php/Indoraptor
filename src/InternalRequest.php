@@ -34,7 +34,7 @@ class InternalRequest implements ServerRequestInterface
     
     protected ?array $queryParams = null;
     
-    function __construct(string $method, string $pattern, array $payload = [], ?string $token = null)
+    public function __construct(string $method, string $pattern, array $payload = [], ?string $token = null)
     {
         $this->serverParams['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
         $this->serverParams['REQUEST_URI'] = $pattern;
@@ -109,7 +109,7 @@ class InternalRequest implements ServerRequestInterface
         return isset($this->headers[strtoupper($name)]);
     }
     
-    function setHeader($name, $value)
+    public function setHeader($name, $value)
     {
         if (is_array($value)) {
             $this->headers[strtoupper($name)] = $value;

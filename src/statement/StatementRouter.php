@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class StatementRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->POST_INTERNAL('/statement', [StatementController::class, 'index']);
     }

@@ -6,7 +6,7 @@ use codesaur\Http\Application\Application;
 
 class IndoApplication extends Application
 {
-    function __construct()
+    public function __construct()
     {
         parent::__construct();
         
@@ -38,7 +38,7 @@ class IndoApplication extends Application
 
         $this->GET('/', function()
         {
-            echo json_encode(array('application' => __CLASS__));
+            echo '{"application":"'. addslashes(__CLASS__) . '"}';
         });
     }
 }

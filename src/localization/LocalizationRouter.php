@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class LocalizationRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         // Language rules
         $this->GET('/language', [LanguageController::class, 'index']);

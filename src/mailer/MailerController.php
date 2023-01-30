@@ -51,10 +51,6 @@ class MailerController extends \Indoraptor\IndoController
         } finally {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $by_account = getenv('CODESAUR_ACCOUNT_ID', true);
-            if ($by_account !== false && is_int($by_account)) {
-                $logger->prepareCreatedBy((int) $by_account);
-            }
             $to = $context['to'] ?? 'Unknown recipient';
             $subject = $context['subject'] ?? 'Unknown message';
             $logger->log($level ?? LogLevel::NOTICE, "[$to] - $subject", $context);
@@ -118,10 +114,6 @@ class MailerController extends \Indoraptor\IndoController
         } finally {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $by_account = getenv('CODESAUR_ACCOUNT_ID', true);
-            if ($by_account !== false && is_int($by_account)) {
-                $logger->prepareCreatedBy((int) $by_account);
-            }
             $to = $context['to'] ?? 'Unknown recipient';
             $subject = $context['subject'] ?? 'Unknown message';
             if (isset($context['to_name'])) {

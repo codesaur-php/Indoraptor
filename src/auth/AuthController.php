@@ -185,11 +185,12 @@ class AuthController extends \Indoraptor\IndoController
         }
     }
     
-    function getLastLoginOrg(int $account_id): int|null
+    private function getLastLoginOrg(int $account_id): int|null
     {
         if (!$this->hasTable('dashboard_log')) {
             return null;
         }
+        
         $level = LogLevel::INFO;
         $login_like = '{"reason":"login-to-organization"%';
         $stmt = $this->prepare('SELECT context FROM dashboard_log WHERE created_by=:id AND context LIKE :co AND level=:le ORDER BY id Desc LIMIT 1');
@@ -200,21 +201,29 @@ class AuthController extends \Indoraptor\IndoController
         if ($stmt->rowCount() != 1) {
             return null;
         }
+        
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         $context = json_decode($result['context'], true);
+        if (isset($context['enter'])
+            || !is_int($context['enter'])
+        ) {
+            return null;
+        }
+        
+        $org_id = (int) $context['enter'];
         $org_user_model = new OrganizationUserModel($this->pdo);
         $org_user_query =
             "SELECT id FROM {$org_user_model->getName()} " .
             'WHERE organization_id=:org AND account_id=:acc AND is_active=1 ' .
             'ORDER By id Desc LIMIT 1';
         $org_user_stmt = $this->prepare($org_user_query);
-        $org_user_stmt->bindParam(':org', $context['enter']);
+        $org_user_stmt->bindParam(':org', $org_id, \PDO::PARAM_INT);
         $org_user_stmt->bindParam(':acc', $account_id, \PDO::PARAM_INT);
         $org_user_stmt->execute();
         if ($org_user_stmt->rowCount() != 1) {
             return null;
         }
 
-        return (int) $context['enter'];
+        return $org_id;
     }
 }

@@ -7,9 +7,9 @@ use codesaur\DataObject\MultiModel;
 
 class CountriesModel extends MultiModel
 {
-    function __construct(\PDO $pdo)
+    public function __construct(\PDO $pdo)
     {
-        parent::__construct($pdo);
+        $this->setInstance($pdo);
         
         $this->setColumns([
            (new Column('id', 'varchar', 19))->primary()->unique()->notNull(),
@@ -52,15 +52,13 @@ class CountriesModel extends MultiModel
         return $countries;
     }
     
-    function __initial()
+    protected function __initial()
     {
-        parent::__initial();
-        
-        $table = $this->getName();
-        
         $this->setForeignKeyChecks(false);
+        
+        $table = $this->getName();        
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");        
         
         $this->insert(['id' => 'AD', 'speak' => 'Català'], ['mn' => ['title' => 'Андорра'], 'en' => ['title' => 'Andorra']]);
         $this->insert(['id' => 'AE', 'speak' => 'الإمارات العربية المتحدة'], ['en' => ['title' => 'United Arab Emirates'], 'mn' => ['title' => 'Арабын Нэгдсэн Эмират']]);

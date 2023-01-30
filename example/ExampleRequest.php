@@ -64,37 +64,38 @@ class ExampleRequest extends ServerRequest
 
     function getRemoteAddr(): string
     {
-        if (!empty($this->getServerParams()['HTTP_X_FORWARDED_FOR'])) {
-            if (!empty($this->getServerParams()['HTTP_CLIENT_IP'])
-                && $this->isValidIP($this->getServerParams()['HTTP_CLIENT_IP'])
+        $server = $this->getServerParams();
+        if (!empty($server['HTTP_X_FORWARDED_FOR'])) {
+            if (!empty($server['HTTP_CLIENT_IP'])
+                && $this->isValidIP($server['HTTP_CLIENT_IP'])
             ) {
-                return $this->getServerParams()['HTTP_CLIENT_IP'];
+                return $server['HTTP_CLIENT_IP'];
             }            
-            foreach (explode(',', $this->getServerParams()['HTTP_X_FORWARDED_FOR']) as $ip) {
+            foreach (explode(',', $server['HTTP_X_FORWARDED_FOR']) as $ip) {
                 if ($this->isValidIP(trim($ip))) {
                     return $ip;
                 }
             }
         }
 
-        if (!empty($this->getServerParams()['HTTP_X_FORWARDED'])
-            && $this->isValidIP($this->getServerParams()['HTTP_X_FORWARDED'])
+        if (!empty($server['HTTP_X_FORWARDED'])
+            && $this->isValidIP($server['HTTP_X_FORWARDED'])
         ) {
-            return $this->getServerParams()['HTTP_X_FORWARDED'];
-        } elseif (!empty($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
-            && $this->isValidIP($this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'])
+            return $server['HTTP_X_FORWARDED'];
+        } elseif (!empty($server['HTTP_X_CLUSTER_CLIENT_IP'])
+            && $this->isValidIP($server['HTTP_X_CLUSTER_CLIENT_IP'])
         ) {
-            return $this->getServerParams()['HTTP_X_CLUSTER_CLIENT_IP'];
-        } elseif (!empty($this->getServerParams()['HTTP_FORWARDED_FOR'])
-            && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED_FOR'])
+            return $server['HTTP_X_CLUSTER_CLIENT_IP'];
+        } elseif (!empty($server['HTTP_FORWARDED_FOR'])
+            && $this->isValidIP($server['HTTP_FORWARDED_FOR'])
         ) {
-            return $this->getServerParams()['HTTP_FORWARDED_FOR'];
-        } elseif (!empty($this->getServerParams()['HTTP_FORWARDED'])
-            && $this->isValidIP($this->getServerParams()['HTTP_FORWARDED'])
+            return $server['HTTP_FORWARDED_FOR'];
+        } elseif (!empty($server['HTTP_FORWARDED'])
+            && $this->isValidIP($server['HTTP_FORWARDED'])
         ) {
-            return $this->getServerParams()['HTTP_FORWARDED'];
+            return $server['HTTP_FORWARDED'];
         }
 
-        return $this->getServerParams()['REMOTE_ADDR'] ?? '';
+        return $server['REMOTE_ADDR'] ?? '';
     }
 }

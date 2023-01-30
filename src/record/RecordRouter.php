@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class RecordRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET('/record', [RecordController::class, 'record']);
         $this->GET('/records', [RecordController::class, 'records']);

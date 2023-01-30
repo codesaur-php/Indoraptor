@@ -18,7 +18,7 @@ class IndoController extends Controller
 {
     use \codesaur\DataObject\PDOTrait;
     
-    final function __construct(ServerRequestInterface $request)
+    public final function __construct(ServerRequestInterface $request)
     {
         parent::__construct($request);
         
@@ -27,12 +27,12 @@ class IndoController extends Controller
         if ($request->getMethod() == 'INTERNAL'
             && !$request instanceof InternalRequest
         ) {
-             $this->unauthorized();
-             exit;
+            $this->unauthorized();
+            exit;
         }
     }
     
-    final public function generate(array $data): string
+    public final function generate(array $data): string
     {
         $issuedAt = time();
         $lifeSeconds = (int) ($_ENV['INDO_JWT_LIFETIME'] ?? 2592000);
@@ -49,7 +49,7 @@ class IndoController extends Controller
         return JWT::encode($payload, $key, $alg);
     }
     
-    final public function validate(?string $jwt = null, $secret = null, ?string $algorithm = null): array|string
+    public final function validate(?string $jwt = null, $secret = null, ?string $algorithm = null): array|string
     {
         try {
             if (empty($jwt)) {
@@ -82,12 +82,12 @@ class IndoController extends Controller
         }
     }
     
-    final public function isAuthorized(): bool
+    public final function isAuthorized(): bool
     {
-        return is_array($this->validate());
+        return ($this->validate()['account_id'] ?? 0) > 0;
     }
 
-    public function respond($data, ?int $status = null): ResponseInterface
+    public function respond($data, ?int $code = null): ResponseInterface
     {
         $response = new class extends NonBodyResponse
         {
@@ -97,41 +97,42 @@ class IndoController extends Controller
             }
         };
         
-        echo json_encode($data);
+        echo json_encode($data)
+            ?: '{"error":{"code":500,"message":"Indoraptor: Failed to encode response data!"}}';
         
-        if (!empty($status)) {
-            $response->setStatus($status);
+        if (!empty($code)) {
+            $response->setStatus($code);
         }
         
         return $response;
     }
     
-    public function error(string $message, int $status): ResponseInterface
+    public function error(string $message, int $code): ResponseInterface
     {
-        return $this->respond(['error' => ['code' => $status, 'message' => $message]], $status);
+        return $this->respond(['error' => ['code' => $code, 'message' => $message]], $code);
     }
     
-    final public function badRequest(string $message = 'Bad Request'): ResponseInterface
+    public final function badRequest(string $message = 'Bad Request'): ResponseInterface
     {
         return $this->error($message, StatusCodeInterface::STATUS_BAD_REQUEST);
     }
     
-    final public function unauthorized(string $message = 'Unauthorized'): ResponseInterface
+    public final function unauthorized(string $message = 'Unauthorized'): ResponseInterface
     {
         return $this->error($message, StatusCodeInterface::STATUS_UNAUTHORIZED);
     }
     
-    final public function forbidden(string $message = 'Forbidden'): ResponseInterface
+    public final function forbidden(string $message = 'Forbidden'): ResponseInterface
     {
         return $this->error($message, StatusCodeInterface::STATUS_FORBIDDEN);
     }
     
-    final public function notFound(string $message = 'Not found'): ResponseInterface
+    public final function notFound(string $message = 'Not found'): ResponseInterface
     {
         return $this->error($message, StatusCodeInterface::STATUS_NOT_FOUND);
     }
     
-    public function grabModel()
+    protected function grabModel()
     {
         $params = $this->getQueryParams();
         $cls = $params['model'] ?? null;

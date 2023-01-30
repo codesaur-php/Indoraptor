@@ -19,7 +19,7 @@ class StatementController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
         
-        $stmt = $this->pdo->prepare($payload['query']);
+        $stmt = $this->prepare($payload['query']);
         if (isset($payload['bind'])) {
             foreach ($payload['bind'] as $parametr => $values) {
                 if (isset($values['var'])) {

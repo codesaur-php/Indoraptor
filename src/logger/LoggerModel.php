@@ -14,7 +14,7 @@ class LoggerModel extends \codesaur\Logger\Logger
         parent::setTable("indo_$table", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
-    function __initial()
+    protected function __initial()
     {
         parent::__initial();
         

@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class LoggerRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET('/log', [LoggerController::class, 'index']);
         $this->POST('/log', [LoggerController::class, 'insert']);

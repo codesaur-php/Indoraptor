@@ -13,14 +13,14 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
         $message = $throwable->getMessage();
         $title = $throwable instanceof \Exception ? 'Exception' : 'Error';
         
-        if ($code !== 0) {
+        if ($code != 0) {
             $status = "STATUS_$code";
             $reasonPhrase = ReasonPrhase::class;
             if (defined("$reasonPhrase::$status")
                     && !headers_sent()
             ) {
                 http_response_code($code);
-            }            
+            }
             $title .= " $code";
         }
         
@@ -38,6 +38,7 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
             $error['trace'] = $throwable->getTrace();
         }
         
-        echo json_encode(['error' => $error]);
+        echo json_encode(['error' => $error])
+            ?: '{"error":{"code":' . $code . ',"title":"' . $title . '","message":"' . $message . '"}}';
     }
 }

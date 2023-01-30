@@ -7,9 +7,9 @@ use codesaur\DataObject\Column;
 
 class FilesModel extends Model
 {
-    function __construct(\PDO $pdo)
+    public function __construct(\PDO $pdo)
     {
-        parent::__construct($pdo);
+        $this->setInstance($pdo);
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
@@ -41,14 +41,12 @@ class FilesModel extends Model
         return substr($this->getName(), 5, -(strlen('_files')));
     }
     
-    function __initial()
+    protected function __initial()
     {
-        parent::__initial();
+        $this->setForeignKeyChecks(false);
         
         $my_name = $this->getName();
         $record_table_name = $this->getNameClean();
-        
-        $this->setForeignKeyChecks(false);
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file FOREIGN KEY (file) REFERENCES indo_file(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record FOREIGN KEY (record) REFERENCES $record_table_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");

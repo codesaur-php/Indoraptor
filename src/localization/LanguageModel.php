@@ -7,9 +7,9 @@ use codesaur\DataObject\Column;
 
 class LanguageModel extends Model
 {
-    function __construct(\PDO $pdo)
+    public function __construct(\PDO $pdo)
     {
-        parent::__construct($pdo);
+        $this->setInstance($pdo);
 
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
@@ -50,21 +50,20 @@ class LanguageModel extends Model
         ])) ?: null;
     }
 
-    function __initial()
+    protected function __initial()
     {
-        parent::__initial();
-        
-        $table = $this->getName();
-        
         $this->setForeignKeyChecks(false);
+        
+        $table = $this->getName();        
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->setForeignKeyChecks(true);
         
         $nowdate = date('Y-m-d H:i:s');
         $query =
             "INSERT INTO $table(created_at,code,full,is_default) " .
             "VALUES('$nowdate','mn','Монгол',1),('$nowdate','en','English',0)";
         $this->exec($query);
+        
+        $this->setForeignKeyChecks(true);
     }
 }

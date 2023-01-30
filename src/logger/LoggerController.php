@@ -73,14 +73,27 @@ class LoggerController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
         
+        $context = json_decode($payload['context'], true);
+        if ($context == null) {
+            return $this->badRequest('Invalid log context');
+        }
+        
         $logger = new LoggerModel($this->pdo);
         $logger->setTable($payload['table'], $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         if (isset($payload['created_by'])) {
-            $logger->prepareCreatedBy($payload['created_by']);
+            $current_user = getenv('CODESAUR_ACCOUNT_ID', true);
+            putenv("CODESAUR_ACCOUNT_ID={$payload['created_by']}");
         }
-        $logger->log($payload['level'] ?? LogLevel::NOTICE, $payload['message'], json_decode($payload['context'], true));
-        if ($logger->lastInsertId()) {
-            return $this->respond($logger->getLogById($logger->lastInsertId()));
+        
+        $logger->log($payload['level'] ?? LogLevel::NOTICE, $payload['message'], $context);
+        
+        if (isset($current_user)) {
+            putenv("CODESAUR_ACCOUNT_ID=$current_user");
+        }
+        
+        $id = $logger->lastInsertId();
+        if ($id !== false) {
+            return $this->respond($logger->getLogById((int) $id));
         }
         
         return $this->notFound('Not completed');
