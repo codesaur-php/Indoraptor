@@ -68,7 +68,7 @@ class ReferenceController extends \Indoraptor\IndoController
         
         $model = new ReferenceModel($this->pdo);
         $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        $this->respond($model->update($payload['record'], $payload['content'], $payload['condition']));
+        return $this->respond($model->update($payload['record'], $payload['content'], $payload['condition']));
     }
     
     public function delete(string $table): ResponseInterface
