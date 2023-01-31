@@ -62,7 +62,6 @@ class TextController extends \Indoraptor\IndoController
         $texts = [];
         $code = $payload['code'] ?? null;
 
-        $model = new TextModel($this->pdo);
         foreach (array_unique($tables) as $table) {
             $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
             if (!in_array("localization_text_$table", $initial)
@@ -71,6 +70,7 @@ class TextController extends \Indoraptor\IndoController
                 continue;
             }
 
+            $model = new TextModel($this->pdo);
             $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
             $text = $model->retrieve($code);
 
