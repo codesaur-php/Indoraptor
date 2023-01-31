@@ -27,7 +27,7 @@ class CountriesModel extends MultiModel
     }
     
     public function retrieve(?string $code = null): array
-    {        
+    {
         $countries = [];
         $codeName = $this->getCodeColumn()->getName();
         if (empty($code)) {

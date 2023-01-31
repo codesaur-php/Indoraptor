@@ -100,7 +100,7 @@ class LoggerController extends \Indoraptor\IndoController
     }
     
     public function names(): ResponseInterface
-    {        
+    {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
         }

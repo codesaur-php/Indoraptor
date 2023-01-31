@@ -46,7 +46,7 @@ class TextModel extends MultiModel
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                 $text[$row['keyword']][$row[$codeName]] = $row['text'];
             }
-        } else {            
+        } else {
             $code = preg_replace('/[^A-Za-z]/', '', $code);
             $condition = [
                 'WHERE' => "c.$codeName=:1 AND p.is_active=1",

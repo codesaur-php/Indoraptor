@@ -116,7 +116,7 @@ class LanguageController extends \Indoraptor\IndoController
             
             $copied = false;
             $params = implode(', ', $param);
-            while ($row = $select->fetch(\PDO::FETCH_ASSOC)) {                
+            while ($row = $select->fetch(\PDO::FETCH_ASSOC)) {
                 $existing = $this->prepare("SELECT id FROM $contentTable WHERE parent_id=:1 AND code=:2");
                 $parameters = [':1' => $row['parent_id'], ':2' => $to];
                 if ($existing->execute($parameters)

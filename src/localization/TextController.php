@@ -63,7 +63,7 @@ class TextController extends \Indoraptor\IndoController
         $code = $payload['code'] ?? null;
 
         $model = new TextModel($this->pdo);
-        foreach (array_unique($tables) as $table) {            
+        foreach (array_unique($tables) as $table) {
             $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
             if (!in_array("localization_text_$table", $initial)
                 && !$this->hasTable("localization_text_$table")
