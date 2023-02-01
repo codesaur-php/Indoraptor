@@ -70,7 +70,7 @@ class ExampleRequest extends ServerRequest
                 && $this->isValidIP($server['HTTP_CLIENT_IP'])
             ) {
                 return $server['HTTP_CLIENT_IP'];
-            }            
+            }
             foreach (explode(',', $server['HTTP_X_FORWARDED_FOR']) as $ip) {
                 if ($this->isValidIP(trim($ip))) {
                     return $ip;

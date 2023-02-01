@@ -115,7 +115,7 @@ class AuthController extends \Indoraptor\IndoController
             $stmt_check_org->bindParam(':id', $account['id'], \PDO::PARAM_INT);
             if ($stmt_check_org->execute()) {
                 $has_organization = $stmt_check_org->rowCount() > 0;
-            }            
+            }
             if (!isset($has_organization) || !$has_organization) {
                 throw new \Exception('Account doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
             }

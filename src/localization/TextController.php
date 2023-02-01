@@ -56,8 +56,8 @@ class TextController extends \Indoraptor\IndoController
             $tables = array_values($payload['table']);
         } else {
             $tables = [$payload['table']];
-        }            
-
+        }
+        
         $initial = get_class_methods(TextInitial::class);
         $texts = [];
         $code = $payload['code'] ?? null;
