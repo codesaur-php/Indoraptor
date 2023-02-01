@@ -135,7 +135,7 @@ class InternalRequest implements ServerRequestInterface
 
     public function getQueryParams()
     {
-        if (is_array($this->queryParams)) {
+        if (\is_array($this->queryParams)) {
             return $this->queryParams;
         }
 
@@ -191,7 +191,7 @@ class InternalRequest implements ServerRequestInterface
     {
         $clone = clone $this;
         if ($this->hasHeader($name)) {
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $this->headers[\strtoupper($name)] += $value;
             } else {
                 $this->headers[\strtoupper($name)][] = $value;
@@ -234,7 +234,7 @@ class InternalRequest implements ServerRequestInterface
     public function withMethod($method)
     {
         $clone = clone $this;
-        $clone->method = strtoupper($method);
+        $clone->method = \strtoupper($method);
         return $clone;
     }
 
@@ -308,7 +308,7 @@ class InternalRequest implements ServerRequestInterface
     {
         $clone = clone $this;
         if ($this->hasHeader($name)) {
-            unset($this->headers[strtoupper($name)]);
+            unset($this->headers[\strtoupper($name)]);
         }
         return $clone;
     }

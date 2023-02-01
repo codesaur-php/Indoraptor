@@ -64,7 +64,7 @@ class IndoController extends Controller
             $key = new Key($secret ?? INDO_JWT_SECRET, $algorithm ?? INDO_JWT_ALGORITHM);
             $result = (array) JWT::decode($jwt, $key);
             $expirationTime = $result['exp'] ?? 0;
-            if ($expirationTime < time()) {
+            if ($expirationTime < \time()) {
                 throw new \Exception('Invalid JWT data or expired!');
             }
             if ($result['account_id'] ?? false
