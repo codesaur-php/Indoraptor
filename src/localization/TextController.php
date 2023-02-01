@@ -97,7 +97,7 @@ class TextController extends \Indoraptor\IndoController
 
         $likeness = [];
         while ($rows = $pdostmt->fetch(\PDO::FETCH_ASSOC)) {
-            $likeness[] = current($rows);
+            $likeness[] = \current($rows);
         }
 
         $names = [];

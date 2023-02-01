@@ -82,7 +82,7 @@ class LoggerController extends \Indoraptor\IndoController
         $logger->setTable($payload['table'], $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         if (isset($payload['created_by'])) {
             $current_user = \getenv('CODESAUR_ACCOUNT_ID', true);
-            putenv("CODESAUR_ACCOUNT_ID={$payload['created_by']}");
+            \putenv("CODESAUR_ACCOUNT_ID={$payload['created_by']}");
         }
         
         $logger->log($payload['level'] ?? LogLevel::NOTICE, $payload['message'], $context);
