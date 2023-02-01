@@ -72,7 +72,7 @@ class ExampleRequest extends ServerRequest
                 return $server['HTTP_CLIENT_IP'];
             }
             foreach (\explode(',', $server['HTTP_X_FORWARDED_FOR']) as $ip) {
-                if ($this->isValidIP(trim($ip))) {
+                if ($this->isValidIP(\trim($ip))) {
                     return $ip;
                 }
             }

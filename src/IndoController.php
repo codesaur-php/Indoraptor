@@ -54,7 +54,7 @@ class IndoController extends Controller
         try {
             if (empty($jwt)) {
                 if (empty($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'])
-                    || substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 0, 7) != 'Bearer '
+                    || \substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 0, 7) != 'Bearer '
                 ) {
                     throw new \Exception('Undefined JWT!');
                 }
