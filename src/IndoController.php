@@ -11,8 +11,8 @@ use Psr\Http\Message\ResponseInterface;
 use codesaur\Http\Application\Controller;
 use codesaur\Http\Message\NonBodyResponse;
 
-define('INDO_JWT_ALGORITHM', $_ENV['INDO_JWT_ALGORITHM'] ?? 'HS256');
-define('INDO_JWT_SECRET', $_ENV['INDO_JWT_SECRET'] ?? 'codesaur-indoraptor-not-so-secret');
+\define('INDO_JWT_ALGORITHM', $_ENV['INDO_JWT_ALGORITHM'] ?? 'HS256');
+\define('INDO_JWT_SECRET', $_ENV['INDO_JWT_SECRET'] ?? 'codesaur-indoraptor-not-so-secret');
 
 class IndoController extends Controller
 {
