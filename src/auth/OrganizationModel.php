@@ -40,7 +40,7 @@ class OrganizationModel extends Model
             return;
         }
         
-        $nowdate = date('Y-m-d H:i:s');
+        $nowdate = \date('Y-m-d H:i:s');
         $this->exec("INSERT INTO $table(id,created_at,name,alias) VALUES(1,'$nowdate','System','system')");
     }
 }

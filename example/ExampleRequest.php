@@ -12,13 +12,13 @@ class ExampleRequest extends ServerRequest
     {
         $this->initFromGlobal();
         
-        if (!in_array($this->getRemoteAddr(), ['127.0.0.1', '::1'])) {
+        if (!\in_array($this->getRemoteAddr(), ['127.0.0.1', '::1'])) {
             throw new \Error('This experimental example only works on local development enviroment');
         }
 
         if (empty($this->getServerParams()['HTTP_AUTHORIZATION'])) {
             // For a testing purpose we authorizing into Indoraptor
-            $issuedAt = time();
+            $issuedAt = \time();
             $lifeSeconds = 300;
             $expirationTime = $issuedAt + $lifeSeconds;
             $payload = [
@@ -36,7 +36,7 @@ class ExampleRequest extends ServerRequest
     
     function isValidIP(string $ip): bool
     {
-        $real = ip2long($ip);
+        $real = \ip2long($ip);
         if (empty($ip) || $real == -1 || $real === false) {
             return false;
         }
@@ -52,8 +52,8 @@ class ExampleRequest extends ServerRequest
             ['255.255.255.0', '255.255.255.255']
         ];
         foreach ($private_ips as $r) {
-            $min = ip2long($r[0]);
-            $max = ip2long($r[1]);
+            $min = \ip2long($r[0]);
+            $max = \ip2long($r[1]);
             if ($real >= $min && $real <= $max) {
                 return false;
             }
@@ -71,7 +71,7 @@ class ExampleRequest extends ServerRequest
             ) {
                 return $server['HTTP_CLIENT_IP'];
             }
-            foreach (explode(',', $server['HTTP_X_FORWARDED_FOR']) as $ip) {
+            foreach (\explode(',', $server['HTTP_X_FORWARDED_FOR']) as $ip) {
                 if ($this->isValidIP(trim($ip))) {
                     return $ip;
                 }

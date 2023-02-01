@@ -14,20 +14,20 @@ class TextController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        $tbl = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         if (empty($tbl)) {
             return $this->badRequest();
         }
         $localization_table = "localization_text_$tbl";
         
         $model = new TextModel($this->pdo);
-        $is_exist = $model->query('SHOW TABLES LIKE ' .  $this->quote($localization_table))->rowCount() > 0;
+        $is_exist = $model->query('SHOW TABLES LIKE ' . $this->quote($localization_table))->rowCount() > 0;
         if ($is_exist) {
             return $this->badRequest(__NAMESPACE__ . " table [$tbl] is already exists!");
         }
 
         $model->setTable($tbl, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        $is_created = $model->query('SHOW TABLES LIKE ' .  $this->quote($localization_table))->rowCount() > 0;
+        $is_created = $model->query('SHOW TABLES LIKE ' . $this->quote($localization_table))->rowCount() > 0;
         if (!$is_created) {
             return $this->badRequest(__NAMESPACE__ . " table [$tbl] creation failed!");
         }
@@ -52,19 +52,19 @@ class TextController extends \Indoraptor\IndoController
             return $this->badRequest();
         }
         
-        if (is_array($payload['table'])) {
-            $tables = array_values($payload['table']);
+        if (\is_array($payload['table'])) {
+            $tables = \array_values($payload['table']);
         } else {
             $tables = [$payload['table']];
         }
         
-        $initial = get_class_methods(TextInitial::class);
+        $initial = \get_class_methods(TextInitial::class);
         $texts = [];
         $code = $payload['code'] ?? null;
 
-        foreach (array_unique($tables) as $table) {
-            $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-            if (!in_array("localization_text_$table", $initial)
+        foreach (\array_unique($tables) as $table) {
+            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+            if (!\in_array("localization_text_$table", $initial)
                 && !$this->hasTable("localization_text_$table")
             ) {
                 continue;
@@ -102,8 +102,8 @@ class TextController extends \Indoraptor\IndoController
 
         $names = [];
         foreach ($likeness as $name) {
-            if (in_array($name . '_content', $likeness)) {
-                $names[] = substr($name, strlen('localization_text_'));
+            if (\in_array($name . '_content', $likeness)) {
+                $names[] = \substr($name, \strlen('localization_text_'));
             }
         }
         if (empty($names)) {
@@ -126,7 +126,7 @@ class TextController extends \Indoraptor\IndoController
         }
         
         while ($name = $show_tables->fetch(\PDO::FETCH_NUM)) {
-            $table = substr($name[0], 0, strlen($name[0]) - strlen('_content'));
+            $table = \substr($name[0], 0, \strlen($name[0]) - \strlen('_content'));
             $select = $this->prepare("SELECT * FROM $table WHERE keyword=:1 LIMIT 1");
             $select->bindParam(':1', $payload['keyword']);
             if (!$select->execute()) {
@@ -135,7 +135,7 @@ class TextController extends \Indoraptor\IndoController
             
             if ($select->rowCount() == 1) {
                 $result = ['table' => $table];
-                $result += $select->fetch(\PDO::FETCH_ASSOC);                
+                $result += $select->fetch(\PDO::FETCH_ASSOC);
                 foreach (['id', 'type', 'is_active', 'created_by', 'updated_by'] as $column) {
                     if (isset($result[$column])) {
                         $result[$column] = (int) $result[$column];
@@ -251,7 +251,7 @@ class TextController extends \Indoraptor\IndoController
     
     private function isExists(string &$table): bool
     {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("localization_text_$table");
     }
 }

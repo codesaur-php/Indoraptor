@@ -47,12 +47,12 @@ class InternalRequest implements ServerRequestInterface
         
         $this->uri = new Uri();
         $this->requestTarget = $pattern;
-        if (($pos = strpos($pattern, '?')) !== false) {
-            $query = substr($pattern, $pos + 1);
+        if (($pos = \strpos($pattern, '?')) !== false) {
+            $query = \substr($pattern, $pos + 1);
             $this->serverParams['QUERY_STRING'] = $query;
-            $this->uri->setPath(substr($pattern, 0, $pos));
+            $this->uri->setPath(\substr($pattern, 0, $pos));
             $this->uri->setQuery($query);
-            parse_str($query, $this->queryParams);
+            \parse_str($query, $this->queryParams);
         } else {
             $this->uri->setPath($pattern);
         }
@@ -90,13 +90,13 @@ class InternalRequest implements ServerRequestInterface
 
     public function getHeader($name)
     {
-        return $this->headers[strtoupper($name)] ?? [];
+        return $this->headers[\strtoupper($name)] ?? [];
     }
 
     public function getHeaderLine($name)
     {
-        $values = $this->getHeader($name);        
-        return implode(',', $values);
+        $values = $this->getHeader($name);
+        return \implode(',', $values);
     }
 
     public function getHeaders()
@@ -106,15 +106,15 @@ class InternalRequest implements ServerRequestInterface
 
     public function hasHeader($name)
     {
-        return isset($this->headers[strtoupper($name)]);
+        return isset($this->headers[\strtoupper($name)]);
     }
     
     public function setHeader($name, $value)
     {
-        if (is_array($value)) {
-            $this->headers[strtoupper($name)] = $value;
+        if (\is_array($value)) {
+            $this->headers[\strtoupper($name)] = $value;
         } else {
-            $this->headers[strtoupper($name)] = [$value];
+            $this->headers[\strtoupper($name)] = [$value];
         }
     }
 
@@ -143,8 +143,8 @@ class InternalRequest implements ServerRequestInterface
             return [];
         }
         
-        $query = rawurldecode($this->getUri()->getQuery());
-        parse_str($query, $this->queryParams);
+        $query = \rawurldecode($this->getUri()->getQuery());
+        \parse_str($query, $this->queryParams);
         return $this->queryParams;
     }
 
@@ -156,12 +156,12 @@ class InternalRequest implements ServerRequestInterface
             return '/';
         }
 
-        $path = rawurldecode($this->getUri()->getPath());
-        $requestTarget = '/' . ltrim($path, '/');
+        $path = \rawurldecode($this->getUri()->getPath());
+        $requestTarget = '/' . \ltrim($path, '/');
         
         $query = $this->getUri()->getQuery();
         if ($query != '') {
-            $requestTarget .= '?' . rawurldecode($query);
+            $requestTarget .= '?' . \rawurldecode($query);
         }
         
         $fragment = $this->getUri()->getFragment();
@@ -192,9 +192,9 @@ class InternalRequest implements ServerRequestInterface
         $clone = clone $this;
         if ($this->hasHeader($name)) {
             if (is_array($value)) {
-                $this->headers[strtoupper($name)] += $value;
+                $this->headers[\strtoupper($name)] += $value;
             } else {
-                $this->headers[strtoupper($name)][] = $value;
+                $this->headers[\strtoupper($name)][] = $value;
             }
         } else {
             $this->setHeader($name, $value);
@@ -269,7 +269,7 @@ class InternalRequest implements ServerRequestInterface
     public function withUploadedFiles(array $uploadedFiles)
     {
         $clone = clone $this;
-        $clone->uploadedFiles = $uploadedFiles;        
+        $clone->uploadedFiles = $uploadedFiles;
         return $clone;
     }
 

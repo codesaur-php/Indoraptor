@@ -25,7 +25,7 @@ class PDOConnectMiddleware implements MiddlewareInterface
         $pdo = new \PDO($dsn, $username, $passwd, $options);
 
         $database = $_ENV['INDO_DB_NAME'] ?? 'indoraptor';
-        if (in_array($request->getServerParams()['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
+        if (\in_array($request->getServerParams()['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
             $collation = $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci';
             $pdo->exec("CREATE DATABASE IF NOT EXISTS $database COLLATE " . $pdo->quote($collation));
         }

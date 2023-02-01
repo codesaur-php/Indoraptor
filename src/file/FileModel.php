@@ -49,7 +49,7 @@ class FileModel extends MultiModel
         
         $condition = "record=$record AND type=$type AND is_active=1";
         if (!empty($code)) {
-            $code = preg_replace('/[^A-Za-z]/', '', $code);
+            $code = \preg_replace('/[^A-Za-z]/', '', $code);
             $condition .= " AND code='$code'";
         }
         $rows = $files->getRows([
@@ -58,7 +58,7 @@ class FileModel extends MultiModel
             'LIMIT' => 1
         ]);
         
-        $files_record = end($rows);
+        $files_record = \end($rows);
         if (isset($files_record['file'])) {
             $data = $this->getById($files_record['file'], $code);
 

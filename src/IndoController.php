@@ -34,7 +34,7 @@ class IndoController extends Controller
     
     public final function generate(array $data): string
     {
-        $issuedAt = time();
+        $issuedAt = \time();
         $lifeSeconds = (int) ($_ENV['INDO_JWT_LIFETIME'] ?? 2592000);
         $expirationTime = $issuedAt;
         $expirationTime += $lifeSeconds;
@@ -58,7 +58,7 @@ class IndoController extends Controller
                 ) {
                     throw new \Exception('Undefined JWT!');
                 }
-                $jwt = trim(substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 7));
+                $jwt = \trim(\substr($this->getRequest()->getServerParams()['HTTP_AUTHORIZATION'], 7));
             }
             
             $key = new Key($secret ?? INDO_JWT_SECRET, $algorithm ?? INDO_JWT_ALGORITHM);
@@ -68,14 +68,14 @@ class IndoController extends Controller
                 throw new \Exception('Invalid JWT data or expired!');
             }
             if ($result['account_id'] ?? false
-                && !getenv('CODESAUR_ACCOUNT_ID', true)
+                && !\getenv('CODESAUR_ACCOUNT_ID', true)
             ) {
-                putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");
+                \putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");
             }
             return $result;
         } catch (\Throwable $th) {
             if ($this->isDevelopment()) {
-                error_log($th->getMessage());
+                \error_log($th->getMessage());
             }
             
             return $th->getMessage();
@@ -97,7 +97,7 @@ class IndoController extends Controller
             }
         };
         
-        echo json_encode($data)
+        echo \json_encode($data)
             ?: '{"error":{"code":500,"message":"Indoraptor: Failed to encode response data!"}}';
         
         if (!empty($code)) {
@@ -143,8 +143,8 @@ class IndoController extends Controller
             return null;
         }
         
-        $class = str_replace(' ', '', $cls);
-        if (!class_exists($class)) {
+        $class = \str_replace(' ', '', $cls);
+        if (!\class_exists($class)) {
             return null;
         }
         

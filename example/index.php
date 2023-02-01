@@ -7,17 +7,17 @@ namespace Indoraptor\Example;
  * This is an example script!
  */
 
-define('CODESAUR_DEVELOPMENT', true);
+\define('CODESAUR_DEVELOPMENT', true);
 
-ini_set('display_errors', 'On');
-error_reporting(\E_ALL);
+\ini_set('display_errors', 'On');
+\error_reporting(\E_ALL);
 
 use Indoraptor\IndoApplication;
 use Indoraptor\JsonExceptionHandler;
 use Indoraptor\JsonResponseMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
-$autoload->addPsr4(__NAMESPACE__ . '\\', dirname(__FILE__));
+$autoload->addPsr4(__NAMESPACE__ . '\\', \dirname(__FILE__));
 
 $application = new IndoApplication();
 $application->use(new JsonExceptionHandler());

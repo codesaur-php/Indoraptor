@@ -18,6 +18,6 @@ class RecordRouter extends Router
         $this->INTERNAL('/records', [RecordController::class, 'internal_records']);
         $this->INTERNAL('/record/insert', [RecordController::class, 'internal_insert']);
         $this->INTERNAL('/record/update', [RecordController::class, 'internal_update']);
-        $this->INTERNAL('/record/delete', [RecordController::class, 'internal_delete']);        
+        $this->INTERNAL('/record/delete', [RecordController::class, 'internal_delete']);
     }
 }

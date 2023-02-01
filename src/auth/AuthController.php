@@ -90,7 +90,7 @@ class AuthController extends \Indoraptor\IndoController
                 throw new \Exception('Invalid username or password', StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
             $account = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if (!password_verify($payload['password'], $account['password'])) {
+            if (!\password_verify($payload['password'], $account['password'])) {
                 throw new \Exception('Invalid username or password', StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
             
@@ -137,15 +137,15 @@ class AuthController extends \Indoraptor\IndoController
     {
         try {
             $current_login = $this->validate();
-            if (!is_array($current_login)) {
+            if (!\is_array($current_login)) {
                 throw new \Exception('Not allowed', StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
             
             $payload = $this->getParsedBody();
             if (!isset($payload['account_id'])
-                || !is_int($payload['account_id'])
+                || !\is_int($payload['account_id'])
                 || !isset($payload['organization_id'])
-                || !is_int($payload['organization_id'])
+                || !\is_int($payload['organization_id'])
             ) {
                 throw new \Exception('Invalid request', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
@@ -203,9 +203,9 @@ class AuthController extends \Indoraptor\IndoController
         }
         
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $context = json_decode($result['context'], true);
+        $context = \json_decode($result['context'], true);
         if (isset($context['enter'])
-            || !is_int($context['enter'])
+            || !\is_int($context['enter'])
         ) {
             return null;
         }

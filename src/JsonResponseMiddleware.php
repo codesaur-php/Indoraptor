@@ -14,8 +14,8 @@ class JsonResponseMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!headers_sent()) {
-            header('Content-Type: application/json');
+        if (!\headers_sent()) {
+            \header('Content-Type: application/json');
         }
 
         $response = $handler->handle($request);
@@ -24,8 +24,8 @@ class JsonResponseMiddleware implements MiddlewareInterface
         if ($code != StatusCodeInterface::STATUS_OK) {
             $status_code = "STATUS_$code";
             $reasonPhraseClass = ReasonPrhase::class;
-            if (defined("$reasonPhraseClass::$status_code")) {
-                http_response_code($code);
+            if (\defined("$reasonPhraseClass::$status_code")) {
+                \http_response_code($code);
             }
         }
         

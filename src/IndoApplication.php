@@ -38,7 +38,7 @@ class IndoApplication extends Application
 
         $this->GET('/', function()
         {
-            echo '{"application":"'. addslashes(__CLASS__) . '"}';
+            echo '{"application":"'. \addslashes(__CLASS__) . '"}';
         });
     }
 }

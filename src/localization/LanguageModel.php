@@ -43,8 +43,8 @@ class LanguageModel extends Model
 
     public function getByCode(string $code, int $is_active = 1)
     {
-        $codeCleaned = preg_replace('/[^A-Za-z]/', '', $code);
-        return reset($this->getRows([
+        $codeCleaned = \preg_replace('/[^A-Za-z]/', '', $code);
+        return \reset($this->getRows([
             'WHERE' => 'code=' . $this->quote($codeCleaned) . " AND is_active=$is_active",
             'ORDER BY' => 'is_default Desc'
         ])) ?: null;
@@ -54,11 +54,11 @@ class LanguageModel extends Model
     {
         $this->setForeignKeyChecks(false);
         
-        $table = $this->getName();        
+        $table = $this->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         
-        $nowdate = date('Y-m-d H:i:s');
+        $nowdate = \date('Y-m-d H:i:s');
         $query =
             "INSERT INTO $table(created_at,code,full,is_default) " .
             "VALUES('$nowdate','mn','Монгол',1),('$nowdate','en','English',0)";

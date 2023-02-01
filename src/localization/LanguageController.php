@@ -42,7 +42,7 @@ class LanguageController extends \Indoraptor\IndoController
 
         $copied = [];
         while ($rows = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $contentTable = current($rows);
+            $contentTable = \current($rows);
             
             $query = $this->query("SHOW COLUMNS FROM $contentTable");
             $columns = $query->fetchAll(\PDO::FETCH_ASSOC);
@@ -73,7 +73,7 @@ class LanguageController extends \Indoraptor\IndoController
                 continue;
             }
             
-            $table = substr($contentTable, 0, strlen($contentTable) - 8);
+            $table = \substr($contentTable, 0, \strlen($contentTable) - 8);
             if (!$this->hasTable($table)) {
                 continue;
             }
@@ -84,7 +84,7 @@ class LanguageController extends \Indoraptor\IndoController
             $primary = false;
             $updates = [];
             $update_arguments = [];
-            $by_account = getenv('CODESAUR_ACCOUNT_ID', true);
+            $by_account = \getenv('CODESAUR_ACCOUNT_ID', true);
             foreach ($table_columns as $column) {
                 $name = $column['Field'];
                 if ($name == 'id') {
@@ -104,18 +104,18 @@ class LanguageController extends \Indoraptor\IndoController
             }
             
             if (!empty($updates)) {
-                $sets = implode(', ', $updates);
+                $sets = \implode(', ', $updates);
                 $update = $this->prepare("UPDATE $table SET $sets WHERE id=:id");
             }
             
-            $fields = implode(', ', $field);
+            $fields = \implode(', ', $field);
             $select = $this->prepare("SELECT parent_id, code, $fields FROM $contentTable WHERE code=:1");
             if (!$select->execute([':1' => $from])) {
                 continue;
             }
             
             $copied = false;
-            $params = implode(', ', $param);
+            $params = \implode(', ', $param);
             while ($row = $select->fetch(\PDO::FETCH_ASSOC)) {
                 $existing = $this->prepare("SELECT id FROM $contentTable WHERE parent_id=:1 AND code=:2");
                 $parameters = [':1' => $row['parent_id'], ':2' => $to];
@@ -134,7 +134,7 @@ class LanguageController extends \Indoraptor\IndoController
                     
                     if ($update) {
                         $update_arguments[':id'] = $row['parent_id'];
-                        $update_arguments[':at'] = date('Y-m-d H:i:s');
+                        $update_arguments[':at'] = \date('Y-m-d H:i:s');
                         $update->execute($update_arguments);
                     }
                 }

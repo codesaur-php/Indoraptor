@@ -16,9 +16,9 @@ class ReferenceController extends \Indoraptor\IndoController
         
         $records = [];
         $condition = $this->getParsedBody();
-        $initial = get_class_methods(ReferenceInitial::class);
-        $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        if (in_array("reference_$tbl", $initial)
+        $initial = \get_class_methods(ReferenceInitial::class);
+        $tbl = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        if (\in_array("reference_$tbl", $initial)
             || $this->hasTable("reference_$tbl")
         ) {
             $reference = new ReferenceModel($this->pdo);
@@ -97,9 +97,9 @@ class ReferenceController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        $tbl = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        $initial = get_class_methods(ReferenceInitial::class);
-        if (!in_array("reference_$tbl", $initial)
+        $tbl = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        $initial = \get_class_methods(ReferenceInitial::class);
+        if (!\in_array("reference_$tbl", $initial)
             && !$this->hasTable("reference_$tbl")
         ) {
             return $this->notFound('Invalid refence table name!');
@@ -113,7 +113,7 @@ class ReferenceController extends \Indoraptor\IndoController
     
     private function isExists(string &$table): bool
     {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("reference_$table");
     }
 }

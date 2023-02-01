@@ -28,7 +28,7 @@ class FilesModel extends Model
     
     public function setTable(string $name, ?string $collate = null)
     {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
             throw new \Exception(__CLASS__ . ': Table name must be provided', 1103);
         }
@@ -38,7 +38,7 @@ class FilesModel extends Model
 
     public function getNameClean(): string
     {
-        return substr($this->getName(), 5, -(strlen('_files')));
+        return \substr($this->getName(), 5, -(\strlen('_files')));
     }
     
     protected function __initial()
@@ -51,6 +51,7 @@ class FilesModel extends Model
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record FOREIGN KEY (record) REFERENCES $record_table_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        
         $this->setForeignKeyChecks(true);
     }
 }

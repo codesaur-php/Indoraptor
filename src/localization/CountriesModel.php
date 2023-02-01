@@ -38,7 +38,7 @@ class CountriesModel extends MultiModel
                 $countries[$row['id']][$row[$codeName]] = $row['title'];
             }
         } else {
-            $code = preg_replace('/[^A-Za-z]/', '', $code);
+            $code = \preg_replace('/[^A-Za-z]/', '', $code);
             $condition = [
                 'WHERE' => "c.$codeName=:1 AND p.is_active=1",
                 'ORDER BY' => 'p.id',
@@ -56,9 +56,9 @@ class CountriesModel extends MultiModel
     {
         $this->setForeignKeyChecks(false);
         
-        $table = $this->getName();        
+        $table = $this->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");        
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         
         $this->insert(['id' => 'AD', 'speak' => 'Català'], ['mn' => ['title' => 'Андорра'], 'en' => ['title' => 'Andorra']]);
         $this->insert(['id' => 'AE', 'speak' => 'الإمارات العربية المتحدة'], ['en' => ['title' => 'United Arab Emirates'], 'mn' => ['title' => 'Арабын Нэгдсэн Эмират']]);

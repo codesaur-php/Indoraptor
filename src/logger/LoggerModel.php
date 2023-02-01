@@ -6,7 +6,7 @@ class LoggerModel extends \codesaur\Logger\Logger
 {
     public function setTable(string $name, ?string $collate = null)
     {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
             throw new \Exception(__CLASS__ . ': Logger table name must be provided', 1103);
         }

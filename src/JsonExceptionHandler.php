@@ -16,29 +16,29 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
         if ($code != 0) {
             $status = "STATUS_$code";
             $reasonPhrase = ReasonPrhase::class;
-            if (defined("$reasonPhrase::$status")
-                    && !headers_sent()
+            if (\defined("$reasonPhrase::$status")
+                    && !\headers_sent()
             ) {
-                http_response_code($code);
+                \http_response_code($code);
             }
             $title .= " $code";
         }
         
-        error_log("$title: $message");
+        \error_log("$title: $message");
         
-        if (!headers_sent()) {
-            header('Content-Type: application/json');
+        if (!\headers_sent()) {
+            \header('Content-Type: application/json');
         }
         
         $error = ['code' => $code, 'title' => $title, 'message' => $message];
         
-        if (defined('CODESAUR_DEVELOPMENT')
+        if (\defined('CODESAUR_DEVELOPMENT')
                 && CODESAUR_DEVELOPMENT
         ) {
             $error['trace'] = $throwable->getTrace();
         }
         
-        echo json_encode(['error' => $error])
+        echo \json_encode(['error' => $error])
             ?: '{"error":{"code":' . $code . ',"title":"' . $title . '","message":"' . $message . '"}}';
     }
 }

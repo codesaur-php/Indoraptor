@@ -66,7 +66,7 @@ class FilesController extends \Indoraptor\IndoController
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        return $this->respond($model->update($payload['record'],  $payload['condition']));
+        return $this->respond($model->update($payload['record'], $payload['condition']));
     }
     
     public function delete(string $table): ResponseInterface
@@ -105,7 +105,7 @@ class FilesController extends \Indoraptor\IndoController
     
     private function isExists(string &$table): bool
     {
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("indo_{$table}_files");
     }
 }

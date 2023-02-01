@@ -17,12 +17,12 @@ class LoggerController extends \Indoraptor\IndoController
         if (empty($params['table'])) {
             return $this->badRequest();
         } elseif (!empty($params['id'])
-            && filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) !== false
+            && \filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) !== false
         ) {
             $id = (int) $params['id'];
         }
         
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $params['table']);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $params['table']);
         if ($this->hasTable("indo_{$table}_log")) {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
@@ -34,17 +34,17 @@ class LoggerController extends \Indoraptor\IndoController
                 if ($limit) {
                     $condition['LIMIT'] = $limit;
                 }
-                $data = array_values($logger->getLogs($condition));
+                $data = \array_values($logger->getLogs($condition));
             }
 
             if (!empty($data)) {
-                array_walk_recursive($data, function (&$v, $k) {
-                    $key = strtoupper($k);
+                \array_walk_recursive($data, function (&$v, $k) {
+                    $key = \strtoupper($k);
                     if (!empty($key) 
-                        && (in_array($key, ['JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'])
-                            || str_contains('PASSWORD', $key))
+                        && (\in_array($key, ['JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'])
+                            || \str_contains('PASSWORD', $key))
                     ) {
-                        $v = '*** hidden info ***'; 
+                        $v = '*** hidden info ***';
                     }
                 });
                 return $this->respond($data);
@@ -73,7 +73,7 @@ class LoggerController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
         
-        $context = json_decode($payload['context'], true);
+        $context = \json_decode($payload['context'], true);
         if ($context == null) {
             return $this->badRequest('Invalid log context');
         }
@@ -81,14 +81,14 @@ class LoggerController extends \Indoraptor\IndoController
         $logger = new LoggerModel($this->pdo);
         $logger->setTable($payload['table'], $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         if (isset($payload['created_by'])) {
-            $current_user = getenv('CODESAUR_ACCOUNT_ID', true);
+            $current_user = \getenv('CODESAUR_ACCOUNT_ID', true);
             putenv("CODESAUR_ACCOUNT_ID={$payload['created_by']}");
         }
         
         $logger->log($payload['level'] ?? LogLevel::NOTICE, $payload['message'], $context);
         
         if (isset($current_user)) {
-            putenv("CODESAUR_ACCOUNT_ID=$current_user");
+            \putenv("CODESAUR_ACCOUNT_ID=$current_user");
         }
         
         $id = $logger->lastInsertId();
@@ -108,7 +108,7 @@ class LoggerController extends \Indoraptor\IndoController
         $pdostmt->execute();
         $names = [];
         while ($rows = $pdostmt->fetch(\PDO::FETCH_ASSOC)) {
-            $names[] = substr(current($rows), 5, -strlen('_log'));
+            $names[] = \substr(\current($rows), 5, -\strlen('_log'));
         }
         if (empty($names)) {
             return $this->notFound();
@@ -128,7 +128,7 @@ class LoggerController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
 
-        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table']);
+        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table']);
         unset($payload['table']);
         
         if ($this->hasTable("indo_{$table}_log")) {

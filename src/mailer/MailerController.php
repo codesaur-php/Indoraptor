@@ -22,7 +22,7 @@ class MailerController extends \Indoraptor\IndoController
             if (!isset($payload['to'])
                 || !isset($payload['subject'])
                 || !isset($payload['message'])
-                || filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
+                || \filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
             ) {
                 throw new \Exception('Invalid Request');
             } else {
@@ -66,7 +66,7 @@ class MailerController extends \Indoraptor\IndoController
             if (!isset($payload['to'])
                 || !isset($payload['subject'])
                 || !isset($payload['message'])
-                || filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
+                || \filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
             ) {
                 throw new \Exception('Invalid Request');
             } else {
@@ -79,7 +79,7 @@ class MailerController extends \Indoraptor\IndoController
         
             $model = new MailerModel($this->pdo);
             $rows = $model->getRows();
-            $record = end($rows);
+            $record = \end($rows);
 
             $texts = new TextModel($this->pdo);
             $texts->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');

@@ -62,7 +62,7 @@ class RecordController extends \Indoraptor\IndoController
         }
         
         $model = $this->grabModel();
-        if (method_exists($model, 'getRowBy')) {
+        if (\method_exists($model, 'getRowBy')) {
             $record = $model->getRowBy($with_values);
         }
 
@@ -77,7 +77,7 @@ class RecordController extends \Indoraptor\IndoController
     {
         $model = $this->grabModel();
         $condition = $this->getParsedBody();
-        if (method_exists($model, 'getRows')) {
+        if (\method_exists($model, 'getRows')) {
             $rows = $model->getRows($condition);
         }
 
@@ -139,7 +139,7 @@ class RecordController extends \Indoraptor\IndoController
         $model = $this->grabModel();
         $condition = $this->getParsedBody();
         if (empty($condition)
-            || !method_exists($model, 'delete')
+            || !\method_exists($model, 'delete')
         ) {
             return $this->badRequest();
         }
