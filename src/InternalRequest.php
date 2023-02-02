@@ -166,7 +166,7 @@ class InternalRequest implements ServerRequestInterface
         
         $fragment = $this->getUri()->getFragment();
         if ($fragment != '') {
-            $requestTarget .= '#' . rawurldecode($fragment);
+            $requestTarget .= '#' . \rawurldecode($fragment);
         }
 
         return $requestTarget;
