@@ -35,7 +35,7 @@ class TextModel extends MultiModel
         parent::setTable("localization_text_$table", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
-    public function retrieve(?string $code = null) : array
+    public function retrieve(?string $code = null): array
     {
         $text = [];
         $codeName = $this->getCodeColumn()->getName();
