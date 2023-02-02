@@ -69,7 +69,7 @@ class TextModel extends MultiModel
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         
-        if (method_exists(TextInitial::class, $table)) {
+        if (\method_exists(TextInitial::class, $table)) {
             TextInitial::$table($this);
         }
         
