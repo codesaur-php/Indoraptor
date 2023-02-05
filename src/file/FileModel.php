@@ -16,8 +16,8 @@ class FileModel extends MultiModel
             new Column('file', 'varchar', 255),
             new Column('path', 'varchar', 255, ''),
            (new Column('protection', 'tinyint', 1, 1))->notNull(), // 1 => public; 2 => private
-            new Column('category', 'int', 4, 1),
-            new Column('size', 'bigint', 8),
+            new Column('category', 'tinyint', 1, 1),
+            new Column('size', 'int', 4),
             new Column('keyword', 'varchar', 128),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),

@@ -18,7 +18,7 @@ class MailerModel extends Model
             new Column('smtp_auth', 'tinyint', 1),
             new Column('smtp_secure', 'varchar', 6),
             new Column('host', 'varchar', 255),
-            new Column('port', 'int', 4),
+            new Column('port', 'smallint', 2),
             new Column('username', 'varchar', 128),
             new Column('password', 'varchar', 255),
             new Column('name', 'varchar', 255),
