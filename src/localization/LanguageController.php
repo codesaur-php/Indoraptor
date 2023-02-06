@@ -27,7 +27,6 @@ class LanguageController extends \Indoraptor\IndoController
         $payload = $this->getParsedBody();
         $from = $payload['from'] ?? false;
         $to = $payload['to'] ?? false;
-
         if (!$from || !$to) {
             return $this->badRequest('Invalid payload');
         }
@@ -80,7 +79,7 @@ class LanguageController extends \Indoraptor\IndoController
             
             $table_query = $this->query("SHOW COLUMNS FROM $table");
             $table_columns = $table_query->fetchAll(\PDO::FETCH_ASSOC);
-            $update = null;
+            $update = false;
             $primary = false;
             $updates = [];
             $update_arguments = [];
@@ -113,8 +112,7 @@ class LanguageController extends \Indoraptor\IndoController
             if (!$select->execute([':1' => $from])) {
                 continue;
             }
-            
-            $copied = false;
+            $inserted = false;
             $params = \implode(', ', $param);
             while ($row = $select->fetch(\PDO::FETCH_ASSOC)) {
                 $existing = $this->prepare("SELECT id FROM $contentTable WHERE parent_id=:1 AND code=:2");
@@ -130,8 +128,7 @@ class LanguageController extends \Indoraptor\IndoController
                     $parameters[":$name"] = $row[$name];
                 }
                 if ($insert->execute($parameters)) {
-                    $copied = true;
-                    
+                    $inserted = true;
                     if ($update) {
                         $update_arguments[':id'] = $row['parent_id'];
                         $update_arguments[':at'] = \date('Y-m-d H:i:s');
@@ -140,7 +137,7 @@ class LanguageController extends \Indoraptor\IndoController
                 }
             }
             
-            if ($copied) {
+            if ($inserted) {
                 $copied[] = [$table => $contentTable];
             }
         }
