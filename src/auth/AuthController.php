@@ -66,8 +66,8 @@ class AuthController extends \Indoraptor\IndoController
                 'organizations' => $organizations,
                 'rbac' => new RBACUser($this->pdo, $account['id'])
             ]);
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), $th->getCode());
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), $e->getCode());
         }
     }
 
@@ -128,8 +128,8 @@ class AuthController extends \Indoraptor\IndoController
             $account['jwt'] = $this->generate($login_info);
             
             return $this->respond($account);
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), $th->getCode());
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), $e->getCode());
         }
     }
     
@@ -180,8 +180,8 @@ class AuthController extends \Indoraptor\IndoController
                 'organization_id' => $organization['id']
             ];
             return $this->respond(['jwt' => $this->generate($account_org_jwt)]);
-        } catch (\Throwable $th) {
-            return $this->error($th->getMessage(), $th->getCode());
+        } catch (\Throwable $e) {
+            return $this->error($e->getMessage(), $e->getCode());
         }
     }
     

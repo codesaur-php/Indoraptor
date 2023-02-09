@@ -44,10 +44,10 @@ class MailerController extends \Indoraptor\IndoController
             
             $context['response'] = $text['email-succesfully-sent'] ?? 'Email successfully sent to destination';
             return $this->respond(['success' => ['message' => $context['response']]]);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $level = LogLevel::ERROR;
-            $context['response'] = $th->getMessage();
-            return $this->error($context['response'], $th->getCode());
+            $context['response'] = $e->getMessage();
+            return $this->error($context['response'], $e->getCode());
         } finally {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
@@ -107,10 +107,10 @@ class MailerController extends \Indoraptor\IndoController
             
             $context['response'] = $text['email-succesfully-sent'] ?? 'Email successfully sent to destination';
             return $this->respond(['success' => ['message' => $context['response']]]);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $level = LogLevel::ERROR;
-            $context['response'] = $th->getMessage();
-            return $this->error($context['response'], $th->getCode());
+            $context['response'] = $e->getMessage();
+            return $this->error($context['response'], $e->getCode());
         } finally {
             $logger = new LoggerModel($this->pdo);
             $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');

@@ -73,12 +73,12 @@ class IndoController extends Controller
                 \putenv("CODESAUR_ACCOUNT_ID={$result['account_id']}");
             }
             return $result;
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($this->isDevelopment()) {
-                \error_log($th->getMessage());
+                \error_log($e->getMessage());
             }
             
-            return $th->getMessage();
+            return $e->getMessage();
         }
     }
     
