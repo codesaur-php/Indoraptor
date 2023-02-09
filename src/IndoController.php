@@ -87,7 +87,7 @@ class IndoController extends Controller
         return ($this->validate()['account_id'] ?? 0) > 0;
     }
 
-    public function respond($data, ?int $code = null): ResponseInterface
+    public function respond($data, int|string $code = ''): ResponseInterface
     {
         $response = new class extends NonBodyResponse
         {
@@ -100,14 +100,16 @@ class IndoController extends Controller
         echo \json_encode($data)
             ?: '{"error":{"code":500,"message":"Indoraptor: Failed to encode response data!"}}';
         
-        if (!empty($code)) {
+        if (!empty($code)
+            && \is_int($code)
+        ) {
             $response->setStatus($code);
         }
         
         return $response;
     }
     
-    public function error(string $message, int $code): ResponseInterface
+    public function error(string $message, int|string $code): ResponseInterface
     {
         return $this->respond(['error' => ['code' => $code, 'message' => $message]], $code);
     }
