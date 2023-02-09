@@ -63,19 +63,16 @@ class OrganizationUserModel extends Model
     
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-        
         $table = $this->getName();
+        
+        $this->setForeignKeyChecks(false);
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_account_id FOREIGN KEY (account_id) REFERENCES rbac_accounts(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_organization_id FOREIGN KEY (organization_id) REFERENCES indo_organizations(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        
-        if ($table == 'indo_organization_users') {
-            $nowdate = \date('Y-m-d H:i:s');
-            $this->exec("INSERT INTO $table(id,created_at,account_id,organization_id) VALUES(1,'$nowdate',1,1)");
-        }
-        
         $this->setForeignKeyChecks(true);
+        
+        $nowdate = \date('Y-m-d H:i:s');
+        $this->exec("INSERT INTO $table(id,created_at,account_id,organization_id) VALUES(1,'$nowdate',1,1)");
     }
 }

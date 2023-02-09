@@ -36,10 +36,6 @@ class OrganizationModel extends Model
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
 
-        if ($table != 'indo_organizations') {
-            return;
-        }
-        
         $nowdate = \date('Y-m-d H:i:s');
         $this->exec("INSERT INTO $table(id,created_at,name,alias) VALUES(1,'$nowdate','System','system')");
     }
