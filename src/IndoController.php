@@ -87,7 +87,7 @@ class IndoController extends Controller
         return ($this->validate()['account_id'] ?? 0) > 0;
     }
 
-    public function respond($data, int|string $code = ''): ResponseInterface
+    public function respond($data, int|string $code = 0): ResponseInterface
     {
         $response = new class extends NonBodyResponse
         {
