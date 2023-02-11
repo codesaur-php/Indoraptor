@@ -16,7 +16,7 @@
         "codesaur/http-application": ">=5.4.4",
         "codesaur/rbac": ">=2.3.6",
         "codesaur/logger": ">=1.5.7",
-        "codesaur/http-client": ">=1.2.4",
+        "codesaur/http-client": ">=1.2.5",
         "codesaur/globals": ">=1.3.4"
     },
     "autoload": {

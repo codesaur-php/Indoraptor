@@ -80,10 +80,11 @@ class MailerController extends \Indoraptor\IndoController
             $model = new MailerModel($this->pdo);
             $rows = $model->getRows();
             $record = \end($rows);
-
+            
+            $lang_code = $payload['code'] ?? 'en';
             $texts = new TextModel($this->pdo);
             $texts->setTable('dashboard', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $text = $texts->retrieve($payload['code'] ?? 'en');
+            $text = $texts->retrieve($lang_code);
 
             if (empty($record) || !isset($record['charset'])
                 || !isset($record['host']) || !isset($record['port'])
@@ -103,7 +104,9 @@ class MailerController extends \Indoraptor\IndoController
                 $record['email'], $record['name'], $payload['to'], $payload['name'] ?? '',
                 $payload['subject'], $payload['message'], $record['charset'],
                 $record['host'], $record['port'], $record['username'], $record['password'],
-                ((int) $record['is_smtp']) == 1, (bool) ((int) $record['smtp_auth']), $record['smtp_secure']);
+                ((int) $record['is_smtp']) == 1, (bool) ((int) $record['smtp_auth']), $record['smtp_secure'], null,
+                $lang_code
+            );
             
             $context['response'] = $text['email-succesfully-sent'] ?? 'Email successfully sent to destination';
             return $this->respond(['success' => ['message' => $context['response']]]);
