@@ -5,7 +5,7 @@ namespace Indoraptor\Contents;
 use codesaur\DataObject\Column;
 use codesaur\DataObject\MultiModel;
 
-class PagesModel extends MultiModel
+class NewsModel extends MultiModel
 {
     public function __construct(\PDO $pdo)
     {
@@ -13,10 +13,9 @@ class PagesModel extends MultiModel
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-            new Column('parent_id', 'bigint', 8),
             new Column('meta_id', 'bigint', 8),
             new Column('category', 'varchar', 32, 'general'),
-            new Column('type', 'varchar', 32, 'menu'),
+            new Column('type', 'varchar', 32, 'common'),
             new Column('position', 'smallint', 2, 100),
             new Column('link', 'varchar', 255),
            (new Column('name', 'varchar', 128))->unique(),
@@ -41,7 +40,7 @@ class PagesModel extends MultiModel
             new Column('is_visible', 'tinyint', 1, 1)
         ]);
         
-        $this->setTable('pages', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->setTable('news', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     protected function __initial()
