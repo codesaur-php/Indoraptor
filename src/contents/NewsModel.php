@@ -16,7 +16,6 @@ class NewsModel extends MultiModel
             new Column('meta_id', 'bigint', 8),
             new Column('category', 'varchar', 32, 'general'),
             new Column('type', 'varchar', 32, 'common'),
-            new Column('position', 'smallint', 2, 100),
             new Column('link', 'varchar', 255),
            (new Column('name', 'varchar', 128))->unique(),
             new Column('show_comment', 'tinyint', 1, 0),
