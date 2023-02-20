@@ -40,7 +40,7 @@ class InternalRequest implements ServerRequestInterface
         $this->serverParams['REQUEST_URI'] = $pattern;
         $this->serverParams['SCRIPT_NAME'] = '/index.php';
         $this->serverParams['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
-        $this->serverParams['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
+        $this->serverParams['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
         $this->serverParams['PHP_SELF'] = $_SERVER['PHP_SELF'];
         
         $this->method = $method;
