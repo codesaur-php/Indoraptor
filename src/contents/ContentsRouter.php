@@ -13,5 +13,6 @@ class ContentsRouter extends Router
         $this->PUT('/reference/{table}', [ReferenceController::class, 'update']);
         $this->DELETE('/reference/{table}', [ReferenceController::class, 'delete']);
         $this->GET_INTERNAL('/reference/records/{table}', [ReferenceController::class, 'records']);
+        $this->INTERNAL('/pages/navigation/{code}', [PagesController::class, 'navigation']);
     }
 }
