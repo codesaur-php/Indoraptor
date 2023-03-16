@@ -15,7 +15,6 @@ class FileModel extends MultiModel
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('file', 'varchar', 255),
             new Column('path', 'varchar', 255, ''),
-           (new Column('protection', 'tinyint', 1, 1))->notNull(), // 1 => public; 2 => private
             new Column('category', 'tinyint', 1, 1),
             new Column('size', 'int', 4),
             new Column('keyword', 'varchar', 128),
