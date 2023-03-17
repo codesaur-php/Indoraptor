@@ -32,22 +32,29 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function insert(string $table): ResponseInterface
+    public function internal(string $table): ResponseInterface
     {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
         $record = $this->getParsedBody();
-        if (empty($record)
-            || !$this->isExists($table)
-        ) {
+        if (empty($record)) {
             return $this->badRequest();
         }
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->insert($record));
+    }
+    
+    public function insert(string $table): ResponseInterface
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        if (!$this->isExists($table)) {
+            return $this->badRequest();
+        }
+        
+        return $this->internal($table);
     }
     
     public function update(string $table): ResponseInterface
