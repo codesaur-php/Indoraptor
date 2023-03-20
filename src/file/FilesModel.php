@@ -13,8 +13,8 @@ class FilesModel extends Model
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-           (new Column('record', 'bigint', 8))->notNull(),
            (new Column('file', 'bigint', 8))->notNull(),
+            new Column('record', 'bigint', 8),
             new Column('type', 'tinyint', 1, 5),
             new Column('code', 'varchar', 6, ''),
             new Column('rank', 'smallint', 2, 10),
