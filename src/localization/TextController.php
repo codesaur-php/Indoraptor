@@ -136,7 +136,7 @@ class TextController extends \Indoraptor\IndoController
             if ($select->rowCount() == 1) {
                 $result = ['table' => $table];
                 $result += $select->fetch(\PDO::FETCH_ASSOC);
-                foreach (['id', 'type', 'is_active', 'created_by', 'updated_by'] as $column) {
+                foreach (['id', 'is_active', 'created_by', 'updated_by'] as $column) {
                     if (isset($result[$column])) {
                         $result[$column] = (int) $result[$column];
                     }

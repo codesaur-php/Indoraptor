@@ -15,7 +15,7 @@ class LanguageModel extends Model
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('code', 'varchar', 6),
             new Column('full', 'varchar', 128),
-            new Column('description', 'text'),
+            new Column('description', 'varchar', 255),
             new Column('is_default', 'tinyint', 1, 0),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),

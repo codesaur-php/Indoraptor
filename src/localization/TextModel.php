@@ -14,7 +14,7 @@ class TextModel extends MultiModel
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
            (new Column('keyword', 'varchar', 128))->unique(),
-            new Column('type', 'int', 4, 0),
+            new Column('type', 'varchar', 16),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),

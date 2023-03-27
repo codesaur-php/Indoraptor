@@ -13,7 +13,7 @@ class CountriesModel extends MultiModel
         
         $this->setColumns([
            (new Column('id', 'varchar', 19))->primary()->unique()->notNull(),
-            new Column('speak', 'varchar', 64),
+            new Column('speak', 'varchar', 32),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),
