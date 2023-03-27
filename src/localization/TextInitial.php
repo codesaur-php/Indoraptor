@@ -148,6 +148,7 @@ class TextInitial
         $model->insert(['keyword' => 'player', 'type' => 'sys-defined'], ['mn' => ['text' => 'Тоглогч'], 'en' => ['text' => 'Player']]);
         $model->insert(['keyword' => 'players', 'type' => 'sys-defined'], ['mn' => ['text' => 'Тоглогчид'], 'en' => ['text' => 'Players']]);
         $model->insert(['keyword' => 'position', 'type' => 'sys-defined'], ['mn' => ['text' => 'Байршил'], 'en' => ['text' => 'Position']]);
+        $model->insert(['keyword' => 'purpose', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зорилго'], 'en' => ['text' => 'Purpose']]);
         $model->insert(['keyword' => 'prev', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өмнөх'], 'en' => ['text' => 'Prev']]);
         $model->insert(['keyword' => 'print', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэвлэх'], 'en' => ['text' => 'Print']]);
         $model->insert(['keyword' => 'processing', 'type' => 'sys-defined'], ['en' => ['text' => 'Processing'], 'mn' => ['text' => 'Боловcруулж байна']]);
