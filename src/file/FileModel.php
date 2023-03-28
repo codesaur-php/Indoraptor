@@ -16,9 +16,9 @@ class FileModel extends MultiModel
             new Column('file', 'varchar', 255),
             new Column('path', 'varchar', 255, ''),
             new Column('size', 'int', 4),
-            new Column('type', 'tinyint', 1), // 1: Image, 2: Video, 3: Sound, 4: Document, 5: Text, 6: Archive, 7: Icon 
+            new Column('mime', 'varchar', 32),
+            new Column('category', 'varchar', 24),
             new Column('keyword', 'varchar', 128),
-            new Column('category', 'varchar', 24, 'general'),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),
