@@ -15,7 +15,7 @@ class FilesModel extends Model
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
            (new Column('file', 'bigint', 8))->notNull(),
             new Column('record', 'bigint', 8),
-            new Column('code', 'varchar', 6, ''),
+            new Column('codes', 'varchar', 65, ''),
             new Column('purpose', 'varchar', 24, 'generic'),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),

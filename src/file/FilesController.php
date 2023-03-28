@@ -41,7 +41,10 @@ class FilesController extends \Indoraptor\IndoController
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        return $this->respond($model->insert($record));
+        $model->setForeignKeyChecks(false);
+        $id = $model->insert($record);
+        $model->setForeignKeyChecks(true);
+        return $this->respond($id);
     }
     
     public function insert(string $table): ResponseInterface
@@ -73,7 +76,10 @@ class FilesController extends \Indoraptor\IndoController
         
         $model = new FilesModel($this->pdo);
         $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-        return $this->respond($model->update($payload['record'], $payload['condition']));
+        $model->setForeignKeyChecks(false);
+        $ids = $model->update($payload['record'], $payload['condition']);
+        $model->setForeignKeyChecks(true);
+        return $this->respond($ids);
     }
     
     public function delete(string $table): ResponseInterface
