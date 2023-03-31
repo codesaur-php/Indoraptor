@@ -46,8 +46,8 @@ class FilesModel extends Model
         
         $my_name = $this->getName();
         $record_table_name = $this->getNameClean();
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file FOREIGN KEY (file) REFERENCES indo_file(id) ON DELETE CASCADE ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record FOREIGN KEY (record) REFERENCES $record_table_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file_id FOREIGN KEY (file_id) REFERENCES indo_file(id) ON DELETE CASCADE ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_table_name(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         
