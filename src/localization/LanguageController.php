@@ -37,8 +37,6 @@ class LanguageController extends \Indoraptor\IndoController
             return $this->notFound();
         }
         
-        $this->setForeignKeyChecks(false);
-
         $copied = [];
         while ($rows = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $contentTable = \current($rows);
@@ -141,8 +139,6 @@ class LanguageController extends \Indoraptor\IndoController
                 $copied[] = [$table => $contentTable];
             }
         }
-        
-        $this->setForeignKeyChecks(true);
         
         if (empty($copied)) {
             return $this->notFound('Nothing changed');
