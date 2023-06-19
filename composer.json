@@ -12,12 +12,11 @@
         }
     ],
     "require": {
-        "firebase/php-jwt": ">=6.4.0",
-        "codesaur/http-application": ">=5.5.0",
-        "codesaur/rbac": ">=2.3.6",
-        "codesaur/logger": ">=1.5.7",
-        "codesaur/http-client": ">=1.2.6",
-        "codesaur/globals": ">=1.3.4"
+        "firebase/php-jwt": ">=6.7.0",
+        "codesaur/http-application": ">=5.5.2",
+        "codesaur/rbac": ">=2.3.7",
+        "codesaur/logger": ">=1.5.9",
+        "codesaur/http-client": ">=1.2.7"
     },
     "autoload": {
         "psr-4": {

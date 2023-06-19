@@ -8,21 +8,22 @@ class PagesController extends \Indoraptor\IndoController
 {
     public function navigation(string $code): ResponseInterface
     {
-        $language = \preg_replace('/[^a-z]/', '', $code);
         $queryParams = $this->getQueryParams();
         $is_active = $queryParams['is_active'] ?? 1;
         $is_visible = $queryParams['is_visible'] ?? 1;
-        $condition = "c.code='$language'";
+        $language = \preg_replace('/[^a-z]/', '', $code);
+        $condition = "code='$language'";
         if ($is_active == 1) {
-            $condition .= ' AND p.is_active=1';
+            $condition .= ' AND is_active=1';
         }
         if ($is_visible == 1) {
-            $condition .= ' AND c.is_visible=1';
+            $condition .= ' AND is_visible=1';
         }
+        
+        $pages_model = new PagesModel($this->pdo);        
         $pages_query = 
-            'SELECT p.id, c.title, p.parent_id, p.position, c.is_visible, p.is_active ' .
-            'FROM pages as p JOIN pages_content as c ON p.id=c.parent_id ' .
-            "WHERE $condition ORDER By p.position, p.id";
+            'SELECT id, code, title, parent_id, position, is_visible, is_active ' .
+            "FROM {$pages_model->getName()} WHERE $condition ORDER By position, id";
         $stmt = $this->prepare($pages_query);
         $stmt->execute();
         $pages = [];

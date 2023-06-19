@@ -91,7 +91,7 @@ class LoggerController extends \Indoraptor\IndoController
             \putenv("CODESAUR_ACCOUNT_ID=$current_user");
         }
         
-        $id = $logger->lastInsertId();
+        $id = $logger->getLastInsertId();
         if ($id !== false) {
             return $this->respond($logger->getLogById((int) $id));
         }

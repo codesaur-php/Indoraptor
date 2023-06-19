@@ -2,10 +2,10 @@
 
 namespace Indoraptor\Contents;
 
+use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
-use codesaur\DataObject\MultiModel;
 
-class PagesModel extends MultiModel
+class PagesModel extends Model
 {
     public function __construct(\PDO $pdo)
     {
@@ -14,6 +14,7 @@ class PagesModel extends MultiModel
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('parent_id', 'bigint', 8),
+            new Column('code', 'varchar', 6),
             new Column('meta_id', 'bigint', 8),
             new Column('category', 'varchar', 32, 'general'),
             new Column('type', 'varchar', 32, 'menu'),
@@ -23,22 +24,19 @@ class PagesModel extends MultiModel
             new Column('show_comment', 'tinyint', 1, 0),
             new Column('can_comment', 'tinyint', 1, 0),
             new Column('read_count', 'int', 4, 0),
-            new Column('is_active', 'tinyint', 1, 1),
+            new Column('title', 'varchar', 255),
+            new Column('short', 'text'),
+            new Column('full', 'text'),
+            new Column('is_visible', 'tinyint', 1, 1),
             new Column('publish_date', 'datetime'),
             new Column('published', 'tinyint', 1, 1),
             new Column('published_at', 'datetime'),
             new Column('published_by', 'bigint', 8),
+            new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ]);
-        
-        $this->setContentColumns([
-            new Column('title', 'varchar', 255),
-            new Column('short', 'text'),
-            new Column('full', 'text'),
-            new Column('is_visible', 'tinyint', 1, 1)
         ]);
         
         $this->setTable('pages', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');

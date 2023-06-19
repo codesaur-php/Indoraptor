@@ -2,8 +2,10 @@
 
 namespace Indoraptor;
 
-use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
 use codesaur\Http\Message\Uri;
@@ -12,7 +14,7 @@ class InternalRequest implements ServerRequestInterface
 {
     protected array $headers = [];
     
-    protected ?StreamInterface $body = null;
+    protected StreamInterface $body;
     
     protected string $protocolVersion = '1.1';
 
@@ -64,7 +66,7 @@ class InternalRequest implements ServerRequestInterface
         }
     }
 
-    public function getAttribute($name, $default = null)
+    public function getAttribute(string $name, $default = null)
     {
         if (!isset($this->attributes[$name])) {
             return $default;
@@ -73,43 +75,43 @@ class InternalRequest implements ServerRequestInterface
         return $this->attributes[$name];
     }
 
-    public function getAttributes()
+    public function getAttributes(): array
     {
         return $this->attributes;
     }
 
-    public function getBody()
+    public function getBody(): StreamInterface
     {
         return $this->body;
     }
 
-    public function getCookieParams()
+    public function getCookieParams(): array
     {
         return $this->cookies;
     }
 
-    public function getHeader($name)
+    public function getHeader(string $name): array
     {
         return $this->headers[\strtoupper($name)] ?? [];
     }
 
-    public function getHeaderLine($name)
+    public function getHeaderLine(string $name): string
     {
         $values = $this->getHeader($name);
         return \implode(',', $values);
     }
 
-    public function getHeaders()
+    public function getHeaders(): array
     {
         return $this->headers;
     }
 
-    public function hasHeader($name)
+    public function hasHeader(string $name): bool
     {
         return isset($this->headers[\strtoupper($name)]);
     }
     
-    public function setHeader($name, $value)
+    public function setHeader(string $name, $value)
     {
         if (\is_array($value)) {
             $this->headers[\strtoupper($name)] = $value;
@@ -118,7 +120,7 @@ class InternalRequest implements ServerRequestInterface
         }
     }
 
-    public function getMethod()
+    public function getMethod(): string
     {
         return $this->method;
     }
@@ -128,12 +130,12 @@ class InternalRequest implements ServerRequestInterface
         return $this->parsedBody;
     }
 
-    public function getProtocolVersion()
+    public function getProtocolVersion(): string
     {
         return $this->protocolVersion;
     }
 
-    public function getQueryParams()
+    public function getQueryParams(): array
     {
         if (\is_array($this->queryParams)) {
             return $this->queryParams;
@@ -148,7 +150,7 @@ class InternalRequest implements ServerRequestInterface
         return $this->queryParams;
     }
 
-    public function getRequestTarget()
+    public function getRequestTarget(): string
     {
         if (!empty($this->requestTarget)) {
             return $this->requestTarget;
@@ -172,22 +174,22 @@ class InternalRequest implements ServerRequestInterface
         return $requestTarget;
     }
 
-    public function getServerParams()
+    public function getServerParams(): array
     {
         return $this->serverParams;
     }
 
-    public function getUploadedFiles()
+    public function getUploadedFiles(): array
     {
         return $this->uploadedFiles;
     }
 
-    public function getUri()
+    public function getUri(): UriInterface
     {
         return $this->uri;
     }
 
-    public function withAddedHeader($name, $value)
+    public function withAddedHeader(string $name, $value): MessageInterface
     {
         $clone = clone $this;
         if ($this->hasHeader($name)) {
@@ -203,77 +205,77 @@ class InternalRequest implements ServerRequestInterface
         return $clone;
     }
 
-    public function withAttribute($name, $value)
+    public function withAttribute(string $name, $value): ServerRequestInterface
     {
         $clone = clone $this;
         $clone->attributes[$name] = $value;
         return $clone;
     }
 
-    public function withBody(StreamInterface $body)
+    public function withBody(StreamInterface $body): MessageInterface
     {
         $clone = clone $this;
         $clone->body = $body;
         return $clone;
     }
 
-    public function withCookieParams(array $cookies)
+    public function withCookieParams(array $cookies): ServerRequestInterface
     {
         $clone = clone $this;
         $clone->cookies = $cookies;
         return $clone;
     }
 
-    public function withHeader($name, $value)
+    public function withHeader(string $name, $value): MessageInterface
     {
         $clone = clone $this;
         $clone->setHeader($name, $value);
         return $clone;
     }
 
-    public function withMethod($method)
+    public function withMethod(string $method): RequestInterface
     {
         $clone = clone $this;
         $clone->method = \strtoupper($method);
         return $clone;
     }
 
-    public function withParsedBody($data)
+    public function withParsedBody($data): ServerRequestInterface
     {
         $clone = clone $this;
         $clone->parsedBody = $data;
         return $clone;
     }
 
-    public function withProtocolVersion($version)
+    public function withProtocolVersion(string $version): MessageInterface
     {
         $clone = clone $this;
         $clone->protocolVersion = $version;
         return $clone;
     }
 
-    public function withQueryParams(array $query)
+    public function withQueryParams(array $query): ServerRequestInterface
     {
         $clone = clone $this;
         $clone->queryParams = $query;
         return $clone;
     }
 
-    public function withRequestTarget($requestTarget)
+    public function withRequestTarget(string $requestTarget): RequestInterface
     {
         $clone = clone $this;
         $clone->requestTarget = $requestTarget;
         return $clone;
     }
 
-    public function withUploadedFiles(array $uploadedFiles)
+    public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface
     {
         $clone = clone $this;
         $clone->uploadedFiles = $uploadedFiles;
         return $clone;
     }
 
-    public function withUri(UriInterface $uri, $preserveHost = false)
+    public function withUri(UriInterface $uri, bool $preserveHost = false): RequestInterface
     {
         $clone = clone $this;
         $clone->uri = $uri;
@@ -295,7 +297,7 @@ class InternalRequest implements ServerRequestInterface
         return $clone;
     }
 
-    public function withoutAttribute($name)
+    public function withoutAttribute(string $name): ServerRequestInterface
     {
         $clone = clone $this;
         if (isset($clone->attributes[$name])) {
@@ -304,7 +306,7 @@ class InternalRequest implements ServerRequestInterface
         return $clone;
     }
 
-    public function withoutHeader($name)
+    public function withoutHeader(string $name): MessageInterface
     {
         $clone = clone $this;
         if ($this->hasHeader($name)) {
