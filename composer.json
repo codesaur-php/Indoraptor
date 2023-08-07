@@ -13,7 +13,7 @@
     ],
     "require": {
         "firebase/php-jwt": ">=6.7.0",
-        "codesaur/http-application": ">=5.5.2",
+        "codesaur/http-application": ">=5.5.3",
         "codesaur/rbac": ">=2.3.7",
         "codesaur/logger": ">=1.5.9",
         "codesaur/http-client": ">=1.2.7"
