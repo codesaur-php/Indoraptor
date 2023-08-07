@@ -157,7 +157,7 @@ class MailerController extends \Indoraptor\IndoController
 
     private function getRemoteAddr(): string
     {
-        $server = $this->getServerParams();
+        $server = $this->getRequest()->getServerParams();
         if (!empty($server['HTTP_X_FORWARDED_FOR'])) {
             if (!empty($server['HTTP_CLIENT_IP'])
                 && $this->isValidIP($server['HTTP_CLIENT_IP'])
