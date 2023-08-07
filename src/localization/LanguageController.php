@@ -31,7 +31,7 @@ class LanguageController extends \Indoraptor\IndoController
             return $this->badRequest('Invalid payload');
         }
 
-        $database = $this->databaseName();
+        $database = $this->getDatabaseName();
         $stmt = $this->prepare("SHOW TABLES FROM $database LIKE " . $this->quote('%_content'));
         if (!$stmt->execute()) {
             return $this->notFound();
