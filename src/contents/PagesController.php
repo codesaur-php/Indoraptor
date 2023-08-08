@@ -10,19 +10,19 @@ class PagesController extends \Indoraptor\IndoController
     {
         $queryParams = $this->getQueryParams();
         $is_active = $queryParams['is_active'] ?? 1;
-        $is_visible = $queryParams['is_visible'] ?? 1;
+        $published = $queryParams['published'] ?? 1;
         $language = \preg_replace('/[^a-z]/', '', $code);
         $condition = "code='$language'";
         if ($is_active == 1) {
             $condition .= ' AND is_active=1';
         }
-        if ($is_visible == 1) {
-            $condition .= ' AND is_visible=1';
+        if ($published == 1) {
+            $condition .= ' AND published=1';
         }
         
         $pages_model = new PagesModel($this->pdo);        
         $pages_query = 
-            'SELECT id, code, title, parent_id, position, is_visible, is_active ' .
+            'SELECT id, code, title, parent_id, position, published, is_active ' .
             "FROM {$pages_model->getName()} WHERE $condition ORDER By position, id";
         $stmt = $this->prepare($pages_query);
         $stmt->execute();

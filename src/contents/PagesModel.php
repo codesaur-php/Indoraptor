@@ -27,7 +27,6 @@ class PagesModel extends Model
             new Column('title', 'varchar', 255),
             new Column('short', 'text'),
             new Column('full', 'text'),
-            new Column('is_visible', 'tinyint', 1, 1),
             new Column('publish_date', 'datetime'),
             new Column('published', 'tinyint', 1, 1),
             new Column('published_at', 'datetime'),
