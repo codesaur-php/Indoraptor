@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\File;
+namespace Indoraptor\Contents;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
@@ -13,9 +13,15 @@ class FilesModel extends Model
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-           (new Column('file_id', 'bigint', 8))->notNull(),
             new Column('record_id', 'bigint', 8),
+            new Column('file', 'varchar', 255),
+            new Column('path', 'varchar', 255, ''),
+            new Column('size', 'int', 4),
+            new Column('type', 'varchar', 24),
+            new Column('mime_content_type', 'varchar', 32),
             new Column('purpose', 'varchar', 24, 'generic'),
+            new Column('keyword', 'varchar', 32),
+            new Column('description', 'varchar', 255),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),
@@ -45,7 +51,6 @@ class FilesModel extends Model
         
         $my_name = $this->getName();
         $record_table_name = $this->getRecordName();
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file_id FOREIGN KEY (file_id) REFERENCES indo_file(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_table_name(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");

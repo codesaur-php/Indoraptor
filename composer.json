@@ -25,7 +25,6 @@
             "Indoraptor\\Localization\\": "src/localization/",
             "Indoraptor\\Logger\\": "src/logger/",
             "Indoraptor\\Record\\": "src/record/",
-            "Indoraptor\\File\\": "src/file/",
             "Indoraptor\\Statement\\": "src/statement/",
             "Indoraptor\\Contents\\": "src/contents/",
             "Indoraptor\\Mailer\\": "src/mailer/"

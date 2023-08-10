@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor\File;
+namespace Indoraptor\Contents;
 
 use Psr\Http\Message\ResponseInterface;
 
