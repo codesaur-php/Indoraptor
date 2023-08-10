@@ -15,7 +15,6 @@ class FilesModel extends Model
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
            (new Column('file_id', 'bigint', 8))->notNull(),
             new Column('record_id', 'bigint', 8),
-            new Column('codes', 'varchar', 65, ''),
             new Column('purpose', 'varchar', 24, 'generic'),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
@@ -35,7 +34,7 @@ class FilesModel extends Model
         parent::setTable("indo_{$table}_files", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
 
-    public function getNameClean(): string
+    public function getRecordName(): string
     {
         return \substr($this->getName(), 5, -(\strlen('_files')));
     }
@@ -45,7 +44,7 @@ class FilesModel extends Model
         $this->setForeignKeyChecks(false);
         
         $my_name = $this->getName();
-        $record_table_name = $this->getNameClean();
+        $record_table_name = $this->getRecordName();
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_file_id FOREIGN KEY (file_id) REFERENCES indo_file(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_table_name(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
