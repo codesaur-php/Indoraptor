@@ -25,10 +25,7 @@ class IndoApplication extends Application
         $this->use(new Record\RecordRouter());
 
         // import contents rules
-        $this->use(new Contents\ContentsRouter());
-        
-        // import emailing rules
-        $this->use(new File\FilesRouter());
+        $this->use(new Contents\ContentsRouter());        
 
         // import statement rules
         $this->use(new Statement\StatementRouter());
