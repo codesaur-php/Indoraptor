@@ -19,7 +19,7 @@ class FilesModel extends Model
             new Column('size', 'int', 4),
             new Column('type', 'varchar', 24),
             new Column('mime_content_type', 'varchar', 32),
-            new Column('purpose', 'varchar', 24),
+            new Column('category', 'varchar', 24),
             new Column('keyword', 'varchar', 32),
             new Column('description', 'varchar', 255),
             new Column('is_active', 'tinyint', 1, 1),
