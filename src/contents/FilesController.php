@@ -32,7 +32,18 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function internal(string $table): ResponseInterface
+    public function insert(string $table): ResponseInterface
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        } elseif (!$this->isExists($table)) {
+            return $this->badRequest();
+        }
+        
+        return $this->insert_internal($table);
+    }
+    
+    public function insert_internal(string $table): ResponseInterface
     {
         $record = $this->getParsedBody();
         if (empty($record)) {
@@ -44,29 +55,22 @@ class FilesController extends \Indoraptor\IndoController
         return $this->respond($model->insert($record));
     }
     
-    public function insert(string $table): ResponseInterface
-    {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
-        if (!$this->isExists($table)) {
-            return $this->badRequest();
-        }
-        
-        return $this->internal($table);
-    }
-    
     public function update(string $table): ResponseInterface
     {
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
+        } elseif (!$this->isExists($table)) {
+            return $this->badRequest();
         }
         
+        return $this->update_internal($table);
+    }
+    
+    public function update_internal(string $table): ResponseInterface
+    {
         $payload = $this->getParsedBody();
         if (empty($payload['record'])
             || empty($payload['condition'])
-            || !$this->isExists($table)
         ) {
             return $this->badRequest();
         }

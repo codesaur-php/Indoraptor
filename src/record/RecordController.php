@@ -15,46 +15,10 @@ class RecordController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
-        return $this->internal_record();
+        return $this->record_internal();
     }
     
-    public function records(): ResponseInterface
-    {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
-        return $this->internal_records();
-    }
-    
-    public function insert(): ResponseInterface
-    {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
-        return $this->internal_insert();
-    }
-    
-    public function update(): ResponseInterface
-    {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
-        return $this->internal_update();
-    }
-    
-    public function delete(): ResponseInterface
-    {
-        if (!$this->isAuthorized()) {
-            return $this->unauthorized();
-        }
-        
-        return $this->internal_delete();
-    }
-    
-    public function internal_record(): ResponseInterface
+    public function record_internal(): ResponseInterface
     {
         $with_values = $this->getParsedBody();
         if (empty($with_values)) {
@@ -73,7 +37,16 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($record);
     }
     
-    public function internal_records(): ResponseInterface
+    public function records(): ResponseInterface
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->records_internal();
+    }
+    
+    public function records_internal(): ResponseInterface
     {
         $model = $this->grabModel();
         $condition = $this->getParsedBody();
@@ -88,7 +61,16 @@ class RecordController extends \Indoraptor\IndoController
         return $this->respond($rows);
     }
     
-    public function internal_insert(): ResponseInterface
+    public function insert(): ResponseInterface
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->insert_internal();
+    }
+    
+    public function insert_internal(): ResponseInterface
     {
         $model = $this->grabModel();
         $record = $this->getParsedBody();
@@ -110,7 +92,16 @@ class RecordController extends \Indoraptor\IndoController
         throw new \Exception(__CLASS__. ':insert failed!');
     }
     
-    public function internal_update(): ResponseInterface
+    public function update(): ResponseInterface
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->update_internal();
+    }
+    
+    public function update_internal(): ResponseInterface
     {
         $model = $this->grabModel();
         $payload = $this->getParsedBody();
@@ -134,7 +125,16 @@ class RecordController extends \Indoraptor\IndoController
         throw new \Exception(__CLASS__. ':update failed!');
     }
     
-    public function internal_delete(): ResponseInterface
+    public function delete(): ResponseInterface
+    {
+        if (!$this->isAuthorized()) {
+            return $this->unauthorized();
+        }
+        
+        return $this->delete_internal();
+    }
+    
+    public function delete_internal(): ResponseInterface
     {
         $model = $this->grabModel();
         $condition = $this->getParsedBody();
