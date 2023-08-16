@@ -28,7 +28,7 @@ class PagesModel extends Model
             new Column('short', 'text'),
             new Column('full', 'text'),
             new Column('publish_date', 'datetime'),
-            new Column('published', 'tinyint', 1, 1),
+            new Column('published', 'tinyint', 1, 0),
             new Column('published_at', 'datetime'),
             new Column('published_by', 'bigint', 8),
             new Column('is_active', 'tinyint', 1, 1),
@@ -38,7 +38,7 @@ class PagesModel extends Model
             new Column('updated_by', 'bigint', 8)
         ]);
         
-        $this->setTable('pages', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->setTable('indo_pages', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
     protected function __initial()
