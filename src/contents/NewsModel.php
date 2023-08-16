@@ -13,8 +13,9 @@ class NewsModel extends Model
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-            new Column('code', 'varchar', 6),
             new Column('meta_id', 'bigint', 8),
+            new Column('title', 'varchar', 255),
+            new Column('code', 'varchar', 6),
             new Column('category', 'varchar', 32, 'general'),
             new Column('type', 'varchar', 32, 'common'),
             new Column('link', 'varchar', 255),
@@ -22,7 +23,6 @@ class NewsModel extends Model
             new Column('show_comment', 'tinyint', 1, 1),
             new Column('can_comment', 'tinyint', 1, 1),
             new Column('read_count', 'int', 4, 0),
-            new Column('title', 'varchar', 255),
             new Column('short', 'text'),
             new Column('full', 'text'),
             new Column('publish_date', 'datetime'),

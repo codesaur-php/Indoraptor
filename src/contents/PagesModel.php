@@ -14,8 +14,9 @@ class PagesModel extends Model
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('parent_id', 'bigint', 8),
-            new Column('code', 'varchar', 6),
             new Column('meta_id', 'bigint', 8),
+            new Column('title', 'varchar', 255),
+            new Column('code', 'varchar', 6),
             new Column('category', 'varchar', 32, 'general'),
             new Column('type', 'varchar', 32, 'menu'),
             new Column('position', 'smallint', 2, 100),
@@ -24,7 +25,6 @@ class PagesModel extends Model
             new Column('show_comment', 'tinyint', 1, 0),
             new Column('can_comment', 'tinyint', 1, 0),
             new Column('read_count', 'int', 4, 0),
-            new Column('title', 'varchar', 255),
             new Column('short', 'text'),
             new Column('full', 'text'),
             new Column('publish_date', 'datetime'),

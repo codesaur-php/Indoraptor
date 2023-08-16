@@ -37,12 +37,12 @@ class FilesModel extends Model
             throw new \Exception(__CLASS__ . ': Table name must be provided', 1103);
         }
         
-        parent::setTable("indo_{$table}_files", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        parent::setTable("{$table}_files", $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
 
     public function getRecordName(): string
     {
-        return \substr($this->getName(), 5, -(\strlen('_files')));
+        return \substr($this->getName(), 0, -(\strlen('_files')));
     }
     
     protected function __initial()
