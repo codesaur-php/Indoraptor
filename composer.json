@@ -16,7 +16,7 @@
         "codesaur/http-application": ">=5.5.3",
         "codesaur/rbac": ">=2.3.7",
         "codesaur/logger": ">=1.5.9",
-        "codesaur/http-client": ">=1.2.7"
+        "codesaur/http-client": ">=1.3.0"
     },
     "autoload": {
         "psr-4": {
@@ -26,8 +26,7 @@
             "Indoraptor\\Logger\\": "src/logger/",
             "Indoraptor\\Record\\": "src/record/",
             "Indoraptor\\Statement\\": "src/statement/",
-            "Indoraptor\\Contents\\": "src/contents/",
-            "Indoraptor\\Mailer\\": "src/mailer/"
+            "Indoraptor\\Contents\\": "src/contents/"
         }
     },
     "license": "MIT",

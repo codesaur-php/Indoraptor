@@ -30,9 +30,6 @@ class IndoApplication extends Application
         // import statement rules
         $this->use(new Statement\StatementRouter());
 
-        // import emailing rules
-        $this->use(new Mailer\MailerRouter());
-
         $this->GET('/', function()
         {
             echo '{"application":"'. \addslashes(__CLASS__) . '"}';
