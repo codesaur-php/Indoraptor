@@ -14,15 +14,16 @@ class FilesController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
+        $name = $this->tableName($table);
         $with_values = $this->getParsedBody();
         if (empty($with_values)
-            || !$this->isExists($table)
+            || !$this->isExists($name)
         ) {
             return $this->badRequest();
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $model->setTable($name, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         $record = $model->getRowBy($with_values);
         
         if (empty($record)) {
@@ -34,13 +35,14 @@ class FilesController extends \Indoraptor\IndoController
     
     public function insert(string $table): ResponseInterface
     {
+        $name = $this->tableName($table);
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
-        } elseif (!$this->isExists($table)) {
+        } elseif (!$this->isExists($name)) {
             return $this->badRequest();
         }
         
-        return $this->insert_internal($table);
+        return $this->insert_internal($name);
     }
     
     public function insert_internal(string $table): ResponseInterface
@@ -51,19 +53,20 @@ class FilesController extends \Indoraptor\IndoController
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $model->setTable($this->tableName($table), $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->insert($record));
     }
     
     public function update(string $table): ResponseInterface
     {
+        $name = $this->tableName($table);
         if (!$this->isAuthorized()) {
             return $this->unauthorized();
-        } elseif (!$this->isExists($table)) {
+        } elseif (!$this->isExists($name)) {
             return $this->badRequest();
         }
         
-        return $this->update_internal($table);
+        return $this->update_internal($name);
     }
     
     public function update_internal(string $table): ResponseInterface
@@ -76,7 +79,7 @@ class FilesController extends \Indoraptor\IndoController
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $model->setTable($this->tableName($table), $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->update($payload['record'], $payload['condition']));
     }
     
@@ -86,31 +89,33 @@ class FilesController extends \Indoraptor\IndoController
             return $this->unauthorized();
         }
         
+        $name = $this->tableName($table);
         $condition = $this->getParsedBody();
         if (empty($condition)
-            || !$this->isExists($table)
+            || !$this->isExists($name)
         ) {
             return $this->badRequest();
         }
         
         $model = new FilesModel($this->pdo);
-        $model->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $model->setTable($name, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($model->delete($condition));
     }
     
     public function records(string $table): ResponseInterface
     {
+        $name = $this->tableName($table);
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()
         ) {
             return $this->unauthorized();
-        } elseif (!$this->isExists($table)) {
+        } elseif (!$this->isExists($name)) {
             return $this->badRequest();
         }
         
         $condition = $this->getParsedBody();
         $files = new FilesModel($this->pdo);
-        $files->setTable($table, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $files->setTable($name, $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
         return $this->respond($files->getRows($condition));
     }
     
@@ -118,5 +123,14 @@ class FilesController extends \Indoraptor\IndoController
     {
         $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
         return $this->hasTable("{$table}_files");
+    }
+    
+    private function tableName($name): string
+    {
+        $suffix = '_files';
+        if (\str_ends_with($name, $suffix)) {
+            $name = \substr($name, 0, -\strlen($suffix));
+        }
+        return $name;
     }
 }
