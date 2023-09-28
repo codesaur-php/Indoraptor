@@ -33,17 +33,6 @@ class StatementController extends \Indoraptor\IndoController
         }
         $stmt->execute();
         
-        $result = [];
-        if ($stmt->rowCount() > 0) {
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                if (isset($row['id'])) {
-                    $result[$row['id']] = $row;
-                } else {
-                    $result[] = $row;
-                }
-            }
-        }
-
-        return $this->respond($result);
+        return $this->respond($stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 }
