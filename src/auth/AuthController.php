@@ -215,7 +215,7 @@ class AuthController extends \Indoraptor\IndoController
         $org_user_query =
             "SELECT id FROM {$org_user_model->getName()} " .
             'WHERE organization_id=:org AND account_id=:acc AND is_active=1 ' .
-            'ORDER By id Desc LIMIT 1';
+            'ORDER BY id Desc LIMIT 1';
         $org_user_stmt = $this->prepare($org_user_query);
         $org_user_stmt->bindParam(':org', $org_id, \PDO::PARAM_INT);
         $org_user_stmt->bindParam(':acc', $account_id, \PDO::PARAM_INT);
