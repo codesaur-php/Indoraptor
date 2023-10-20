@@ -201,6 +201,7 @@ class TextInitial
         $model->insert(['keyword' => 'type', 'type' => 'sys-defined'], ['mn' => ['text' => 'Төрөл'], 'en' => ['text' => 'Type']]);
         $model->insert(['keyword' => 'or', 'type' => 'sys-defined'], ['mn' => ['text' => 'Эсвэл'], 'en' => ['text' => 'Or']]);
         $model->insert(['keyword' => 'unknown', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үл мэдэгдэх'], 'en' => ['text' => 'Unknown']]);
+        $model->insert(['keyword' => 'urgent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Яаралтай'], 'en' => ['text' => 'Urgent']]);
         $model->insert(['keyword' => 'user', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч'], 'en' => ['text' => 'User']]);
         $model->insert(['keyword' => 'username', 'type' => 'sys-defined'], ['en' => ['text' => 'Username'], 'mn' => ['text' => 'Хэрэглэгчийн нэр']]);
         $model->insert(['keyword' => 'users', 'type' => 'sys-defined'], ['en' => ['text' => 'Users'], 'mn' => ['text' => 'Хэрэглэгчид']]);
