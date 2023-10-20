@@ -43,8 +43,9 @@ class TextInitial
         $model->insert(['keyword' => 'ololt', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ололт'], 'en' => ['text' => 'ololt']]);
         $model->insert(['keyword' => 'comment', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сэтгэгдэл'], 'en' => ['text' => 'Comment']]);
         $model->insert(['keyword' => 'comments', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сэтгэгдлүүд'], 'en' => ['text' => 'Comments']]);
-        $model->insert(['keyword' => 'confirm', 'type' => 'sys-defined'], ['mn' => ['text' => 'Батлах'], 'en' => ['text' => 'Confirm']]);
         $model->insert(['keyword' => 'confirmation', 'type' => 'sys-defined'], ['mn' => ['text' => 'Лавлагаа'], 'en' => ['text' => 'Confirmation']]);
+        $model->insert(['keyword' => 'confirm', 'type' => 'sys-defined'], ['mn' => ['text' => 'Батлах'], 'en' => ['text' => 'Confirm']]);
+        $model->insert(['keyword' => 'config', 'type' => 'sys-defined'], ['en' => ['text' => 'Config'], 'mn' => ['text' => 'Тохиргоо']]);
         $model->insert(['keyword' => 'contact', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбоо барих'], 'en' => ['text' => 'Contact']]);
         $model->insert(['keyword' => 'content', 'type' => 'sys-defined'], ['mn' => ['text' => 'Агуулга'], 'en' => ['text' => 'Content']]);
         $model->insert(['keyword' => 'continue', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үргэлжлүүлэх'], 'en' => ['text' => 'Continue']]);
@@ -261,8 +262,8 @@ class TextInitial
         $model->insert(['keyword' => 'style', 'type' => 'sys-defined'], ['en' => ['text' => 'Style'], 'mn' => ['text' => 'Загвар']]);
         $model->insert(['keyword' => 'version', 'type' => 'sys-defined'], ['en' => ['text' => 'Version'], 'mn' => ['text' => 'Цуврал']]);
         $model->insert(['keyword' => 'icon', 'type' => 'sys-defined'], ['en' => ['text' => 'Icon'], 'mn' => ['text' => 'Дүрс']]);
-        $model->insert(['keyword' => 'options', 'type' => 'sys-defined'], ['en' => ['text' => 'Options'], 'mn' => ['text' => 'Тохируулгууд']]);
-        $model->insert(['keyword' => 'option', 'type' => 'sys-defined'], ['en' => ['text' => 'Option'], 'mn' => ['text' => 'Тохиргоо']]);
+        $model->insert(['keyword' => 'options', 'type' => 'sys-defined'], ['en' => ['text' => 'Options'], 'mn' => ['text' => 'Сонголтууд']]);
+        $model->insert(['keyword' => 'option', 'type' => 'sys-defined'], ['en' => ['text' => 'Option'], 'mn' => ['text' => 'Сонголт']]);
         $model->insert(['keyword' => 'teaser', 'type' => 'sys-defined'], ['mn' => ['text' => 'Оршил'], 'en' => ['text' => 'Teaser']]);
         $model->insert(['keyword' => 'link', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбоос'], 'en' => ['text' => 'Link']]);
         $model->insert(['keyword' => 'facebook', 'type' => 'sys-defined'], ['en' => ['text' => 'Facebook'], 'mn' => ['text' => 'Фейсбүүк']]);
