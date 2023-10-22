@@ -39,7 +39,7 @@ class AuthController extends \Indoraptor\IndoController
             $org_user_model = new OrganizationUserModel($this->pdo);
             $stmt = $this->prepare(
                 'SELECT t2.id, t2.name, t2.logo, t2.alias ' .
-                "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                "FROM {$org_user_model->getName()} t1 INNER JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
                 'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt->bindParam(':id', $account['id'], \PDO::PARAM_INT);
             if ($stmt->execute()) {
@@ -110,7 +110,7 @@ class AuthController extends \Indoraptor\IndoController
             $org_user_model = new OrganizationUserModel($this->pdo);
             $stmt_check_org = $this->prepare(
                 'SELECT t2.id, t2.name, t2.logo, t2.alias ' .
-                "FROM {$org_user_model->getName()} t1 JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                "FROM {$org_user_model->getName()} t1 INNER JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
                 'WHERE t1.account_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name');
             $stmt_check_org->bindParam(':id', $account['id'], \PDO::PARAM_INT);
             if ($stmt_check_org->execute()) {
