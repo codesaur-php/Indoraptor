@@ -24,7 +24,7 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
             $title .= " $code";
         }
         
-        \error_log("$title: $message");
+        \error_log($title . ': ' . $message);
         
         if (!\headers_sent()) {
             \header('Content-Type: application/json');
@@ -39,6 +39,6 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
         }
         
         echo \json_encode(['error' => $error])
-            ?: '{"error":{"code":' . $code . ',"title":"' . $title . '","message":"' . $message . '"}}';
+            ?: '{"error":{"code":' . $code . ',"title":"' . \addslashes($title) . '","message":"' . \addslashes($message) . '"}}';
     }
 }
