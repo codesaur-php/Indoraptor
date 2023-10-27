@@ -140,10 +140,6 @@ class LanguageController extends \Indoraptor\IndoController
             }
         }
         
-        if (empty($copied)) {
-            return $this->notFound('Nothing changed');
-        }
-        
         return $this->respond($copied);
     }
 }
