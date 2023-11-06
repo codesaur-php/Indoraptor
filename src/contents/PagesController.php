@@ -22,7 +22,7 @@ class PagesController extends \Indoraptor\IndoController
         
         $pages_model = new PagesModel($this->pdo);        
         $pages_query = 
-            'SELECT id, code, title, parent_id, position, published, is_active ' .
+            'SELECT id, code, title, parent_id, position, category, type, link, name, published, is_active ' .
             "FROM {$pages_model->getName()} WHERE $condition ORDER BY position, id";
         $stmt = $this->prepare($pages_query);
         $stmt->execute();
