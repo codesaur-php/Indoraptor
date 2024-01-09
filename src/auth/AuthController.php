@@ -173,6 +173,11 @@ class AuthController extends \Indoraptor\IndoController
                 if (!$rbacUser->hasRole('system_coder')) {
                     throw new \Exception('Account does not belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
                 }
+                $org_user_model->insert([
+                    'account_id' => $account['id'],
+                    'organization_id' => $organization['id'],
+                    'is_active' => 1,
+                ]);
             }
             
             $account_org_jwt = [
