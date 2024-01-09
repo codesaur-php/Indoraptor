@@ -168,7 +168,7 @@ class AuthController extends \Indoraptor\IndoController
             
             $org_user_model = new OrganizationUserModel($this->pdo);
             $user = $org_user_model->retrieve($organization['id'], $account['id']);
-            if (empty($user['id'])) {
+            if ($user == false) {
                 $rbacUser = new RBACUser($this->pdo, $account['id']);
                 if (!$rbacUser->hasRole('system_coder')) {
                     throw new \Exception('Account does not belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);

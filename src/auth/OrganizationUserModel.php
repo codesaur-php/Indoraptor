@@ -25,7 +25,7 @@ class OrganizationUserModel extends Model
         $this->setTable('indo_organization_users', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
-    public function retrieve(int $organization_id, int $account_id)
+    public function retrieve(int $organization_id, int $account_id): array|false
     {
         $stmt = $this->prepare(
             "SELECT * FROM {$this->getName()} WHERE account_id=:1 AND organization_id=:2 AND is_active=1 LIMIT 1");
@@ -41,24 +41,10 @@ class OrganizationUserModel extends Model
                     }
                 }
             }
-        } else {
-            $record = [
-                'account_id' => $account_id,
-                'organization_id' => $organization_id
-            ];
-            
-            $id = $this->insert($record);
-            if ($id !== false) {
-                $record['id'] = $id;
-                $record['is_active'] = 1;
-            }
+            return $record;
         }
         
-        if (isset($record['id'])) {
-            return $record;
-        } else {
-            return false;
-        }
+        return false;
     }
     
     protected function __initial()
