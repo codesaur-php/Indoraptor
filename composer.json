@@ -14,8 +14,8 @@
     "require": {
         "firebase/php-jwt": ">=6.7.0",
         "codesaur/http-application": ">=5.5.3",
-        "codesaur/rbac": ">=2.4.0",
-        "codesaur/logger": ">=1.6.0"
+        "codesaur/rbac": ">=2.4.1",
+        "codesaur/logger": ">=1.6.1"
     },
     "autoload": {
         "psr-4": {
