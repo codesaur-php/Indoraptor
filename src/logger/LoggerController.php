@@ -42,7 +42,7 @@ class LoggerController extends \Indoraptor\IndoController
                     $key = \strtoupper($k);
                     if (!empty($key) 
                         && (\in_array($key, ['JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'])
-                            || \str_contains('PASSWORD', $key))
+                            || \str_contains($key, 'PASSWORD'))
                     ) {
                         $v = '*** hidden info ***';
                     }
