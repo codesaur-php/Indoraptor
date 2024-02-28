@@ -25,7 +25,7 @@ class ReferenceModel extends MultiModel
         $this->setContentColumns([
             new Column('title', 'varchar', 255),
             new Column('short', 'text'),
-            new Column('full', 'text')
+            new Column('mediumtext', 'text')
         ]);
     }
     

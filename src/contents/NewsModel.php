@@ -24,7 +24,7 @@ class NewsModel extends Model
             new Column('can_comment', 'tinyint', 1, 1),
             new Column('read_count', 'int', 4, 0),
             new Column('short', 'text'),
-            new Column('full', 'text'),
+            new Column('full', 'mediumtext'),
             new Column('published', 'tinyint', 1, 0),
             new Column('published_date', 'datetime'),
             new Column('published_by', 'bigint', 8),

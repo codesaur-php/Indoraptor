@@ -23,8 +23,5 @@ class LocalizationRouter extends Router
         $this->PUT('/text/{table}', [TextController::class, 'update']);
         $this->DELETE('/text/{table}', [TextController::class, 'delete']);
         $this->GET_INTERNAL('/text/records/{table}', [TextController::class, 'records']);
-        
-        // Countries rules
-        $this->GET_INTERNAL('/countries', [CountriesController::class, 'index']);
     }
 }
