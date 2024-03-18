@@ -27,8 +27,8 @@ class IndoApplication extends Application
         // import contents rules
         $this->use(new Contents\ContentsRouter());        
 
-        // import statement rules
-        $this->use(new Statement\StatementRouter());
+        // import internal rules
+        $this->use(new Internal\InternalRouter());
 
         $this->GET('/', function()
         {

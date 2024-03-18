@@ -21,11 +21,11 @@
         "psr-4": {
             "Indoraptor\\": "src/",
             "Indoraptor\\Auth\\": "src/auth/",
-            "Indoraptor\\Localization\\": "src/localization/",
             "Indoraptor\\Logger\\": "src/logger/",
             "Indoraptor\\Record\\": "src/record/",
-            "Indoraptor\\Statement\\": "src/statement/",
-            "Indoraptor\\Contents\\": "src/contents/"
+            "Indoraptor\\Contents\\": "src/contents/",
+            "Indoraptor\\Internal\\": "src/internal/",
+            "Indoraptor\\Localization\\": "src/localization/"
         }
     },
     "license": "MIT",

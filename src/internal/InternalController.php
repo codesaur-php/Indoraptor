@@ -1,12 +1,12 @@
 <?php
 
-namespace Indoraptor\Statement;
+namespace Indoraptor\Internal;
 
 use Psr\Http\Message\ResponseInterface;
 
-class StatementController extends \Indoraptor\IndoController
+class InternalController extends \Indoraptor\IndoController
 {
-    public function index(): ResponseInterface
+    public function executeFetchAll(): ResponseInterface
     {
         if ($this->getRequest()->getMethod() != 'INTERNAL'
             && !$this->isAuthorized()

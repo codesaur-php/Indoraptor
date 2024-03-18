@@ -1,6 +1,6 @@
 <?php
 
-namespace Indoraptor;
+namespace Indoraptor\Internal;
 
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
