@@ -25,6 +25,7 @@ class NewsModel extends Model
             new Column('read_count', 'int', 4, 0),
             new Column('short', 'text'),
             new Column('full', 'mediumtext'),
+            new Column('photo', 'varchar', 255),
             new Column('published', 'tinyint', 1, 0),
             new Column('published_date', 'datetime'),
             new Column('published_by', 'bigint', 8),

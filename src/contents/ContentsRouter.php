@@ -21,7 +21,5 @@ class ContentsRouter extends Router
         $this->INTERNAL('/files/{table}/update', [FilesController::class, 'update_internal']);
         $this->DELETE('/files/{table}', [FilesController::class, 'delete']);
         $this->GET_INTERNAL('/files/records/{table}', [FilesController::class, 'records']);
-        
-        $this->INTERNAL('/pages/navigation/{code}', [PagesController::class, 'navigation']);
     }
 }
