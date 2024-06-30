@@ -14,18 +14,12 @@
     "require": {
         "firebase/php-jwt": ">=6.7.0",
         "codesaur/http-application": ">=5.5.3",
-        "codesaur/rbac": ">=2.4.1",
+        "codesaur/rbac": ">=2.5.0",
         "codesaur/logger": ">=2.0.0"
     },
     "autoload": {
         "psr-4": {
-            "Indoraptor\\": "src/",
-            "Indoraptor\\Auth\\": "src/auth/",
-            "Indoraptor\\Logger\\": "src/logger/",
-            "Indoraptor\\Record\\": "src/record/",
-            "Indoraptor\\Contents\\": "src/contents/",
-            "Indoraptor\\Internal\\": "src/internal/",
-            "Indoraptor\\Localization\\": "src/localization/"
+            "Indoraptor\\": "src/"
         }
     },
     "license": "MIT",

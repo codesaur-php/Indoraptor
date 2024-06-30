@@ -1,13 +1,13 @@
 <?php
 
-namespace Indoraptor\Record;
+namespace Indoraptor;
 
 use Psr\Http\Message\ResponseInterface;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\MultiModel;
 
-class RecordController extends \Indoraptor\IndoController
+class RecordController extends IndoController
 {
     public function record(): ResponseInterface
     {
@@ -86,7 +86,8 @@ class RecordController extends \Indoraptor\IndoController
             && !empty($record['content'])
         ) {
             return $this->respond($model->insert(
-                $record['record'], $record['content']));
+                $record['record'], $record['content'])
+            );
         }
         
         throw new \Exception(__CLASS__. ':insert failed!');
@@ -113,13 +114,15 @@ class RecordController extends \Indoraptor\IndoController
         
         if ($model instanceof Model) {
             return $this->respond($model->update(
-                        $payload['record'], $payload['condition']));
+                        $payload['record'], $payload['condition'])
+            );
         } elseif (
             $model instanceof MultiModel
             && isset($payload['content'])
         ) {
             return $this->respond($model->update(
-                        $payload['record'], $payload['content'], $payload['condition']));
+                        $payload['record'], $payload['content'], $payload['condition'])
+            );
         }
         
         throw new \Exception(__CLASS__. ':update failed!');

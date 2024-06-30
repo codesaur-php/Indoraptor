@@ -11,28 +11,22 @@ class IndoApplication extends Application
         parent::__construct();
         
         $this->use(new PDOConnectMiddleware());
-
-        // import account rules
-        $this->use(new Auth\AuthRouter());
-
-        // import localization rules
-        $this->use(new Localization\LocalizationRouter());
-
-        // import logger rules
-        $this->use(new Logger\LoggerRouter());
         
-        // import record rules
-        $this->use(new Record\RecordRouter());
-
-        // import contents rules
-        $this->use(new Contents\ContentsRouter());        
-
-        // import internal rules
-        $this->use(new Internal\InternalRouter());
-
-        $this->GET('/', function()
-        {
-            echo '{"application":"'. \addslashes(__CLASS__) . '"}';
-        });
+        $this->INTERNAL('/execute/fetch/all', [InternalController::class, 'executeFetchAll']);
+        
+        $this->GET('/record', [RecordController::class, 'record']);
+        $this->INTERNAL('/record', [RecordController::class, 'record_internal']);
+        
+        $this->GET('/records', [RecordController::class, 'records']);
+        $this->INTERNAL('/records', [RecordController::class, 'records_internal']);
+        
+        $this->POST('/record', [RecordController::class, 'insert']);
+        $this->INTERNAL('/record/insert', [RecordController::class, 'insert_internal']);
+        
+        $this->PUT('/record', [RecordController::class, 'update']);
+        $this->INTERNAL('/record/update', [RecordController::class, 'update_internal']);
+        
+        $this->DELETE('/record', [RecordController::class, 'delete']);
+        $this->INTERNAL('/record/delete', [RecordController::class, 'delete_internal']);
     }
 }

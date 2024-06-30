@@ -1,10 +1,10 @@
 <?php
 
-namespace Indoraptor\Internal;
+namespace Indoraptor;
 
 use Psr\Http\Message\ResponseInterface;
 
-class InternalController extends \Indoraptor\IndoController
+class InternalController extends IndoController
 {
     public function executeFetchAll(): ResponseInterface
     {
