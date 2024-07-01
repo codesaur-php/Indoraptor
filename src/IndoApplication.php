@@ -12,8 +12,6 @@ class IndoApplication extends Application
         
         $this->use(new PDOConnectMiddleware());
         
-        $this->INTERNAL('/execute/fetch/all', [InternalController::class, 'executeFetchAll']);
-        
         $this->GET('/record', [RecordController::class, 'record']);
         $this->INTERNAL('/record', [RecordController::class, 'record_internal']);
         
@@ -28,5 +26,13 @@ class IndoApplication extends Application
         
         $this->DELETE('/record', [RecordController::class, 'delete']);
         $this->INTERNAL('/record/delete', [RecordController::class, 'delete_internal']);
+        
+        $this->INTERNAL('/execute/fetch/all', [RecordController::class, 'executeFetchAll']);        
+        
+        $this->GET('/', function()
+        {
+            echo '{"application":"codesaur/indoraptor: '
+                . \Composer\InstalledVersions::getPrettyVersion('codesaur/indoraptor') . '"}';
+        });
     }
 }

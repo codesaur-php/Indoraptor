@@ -149,4 +149,53 @@ class RecordController extends IndoController
         
         return $this->respond($model->delete($condition));
     }
+    
+    private function grabModel()
+    {
+        $params = $this->getQueryParams();
+        $cls = $params['model'] ?? null;
+        if (empty($cls)) {
+            $cls = $this->getParsedBody()['model'] ?? null;
+        }
+        if (empty($cls)) {
+            return null;
+        }
+        
+        $class = \str_replace(' ', '', $cls);
+        if (!\class_exists($class)) {
+            return null;
+        }
+        
+        return new $class($this->pdo);
+    }
+    
+    public function executeFetchAll(): ResponseInterface
+    {
+        if ($this->getRequest()->getMethod() != 'INTERNAL'
+            && !$this->isAuthorized()
+        ) {
+            return $this->unauthorized();
+        }
+        
+        $payload = $this->getParsedBody();
+        if (!isset($payload['query'])) {
+            return $this->badRequest('Invalid payload');
+        }
+        
+        $stmt = $this->prepare($payload['query']);
+        if (isset($payload['bind'])) {
+            foreach ($payload['bind'] as $parametr => $values) {
+                if (isset($values['var'])) {
+                    if (isset($values['length'])) {
+                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? \PDO::PARAM_STR, $values['length']);
+                    } else {
+                        $stmt->bindParam($parametr, $values['var'], $values['type'] ?? \PDO::PARAM_STR);
+                    }
+                }
+            }
+        }
+        $stmt->execute();
+        
+        return $this->respond($stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
 }

@@ -133,23 +133,4 @@ class IndoController extends Controller
     {
         return $this->error($message, StatusCodeInterface::STATUS_NOT_FOUND);
     }
-    
-    protected function grabModel()
-    {
-        $params = $this->getQueryParams();
-        $cls = $params['model'] ?? null;
-        if (empty($cls)) {
-            $cls = $this->getParsedBody()['model'] ?? null;
-        }
-        if (empty($cls)) {
-            return null;
-        }
-        
-        $class = \str_replace(' ', '', $cls);
-        if (!\class_exists($class)) {
-            return null;
-        }
-        
-        return new $class($this->pdo);
-    }
 }

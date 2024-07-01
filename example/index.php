@@ -14,6 +14,8 @@ namespace Indoraptor\Example;
 
 use Firebase\JWT\JWT;
 
+use codesaur\Http\Message\ServerRequest;
+
 use Indoraptor\IndoApplication;
 use Indoraptor\JsonExceptionHandler;
 use Indoraptor\JsonResponseMiddleware;
@@ -21,7 +23,7 @@ use Indoraptor\JsonResponseMiddleware;
 $autoload = require_once '../vendor/autoload.php';
 $autoload->addPsr4(__NAMESPACE__ . '\\', \dirname(__FILE__));
 
-class ExampleRequest extends \codesaur\Http\Message\ServerRequest
+class MockRequest extends ServerRequest
 {
     function __construct()
     {
@@ -52,10 +54,4 @@ class ExampleRequest extends \codesaur\Http\Message\ServerRequest
 $application = new IndoApplication();
 $application->use(new JsonExceptionHandler());
 $application->use(new JsonResponseMiddleware());
-
-$application->GET('/', function()
-{
-    echo '{"application":"'. \addslashes(__CLASS__) . '"}';
-});
-
-$application->handle(new ExampleRequest());
+$application->handle(new MockRequest());
