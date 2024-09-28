@@ -1,0 +1,134 @@
+<style>
+    .select-editable {
+        position:relative;
+        background-color:white;
+        border:solid grey 1px;
+        width:120px;
+        height:18px;
+    }
+    .select-editable select {
+        position:absolute;
+        top:0px;
+        left:0px;
+        font-size:14px;
+        border:none;
+        width:120px;
+        margin:0;
+    }
+    .select-editable input {
+        position:absolute;
+        top:0px;
+        left:0px;
+        width:100px;
+        padding:1px;
+        font-size:12px;
+        border:none;
+    }
+    .select-editable select:focus, .select-editable input:focus {
+        outline:none;
+    }
+</style>
+<div class="modal-lg modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-success">Add Permission</h3>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+                <form class="needs-validation" novalidate autocomplete="off" id="rbac_permission_insert" role="form" action="{{ 'rbac-insert-permission'|link({'alias':alias}) }}?title={{ title|e }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group row">
+                        <label class="col-3 form-label text-end">{{ 'group'|text }}</label>
+                        <div class="col-9">
+                            <div class="input-group">
+                                <input class="form-control" name="module" maxlength="128" placeholder="" value="" type="text">
+                                <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                                {% for item in modules %}
+                                    <li class="dropdown-item" value="{{ item['module']|e }}">{{ item['module'] }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-3 form-label text-end">{{ 'name'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" required autocomplete="off" maxlength="128" name="name" placeholder="" value="" type="text">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-3 form-label text-end">{{ 'description'|text }}</label>
+                        <div class="col-9">
+                            <textarea class="form-control" name="description"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="submit-new-permission btn btn-success shadow-sm">
+                <i class="la la-check"></i> <strong>{{ 'submit'|text }}</strong>
+            </button>
+            <button class="btn btn-secondary shadow-sm" type="button" data-bs-dismiss="modal" type="button">
+                {{ 'back'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    const formInsert = document.querySelector('form#rbac_permission_insert');
+    if (!formInsert) {
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const modules = formInsert.querySelectorAll('.dropdown-item');
+        modules.forEach(a => a.addEventListener('click', function () {
+            formInsert.querySelector('input[name="module"]').value = a.innerHTML;
+        }));
+        
+        const submitter = document.querySelector('button.submit-new-permission');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formInsert.requestSubmit();
+        });
+
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.reload();
+
+                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Permission created');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                submitter.growNstop();
+            });
+        });
+    }
+</script>

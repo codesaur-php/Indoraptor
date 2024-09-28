@@ -1,0 +1,202 @@
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
+  'system': { 'mn': 'Систем' },
+  'special': { 'mn': 'Тусгай' },
+  'manual': { 'mn': 'Заавар' },
+  'notification': { 'mn': 'Сонордуулга' },
+  'email': { 'mn': 'Цахим захиа' }
+} %}
+<div class="card shadow border-primary">
+    <div class="card-header">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
+            <h3 class="text-primary fs-6 text-uppercase pt-1">
+                <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} ({{ table }}:{{ record['id'] }})
+            </h3>
+            <div class="ms-auto">
+                <button class="submit-update btn btn-sm btn-primary shadow-sm text-uppercase" type="button">
+                    <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+                </button>
+                <a class="btn btn-sm btn-secondary shadow-sm text-uppercase" href="{{ 'references'|link }}">
+                    <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <form class="needs-validation" id="reference_update" action="{{ 'reference-update'|link({'table': table, 'id': record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
+            <div class="form-group row">
+                <div class="col-6">
+                    <label class="form-label">{{ 'keyword'|text }}</label>
+                    <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off">
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">{{ 'category'|text }}</label>
+                    <div class="input-group">
+                        <input class="form-control" name="category" required type="text" value="{{ record['category']|e }}" maxlength="32">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                        {% for value,name in categories %}
+                            <li class="dropdown-item" value="{{ value|e }}">{{ (name[localization.code] ?? value)|capitalize }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <ul class="nav nav-tabs nav-tabs-content mt-3">
+                {% for code,title in localization.language %}
+                <li class="nav-item">
+                    <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
+                        {{ 'content'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12">
+                    </a>
+                </li>
+                {% endfor %}
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-history">
+                        {{ 'history'|text }} <i class="bi bi-clock-history"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-version">
+                        {{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i>
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                {% for code,title in localization.language %}
+                <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+                    <div class="form-group mt-3">
+                        <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
+                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
+                        <textarea class="form-control" name="short[{{ code }}]">{{ record['content']['short'][code] }}</textarea>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
+                        <textarea class="form-control" name="full[{{ code }}]" required rows="10">{{ record['content']['full'][code] }}</textarea>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                {% endfor %}                
+                <div class="tab-pane" id="tab-history">
+                    <div class="row mt-3">
+                        <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ (record['rbac_users'][record['created_by']] ?? record['created_by'])|e }}" type="text">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ (record['rbac_users'][record['updated_by']] ?? record['updated_by'])|e }}" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-version">
+                    <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
+                        <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                        {% if localization.code == 'mn' %}
+                            Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                        {% else %}
+                            Sorry, this feature isn’t available right now
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="card-footer">
+        <div class="row pb-1">
+            <div class="col-6 d-grid">
+                <button class="submit-update btn btn-primary text-uppercase shadow-sm" type="button">
+                    <i class="bi bi-check2"></i> {{ 'save'|text }}
+                </button>
+            </div>
+            <div class="col-6 d-grid">
+                <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'references'|link }}">
+                    <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    const category = document.querySelector('input[name="category"]');
+    document.getElementById('category_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            category.value = e.target.getAttribute('value');
+        }
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const formUpdate = document.querySelector('form#reference_update');
+        if (!formUpdate) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitters = document.querySelectorAll('button.submit-update');
+            submitters.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    formUpdate.requestSubmit();
+                });
+            });
+
+            formUpdate.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                }
+
+                submitters.forEach(function (btn) { btn.growNstop(); });
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'PUT'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.href = `{{ 'references'|link }}`;
+
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Reference updated');
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitters.forEach(function (btn) { btn.growNstop(); });
+                });
+            });
+        }
+    });
+</script>

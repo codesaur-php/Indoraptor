@@ -1,0 +1,133 @@
+<style>
+    .requesting {
+        z-index: 2000;
+        display: none;
+        position: fixed;
+        margin: 0;
+        padding: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: wait;
+        border: none;
+    }
+    .requesting-bg {
+        width: 100%;
+        height: 100%;
+        background-color: rgb(0, 0, 0);
+        opacity: 0.6;
+    }
+    .requesting-content {
+        position: absolute;
+        padding: .7rem .5rem .2rem .5rem;
+        margin: 0;
+        top: 40%;
+        left: 35%;
+        width: 30%;
+        text-align: center;
+        color: #0d6efd;
+        border-radius: 7px;
+        border: 2px solid #0d6efd;
+        background-color: rgb(255, 255, 255);
+    }
+    .requesting-content img {
+        height: 42px;
+        margin-bottom: .3rem;
+    }
+</style>
+<div class="requesting">
+    <div class="requesting-bg"></div>
+    <div class="requesting-content">
+        <span class="spinner-border" role="status"></span>
+        <h6>Processing request ...</h6>
+    </div>
+</div>
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-danger">
+        <i class="bi bi-shield-fill-check"></i> RBAC / {{ alias ~ (title is empty ? '' : ' / ' ~ title)}}
+    </h3>
+    <div class="ms-auto">
+        <button class="btn btn-sm btn-info shadow-sm text-white" href="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}" data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
+            <i class="bi bi-plus-circle"></i> Add Role
+        </button>
+        <button class="btn btn-sm btn-success shadow-sm" href="{{ 'rbac-insert-permission'|link({'alias':alias}) }}?title={{ title|e }}" data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
+            <i class="bi bi-plus-circle"></i> Add Permission
+        </button>
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-striped table-bordered mt-1" id="rbac_{{ alias }}">
+        <thead>
+            <tr>
+                <th class="text-danger" scope="col">ROLE</th>
+                    {% for permission in permissions %}
+                    <th class="text-center">
+                        <span style="cursor:pointer" data-toggle="tooltip" title="{{ permission['description']|e }}">
+                            {{ permission['name'] }}
+                        </span>
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody style="border-top:0.1rem solid currentcolor">
+            {% for role in roles %}
+                <tr>
+                    <th scope="col">
+                        <span class="text-danger" style="cursor:pointer" data-toggle="tooltip" data-placement="right" title="{{ role['description']|e }}">
+                            {{ role['name'] }}
+                        </span>
+                    </th>
+                    {% for permission in permissions %}
+                        <td class="text-center">
+                            <input class="role_permission"{% if role_permission[role['id']][permission['id']] is defined %} checked{% endif %} role_id="{{ role['id'] }}" permission_id="{{ permission['id'] }}" type="checkbox">
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot></tfoot>
+    </table>
+</div>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const setRolePermission = function () {
+            const requesting = document.querySelector('div.requesting');
+            if (requesting) {
+                requesting.style.display = 'block';
+            }
+            
+            let formData = new FormData();
+            formData.append('role_id', this.getAttribute('role_id'));
+            formData.append('permission_id', this.getAttribute('permission_id'));
+            fetch(
+                `{{ 'rbac-set-role-permission'|link({'alias':alias}) }}`,
+                {
+                    method: this.checked ? 'POST' : 'DELETE',
+                    body: formData
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                let type = response.type ?? 'warning';
+                let title = response.title ?? `{{ 'notice'|text|e }}`;
+                NotifyTop(type, title, response.message ?? 'Role permission set');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text }}`, error.message);
+            }).finally(() => {
+                if (requesting) {
+                    requesting.style.display = 'none';
+                }
+            });
+        };
+
+        var rolePermissionInputs = document.getElementsByClassName('role_permission');
+        for (var i = 0; i < rolePermissionInputs.length; i++) {
+            rolePermissionInputs[i].addEventListener('click', setRolePermission);
+        }
+    });
+</script>

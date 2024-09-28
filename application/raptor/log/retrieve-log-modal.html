@@ -1,0 +1,33 @@
+{% macro formGroupRow(label, content, class, col) %}
+    {% if content is iterable %}
+        <hr>
+        <strong>{{ _self.formGroupRow(label|upper, '', 'col-6 text-warning text-right', 6) }}</strong>
+        {% for key,value in content %}
+            {{ _self.formGroupRow(key, value, 'col-3 text-primary text-right', 9) }}
+        {% endfor %}
+        <hr>
+    {% else %}
+        <div class="form-group row">
+            <div class="{{ class }}">{{ label }}</div>
+            <div class="col-{{ col }}">{{ content }}</div>
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{% from _self import formGroupRow %}
+
+<div class="modal-dialog modal-fullscreen modal-dialog-scrollable"  role="document">
+    <div class="modal-content">
+        <div class="modal-header text-bg-secondary">
+            <h3 class="modal-title fs-6 text-uppercase">{{ detailed }} ({{ table }}/{{ id }})</h3>
+        </div>
+        <div class="modal-body">
+            {% for key,value in data %}
+                {{ formGroupRow(key, value, 'col-3 text-danger text-right', 9) }}
+            {% endfor %}
+        </div>
+        <div class="modal-footer text-bg-secondary">
+            <button class="btn btn-light shadow-sm" data-bs-dismiss="modal" type="button">{{ close }}</button>
+        </div>
+    </div>
+</div>

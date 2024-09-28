@@ -1,4 +1,14 @@
+/public_html/public/*
+!/public_html/public/.htaccess
+/private/*
+!/private/.htaccess
+/databack/*
+!/databack/.htaccess
+
+/nbproject/private/
+
 /vendor/
-/nbproject/
 
 composer.lock
+
+.env

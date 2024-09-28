@@ -1,0 +1,113 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-info">
+        <i class="bi bi-person-circle"></i> {{ record['first_name'] ~ ' ' ~ record['last_name'] }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-info shadow-sm" href="{{ 'users'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
+        </a>
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">ID</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['id'] }}" type="number">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'login'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['username']|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'firstname'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['first_name']|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'lastname'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['last_name']|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'photo'|text }}</label>
+    <div class="col-9">
+        {% if record['photo'] is not empty %}
+            <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}" style="max-height:480px;">
+        {% else %}
+            <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
+        {% endif %}
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'email'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['email']|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'telephone'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['phone']|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'organization'|text }}</label>
+    <div class="col-9">
+        <div class="form-control">
+            {% for org in organizations %}
+                <a class="badge bg-{{ org['alias'] == 'system' ? 'primary' : 'info' }} text-decoration-none fw-normal shadow-sm" href="{{ 'organizations'|link }}/view/{{ org['id'] }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                    {{ org['name'] }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'role2'|text }}</label>
+    <div class="col-9">
+        <div class="form-control">
+            {% for role in roles %}
+                <a class="badge bg-{{ role['name'] == 'system_coder' ? 'primary' : 'warning' }} text-decoration-none fw-normal shadow-sm" href="{{ 'rbac-role-view'|link }}?role={{ role['name'] }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                    {{ role['name'] }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<div class="row mb-2 mt-3">
+    <label class="col-3 col-form-label text-end text-end">{{ 'status'|text }}</label>
+    <div class="col-9">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
+            <div class="form-text" id="activeHelpBlock">{{ 'active-user-can-login'|text }}</div>
+        </div>
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'date-created'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['created_at']|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'created-by'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ (record['rbac_users'][record['created_by']] ?? record['created_by'])|e }}" type="text">
+    </div>
+</div>
+<div class="row mb-2">
+    <label class="col-3 col-form-label text-end text-end">{{ 'date-modified'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ record['updated_at']|e }}" type="text">
+    </div>
+</div>
+<div class="row">
+    <label class="col-3 col-form-label text-end text-end">{{ 'updated-by'|text }}</label>
+    <div class="col-9">
+        <input class="form-control" disabled value="{{ (record['rbac_users'][record['updated_by']] ?? record['updated_by'])|e }}" type="text">
+    </div>
+</div>

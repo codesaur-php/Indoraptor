@@ -1,0 +1,15 @@
+<div id="hello"></div>
+<script type="text/javascript">
+function getGreeting() {
+    let dd = new Date();
+    let hh = dd.getHours();
+    if (hh > 17) {
+        return 'Good evening';
+    } else if (hh > 11) {
+        return 'Good afternoon';
+    } else {
+        return 'Good morning';
+    }
+}
+document.getElementById('hello').innerHTML = `${getGreeting()} <strong>{{ user.getProfile()['first_name'] }}</strong>.<br/>Welcome to codesaur framework!`;
+</script>

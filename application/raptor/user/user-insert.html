@@ -1,0 +1,213 @@
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-success">
+        <i class="bi bi-person-plus-fill"></i> {{ 'create-new-user'|text }}
+    </h3>
+    <div class="ms-auto">
+        {% if user.can('system_user_insert') %}
+            <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
+                <i class="bi bi-check"></i> {{ 'submit'|text }}
+            </button>
+        {% endif %}
+        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'users'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
+        </a>
+    </div>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }} <i class="bi bi-postcard"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }} <i class="bi bi-camera"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">{{ 'organization'|text }} <i class="bi bi-building"></i></a></li>
+</ul>
+<form class="needs-validation pt-3" novalidate id="user_insert" action="{{ 'user-insert'|link }}" method="POST" enctype="multipart/form-data">
+    <div class="tab-content">
+        <div class="tab-pane active show" id="tab-personal" role="tabpanel">
+            <div class="mb-3">
+                <label class="form-label">{{ 'login'|text }}</label>
+                <input class="form-control" required name="username" value="" maxlength="128" placeholder="" type="text" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ 'password'|text }}</label>
+                <input class="form-control" required name="password" value="" maxlength="256" placeholder="" type="password" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ 'firstname'|text }}</label>
+                <input class="form-control" required name="first_name" value="" maxlength="128" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ 'lastname'|text }}</label>
+                <input class="form-control" required name="last_name" value="" maxlength="128" placeholder="" required type="text" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ 'telephone'|text }}</label>
+                <input class="form-control" required name="phone" value="" maxlength="128" placeholder="" type="text" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ 'email'|text }}</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text">@</span></div>
+                    <input class="form-control" required name="email" value="" maxlength="128" placeholder="" type="email" autocomplete="off">
+                    <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
+                </div>
+            </div>
+            <div class="rounded-3">
+                <label class="form-label">{{ 'status'|text }}</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="status" checked type="checkbox" role="switch" aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                    <div id="activeHelpBlock" class="form-text">{{ 'active-user-can-login'|text }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-picture" role="tabpanel">
+            <div class="input-group">
+                <input class="form-control" type="text" id="photo_name" disabled value="" placeholder="{{ 'select-an-image'|text|e }}">
+                <div class="input-group-append">
+                    <div class="btn-group">
+                        <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
+                        <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                    </div>
+                </div>
+            </div>
+            <img class="img-thumbnail img-fluid" id="photo_preview" src="" style=display:none;">
+        </div>
+        <div class="tab-pane" id="tab-organization" role="tabpanel">
+            <label class="form-label">{{ 'organization'|text }}</label>
+            <select class="form-control" name="organization">
+                {% for org in organizations %}
+                    <option value="{{ org['id'] }}"{{ loop.first ? ' selected' : '' }}>{{ org['name']|e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</form>
+<div class="rounded p-2 mt-3 shadow">
+    {% if user.can('system_user_insert') %}
+        <button class="submit-insert btn btn-success text-uppercase shadow-sm">
+            <i class="bi bi-check"></i> {{ 'submit'|text }}
+        </button>
+    {% endif %}
+    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'users'|link }}">
+        <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
+    </a>
+</div>
+<script type="text/javascript">
+    function warnStatus(checked) {
+        if (checked) {
+            return;
+        }
+
+        Swal.fire({
+            position: 'top-end',
+            icon: 'warning',
+            html: `{{ 'active-user-can-login'|text }}`,
+            showConfirmButton: false,
+            timer: 1500
+        });
+    }
+    
+    const photoName = document.getElementById('photo_name');
+    const photoBrowse = document.querySelector('button.photo-browse');
+    const photoPreview = document.getElementById('photo_preview');
+    const photo = document.querySelector('input[name="photo"]');
+    photo.addEventListener('change', function (e) {
+        e.preventDefault();
+        
+        photo.name = 'photo';
+        photoName.value = photo.files[0].name;
+        
+        photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
+        if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
+            let photoClear = document.createElement('button');
+            photoClear.classList.add('btn', 'btn-danger');
+            photoClear.type = 'button';
+            photoClear.innerHTML = `{{ 'remove'|text }}`;
+            photoClear.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                photoPreview.removeAttribute('src');
+                photoPreview.style.display = 'none';
+
+                photoName.value = '';
+                photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
+
+                photo.value = '';
+                photo.removeAttribute('name');
+
+                photoClear.remove();
+            });
+            if (photoBrowse.nextSibling) {
+                photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
+            } else {
+                photoBrowse.parentNode.appendChild(photoClear);
+            }
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            photoPreview.src = e.target.result;
+            if (photoPreview.style.display === 'none') {
+                photoPreview.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(photo.files[0]);
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const formInsert = document.querySelector('form#user_insert');
+        if (!formInsert) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitters = document.querySelectorAll('button.submit-insert');
+            submitters.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    formInsert.requestSubmit();
+                });
+            });
+
+            formInsert.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                }
+
+                submitters.forEach(function (btn) { btn.growNstop(); });
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'POST'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.href = `{{ 'users'|link }}`;
+
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'User created');
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitters.forEach(function (btn) { btn.growNstop(); });
+                });
+            });
+        }
+    });
+</script>

@@ -1,0 +1,123 @@
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
+  'featured': { 'mn': 'Онцолсон' },
+  'attach': { 'mn': 'Хавсралт' },
+  'special': { 'mn': 'Тусгай' }
+} %}
+<div class="modal-lg modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-primary">
+                <i class="bi bi-hdd"></i> {{ record['path']|basename }}
+            </h3>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <form class="needs-validation" novalidate id="files_update" action="{{ 'files-update'|link({'table':table, 'id':record['id']}) }}" method="PUT" enctype="multipart/form-data">
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'category'|text }}</label>
+                    <div class="col-9">
+                        <div class="input-group mb-3">
+                            <input class="form-control" name="file_category" type="text" value="{{ record['category']|e }}" maxlength="24">
+                            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                            <ul class="dropdown-menu dropdown-menu-end" id="file_category_list">
+                            {% for value,name in categories %}
+                                <li class="dropdown-item" value="{{ value|e }}">{{ (name[localization.code] ?? value)|capitalize }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'keyword'|text }}</label>
+                    <div class="col-9">
+                        <input class="form-control" name="file_keyword" type="text" value="{{ record['keyword']|e }}" maxlength="32">
+                    </div>
+                </div>
+                <div class="row">
+                    <label class="col-3 col-form-label text-end">{{ 'description'|text }}</label>
+                    <div class="col-9">
+                        <textarea class="form-control" name="file_description" maxlength="255">{{ record['description'] }}</textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary update-files-submit" type="button">
+                <i class="bi bi-check"></i> {{ 'save'|text }}
+            </button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" id="file_{{ record['id'] }}_close" type="button">
+                {{ 'cancel'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    const category = document.querySelector('input[name="file_category"]');
+    document.getElementById('file_category_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            category.value = e.target.getAttribute('value');
+        }
+    });
+    
+    const formUpdate = document.querySelector('form#files_update');
+    if (!formUpdate) {
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.update-files-submit');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
+
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'PUT'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(resp => {
+                if (resp.status !== 'success') {
+                    throw new Error(resp.message ? resp.message : 'Invalid response!');
+                }
+
+                if (resp.record === undefined || resp.record.id === undefined) return;
+
+                let row = document.getElementById(`file_${resp.record.id}`);
+                if (!row || row === null) return;
+
+                document.getElementById(`file_${resp.record.id}_close`).click();
+
+                row.children[2].innerHTML = resp.record.description;
+                row.children[3].innerHTML = resp.record.category;
+                row.children[4].innerHTML = resp.record.keyword;
+
+                NotifyTop(resp.type ?? 'success', resp.title ?? `{{ 'success'|text|e }}`, resp.message ?? 'File record successfully updated');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            }).finally(() => {
+                submitter.growNstop();
+            });
+        });
+    }
+</script>

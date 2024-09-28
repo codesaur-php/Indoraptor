@@ -1,0 +1,160 @@
+{% set can_insert = user.can('system_content_insert') %}
+{% set can_update = user.can('system_content_update') %}
+{% set can_delete = user.can('system_content_delete') %}
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="referenceTab" role="tablist">
+            {% for name in tables|keys %}
+                <li class="nav-item">
+                    <button class="nav-link{{ loop.first ? ' active' : '' }}" id="{{ name }}-tab" data-bs-toggle="tab" data-bs-target="#{{ name }}-tab-pane" type="button" role="tab" aria-controls="{{ name }}-tab-pane" aria-selected="{{ loop.first ? 'true' : 'false' }}">
+                        <i class="bi bi-layout-wtf"></i> {{ name|capitalize }}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="card-body tab-content" id="referenceContent">
+        {% for table,rows in tables %}
+        <div class="tab-pane fade{{ loop.first ? ' show active' : '' }}" id="{{ table }}-tab-pane" role="tabpanel" aria-labelledby="{{ table }}-tab">
+            {% if user.can('system_content_insert') %}
+                <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm" href="{{ 'reference-insert'|link({'table':table}) }}">
+                    <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
+                </a>
+            {% endif %}
+            <table class="table table-sm table-striped table-hover" data-table="{{ table }}">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">{{ 'keyword'|text }}</th>
+                        {% for lang in localization.language %}
+                            <th scope="col">{{ 'title'|text }} ({{ lang }})</th>
+                        {% endfor %}
+                        <th scope="col">{{ 'category'|text }}</span></th>
+                        <th scope="col" style="width:8rem">{{ 'action'|text }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <th scope="row">{{ row['id'] }}</th>
+                            <td>{{ row['keyword'] }}</td>
+                            {% for code in localization.language|keys %}
+                                <td>{{ row['content']['title'][code] }}</td>
+                            {% endfor %}
+                            <td>{{ row['category'] }}</td>
+                            <td>
+                                <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm" href="{{ 'reference-view'|link({'table':table,'id':row['id']}) }}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if can_update %}
+                                    <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm" href="{{ 'reference-update'|link({'table':table,'id':row['id']}) }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                {% endif %}
+                                {% if can_delete %}
+                                    <button class="delete-reference btn btn-sm btn-danger mt-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<script type="text/javascript">
+    var tabLink = window.location.hash;
+    if (tabLink) {
+        let activeTab = document.querySelector('ul.nav.nav-tabs.card-header-tabs > li.nav-item > button.nav-link.active');
+        if (activeTab.getAttribute('data-bs-target') !== tabLink) {
+            let linkTab = document.querySelector(`ul.nav.nav-tabs.card-header-tabs > li.nav-item > button[data-bs-target="${tabLink}"]`);
+            if (linkTab) {
+                activeTab.classList.remove('active');
+                linkTab.classList.add('active');
+                document.querySelector(`div.tab-content > div.tab-pane.active.show`).classList.remove('active', 'show');
+                document.querySelector(`div.tab-pane[id="${tabLink.substr(1)}"]`).classList.add('active', 'show');
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        let tabLinks = document.querySelectorAll('ul.nav.nav-tabs > li > button.nav-link');
+        tabLinks.forEach(navLink => navLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            window.location.hash = navLink.getAttribute('data-bs-target');
+        }));
+        
+        const referenceTables = document.querySelectorAll('table[data-table]');
+        referenceTables.forEach(table => {
+            let reference = new motable(table);
+            reference.setReady();
+            
+            let name = reference.table.getAttribute('data-table');
+            if (!name) return;
+            
+            const deleteRef = reference.table.querySelectorAll('.delete-reference');
+            deleteRef.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                let thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+                
+                let questiondel;
+                if (document.documentElement.lang === 'mn') {
+                    questiondel = '<p class="text-danger mb-3">Та [{0}] түлхүүртэй бичлэгийг устгахдаа итгэлтэй байна уу?</p>';
+                } else {
+                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the reference with keyword [{0}]?</p>';
+                }
+                let keyword = thisRow.children[1].innerHTML;
+                let question = questiondel.format(keyword.replace(/<\/?[^>]+(>|$)/g, ''));
+                Swal.fire({
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                            `{{ 'reference-delete'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    keyword,
+                                    table: name,
+                                    id: btn.value
+                                })
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            thisRow.remove();
+                            reference.setReady();
+
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Reference ${keyword} deleted`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+        });
+    });
+</script>

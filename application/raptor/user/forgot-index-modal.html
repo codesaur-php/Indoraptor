@@ -1,0 +1,55 @@
+<div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-info text-uppercase">
+                <i class="bi bi-shield-lock-fill"></i> {{ 'password-reset-request'|text }}
+            </h3>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <table class="table table-hover table-striped-columns table-bordered" id="forgot_requests">
+                <thead>
+                    <tr>
+                        <th class="text-info" scope="col">{{ 'email'|text }}</th>
+                        <th class="text-info" scope="col">{{ 'user'|text }}</th>
+                        <th class="text-info" scope="col">{{ 'language'|text }}</th>
+                        <th class="text-info" scope="col">{{ 'status'|text }}</th>
+                        <th class="text-info" scope="col">{{ 'date-created'|text }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <th scope="row">{{ row['email'] }}</th>
+                        <td>{{ row['first_name'] }} {{ row['last_name'] }} [{{ row['username'] }}: {{ row['user_id'] }}]</td>
+                        <td>
+                            {% set flag = row['code'] == 'en' ? 'us' : row['code'] %}
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15">
+                        </td>
+                        <td>
+                            {% if row['is_active'] == 0 %}
+                            <span class="badge bg-secondary">deleted</span>
+                            {% elseif row['status'] == 1 %}
+                                {% if isExpired(row['created_at']) %}
+                                <span class="badge bg-danger">expired</span>
+                                {% else %}
+                                <span class="badge bg-primary">ready</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-success">used</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row['created_at'] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-info shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    new motable('table#forgot_requests');
+</script>

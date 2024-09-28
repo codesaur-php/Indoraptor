@@ -1,0 +1,64 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name example.com;
+
+    return 301 https://example.com$request_uri;
+}
+
+server {
+  server_name www.example.com;
+  return 301 $scheme://example.com$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name example.com;
+
+    ssl on;
+    ssl_certificate /etc/nginx/ssl/example.com.crt;
+    ssl_certificate_key /etc/nginx/ssl/example.com.key;
+
+    root /var/www/html;
+
+    index index.php;    
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+
+        include fastcgi_params;
+
+        fastcgi_pass unix:/var/run/php/php7.2-fpm.sock;
+        
+        fastcgi_index index.php;
+ 
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+        expires max;
+        log_not_found off;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    access_log /var/log/nginx/example.access.log;
+    error_log /var/log/nginx/example.error.log;
+}

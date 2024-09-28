@@ -1,8 +1,9 @@
 {
     "name": "codesaur/indoraptor",
-    "description": "An elegant object-oriented application for PHP 8.2.1 or newer",
+    "type": "project",
+    "description": "An elegant object-oriented application development framework for PHP 8.2.1 or newer",
     "keywords": [
-        "indoraptor", "application", "http application", "server request handler", "router", "psr-3", "psr-7", "psr-15", "mongol", "mongolia", "mongolian", "монгол", "codesaur", "кодзавр", "narankhuu", "наранхүү", "ololt", "ололт", "мөнхийн ололт", "munkhiin ololt"
+        "velociraptor", "indoraptor", "raptor", "framework", "ерөнхий бүтэц", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "logs", "лог", "лог бичлэг", "протокол", "mongol", "mongolia", "mongolian", "монгол", "codesaur", "кодзавр", "narankhuu", "наранхүү", "ololt", "ололт", "мөнхийн ололт", "munkhiin ololt"
     ],
     "homepage": "https://github.com/codesaur-php",
     "authors": [
@@ -13,14 +14,41 @@
     ],
     "require": {
         "ext-json": "*",
+        "psr/log": ">=3.0.0",
+        "vlucas/phpdotenv": ">=5.5.0",
+        "phpmailer/phpmailer": ">=6.8.0",
+        "getbrevo/brevo-php": ">=1.0.2",
         "firebase/php-jwt": ">=6.7.0",
-        "codesaur/http-application": ">=5.5.3",
-        "codesaur/dataobject": ">=5.0.0"
+        "codesaur/http-application": ">=5.6.0",
+        "codesaur/dataobject": ">=5.2.0",
+        "codesaur/http-client": ">=1.5.0",
+        "codesaur/template": ">=1.6.0"
     },
     "autoload": {
         "psr-4": {
-            "Indoraptor\\": "src/"
+            "Web\\": "application/web/",
+            "Web\\Home\\": "application/web/home/",
+            
+            "Dashboard\\": "application/dashboard/",
+            "Dashboard\\Home\\": "application/dashboard/home",
+            
+            "Raptor\\": "application/raptor/",
+            "Raptor\\Exception\\": "application/raptor/exception/",
+            "Raptor\\Authentication\\": "application/raptor/authentication/",
+            "Raptor\\User\\": "application/raptor/users/",
+            "Raptor\\File\\": "application/raptor/file/",
+            "Raptor\\Organization\\": "application/raptor/organization/",
+            "Raptor\\RBAC\\": "application/raptor/rbac/",
+            "Raptor\\Localization\\": "application/raptor/localization/",
+            "Raptor\\Content\\": "application/raptor/contents/",
+            "Raptor\\Mail\\": "application/raptor/mail/",
+            "Raptor\\Log\\": "application/raptor/log/"
         }
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ]
     },
     "license": "MIT",
     "minimum-stability": "dev"

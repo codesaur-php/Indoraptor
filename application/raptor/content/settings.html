@@ -1,0 +1,335 @@
+{% set user_can = user.can('system_content_settings') %}
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-primary">
+        <i class="bi bi-gear-fill"></i> {{ 'settings'|text }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'home'|link }}">
+            <i class="bi bi-house-door-fill"></i> {{ 'home'|text }}
+        </a>
+    </div>
+</div>
+<ul class="nav nav-tabs mt-1" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-meta">
+            {{ 'meta'|text }} <i class="bi bi-card-text"></i>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-logo">
+            {{ 'logo'|text }} <i class="bi bi-images"></i>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-config">
+            {{ 'config'|text }} <i class="bi bi-gear"></i>
+        </a>
+    </li>
+</ul>
+<div class="settings-tabs tab-content mt-2">
+    <div class="tab-pane active show" id="tab-meta" role="tabpanel">
+        <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            {% for code,lang in localization.language %}
+                <div class="form-floating mt-2">
+                    <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code]|e }}" maxlength="70" id="title_{{ code }}" autocomplete="off">
+                    <label for="title_{{ code }}">
+                        {{ 'title'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+            {% for code,lang in localization.language %}
+                <div class="form-floating mt-2">
+                    <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code]|e }}" maxlength="255" id="description_{{ code }}" autocomplete="off">
+                    <label for="description_{{ code }}">
+                        {{ 'description'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+            {% for code,lang in localization.language %}
+                <div class="form-floating mt-2">
+                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:120px">{{ record['content']['urgent'][code] }}</textarea>
+                    <label for="urgent_{{ code }}">
+                        {{ 'urgent'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+            <div class="form-floating mt-2">
+                <input class="form-control" name="keywords" value="{{ record['keywords']|e }}" maxlength="255" id="keywords" autocomplete="off">
+                <label for="keywords">SEO search keywords</label>
+            </div>
+            <div class="form-floating mt-2">
+                <input class="form-control" name="email" type="email" value="{{ record['email']|e }}" maxlength="70" id="email" autocomplete="off">
+                <label for="email">{{ 'email'|text }}</label>
+            </div>
+            <div class="form-floating mt-2">
+                <input class="form-control" name="phone" value="{{ record['phone']|e }}" maxlength="70" id="phone" autocomplete="off">
+                <label for="phone">{{ 'phone'|text }}</label>
+            </div>
+            <hr>
+            {% for code,lang in localization.language %}
+                <div class="form-floating mt-2">
+                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:120px">{{ record['content']['contact'][code] }}</textarea>
+                    <label for="contact_{{ code }}">
+                        {{ 'contact'|text }}{% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+            {% for code,lang in localization.language %}
+                <div class="form-floating mt-2">
+                    <textarea class="form-control" name="address[{{ code }}]" id="address_{{ code }}" style="height:120px">{{ record['content']['address'][code] }}</textarea>
+                    <label for="address_{{ code }}">
+                        {{ 'address'|text }}{% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+            {% for code,lang in localization.language %}
+                <div class="form-floating mt-2">
+                    <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code]|e }}" maxlength="255" id="copyright_{{ code }}" autocomplete="off">
+                    <label for="copyright_{{ code }}">
+                        Copyright{% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            {% if user_can %}
+                <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
+                    <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
+                </button>
+            {% endif %}
+        </form>
+    </div>
+    <div class="tab-pane" id="tab-logo" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings-files'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            <div class="row mb-3 mt-2">
+                <div class="col">
+                    {% for code,lang in localization.language %}
+                        {% if not loop.first %}<hr>{% endif %}
+                        <label class="form-label">
+                            {{ 'logo'|text }}{% set flag = code == 'en' ? 'us' : code %}
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ lang|e }}">
+                        </label>
+                        <div class="input-group">
+                            <input class="form-control" type="text" id="logo_{{ code }}_name" disabled value="{{ record['content']['logo'][code]|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                            <div class="input-group-append">
+                                <div class="btn-group">
+                                    <input type="file" name="logo_{{ code }}" id="logo_{{ code }}" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
+                                    <button class="btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                                    <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['content']['logo'][code] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+                                </div>
+                            </div>
+                        </div>
+                        <img class="img-thumbnail img-fluid" id="logo_{{ code }}_preview" src="{{ record['content']['logo'][code]|e }}" style="max-height:480px;{% if record['content']['logo'][code] is empty %}display:none;{% endif %}">
+                    {% endfor %}
+                </div>
+                <div class="col">
+                    <label class="form-label">Favico</label>
+                    <div class="input-group">
+                        <input class="form-control" type="text" id="favico_name" disabled value="{{ record['favico']|e }}" placeholder="Select icon file">
+                        <div class="input-group-append">
+                            <div class="btn-group">
+                                <input type="file" name="favico" id="favico" accept=".ico" maxlength="256" style="display:none;" onchange="onFileInput(this);">
+                                <button class="btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                                <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['favico'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+                            </div>
+                        </div>
+                    </div>
+                    <img class="img-thumbnail img-fluid" id="favico_preview" src="{{ record['favico']|e }}" style="max-height:256px;{% if record['favico'] is empty %}display:none;{% endif %}">
+                    <hr>
+                    <label class="form-label">Shortcut image icon</label>
+                    <div class="input-group">
+                        <input class="form-control" type="text" id="shortcut_icon_name" disabled value="{{ record['shortcut_icon']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                        <div class="input-group-append">
+                            <div class="btn-group">
+                                <input type="file" name="shortcut_icon" id="shortcut_icon" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
+                                <button class="btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                                <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['shortcut_icon'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+                            </div>
+                        </div>
+                    </div>
+                    <img class="img-thumbnail img-fluid" id="shortcut_icon_preview" src="{{ record['shortcut_icon']|e }}" style="max-height:480px;{% if record['shortcut_icon'] is empty %}display:none;{% endif %}">
+                    <hr>
+                    <label class="form-label">Apple touch image icon</label>
+                    <div class="input-group">
+                        <input class="form-control" type="text" id="apple_touch_icon_name" disabled value="{{ record['apple_touch_icon']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                        <div class="input-group-append">
+                            <div class="btn-group">
+                                <input type="file" name="apple_touch_icon" id="apple_touch_icon" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
+                                <button class="btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                                <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['apple_touch_icon'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+                            </div>
+                        </div>
+                    </div>
+                    <img class="img-thumbnail img-fluid" id="apple_touch_icon_preview" src="{{ record['apple_touch_icon']|e }}" style="max-height:480px;{% if record['apple_touch_icon'] is empty %}display:none;{% endif %}">
+                </div>
+            </div>
+            {% if user_can %}
+                <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
+                    <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
+                </button>
+            {% endif %}
+        </form>
+    </div>
+    <div class="tab-pane" id="tab-config" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            <label class="form-label text-muted small"><i>must be valid JSON</i></label>
+            <a class="badge bg-info mb-2" href="javascript:;" onclick="prettyPrint();">pretty print</a>
+            <textarea class="form-control" name="config" id="config_editor" rows="25" style="height:450px">{{ record['config'] }}</textarea>
+            {% if user_can %}
+                <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
+                    <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
+                </button>
+            {% endif %}
+        </form>
+    </div>  
+</div>
+<script type="text/javascript">
+    const prettyPrint = function () {
+        try {
+            let configEditor = document.querySelector('textarea#config_editor');
+            if (!configEditor) {
+                throw new Error('JSON editor not selected!');
+            }
+            let val = configEditor.value;
+            if (val) {
+                let mayugly = configEditor.value;
+                let obj = JSON.parse(mayugly);
+                let pretty = JSON.stringify(obj, undefined, 4);
+                configEditor.value = pretty;
+            }
+        } catch (e) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, e.message);
+        }
+    };
+
+    const onFileInput = function (input) {
+        let id = input.id;
+        if (!id) {
+            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
+        }
+
+        if (!input.name) {
+            input.name = id;
+        }
+
+        let name = document.getElementById(input.name + '_name');
+        if (name) {
+            name.value = input.files[0].name;
+        }
+
+        let browse = input.nextElementSibling;
+        if (browse) {
+            browse.innerHTML = `{{ 'change'|text|e }}`;
+        }
+
+        let remove = browse.nextElementSibling;
+        if (remove && remove.style.display === 'none') {
+            remove.style.display = 'block';
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            let preview = document.getElementById(input.name + '_preview');
+            if (preview) {
+                preview.src = e.target.result;
+                if (preview.style.display === 'none') {
+                    preview.style.display = 'block';
+                }
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    };
+
+    const onFileClear = function (remove) {
+        let input = remove?.previousElementSibling?.previousElementSibling;
+        if (input?.tagName === 'INPUT' && input.type === 'file') {
+            let preview = document.getElementById(input.name + '_preview');
+            if (preview) {
+                preview.removeAttribute('src');
+            }
+            let name = document.getElementById(input.name + '_name');
+            if (name) {
+                name.value = '';
+            }
+
+            let browse = input.nextElementSibling;
+            if (browse) {
+                browse.innerHTML = `{{ 'choose'|text|e }}`;
+            }
+
+            remove.style.display = 'none';
+
+            input.value = '';
+            input.removeAttribute('name');
+        }
+    };
+
+    const submitters = document.querySelectorAll('button.submit-settings');
+    submitters.forEach(function (button) {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            let form = this.closest('form');
+            if (!form) {
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            }
+
+            form.requestSubmit();
+        });
+    });
+    
+    document.querySelectorAll('.settings-tabs form').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            }
+
+            submitters.forEach(function (btn) { btn.spinNstop(); });
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Settings updated');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            }).finally(() => {
+                submitters.forEach(function (btn) { btn.spinNstop(); });
+            });
+        });
+    });
+</script>

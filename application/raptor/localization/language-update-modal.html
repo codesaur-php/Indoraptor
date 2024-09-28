@@ -1,0 +1,117 @@
+<div class="modal-xl modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-primary">
+                <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} - {{ record['full']|e }}
+            </h3>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <form class="needs-validation" novalidate id="language_update" action="{{ 'language-update'|link({id: record['id']}) }}" method="PUT">
+                <div class="row mb-2">
+                    <div class="col">
+                        <label class="form-label">{{ 'code'|text }}</label>
+                        <input class="form-control" name="code" required value="{{ record['code']|e }}" maxlength="6" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">{{ 'name'|text }}</label>
+                        <input class="form-control" name="full" required value="{{ record['full']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <label class="form-label">{{ 'flag'|text }}</label>
+                        {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
+                        <p class="lang_flag">
+                            <img src="https://flagcdn.com/40x30/{{ flag }}.png" srcset="https://flagcdn.com/80x60/{{ flag }}.png 2x" width="40" height="30">
+                        </p>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">is_default?</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" name="is_default" type="checkbox" role="switch"{{ record['is_default'] == 1 ? ' checked' : '' }}>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">{{ 'description'|text }}</label>
+                    <input class="form-control" name="description" value="{{ record['description']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            {% if user.can('system_localization_update') %}
+                <button class="submit-language btn btn-primary shadow-sm">
+                    <i class="bi bi-check"></i> {{ 'submit'|text }}
+                </button>
+            {% endif %}
+            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+                {{ 'cancel'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    let codeInput = document.querySelector('#language_update input[name="code"]');
+    codeInput.addEventListener('input', function () {
+        let langFlag = document.querySelector('#language_update p.lang_flag');
+        if (this.value.length === 2) {
+            let flagstr = this.value === 'en' ? 'us' : this.value;
+            langFlag.innerHTML = `<img src="https://flagcdn.com/40x30/${flagstr}.png" srcset="https://flagcdn.com/80x60/${flagstr}.png 2x" width="40" height="30">`;
+        } else {
+            langFlag.innerHTML = '';
+        }
+    }, false);
+
+    const formUpdate = document.querySelector('form#language_update');
+    if (!formUpdate) {
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.submit-language');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
+
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'PUT'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.reload();
+
+                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Language updated');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                submitter.growNstop();
+            });
+        });
+    }
+</script>

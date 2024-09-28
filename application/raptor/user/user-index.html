@@ -1,0 +1,200 @@
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
+        <i class="bi bi-people-fill"></i> {{ 'users'|text }}
+    </h3>
+    <div class="btn-group ms-auto">
+        {% if user.can('system_user_index') %}
+            <a class="btn btn-sm btn-outline-info btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'forgot'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                {{ 'password-reset-request'|text }}
+            </a>
+            <a class="btn btn-sm btn-outline-primary btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'newbie'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                {{ 'request-new-user'|text }}
+            </a>
+        {% endif %}
+        {% if user.can('system_user_insert') %}
+            <a class="btn btn-sm btn-outline-success btn-users d-none shadow-sm" href="{{ 'user-insert'|link }}">
+                <i class="bi bi-person-plus-fill"></i> {{ 'create-new-user'|text }}
+            </a>
+        {% endif %}
+    </div>
+</div>
+<table class="table table-sm table-hover table-striped table-bordered" id="users"></table>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const users = new motable(
+            'table#users',
+            {
+                columns: [
+                    {title: '#'},
+                    {title: `{{ 'photo'|text|e }}`},
+                    {title: `{{ 'user'|text|e }}`},
+                    {title: `{{ 'organization'|text|e }}`},
+                    {title: `{{ 'role2'|text|e }}`},
+                    {title: `{{ 'action'|text|e }}`, style: 'width:8rem'}
+                ]
+            }
+        );
+        window.usersTbl = users;
+        fetch(
+            `{{ 'users-list'|link }}`
+        ).then(res => {
+            let contentType = res.headers.get('content-type');
+            if (contentType.indexOf('application/json') !== -1) {
+                return res.json();
+            }
+            throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+        }).then(data => {
+            if (!data.list) {
+                throw new Error(data.message ?? 'Invalid response!');
+            }
+
+            let rowsHTML = '';
+            let indexLink = `{{ 'users'|link }}`;
+            let orgIndexLink = `{{ 'organizations'|link }}`;
+            let canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
+            let canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
+            let orgUserLink = `{{ user.can('system_user_organization_set') ? 'users-set-organization'|link ~ '?user_id=' : '' }}`;
+            let userRoleLink = `{{ user.can('system_rbac') ? 'users-set-role'|link ~ '?id=' : '' }}`;
+            let rbacRoleViewLink = `{{ 'rbac-role-view'|link }}`;
+            let statuses = document.documentElement.lang === 'mn' ? ['идэвхгүй', 'идэвхтэй'] : ['inactive', 'active'];
+            data.list.forEach(profile => {
+                let photo;
+                if (profile.photo) {
+                    photo = `<img class="img-fluid img-thumbnail" src="${profile.photo}" style="max-width:60px;max-height:60px">`;
+                } else {
+                    photo = '<i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>';
+                }
+
+                let usernameInfo = `<strong>${profile.username}</strong>`;
+                if (!profile.status) {
+                    usernameInfo += `<span class="badge bg-danger-subtle ms-3">${ statuses[profile.status] ?? profile.status}</span>`;
+                }
+                let fullName = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`;
+                if (fullName.length > 1) {
+                    usernameInfo += '<br/>';
+                }
+                usernameInfo += fullName;
+                usernameInfo += `<hr style="margin:0.2rem 0 0 0;"><div style="font-size:.8rem"><a class="text-decoration-none" href="mailto:${profile.email}"><i class="bi bi-envelope-at"></i></a> ${profile.email}</div>`;
+                if (profile.phone) {
+                    usernameInfo += `<div style="font-size:.8rem;"><a class="text-decoration-none" href="tel:${profile.phone}"><i class="bi bi-telephone"></i></a> ${profile.phone}</div>`;
+                }
+
+                let isCoder = Object.values(profile.roles ?? []).includes('system_coder');
+                let orgUserHtml = !orgUserLink ? ''
+                    : `<a class="ajax-modal btn btn-dark btn-sm shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${orgUserLink}${profile.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i></a>`;
+                if (isCoder) {
+                    orgUserHtml += ' <span class="badge bg-secondary fw-normal shadow-sm">system_coder can enter any organization</span><br/>';
+                }
+                profile.organizations?.forEach(org => {
+                    orgUserHtml += ` <a class="ajax-modal badge text-bg-light text-decoration-none ${org.alias === 'system' ? '' : 'fw-normal '}shadow-sm" href="${orgIndexLink}/view/${org.id}" data-bs-target="#static-modal" data-bs-toggle="modal">${org.name}</a>`;
+                });
+
+                let rolesHtml = !userRoleLink ? ''
+                    : `<a class="ajax-modal btn btn-sm btn-dark shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${userRoleLink}${profile.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i></a>`;
+                if (isCoder) {
+                    rolesHtml += ' <span class="badge bg-secondary fw-normal shadow-sm">system_coder can do all the actions</span><br/>';
+                }
+                for (let role_id in profile.roles ?? []) {
+                    rolesHtml += ` <a class="ajax-modal badge text-bg-light text-decoration-none ${profile.roles[role_id] === 'system_coder' ? '' : 'fw-normal '}shadow-sm" href="${rbacRoleViewLink}?role=${profile.roles[role_id]}" data-bs-target="#static-modal" data-bs-toggle="modal">${profile.roles[role_id]}</a>`;
+                }
+
+                let buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${profile.id}"><i class="bi bi-eye"></i></a>`];
+                if (canUpdate) {
+                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/update/${profile.id}"><i class="bi bi-pencil-square"></i></a>`);
+                }
+                if (canDelete) {
+                    buttons.push(`<button class="delete-user btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${profile.id}"><i class="bi bi-trash"></i></button>`);
+                }
+                let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+
+                rowsHTML += `<tr><th scope="row">${profile.id}</th><td>${photo}</td><td>${usernameInfo}</td><td>${orgUserHtml}</td><td>${rolesHtml}</td><td>${actions}</td></tr>`;
+            });
+            users.setBody(rowsHTML);
+            document.querySelectorAll('.btn-users.d-none').forEach(btn => {
+                btn.classList.remove('d-none');
+            });
+        }).catch(err => {
+            users.error(err);
+        }).finally(() => {
+            const modals = users.table.querySelectorAll('.ajax-modal');
+            modals.forEach(a => a.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxModal(a);
+            }));
+
+            const deletes = users.table.querySelectorAll('.delete-user');
+            deletes.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                let questiondel;
+                if (document.documentElement.lang === 'mn') {
+                    questiondel = '<p class="text-danger mb-3">Та ({0}) хэрэглэгчийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
+                } else {
+                    questiondel = '<p class="text-danger mb-3">Are you sure to delete this user ({0})?</p><p>If so, please provide a reason</p>';
+                }
+
+                let thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+                let name = thisRow.children[2].querySelector('strong').innerHTML;
+                let ask = questiondel.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
+                let photo = thisRow.children[1].querySelector('img');
+                let src;
+                if (photo) {
+                    src = photo.src;
+                } else {
+                    src = '';
+                    ask = `<p><i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i></p>${ask}`;
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: ask,
+                    input: 'text',
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: (reason) => {
+                        return fetch(
+                            `{{ 'user-delete'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    name,
+                                    reason,
+                                    id: btn.value
+                                })
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            thisRow.remove();
+                            users.setReady();
+
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deleted`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+        });
+    });
+</script>

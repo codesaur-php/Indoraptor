@@ -1,0 +1,37 @@
+<div class="text-center">
+    <h3 class="fw-normal fs-6 text-uppercase pb-1 fw-bold">{{ 'organization'|text }}</h3>
+</div>
+{% set count = 0 %}
+{% for org in organizations %}
+    {% set count = count + 1 %}
+    {% if count == 1 %}
+        <div class="row row-cols-1 row-cols-md-3 mt-1 text-center">
+        {% endif %}
+        {% set current = org['id'] == user.getOrganization()['id'] %}
+        <div class="col">
+            <div class="card mb-4 rounded-3 shadow-sm{{ current ? ' border-primary' : '' }}">
+                <div class="card-header py-3{{ current ? ' text-white bg-primary border-primary text-uppercase' : '' }}">
+                    <h6 class="my-0 fw-normal text-truncate">{{ org['name'] }}</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-3">
+                        <li>
+                            {% if org['logo'] is defined and org['logo'] is not empty %}
+                                <img class="img-fluid img-thumbnail" src="{{ org['logo'] }}" style="min-height:100px;height:100px">
+                            {% else %}
+                                <i class="bi bi-bank" style="font-size:4.2rem"></i>
+                            {% endif %}
+                        </li>
+                    </ul>
+                    <a class="w-50 btn btn-outline-primary text-uppercase{{ current ? ' disabled' : '' }}" href="{{ 'login-select-organization'|link({'id': org['id']|int}) }}">{{ 'select'|text }}</a>
+                </div>
+            </div>
+        </div>
+        {% if count == 3 %}
+            {% set count = 0 %}
+        </div>
+    {% endif %}
+{% endfor %}
+{% if count != 0 %}
+</div>
+{% endif %}

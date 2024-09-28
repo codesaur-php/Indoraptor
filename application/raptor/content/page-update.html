@@ -1,0 +1,704 @@
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
+  'featured': { 'mn': 'Онцолсон' },
+  'attach': { 'mn': 'Хавсралт' },
+  'special': { 'mn': 'Тусгай' }
+} %}
+{% set types = {
+  'menu': { 'mn': 'Үндсэн цэс' },
+  'top-menu': { 'mn': 'Толгойн цэс' },
+  'footer-menu': { 'mn': 'Хөлийн цэс' },
+  'dropdown-menu': { 'mn': 'Унжих цэс' },
+  'mega-menu': { 'mn': 'Мега цэс' }
+} %}
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/plupload.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
+<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
+        <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
+    </h3>
+    <div class="ms-auto">
+        {% if user.can('system_content_update') %}
+            <button class="submit-update btn btn-sm btn-primary shadow-sm text-uppercase">
+                <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+            </button>
+        {% endif %}
+        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'pages'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
+        </a>
+    </div>
+</div>
+<form class="needs-validation" id="page_update" action="{{ 'page-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
+    <div class="row">
+        <div class="col-8">
+            <label class="form-label">{{ 'parent'|text }}</label>
+            <select class="form-select" name="parent_id">
+                <option value="0" selected>-</option>
+                {% for id,info in infos %}
+                <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-2">
+            <label class="form-label">{{ 'type'|text }}</label>
+            <div class="input-group">
+                <input class="form-control" name="type" type="text" value="{{ record['type']|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="type_list">
+                    {% for value,name in types %}
+                    <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-2">
+            <label class="form-label">{{ 'position'|text }}</label>
+            <input class="form-control" name="position" value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
+            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-2">
+            <label class="form-label">{{ 'language'|text }}</label>
+            <select class="form-select" name="code">
+                {% for code,title in localization.language %}
+                <option value="{{ code }}"{{ record['code'] == code ? ' selected' : '' }}>{{ title|e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-3">
+            <label class="form-label">{{ 'category'|text }}</label>
+            <div class="input-group">
+                <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                    {% for value,name in categories %}
+                    <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-3">
+            <label class="form-label" for="published_date">{{ 'date'|text }}</label>
+            <input class="form-control" name="published_date" id="published_date" value="{{ record['published_date']|e }}" placeholder="" type="datetime-local" autocomplete="off">
+        </div>
+        <div class="col-4">
+            <label class="form-label">{{ 'publish'|text }}</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }}{% if not user.can('system_content_publish') %} disabled{% endif %} type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                <div class="form-text" id="IsVisibleHelp">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
+            </div>
+            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+        </div>
+    </div>
+    <ul class="nav nav-tabs nav-tabs-content mt-3">
+        <li class="nav-item">
+            <a class="nav-link active show" data-bs-toggle="tab" href="#tab-contents">{{ 'content'|text }}</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-meta">{{ 'meta'|text }} <i class="bi bi-share"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-comment">{{ 'comment'|text }} <i class="bi bi-chat-left-text"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
+        </li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane active show" id="tab-contents">
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'title'|text }}</label>
+                <input class="form-control" name="title" value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'short'|text }}</label>
+                <textarea class="form-control" name="short">{{ record['short']|e }}</textarea>
+            </div>
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'photo'|text }}</label>
+                <div class="input-group">
+                    <input class="form-control" type="text" id="photo_name" disabled value="{{ record['photo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                    <div class="input-group-append">
+                        <div class="btn-group">
+                            <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
+                            <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                            {% if record['photo'] is not empty %}<button class="btn btn-danger" type="button" onclick="fileClear(this);">{{ 'remove'|text }}</button>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <img class="img-thumbnail img-fluid" id="photo_preview" src="{{ record['photo']|e }}" style="{% if record['photo'] is empty %}display:none;{% endif %}">
+            </div>
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'full'|text }}</label>
+                <textarea class="form-control" id="full" name="full" rows="10">{{ record['full']|e }}</textarea>
+            </div>
+        </div>
+        <div class="tab-pane pt-2" id="tab-files">
+            <div class="row mb-2">
+                <div class="col-12" id="filelist">Your browser doesn't have Silverlight or HTML5 support.</div>
+            </div>
+            <div class="row">
+                <div id="container">
+                    <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
+                    <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
+                </div>
+            </div>
+            <table class="table table-striped table-hover" id="pages_files">
+                <thead>
+                    <tr>
+                        <th>{{ 'file'|text }}</th>
+                        <th>{{ 'properties'|text }}</th>
+                        <th>{{ 'description'|text }}</th>
+                        <th>{{ 'category'|text }}</th>
+                        <th>{{ 'keyword'|text }}</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div class="tab-pane" id="tab-meta">
+            <div class="alert alert-secondary shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-comment">
+            <div class="alert alert-primary shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-link">
+            <div class="alert alert-warning shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-history">
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
+                <div class="col-9">
+                    <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
+                <div class="col-9">
+                    <input class="form-control" readonly value="{{ (record['rbac_users'][record['created_by']] ?? record['created_by'])|e }}" type="text">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
+                <div class="col-9">
+                    <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
+                <div class="col-9">
+                    <input class="form-control" readonly value="{{ (record['rbac_users'][record['updated_by']] ?? record['updated_by'])|e }}" type="text">
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-version">
+            <div class="alert alert-info shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</form>
+<div class="rounded p-2 mt-3 shadow">
+    {% if user.can('system_content_update') %}
+        <button class="submit-update btn btn-primary text-uppercase shadow-sm">
+            <i class="bi bi-check2"></i> {{ 'save'|text }}
+        </button>
+    {% endif %}
+    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'pages'|link }}">
+        <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
+    </a>
+</div>
+<script type="text/javascript">
+    function copy(elem) {
+        let text = document.getElementById(elem);
+        if (document.body.createTextRange) {
+            let range = document.body.createTextRange();
+            range.moveToElementText(text);
+            range.select();
+        } else if (window.getSelection) {
+            let selection = window.getSelection();
+            let range = document.createRange();
+            range.selectNodeContents(text);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        document.execCommand('copy');
+    }
+
+    function basename(url) {
+        return url.split(/.*[\/|\\]/)[1];
+    }
+
+    function formatSizeUnits(bytes)
+    {
+        const thresh = 1024;
+        if (Math.abs(bytes) < thresh) {
+            return bytes + 'b';
+        }
+
+        const units = ['kb', 'mb', 'gb', 'tb'];
+        let u = -1;
+        const r = 10 ** 1;
+        do {
+            bytes /= thresh;
+            ++u;
+        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+        return bytes.toFixed(1) + units[u];
+    }
+    
+    function escape(s) {
+        let lookup = {
+            '&': "&amp;",
+            '"': "&quot;",
+            '\'': "&apos;",
+            '<': "&lt;",
+            '>': "&gt;"
+        };
+        return s.replace(/[&"'<>]/g, c => lookup[c]);
+    }
+    
+    const type = document.querySelector('input[name="type"]');
+    document.getElementById('type_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            type.value = e.target.getAttribute('value');
+        }
+    });
+
+    const category = document.querySelector('input[name="category"]');
+    document.getElementById('category_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            category.value = e.target.getAttribute('value');
+        }
+    });
+    
+    const photoName = document.getElementById('photo_name');
+    const photoBrowse = document.querySelector('button.photo-browse');
+    const photoPreview = document.getElementById('photo_preview');
+    const photo = document.querySelector('input[name="photo"]');
+    const fileClear = function (button) {
+        photoPreview.removeAttribute('src');
+        photoPreview.style.display = 'none';
+
+        photoName.value = '';
+        photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
+
+        photo.value = '';
+        photo.removeAttribute('name');
+
+        button.remove();
+    };
+    
+    photo.addEventListener('change', function (e) {
+        e.preventDefault();
+        
+        photo.name = 'photo';
+        photoName.value = photo.files[0].name;
+        
+        photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
+        if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
+            let photoClear = document.createElement('button');
+            photoClear.classList.add('btn', 'btn-danger');
+            photoClear.type = 'button';
+            photoClear.innerHTML = `{{ 'remove'|text }}`;
+            photoClear.addEventListener('click', function (e) {
+                e.preventDefault();
+                fileClear(this);
+            });
+            if (photoBrowse.nextSibling) {
+                photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
+            } else {
+                photoBrowse.parentNode.appendChild(photoClear);
+            }
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            photoPreview.src = e.target.result;
+            if (photoPreview.style.display === 'none') {
+                photoPreview.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(photo.files[0]);
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        let full = document.getElementById('full');
+        sceditor.create(full, {
+            format: 'xhtml',
+            emoticonsEnabled: false,
+            toolbarExclude: 'emoticon',
+            icons: 'monocons',
+            width: '100%',
+            height: '360px',
+            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        });
+        
+        let files = new motable('table#pages_files');
+        files.setReady();
+
+        let fileList = document.getElementById('filelist');
+        let uploadFilesBtn = document.getElementById('uploadfiles');
+        let uploader = new plupload.Uploader({
+            runtimes: 'html5,flash,silverlight,html4',
+            browse_button: 'pickfiles',
+            container: document.getElementById('container'),
+            url: `{{ 'files-post'|link({'input':'file', 'table':'pages', 'id':record['id']}) }}`,
+            filters: {
+                max_file_size: `{{ max_file_size ?? '8mb' }}`,
+                mime_types: [
+                    {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico,webp'},
+                    {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
+                    {title: 'Audio', extensions: 'mp3,m4a,ogg,wav'},
+                    {title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2'},
+                    {title: 'Text files', extensions: 'txt,xml,json'},
+                    {title: 'Archives', extensions: 'zip,rar'}
+                ]
+            },
+            flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
+            silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
+            init: {
+                PostInit: function () {
+                    fileList.innerHTML = '';
+                    uploadFilesBtn.onclick = function () {
+                        uploader.start();
+                        return false;
+                    };
+                },
+                FilesAdded: function (up, files) {
+                    plupload.each(files, function (file) {
+                        fileList.innerHTML += `<div id="${file.id}">${file.name} (${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
+                    });
+
+                    if (uploadFilesBtn.disabled) {
+                        uploadFilesBtn.removeAttribute('disabled');
+                        uploadFilesBtn.classList.remove('btn-secondary');
+                        uploadFilesBtn.classList.add('btn-info');
+                    }
+                },
+                UploadProgress: function (up, file) {
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"> sending ${file.percent}%`;
+                    uploadFilesBtn.setAttribute('disabled', '');
+                },
+                FileUploaded: function (up, file, response) {
+                    try {
+                        let res = JSON.parse(response.response);
+                        if (!res.file) {
+                            throw 'Invalid response!';
+                        }
+                        
+                        let currentFile = document.getElementById(file.id);
+                        if (currentFile !== null) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
+                            currentFile.classList.add('text-success');
+                        }
+                        
+                        files.append(res);
+
+                        NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
+                    } catch (err) {
+                        if (err instanceof SyntaxError) {
+                            err = 'Invalid request!';
+                        } else if (res && res.error && res.error.message) {
+                            err = res.error.message;
+                        } else {
+                            err = 'Unknown error!';
+                        }
+
+                        let currentFile = document.getElementById(file.id);
+                        if (currentFile) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                            currentFile.getElementsByTagName('em')[0].innerHTML = err;
+                            currentFile.classList.add('text-danger');
+                        }
+                        NotifyTop('danger', `{{ 'error'|text }}`, err);
+                    }
+
+                    let list = fileList.children;
+                    let processedFile = 0;
+                    for (let i = 0; i < list.length; i++) {
+                        let file = list[i];
+                        if (file.getElementsByTagName('b')[0].innerHTML !== '') {
+                            processedFile++;
+                        }
+                    }
+                    if (processedFile === list.length) {
+                        uploadFilesBtn.classList.remove('btn-info');
+                        uploadFilesBtn.classList.add('btn-secondary');
+                        uploadFilesBtn.setAttribute('disabled', '');
+                    } else {
+                        uploadFilesBtn.removeAttribute('disabled');
+                    }
+                },
+                Error: function (up, err) {
+                    if (err.file.id !== null) {
+                        let currentFile = document.getElementById(err.file.id);
+                        if (currentFile !== null) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                            currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
+                            currentFile.classList.add('text-danger');
+                        }
+                    }
+
+                    NotifyTop('danger', `{{ 'error'|text }} ${err.code.toString().replace(/\D/g, '')}`, err.message);
+                }
+            }
+        });
+        uploader.init();
+        
+        const pageFilesLink = `{{ 'files-modal'|link({'table':'pages'}) }}`;
+        const userCanUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
+        const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
+        motable.prototype.append = function (record) {
+            let fileIcon;
+            let fileName = escape(basename(record['path']));
+            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
+            let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
+            switch (record['type']) {
+                case 'image':
+                    {
+                        fileIcon = `<img src="${record['path']}" style="max-height:120px;height:100%">`;
+                        if (record['mime_content_type'] !== 'image/gif') {
+                            if (record['description']) {
+                                fileLinkAttr = `file-data-fancybox data-caption="${escape(record['description'])}"`;
+                            } else {
+                                fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
+                            }
+                        }
+                    }
+                    break;
+                case 'video':
+                    fileIcon = `<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="${record['path']}"></video>`;
+                    break;
+                case 'audio':
+                    fileIcon = `<audio controls><source src="${record['path']}" type="${record['mime_content_type']}"></audio>`;
+                    break;
+                default:
+                    {
+                        fileIcon = '<i class="bi bi-hdd"></i>';
+                        fileAction = '';
+                    }
+                    break;
+            }
+            fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=location&id=${record['id']}"><i class="bi bi-link"></i></a>${fileAction}`;
+            if (userCanUpdate) fileAction += ` <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=files-update&id=${record['id']}"><i class="bi bi-pencil-square"></i></a>`;
+            if (userCanDelete) fileAction += ` <button class="delete-file btn btn-sm btn-danger shadow-sm" value="${record['id']}" type="button"><i class="bi bi-trash"></i></button>`;
+            
+            let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
+            fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
+
+            let row = document.createElement('tr');
+            row.id = `file_${record['id']}`;
+            row.style.fontSize = '.875rem';
+            let cell1 = document.createElement('td');
+            cell1.innerHTML = `<input name="files[]" value="${record['id']}" type="hidden">${fileFigure}`;
+            row.appendChild(cell1);
+
+            let cell2 = document.createElement('td');
+            cell2.innerHTML = `<p style="max-width:180px;word-wrap:break-all"><u>${record['mime_content_type']}</u></p>${formatSizeUnits(record['size'])}`;
+            row.appendChild(cell2);
+
+            let cell3 = document.createElement('td');
+            cell3.innerHTML = record['description'] ?? '';
+            row.appendChild(cell3);
+
+            let cell4 = document.createElement('td');
+            cell4.innerHTML = record['category'] ?? '';
+            row.appendChild(cell4);
+
+            let cell5 = document.createElement('td');
+            cell5.innerHTML = record['keyword'] ?? '';
+            row.appendChild(cell5);
+
+            let tBody = this.table.querySelector('tbody');
+            if (!tBody) {
+                tBody = document.createElement('tbody');
+                this.table.appendChild(tBody);
+
+                if (this.options.style.tbody)
+                    tBody.style.cssText = this.options.style.tbody;
+            }
+            tBody.appendChild(row);
+
+            this.setReady();
+
+            if (record['type'] === 'image'
+                && record['mime_content_type'] !== 'image/gif'
+            ) {
+                Fancybox.close();
+                Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+            }
+
+            let rowModals = row.querySelectorAll('.ajax-modal');
+            rowModals.forEach(a => a.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxModal(a);
+            }));
+            
+            let thisTable = this;
+            const deleteFile = row.querySelector('.delete-file');
+            deleteFile.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                let questiondel;
+                if (document.documentElement.lang === 'mn') {
+                    questiondel = '<p class="text-danger mb-3">Та {0} файлыг устгахдаа итгэлтэй байна уу?</p>';
+                } else {
+                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the file {0}?</p>';
+                }
+
+                const id = deleteFile.value;
+                const title = row.children[0].textContent;
+                let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+
+                let src = '';
+                let flag = row.children[0].querySelector('img');
+                if (flag) {
+                    src = flag.src;
+                } else {
+                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                            `{{ 'files-delete'|link({'table':'pages'}) }}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({id, title})
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deleted`);
+
+                            row.remove();
+                            thisTable.setReady();
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            });
+        };
+    
+        const formUpdate = document.querySelector('form#page_update');
+        if (!formUpdate) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitters = document.querySelectorAll('button.submit-update');
+            submitters.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    formUpdate.requestSubmit();
+                });
+            });
+
+            formUpdate.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                let datetimes = this.querySelectorAll('input[type="datetime-local"]');
+                datetimes?.forEach(input => { input.type = 'text'; });
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    datetimes?.forEach(input => { input.type = 'datetime-local'; });
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                }
+
+                submitters.forEach(function (btn) { btn.growNstop(); });
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'PUT'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.href = `{{ 'pages'|link }}`;
+
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Page updated');
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    datetimes?.forEach(input => { input.type = 'datetime-local'; });
+                    submitters.forEach(function (btn) { btn.growNstop();});
+                });
+            });
+        }
+        
+        {% for file in files  %}
+        files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
+        {% endfor %}
+        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+    });
+</script>

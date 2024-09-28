@@ -1,0 +1,295 @@
+<style>
+    .requesting {
+        z-index: 2000;
+        display: none;
+        position: fixed;
+        margin: 0;
+        padding: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: wait;
+        border: none;
+    }
+    .requesting-bg {
+        width: 100%;
+        height: 100%;
+        background-color: rgb(0, 0, 0);
+        opacity: 0.6;
+    }
+    .requesting-content {
+        position: absolute;
+        padding: .7rem .5rem .2rem .5rem;
+        margin: 0;
+        top: 40%;
+        left: 35%;
+        width: 30%;
+        text-align: center;
+        color: #0d6efd;
+        border-radius: 7px;
+        border: 2px solid #0d6efd;
+        background-color: rgb(255, 255, 255);
+    }
+    .requesting-content img {
+        height: 42px;
+        margin-bottom: .3rem;
+    }
+</style>
+<div class="requesting">
+    <div class="requesting-bg"></div>
+    <div class="requesting-content">
+        <span class="spinner-border" role="status"></span>
+        <h6>Processing request ...</h6>
+    </div>
+</div>
+<div class="modal-lg modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-success">
+                <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}
+            </h3>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <div class="progress mb-2">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="collectProgress" role="progressbar" style="width:33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <ul class="nav nav-tabs" id="langInsertTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#generalPanel" role="tab" aria-controls="generalPanel" aria-selected="true" type="button">
+                        {{ 'general-info'|text }}
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" role="tab" aria-controls="settingsPanel" aria-selected="false" type="button">
+                        {{ 'text-settings'|text }}
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#confirmPanel" role="tab" aria-controls="confirmPanel" aria-selected="false" type="button">
+                        {{ 'confirm'|text }}
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content mt-2">
+                <div class="tab-pane fade show active" id="generalPanel" role="tabpanel">
+                    <h5>{{ 'enter-language-details'|text }}</h5>
+                    <div class="mt-2">
+                        <label>{{ 'code'|text }}</label>
+                        <input class="form-control lang_code" autocomplete="off" maxlength="6" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-4">
+                        <label>{{ 'flag'|text }}</label>
+                        <p class="lang_flag"></p>
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'name'|text }}</label>
+                        <input class="form-control lang_full" autocomplete="off" maxlength="128" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'description'|text }}</label>
+                        <input class="form-control lang_description" autocomplete="off" maxlength="255" placeholder="" value="" type="text">
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settingsPanel" role="tabpanel">
+                    <h5>{{ 'select-text-settings'|text }}</h5>
+                    <div class="mt-2">
+                        <label>{{ 'copy-text-from'|text }}</label>
+                        <select class="form-control available_languages">
+                            <option value=""></option>
+                            {% for code,name in localization.language %}
+                                <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'code'|text }}</label>
+                        <input class="form-control copy_code" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'flag'|text }}</label>
+                        <p class="copy_flag"></p>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="confirmPanel" role="tabpanel">
+                    <h5>{{ 'please-confirm-info'|text }}</h5>
+                    <div class="mt-2">
+                        <label>{{ 'code'|text }}</label>
+                        <input class="form-control lang_code" readonly autocomplete="off" maxlength="6" name="code" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'flag'|text }}</label>
+                        <p class="lang_flag"></p>
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'name'|text }}</label>
+                        <input class="form-control" readonly autocomplete="off" maxlength="128" name="full" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'description'|text }}</label>
+                        <input class="form-control" readonly autocomplete="off" maxlength="255" name="description" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'copy-text-from'|text }}</label>
+                        <input class="form-control" readonly autocomplete="off" maxlength="6" name="copy" placeholder="" value="" type="text">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-info" id="back" type="button">
+                <i class="bi bi-arrow-left"></i> {{ 'back'|text }}
+            </button>
+            <button class="btn btn-primary" id="continue" type="button">
+                {{ 'continue'|text }} <i class="bi bi-arrow-right"></i>
+            </button>
+            <button class="btn btn-success" id="confirm">
+                <i class="bi bi-check"></i> {{ 'confirm'|text }}
+            </button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">
+                {{ 'close'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    let progressBar = document.querySelector('#collectProgress');
+    let headGeneral = document.querySelector('#langInsertTab button[data-bs-target="#generalPanel"]');
+    let headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
+    let headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
+    let codeInput = document.querySelector('#generalPanel input.lang_code');
+    let flagInput = document.querySelector('#generalPanel p.lang_flag');
+    let nameInput = document.querySelector('#generalPanel input.lang_full');
+    let descriprionInput = document.querySelector('#generalPanel input.lang_description');
+    let copySelect = document.querySelector('#settingsPanel select.available_languages');
+    let btnBack = document.querySelector('.modal-footer #back');
+    let btnContinue = document.querySelector('.modal-footer #continue');
+    let btnConfirm = document.querySelector('.modal-footer #confirm');
+
+    codeInput.addEventListener('input', function () {
+        let confirmFlag = document.querySelector('#confirmPanel p.lang_flag');
+        let confirmCode = document.querySelector('#confirmPanel input[name="code"]');
+        if (this.value.length === 2) {
+            let flagstr = this.value === 'en' ? 'us' : this.value;
+            flagInput.innerHTML = `<img src="https://flagcdn.com/40x30/${flagstr}.png" srcset="https://flagcdn.com/80x60/${flagstr}.png 2x" width="40" height="30">`;
+            confirmFlag.innerHTML = flagInput.innerHTML;
+            confirmCode.value = this.value;
+        } else {
+            confirmFlag.innerHTML = '';
+            confirmCode.value = '';
+        }
+    }, false);
+
+    nameInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="full"]').value = this.value;
+    }, false);
+
+    descriprionInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="description"]').value = this.value;
+    }, false);
+
+    copySelect.onchange = function () {
+        let copyFlag = document.querySelector('#settingsPanel p.copy_flag');
+        let copyCode = document.querySelector('#settingsPanel input.copy_code');
+        let confirmCopyCode = document.querySelector('#confirmPanel input[name="copy"]');
+        if (this.value) {
+            let flagstr = this.value === 'en' ? 'us' : this.value;
+            copyFlag.innerHTML = `<img src="https://flagcdn.com/40x30/${flagstr}.png" srcset="https://flagcdn.com/80x60/${flagstr}.png 2x" width="40" height="30">`;
+            copyCode.value = this.value;
+            confirmCopyCode.value = this.value;
+        } else {
+            copyFlag.innerHTML = '';
+            copyCode.value = '';
+            confirmCopyCode.value = '';
+        }
+    };
+
+    btnBack.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        let id = document.querySelector('.modal-body .tab-content .active').id;
+        if (id === 'settingsPanel') {
+            headGeneral.click();
+        } else if (id === 'confirmPanel') {
+            headSettings.click();
+        }
+    });
+
+    btnContinue.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        let id = document.querySelector('.modal-body .tab-content .active').id;
+        if (id === 'generalPanel') {
+            headSettings.click();
+        } else if (id === 'settingsPanel') {
+            headConfirm.click();
+        }
+    });
+
+    headGeneral.addEventListener('click', function () {
+        btnBack.style.display = 'none';
+        btnContinue.style.display = 'block';
+        btnConfirm.style.display = 'none';
+        progressBar.style.width = '33%';
+    });
+
+    headSettings.addEventListener('click', function () {
+        btnBack.style.display = 'block';
+        btnContinue.style.display = 'block';
+        btnConfirm.style.display = 'none';
+        progressBar.style.width = '66%';
+    });
+
+    headConfirm.addEventListener('click', function () {
+        progressBar.style.width = '99%';
+        btnBack.style.display = 'block';
+        btnContinue.style.display = 'none';
+        btnConfirm.style.display = 'block';
+    });
+
+    headGeneral.click();
+    
+    btnConfirm.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        btnConfirm.growNstop();
+        const requesting = document.querySelector('div.requesting');
+        if (requesting) {
+            requesting.style.display = 'block';
+        }
+        
+        var formData = new FormData();
+        let inputs = document.querySelectorAll('#confirmPanel input');
+        inputs.forEach(function (input) {
+            formData.append(input.name, input.value);
+        });
+        fetch(
+            `{{ 'language-insert'|link }}`,
+            {
+                method: 'POST',
+                body: formData
+            }
+        ).then(res => {
+            let contentType = res.headers.get('content-type');
+            if (contentType.indexOf('application/json') !== -1) {
+                return res.json();
+            }
+            throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+        }).then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message ? response.message : 'Invalid response!');
+            }
+
+            window.location.reload();
+            
+            NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Language inserted');
+        }).catch(error => {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            if (requesting) {
+                requesting.style.display = 'none';
+            }
+            btnConfirm.growNstop();
+        });
+    });
+</script>

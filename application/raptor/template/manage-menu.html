@@ -1,0 +1,637 @@
+{% set user_can = user.can('system_manage_menu') %}
+<style>
+    .menu-table > tbody > tr > th,
+    .menu-table > tbody > tr > td {
+        vertical-align: middle;
+    }
+    .menu-table > tbody > tr {
+        font-size: .85rem;
+    }
+    .menu-table > tbody > tr > th > i {
+        font-size: 1.1rem;
+    }
+    .menu-table > tbody > tr.parent {
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .menu-table > tbody > tr.parent > td {
+        color: dimgray;
+    }
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-warning text-uppercase">
+        <i class="bi bi-menu-button-wide-fill"></i> {{ 'menu'|text }}
+    </h3>
+    <div class="ms-auto">
+        {% if user_can %}
+            <button class="btn btn-sm btn-outline-warning text-uppercase shadow-sm" data-bs-target="#menu-insert-modal" data-bs-toggle="modal" type="button">
+                <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
+            </button>
+        {% endif %}
+    </div>
+</div>
+<table class="table table-sm table-hover table-bordered menu-table" id="raptor_menu">
+    <thead>
+        <tr>
+            <th scope="col">Icon</th>
+            {% for lang in localization.language %}
+                <th scope="col">Caption ({{ lang }})</th>
+            {% endfor %}
+            <th scope="col">Link</th>
+            <th scope="col">RBAC</th>
+            <th scope="col">Permission</th>
+            <th scope="col">Position</th>
+            <th scope="col">Visiblity</th>
+            <th scope="col" style="width:8rem">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in menu %}
+        <tr{% if item['parent_id'] == 0 %} class="parent"{% endif %} data-record="{{ item|json_encode|e }}">
+            <th scope="row">
+                {% if item['icon'] is not empty %}
+                    <i class="{{ item['icon'] }}"></i>
+                {% endif %}
+            </th>
+            {% for code in localization.language|keys %}
+                <td >{{ item['content']['title'][code] }}</td>
+            {% endfor %}
+            <td>
+                {% if item['href'] is not empty %}
+                    <a href="{{ item['href'] }}" target="__blank">{{ item['href'] }}</a>
+                {% endif %}
+            </td>
+            <td>{{ item['alias'] }}</td>
+            <td>{{ item['permission'] }}</td>
+            <td>{{ item['position'] }}</td>
+            <td>
+                {% if item['is_visible'] %}
+                    <i class="bi bi-emoji-heart-eyes-fill text-success"></i>
+                {% else %}
+                    <i class="bi bi-eye-slash"></i>
+                {% endif %}
+            </td>
+            <td>
+                {% if user_can %}
+                    <button class="btn btn-sm btn-info mt-1 shadow-sm" data-bs-target="#menu-view-modal" data-bs-toggle="modal" type="button">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary mt-1 shadow-sm" value="{{ item['id'] }}" data-bs-target="#menu-update-modal" data-bs-toggle="modal" type="button">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="delete-item btn btn-sm btn-danger mt-1 shadow-sm" value="{{ item['id'] }}" type="button">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<div class="modal fade" id="menu-insert-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fs-6 text-uppercase text-success">
+                    <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}
+                </h3>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            </div>
+            <div class="modal-body">
+                <form class="needs-validation" novalidate id="menu_insert" action="{{ 'manage-menu-insert'|link }}" method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" name="parent_id">
+                                    <option value="0" selected>- Main menu -</option>
+                                    {% for item in menu %}
+                                        {% if item['parent_id'] == 0 %}
+                                            <option value="{{ item['id'] }}">{{ item['content']['title'][localization.code]|e }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label>Parent</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" required name="position" value="100" placeholder="Position" type="nunber" autocomplete="off">
+                                <label>Position</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-check form-switch mt-3">
+                                <label>Visiblity</label>
+                                <input class="form-check-input" name="is_visible" checked type="checkbox" role="switch">
+                            </div>
+                        </div>
+                    </div>
+                    {% for code,lang in localization.language %}
+                        <div class="form-floating mt-2">
+                            <input class="form-control" required name="title[{{ code }}]" value="" id="title_{{ code }}" maxlength="128" autocomplete="off">
+                            <label for="title_{{ code }}">
+                                Caption ({{ lang }}) 
+                                {% set flag = code == 'en' ? 'us' : code %}
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                            </label>
+                            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                        </div>
+                    {% endfor %}
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="icon" value="bi bi-dot" placeholder="icon class" type="text" maxlength="64" autocomplete="off">
+                                <label>Icon</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="href" value="" placeholder="Link" type="text" maxlength="255" autocomplete="off">
+                                <label>Link</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="alias">
+                                    <option value="" selected></option>
+                                    {% for alias in aliases %}
+                                        <option value="{{ alias|e }}">{{ alias|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>RBAC</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="permission">
+                                    <option value="" selected></option>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission|e }}">{{ permission|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>Permission</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </form>
+            </div>
+            <div class="modal-footer">
+            {% if user_can %}
+                <button class="insert-menu btn btn-success shadow-sm">
+                    <i class="bi bi-check"></i> {{ 'submit'|text }}
+                </button>
+            {% endif %}
+                <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+                    {{ 'cancel'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="menu-view-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fs-6 text-uppercase text-info">
+                    <i class="bi bi-eye"></i> {{ 'view-record'|text }}
+                </h3>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            </div>
+            <div class="modal-body">
+                <form id="menu_view">
+                    <input name="id" value="" type="hidden">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" name="parent_id" disabled>
+                                    <option value="0">- Main menu -</option>
+                                    {% for item in menu %}
+                                        {% if item['parent_id'] == 0 %}
+                                            <option value="{{ item['id'] }}">{{ item['content']['title'][localization.code]|e }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label>Parent</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="position" disabled value="">
+                                <label>Position</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-check form-switch mt-3">
+                                <label>Visiblity</label>
+                                <input class="form-check-input" name="is_visible" disabled checked type="checkbox" role="switch">
+                            </div>
+                        </div>
+                    </div>
+                    {% for code,lang in localization.language %}
+                        <div class="form-floating mt-2">
+                            <input class="form-control" name="title[{{ code }}]" disabled value="" id="title_{{ code }}">
+                            <label for="title_{{ code }}">
+                                Caption ({{ lang }}) 
+                                {% set flag = code == 'en' ? 'us' : code %}
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                            </label>
+                        </div>
+                    {% endfor %}
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="icon" disabled value="">
+                                <label>Icon</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="href" disabled value="">
+                                <label>Link</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="alias" disabled>
+                                    <option value=""></option>
+                                    {% for alias in aliases %}
+                                        <option value="{{ alias|e }}">{{ alias|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>RBAC</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="permission" disabled>
+                                    <option value=""></option>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission|e }}">{{ permission|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>Permission</label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="created_at" value="">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="created_by" value="">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="updated_at" value="">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="updated_by" value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-info shadow-sm" data-bs-dismiss="modal" type="button">
+                    {{ 'close'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="menu-update-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fs-6 text-uppercase text-primary">
+                    <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }}
+                </h3>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            </div>
+            <div class="modal-body">
+                <form class="needs-validation" novalidate id="menu_update" action="{{ 'manage-menu-update'|link }}" method="PUT" enctype="multipart/form-data">
+                    <input name="id" value="" type="hidden">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" name="parent_id">
+                                    <option value="0">- Main menu -</option>
+                                    {% for item in menu %}
+                                        {% if item['parent_id'] == 0 %}
+                                            <option value="{{ item['id'] }}">{{ item['content']['title'][localization.code]|e }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label>Parent</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" required name="position" value="" placeholder="Position" type="nunber" autocomplete="off">
+                                <label>Position</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-check form-switch mt-3">
+                                <label>Visiblity</label>
+                                <input class="form-check-input" name="is_visible" checked type="checkbox" role="switch">
+                            </div>
+                        </div>
+                    </div>
+                    {% for code,lang in localization.language %}
+                        <div class="form-floating mt-2">
+                            <input class="form-control" required name="title[{{ code }}]" value="" id="title_{{ code }}" maxlength="128" autocomplete="off">
+                            <label for="title_{{ code }}">
+                                Caption ({{ lang }}) 
+                                {% set flag = code == 'en' ? 'us' : code %}
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                            </label>
+                            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                        </div>
+                    {% endfor %}
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="icon" value="" placeholder="icon class" type="text" maxlength="64" autocomplete="off">
+                                <label>Icon</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="href" value="" placeholder="Link" type="text" maxlength="255" autocomplete="off">
+                                <label>Link</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="alias">
+                                    <option value=""></option>
+                                    {% for alias in aliases %}
+                                        <option value="{{ alias|e }}">{{ alias|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>RBAC</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="permission">
+                                    <option value=""></option>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission|e }}">{{ permission|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>Permission</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </form>
+            </div>
+            <div class="modal-footer">
+            {% if user_can %}
+                <button class="update-menu btn btn-primary shadow-sm">
+                    <i class="bi bi-check"></i> {{ 'submit'|text }}
+                </button>
+            {% endif %}
+                <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+                    {{ 'cancel'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const menu = new motable('table#raptor_menu');
+        menu.setReady();
+        
+        const deletes = menu.table.querySelectorAll('.delete-item');
+        deletes.forEach(btn => btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            let question;
+            if (document.documentElement.lang === 'mn') {
+                question = '<p class="text-danger mb-3">Та ({0}) цэсийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
+            } else {
+                question = '<p class="text-danger mb-3">Are you sure to delete the menu ({0})?</p><p>If so, please provide a reason</p>';
+            }
+
+            let thisRow = btn.closest('tr');
+            if (!thisRow) {
+                return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+            }
+            let caption = thisRow.children[1].innerHTML;
+            let ask = question.format(caption.replace(/<\/?[^>]+(>|$)/g, ''));
+            let icon = thisRow.children[0].querySelector('i');
+            if (icon) {
+                ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
+            }
+            Swal.fire({
+                html: ask,
+                input: 'text',
+                showCancelButton: true,
+                cancelButtonText: `{{ 'cancel'|text|e }}`,
+                confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                confirmButtonColor: '#df4759',
+                showLoaderOnConfirm: true,
+                allowOutsideClick: () => !Swal.isLoading(),
+                backdrop: true,
+                preConfirm: (reason) => {
+                    return fetch(
+                        `{{ 'manage-menu-delete'|link }}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                reason,
+                                caption,
+                                id: btn.value
+                            })
+                        }
+                    ).then(res => {
+                        return res.json();
+                    }).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? 'Invalid response!');
+                        }
+
+                        Swal.close();
+
+                        thisRow.remove();
+                        menu.setReady();
+                        
+                        window.location.reload();
+
+                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Menu (${caption}) deleted`);
+                    }).catch(error => {
+                        Swal.showValidationMessage(error.message);
+                    });
+                }
+            });
+        }));
+        
+        const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
+        updates.forEach(btn => btn.addEventListener('click', function () {
+            let thisRow = btn.closest('tr');
+            let record = JSON.parse(thisRow.dataset.record ?? '{}');
+            if (record.id === undefined) return;
+            let updateModal = document.querySelector('div#menu-update-modal');
+            updateModal.querySelector('input[name="id"]').value = record.id;
+            updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
+            updateModal.querySelector('input[name="position"]').value = record.position;
+            updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible === 1;
+            updateModal.querySelector('input[name="icon"]').value = record.icon;
+            updateModal.querySelector('input[name="href"]').value = record.href;
+            updateModal.querySelector('select[name="alias"]').value = record.alias;
+            updateModal.querySelector('select[name="permission"]').value = record.permission;
+            for (let code in record.content?.title) {
+                updateModal.querySelector(`input#title_${code}`).value = record.content.title[code];
+            }
+        }));
+        
+        const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
+        views.forEach(btn => btn.addEventListener('click', function () {
+            let thisRow = btn.closest('tr');
+            let record = JSON.parse(thisRow.dataset.record ?? '{}');
+            if (record.id === undefined) return;
+            let viewModal = document.querySelector('div#menu-view-modal');
+            viewModal.querySelector('input[name="id"]').value = record.id;
+            viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
+            viewModal.querySelector('input[name="position"]').value = record.position;
+            viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible === 1;
+            viewModal.querySelector('input[name="icon"]').value = record.icon;
+            viewModal.querySelector('input[name="href"]').value = record.href;
+            viewModal.querySelector('select[name="alias"]').value = record.alias;
+            viewModal.querySelector('select[name="permission"]').value = record.permission;
+            for (let code in record.content?.title) {
+                viewModal.querySelector(`input#title_${code}`).value = record.content.title[code];
+            }
+            viewModal.querySelector('input[name="created_at"]').value = record.created_at;
+            viewModal.querySelector('input[name="created_by"]').value = record.created_by;
+            viewModal.querySelector('input[name="updated_at"]').value = record.updated_at;
+            viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
+        }));
+        
+        const formInsert = document.querySelector('form#menu_insert');
+        if (!formInsert) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitter = document.querySelector('button.insert-menu');
+            submitter.addEventListener('click', function (e) {
+                e.preventDefault();
+                formInsert.requestSubmit();
+            });
+
+            formInsert.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                }
+
+                submitter.growNstop();
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'POST'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.reload();
+
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Menu created');
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitter.growNstop();
+                });
+            });
+        }
+
+        const formUpdate = document.querySelector('form#menu_update');
+        if (!formUpdate) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitter = document.querySelector('button.update-menu');
+            submitter.addEventListener('click', function (e) {
+                e.preventDefault();
+                formUpdate.requestSubmit();
+            });
+
+            formUpdate.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                }
+
+                submitter.growNstop();
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'PUT'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.reload();
+
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Menu updated');
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitter.growNstop();
+                });
+            });
+        }
+    });
+</script>
