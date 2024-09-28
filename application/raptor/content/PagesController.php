@@ -37,7 +37,7 @@ class PagesController extends \Raptor\Controller
             $select_pages = 
                 'SELECT id, photo, title, code, category, type, position, published ' .
                 "FROM $table WHERE is_active=1 ORDER BY position";
-            $pages = this->query($select_pages)->fetchAll();
+            $pages = $this->query($select_pages)->fetchAll();
             $infos = $this->getInfos($table);
             $files_counts = $this->getFilesCounts($table);            
             $this->respondJSON([
