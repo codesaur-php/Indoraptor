@@ -25,7 +25,7 @@ class SessionMiddleware implements MiddlewareInterface
                 $path = \substr($path, $lngth);
                 $path = '/' . \ltrim($path, '/');
             }
-            if ((\explode('/', $path)[2] ?? '' ) != 'login') {
+            if (!\str_contains($path, '/login/')) {
                 // Only login routes needs write access on $_SESSION,
                 // otherwise we better write_close the session as soon as possible
                 \session_write_close();
