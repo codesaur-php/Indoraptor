@@ -34,13 +34,14 @@
             
             "Raptor\\": "application/raptor/",
             "Raptor\\Exception\\": "application/raptor/exception/",
+            "Raptor\\Template\\": "application/raptor/template/",
             "Raptor\\Authentication\\": "application/raptor/authentication/",
-            "Raptor\\User\\": "application/raptor/users/",
+            "Raptor\\User\\": "application/raptor/user/",
             "Raptor\\File\\": "application/raptor/file/",
             "Raptor\\Organization\\": "application/raptor/organization/",
             "Raptor\\RBAC\\": "application/raptor/rbac/",
             "Raptor\\Localization\\": "application/raptor/localization/",
-            "Raptor\\Content\\": "application/raptor/contents/",
+            "Raptor\\Content\\": "application/raptor/content/",
             "Raptor\\Mail\\": "application/raptor/mail/",
             "Raptor\\Log\\": "application/raptor/log/"
         }
