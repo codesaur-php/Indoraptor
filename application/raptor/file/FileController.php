@@ -149,7 +149,7 @@ class FileController extends \Raptor\Controller
             $this->indolog(
                 $recordTableName ?? 'files',
                 LogLevel::ALERT,
-                "{$context['path']} файл байршууллаа",
+                "<a target=\"__blank\" href=\"{$context['path']}\">{$context['path']}</a> файл байршууллаа",
                 $context + ['reason' => 'file-move-uploaded']
             );
             

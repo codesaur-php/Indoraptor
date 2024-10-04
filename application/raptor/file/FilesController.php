@@ -170,7 +170,7 @@ class FilesController extends FileController
             $this->indolog(
                 $table,
                 LogLevel::INFO,
-                "$record_id-р бичлэгт зориулcан $file_id дугаартай файлын байршил солигдлоо",
+                "$record_id-р бичлэгт зориулcан $file_id дугаартай файлын байршил солигдлоо. <a target=\"__blank\" href=\"{$update['path']}\">{$update['path']}</a>",
                 ['reason' => 'rename-file-folder', 'table' => $table, 'record' => $update + $record, 'mode' => $mode
             ]);
             return true;
