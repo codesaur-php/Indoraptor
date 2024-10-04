@@ -7,18 +7,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Raptor\Authentication\User;
-
 class SettingsMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
-            $alias = \getenv('CODESAUR_ORGANIZATION_ALIAS', true);
-            $user = $request->getAttribute('user');
-            if ($user instanceof User) {
-                $alias = $user->getOrganization()['alias'];
-            }
             $pdo = $request->getAttribute('pdo');
             $model = new SettingsModel($pdo);
             $stmt = $pdo->prepare(
@@ -28,13 +21,16 @@ class SettingsMiddleware implements MiddlewareInterface
                 'WHERE p.is_active=1 AND p.alias=:alias AND c.code=:code ' .
                 'ORDER BY p.updated_at desc LIMIT 1'
             );
-            $_alias = $alias ?: 'system';
-            $localization = $request->getAttribute('localization');
-            $code = empty($localization['code']) ? 'en' : $localization['code'];
-            $stmt->bindParam(':alias', $_alias, \PDO::PARAM_STR);
+            $alias = $request->getAttribute('user')?->getOrganization()['alias'] ?? 'system';
+            $code = $request->getAttribute('localization')['code']
+                ?? throw new \Exception('Please run LocalizationMiddleware before me!');
+            $stmt->bindParam(':alias', $alias, \PDO::PARAM_STR);
             $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
             if ($stmt->execute()) {
                 $settings = $stmt->fetchAll()[0] ?? [];
+                if (!empty($settings['config'])) {
+                    $settings['config'] = \json_decode($settings['config'], true);
+                }
             }
         } catch (\Throwable $e) {
             if (CODESAUR_DEVELOPMENT) {
