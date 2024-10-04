@@ -19,7 +19,7 @@
         "phpmailer/phpmailer": ">=6.8.0",
         "getbrevo/brevo-php": ">=1.0.2",
         "firebase/php-jwt": ">=6.7.0",
-        "codesaur/http-application": ">=5.6.0",
+        "codesaur/http-application": ">=5.7.0",
         "codesaur/dataobject": ">=5.2.0",
         "codesaur/http-client": ">=1.5.0",
         "codesaur/template": ">=1.6.0"
