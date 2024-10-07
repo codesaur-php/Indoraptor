@@ -35,18 +35,13 @@ class SettingsController extends \Raptor\Controller
                 }
                 $context['payload'] = $payload;
                 
-                if (empty($record['alias'])) {
-                    throw new \Exception($this->text('invalid-request'), 400);
-                }
-                
                 if (!empty($record['config'])) {
                     if (\json_decode($record['config']) == null) {
                         throw new \Exception('Extra config must be valid JSON!', 400);
                     }
                 }
                 
-                $current = $model->getRowBy(['p.alias' => $record['alias'], 'p.is_active' => 1]);
-                
+                $current = $model->getRowBy(['p.is_active' => 1]);                
                 if (isset($current['id'])) {
                     $id = $current['id'];
                     $updated = $model->updateById($id, $record, $content);
@@ -86,13 +81,9 @@ class SettingsController extends \Raptor\Controller
                 return;
             }
 
-            $alias = $this->getUser()->getOrganization()['alias'];
-            $record = $model->getRowBy(['p.alias' => $alias, 'p.is_active' => 1]);
-            if (empty($record)) {
-                $record = ['alias' => $alias];
-            }
+            $record = $model->getRowBy(['p.is_active' => 1]);
             
-            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record]);
+            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record ?? []]);
             $dashboard->set('title', $this->text('settings'));
             $dashboard->render();
 
@@ -109,13 +100,8 @@ class SettingsController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $alias = $this->getParsedBody()['alias'] ?? null;
-            if (empty($alias)) {
-                throw new \Exception($this->text('invalid-request'), 400);
-            }
-            
             $model = new SettingsModel($this->pdo);
-            $current_record = $model->getRowBy(['p.alias' => $alias, 'p.is_active' => 1]) ?? [];            
+            $current_record = $model->getRowBy(['p.is_active' => 1]) ?? [];            
             $current_favico_file = \basename($current_record['favico'] ?? '');
             $current_shortcut_icon_file = \basename($current_record['shortcut_icon'] ?? '');
             $current_apple_touch_icon_file = \basename($current_record['apple_touch_icon'] ?? '');
@@ -124,7 +110,7 @@ class SettingsController extends \Raptor\Controller
             $file->setFolder('/settings');
             $file->allowImageOnly();
             
-            $record = ['alias' => $alias];
+            $record = [];
             $content = [];
             foreach (\array_keys($this->getLanguages()) as $code) {
                 $current_logo_file = \basename($current_record['content']['logo'][$code] ?? '');

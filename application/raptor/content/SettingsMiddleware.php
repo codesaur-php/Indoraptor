@@ -18,13 +18,10 @@ class SettingsMiddleware implements MiddlewareInterface
                 'SELECT p.keywords, p.email, p.phone, p.favico, p.shortcut_icon, p.apple_touch_icon, p.config, ' .
                 'c.title, c.logo, c.description, c.urgent, c.contact, c.address, c.copyright ' .
                 "FROM {$model->getName()} as p INNER JOIN {$model->getContentName()} as c ON p.id=c.parent_id " .
-                'WHERE p.is_active=1 AND p.alias=:alias AND c.code=:code ' .
-                'ORDER BY p.updated_at desc LIMIT 1'
+                'WHERE p.is_active=1 AND c.code=:code LIMIT 1'
             );
-            $alias = $request->getAttribute('user')?->getOrganization()['alias'] ?? 'system';
             $code = $request->getAttribute('localization')['code']
                 ?? throw new \Exception('Please run LocalizationMiddleware before me!');
-            $stmt->bindParam(':alias', $alias, \PDO::PARAM_STR);
             $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
             if ($stmt->execute()) {
                 $settings = $stmt->fetchAll()[0] ?? [];

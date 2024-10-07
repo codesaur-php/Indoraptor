@@ -29,7 +29,6 @@
 <div class="settings-tabs tab-content mt-2">
     <div class="tab-pane active show" id="tab-meta" role="tabpanel">
         <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
-            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
                     <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code]|e }}" maxlength="70" id="title_{{ code }}" autocomplete="off">
@@ -114,7 +113,6 @@
     </div>
     <div class="tab-pane" id="tab-logo" role="tabpanel">
         <form class="needs-validation" novalidate action="{{ 'settings-files'|link }}" method="POST" enctype="multipart/form-data">
-            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
             <div class="row mb-3 mt-2">
                 <div class="col">
                     {% for code,lang in localization.language %}
@@ -186,7 +184,6 @@
     </div>
     <div class="tab-pane" id="tab-config" role="tabpanel">
         <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
-            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
             <label class="form-label text-muted small"><i>must be valid JSON</i></label>
             <a class="badge bg-info mb-2" href="javascript:;" onclick="prettyPrint();">pretty print</a>
             <textarea class="form-control" name="config" id="config_editor" rows="25" style="height:450px">{{ record['config'] }}</textarea>

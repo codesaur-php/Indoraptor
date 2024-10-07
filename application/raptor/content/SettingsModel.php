@@ -13,7 +13,6 @@ class SettingsModel extends MultiModel
         
         $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-            new Column('alias', 'varchar', 16),
             new Column('keywords', 'varchar', 255),
             new Column('email', 'varchar', 70),
             new Column('phone', 'varchar', 70),

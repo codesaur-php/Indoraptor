@@ -52,13 +52,13 @@ class FileController extends \Raptor\Controller
     
     public function allowImageOnly()
     {
-        $this->allowExtensions(['jpg', 'jpeg', 'jpe', 'png', 'gif']);
+        $this->allowExtensions(['jpg', 'jpeg', 'jpe', 'png', 'gif', 'webp']);
     }
     
     public function allowCommonTypes()
     {
         $this->allowExtensions([
-            'jpg', 'jpeg', 'jpe', 'png', 'gif', 'ico', 'webp',
+            'jpg', 'jpeg', 'jpe', 'png', 'gif', 'webp', 'ico',
             'pdf', 'doc', 'docx', 'ppt', 'pptx', 'pps', 'ppsx', 'xls', 'xlsx', 'odt', 'psd',
             'mp3', 'm4a', 'ogg', 'wav',
             'mp4', 'm4v', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2',
