@@ -54,4 +54,3 @@ class ErrorHandler implements ExceptionHandlerInterface
         (new FileTemplate($errorTemplate, $vars))->render();
     }
 }
-
