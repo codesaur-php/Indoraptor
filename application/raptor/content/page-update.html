@@ -37,7 +37,7 @@
         <div class="col-8">
             <label class="form-label">{{ 'parent'|text }}</label>
             <select class="form-select" name="parent_id">
-                <option value="0" selected>-</option>
+                <option value="0" selected></option>
                 {% for id,info in infos %}
                 <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
                 {% endfor %}

@@ -12,7 +12,7 @@
                     <div class="col">
                         <div class="form-floating">
                             <select class="form-select" name="parent_id">
-                                <option value="0" selected>- {{ localization.code == 'mn' ? 'Үндсэн байгууллага' : 'Main organization' }} -</option>
+                                <option value="0" selected></option>
                                 {% for org in parents %}
                                 <option value="{{ org['id'] }}">{{ org['name']|e }}</option>
                                 {% endfor %}

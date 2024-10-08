@@ -12,7 +12,7 @@
                     <div class="col">
                         <div class="form-floating">
                             <select class="form-select" name="parent_id">
-                                <option value="0"{{ record['parent_id'] is null or record['parent_id'] == 0 ? ' selected' : '' }}>- {{ localization.code == 'mn' ? 'Үндсэн байгууллага' : 'Main organization' }} -</option>
+                                <option value="0"{{ record['parent_id'] is null or record['parent_id'] == 0 ? ' selected' : '' }}></option>
                                 {% for org in parents %}
                                     {% if org['id'] != record['id'] %}
                                         <option value="{{ org['id'] }}"{{ record['parent_id'] == org['id'] ? ' selected' : '' }}>{{ org['name']|e }}</option>
