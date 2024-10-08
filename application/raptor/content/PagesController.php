@@ -419,7 +419,7 @@ class PagesController extends \Raptor\Controller
             $select_pages = 
                 'SELECT id, parent_id, title ' .
                 "FROM $table WHERE is_active=1";
-            $result = $this->query($select_pages)->fetchAll();
+            $result = $this->query($select_pages . ' ORDER BY position, id')->fetchAll();
             foreach ($result as $record) {
                 $pages[$record['id']] = $record;
             }
@@ -429,7 +429,7 @@ class PagesController extends \Raptor\Controller
             $pages_specified = [];
             try {
                 $select_pages .= " AND $condition";
-                $result_specified = $this->query($select_pages)->fetchAll();
+                $result_specified = $this->query($select_pages . ' ORDER BY position, id')->fetchAll();
                 foreach ($result_specified as $row) {
                     $pages_specified[$row['id']] = $row;
                 }
