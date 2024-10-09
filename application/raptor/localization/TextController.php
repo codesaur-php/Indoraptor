@@ -194,8 +194,8 @@ class TextController extends \Raptor\Controller
                 )->render();
                 
                 $level = LogLevel::NOTICE;
-                $context['record'] = $record;
-                $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг шинэчлэхээр нээж байна";
+                $context['record'] = $current;
+                $message = "$table хүснэгтээс [{$current['keyword']}] текст мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
