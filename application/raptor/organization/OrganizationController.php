@@ -227,7 +227,10 @@ class OrganizationController extends \Raptor\Controller
                     $context['record']['logo'] = $record['logo'];
                 }
                 
-                $model->updateById($id, $record);
+                $updated = $model->updateById($id, $record);
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([
                     'status' => 'success',
