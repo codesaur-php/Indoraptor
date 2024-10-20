@@ -8,9 +8,9 @@
                 {% set href = 'news'|link({id:news['id']}) %}
                 <li class="mt-2 mb-4 {{ loop.index0 is odd ? '' : 'bg-light' }}">
                     {% if news['photo'] is not empty and news['photo'] is not null %}
-                    <div class="img-fluid d-block">
+                    <div class="img-fluid img-thumbnail d-block">
                         <a href="{{ href }}">
-                            <img src="{{ news['photo'] is empty or news['photo'] is null ? assets ~ '/assets/mrpam/mrpam_colored.png' : news['photo'] }}" class="border-radius-0" width="100" alt="MRPAM">
+                            <img src="{{ news['photo'] }}" height="100">
                         </a>
                     </div>
                     {% endif %}
