@@ -212,7 +212,7 @@ class OrganizationController extends \Raptor\Controller
                 if ($logo) {
                     $record['logo'] = $logo['path'];
                 }
-                $current_logo_file = $current_record['logo'] ? '' : \basename($current_record['logo']);
+                $current_logo_file = $current['logo'] ? '' : \basename($current['logo']);
                 if (!empty($current_logo_file)) {
                     if ($file->getLastError() == -1) {
                         $file->tryDeleteFile($current_logo_file, $model->getName());
