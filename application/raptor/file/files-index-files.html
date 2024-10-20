@@ -32,6 +32,7 @@
             <th scope="col">{{ 'description'|text }}</th>
             <th scope="col">{{ 'category'|text }}</th>
             <th scope="col">{{ 'keyword'|text }}</th>
+            <th scope="col">{{ 'date'|text }}</th>
         </tr>
     </thead>
 </table>
@@ -153,6 +154,10 @@
             let cell5 = document.createElement('td');
             cell5.innerHTML = file['keyword'] ?? '';
             row.appendChild(cell5);
+            
+            let cell6 = document.createElement('td');
+            cell6.innerHTML = file['created_at'] ?? '';
+            row.appendChild(cell6);
 
             let tBody = this.table.querySelector('tbody');
             if (!tBody) {

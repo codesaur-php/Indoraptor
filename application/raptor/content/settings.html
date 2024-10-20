@@ -53,7 +53,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:120px">{{ record['content']['urgent'][code] }}</textarea>
+                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:200px">{{ record['content']['urgent'][code] }}</textarea>
                     <label for="urgent_{{ code }}">
                         {{ 'urgent'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -77,7 +77,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:120px">{{ record['content']['contact'][code] }}</textarea>
+                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:200px">{{ record['content']['contact'][code] }}</textarea>
                     <label for="contact_{{ code }}">
                         {{ 'contact'|text }}{% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">

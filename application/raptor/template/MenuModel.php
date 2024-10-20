@@ -49,7 +49,15 @@ class MenuModel extends MultiModel
             ['position' => '200'],
             ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']]
         );
-        if ($contents_id != false) {            
+        if ($contents_id != false) {
+            $this->insert(
+                [
+                    'parent_id' => $contents_id, 'position' => '201',
+                    'alias' => 'system',
+                    'icon' => 'bi bi-rocket-takeoff', 'href' => "$path/home\" target=\"__blank"
+                ],
+                ['mn' => ['title' => 'Веблүү очих'], 'en' => ['title' => 'Visit Website']]
+            );
             $this->insert(
                 [
                     'parent_id' => $contents_id, 'position' => '250',

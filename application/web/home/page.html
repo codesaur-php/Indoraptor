@@ -1,0 +1,32 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<div class="container">
+    <div class="row">
+        <div class="align-self-center p-static text-center mt-4">
+            <h2>{{ title }}</h2>
+        </div>
+    </div>
+</div>
+<style>
+    .page-article > p {
+        text-align:justify;
+        margin:0;
+    }
+    .page-article > p {
+        color:black;
+    }
+    .page-article > dl, .page-article > ol, .page-article > ul {
+        margin-bottom:0;
+    }
+</style>
+<div class="container page-article">
+    {% if photo is not null and photo is not empty %}
+        <img class="img-fluid mb-3" file-data-fancybox src="{{ photo }}" alt="{{ title|e }}">
+    {% endif %}
+    {{ content }}
+</div>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+    });
+</script>

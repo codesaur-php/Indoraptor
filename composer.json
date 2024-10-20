@@ -28,7 +28,8 @@
         "psr-4": {
             "Web\\": "application/web/",
             "Web\\Home\\": "application/web/home/",
-            
+            "Web\\Template\\": "application/web/template/",
+
             "Dashboard\\": "application/dashboard/",
             "Dashboard\\Home\\": "application/dashboard/home",
             

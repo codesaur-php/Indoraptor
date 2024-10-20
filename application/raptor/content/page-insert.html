@@ -84,7 +84,7 @@
         </div>
         <div class="col-3">
             <label class="form-label">{{ 'date'|text }}</label>
-            <input class="form-control" name="published_date" value="" placeholder="" type="datetime-local" autocomplete="off">
+            <input class="form-control" name="published_at" value="" placeholder="" type="datetime-local" autocomplete="off">
         </div>
         <div class="col-4">
             <label class="form-label">{{ 'publish'|text }}</label>
@@ -130,8 +130,8 @@
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
             <div class="form-group mt-3">
-                <label class="form-label">{{ 'short'|text }}</label>
-                <textarea class="form-control" name="short"></textarea>
+                <label class="form-label">{{ 'description'|text }}</label>
+                <textarea class="form-control" name="description"></textarea>
             </div>
             <div class="form-group mt-3">
                 <label class="form-label">{{ 'photo'|text }}</label>
@@ -149,8 +149,8 @@
                 </div>
             </div>
             <div class="form-group mt-3">
-                <label class="form-label">{{ 'full'|text }}</label>
-                <textarea class="form-control" id="full" name="full" rows="10"></textarea>
+                <label class="form-label">{{ 'content'|text }}</label>
+                <textarea class="form-control" id="content" name="content" rows="10"></textarea>
             </div>
         </div>
         <div class="tab-pane pt-2" id="tab-files">
@@ -329,8 +329,8 @@
     });
     
     document.addEventListener('DOMContentLoaded', function () {
-        let full = document.getElementById('full');
-        sceditor.create(full, {
+        let content = document.getElementById('content');
+        sceditor.create(content, {
             format: 'xhtml',
             emoticonsEnabled: false,
             toolbarExclude: 'emoticon',

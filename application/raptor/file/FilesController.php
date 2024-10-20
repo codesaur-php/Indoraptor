@@ -79,7 +79,7 @@ class FilesController extends FileController
                 $files = [];
             } else {
                 $select_files = 
-                    'SELECT id, record_id, file, path, size, type, mime_content_type, category, keyword, description ' .
+                    'SELECT id, record_id, file, path, size, type, mime_content_type, category, keyword, description, created_at ' .
                     "FROM {$table}_files WHERE is_active=1";
                 $files = $this->query($select_files)->fetchAll();
             }

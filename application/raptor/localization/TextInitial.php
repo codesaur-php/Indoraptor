@@ -91,6 +91,7 @@ class TextInitial
         $model->insert(['keyword' => 'image', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг'], 'en' => ['text' => 'Image']]);
         $model->insert(['keyword' => 'images', 'type' => 'sys-defined'], ['en' => ['text' => 'Images'], 'mn' => ['text' => 'Зурагнууд']]);
         $model->insert(['keyword' => 'inactive', 'type' => 'sys-defined'], ['mn' => ['text' => 'Идэвхигүй'], 'en' => ['text' => 'Inactive']]);
+        $model->insert(['keyword' => 'usefull-links', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэгтэй холбоосууд'], 'en' => ['text' => 'Usefull Links']]);
         $model->insert(['keyword' => 'key', 'type' => 'sys-defined'], ['en' => ['text' => 'Key'], 'mn' => ['text' => 'Түлхүүр']]);
         $model->insert(['keyword' => 'keyword', 'type' => 'sys-defined'], ['mn' => ['text' => 'Түлхүүр үг'], 'en' => ['text' => 'Keyword']]);
         $model->insert(['keyword' => 'language', 'type' => 'sys-defined'], ['en' => ['text' => 'Language'], 'mn' => ['text' => 'Хэл']]);
@@ -159,6 +160,7 @@ class TextInitial
         $model->insert(['keyword' => 'register', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүртгэх'], 'en' => ['text' => 'Register']]);
         $model->insert(['keyword' => 'registered', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүртгэгдсэн'], 'en' => ['text' => 'Registered']]);
         $model->insert(['keyword' => 'remove', 'type' => 'sys-defined'], ['mn' => ['text' => 'Арилгах'], 'en' => ['text' => 'Remove']]);
+        $model->insert(['keyword' => 'recent-news', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сүүлийн үеийн мэдээ'], 'en' => ['text' => 'Recent News']]);
         $model->insert(['keyword' => 'report', 'type' => 'sys-defined'], ['mn' => ['text' => 'Тайлан'], 'en' => ['text' => 'Report']]);
         $model->insert(['keyword' => 'request', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүсэлт'], 'en' => ['text' => 'Request']]);
         $model->insert(['keyword' => 'reviews', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэлэлцүүлгүүд'], 'en' => ['text' => 'Reviews']]);
