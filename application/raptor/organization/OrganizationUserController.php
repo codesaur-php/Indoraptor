@@ -18,7 +18,7 @@ class OrganizationUserController extends \Raptor\Controller
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_users_table = (new OrganizationUserModel($this->pdo))->getName();
             if ($this->isUser('system_coder')) {
-                $select_org = "SELECT * FROM $org_table";
+                $select_org = "SELECT * FROM $org_table WHERE is_active=1";
             } else {
                 $select_org =
                     "SELECT t2.* FROM $org_users_table as t1 INNER JOIN $org_table as t2 ON t1.organization_id=t2.id " .

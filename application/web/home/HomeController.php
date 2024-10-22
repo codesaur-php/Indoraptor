@@ -14,18 +14,20 @@ class HomeController extends TemplateController
 {
     public function index()
     {
+        $language_code = $this->getLanguageCode();
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt_recent = $this->prepare(
             "SELECT id, title, photo, published_at FROM $news_table " .
             "WHERE is_active=1 AND published=1 AND code=:code " .
-            'ORDER BY published_at desc LIMIT 25'
+            'ORDER BY published_at desc LIMIT 20'
         );
-        $recent = $stmt_recent->execute([':code' => $this->getLanguageCode()]) ? $stmt_recent->fetchAll() : [];
+        $recent = $stmt_recent->execute([':code' => $language_code]) ? $stmt_recent->fetchAll() : [];
         
         $vars = ['recent' => $recent];
         $home = $this->template(\dirname(__FILE__) . '/home.html', $vars);
         $home->render();
-        $this->indolog('web', LogLevel::NOTICE, 'Нүүр хуудсыг уншиж байна');
+        
+        $this->indolog('web', LogLevel::NOTICE, "[$language_code] Нүүр хуудсыг уншиж байна");
     }
     
     public function contact()
@@ -33,8 +35,7 @@ class HomeController extends TemplateController
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT id FROM $pages_table " .
-            "WHERE is_active=1 AND published=1 AND code=:code AND type='contact' " .
-            'ORDER BY published_at desc LIMIT 1'
+            "WHERE is_active=1 AND published=1 AND code=:code AND name='contact'"
         );
         $contact = $stmt->execute([':code' => $this->getLanguageCode()]) ? $stmt ->fetch() : [];
         return $this->page($contact['id'] ?? -1);
