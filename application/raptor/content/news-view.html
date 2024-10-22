@@ -1,12 +1,11 @@
-{% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
-  'photo': { 'mn': 'Фото' },
+{% set types = {
+  'common': { 'mn': 'Нийтлэг' },
   'video': { 'mn': 'Видео' },
   'announcement': { 'mn': 'Зар мэдээлэл' },
   'special': { 'mn': 'Тусгай' }
 } %}
-{% set types = {
-  'common': { 'mn': 'Нийтлэг' },
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' },
   'hot': { 'mn': 'Халуун' },
   'fun': { 'mn': 'Хөгжилтэй' }
@@ -36,12 +35,12 @@
         </span>
     </div>
     <div class="col-4">
-        <label class="form-label">{{ 'category'|text }}</label>
-        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
-    </div>
-    <div class="col-4">
         <label class="form-label">{{ 'type'|text }}</label>
         <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
+    </div>
+    <div class="col-4">
+        <label class="form-label">{{ 'category'|text }}</label>
+        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
     </div>
 </div>
 <div class="row mt-3">

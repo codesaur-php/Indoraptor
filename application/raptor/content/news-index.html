@@ -58,8 +58,8 @@
                 
                 let image =  `<img style="max-width:60px;max-height:60px" src="${!record.photo ? placeholder : record.photo}">`;
                 
-                let category_type = `<span class="badge bg-primary">${record.category}</span>`;
-                category_type += ` <span class="badge bg-danger">${record.type}</span>`;
+                let type_category = `<span class="badge bg-primary">${record.type}</span>`;
+                type_category += ` <span class="badge bg-danger">${record.category}</span>`;
                 
                 let published = record.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}` : '<i class="bi bi-eye-slash"></i>';
 
@@ -73,7 +73,7 @@
                 }
                 let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
-                rowsHTML += `<tr><th scope="row">${record['published_at']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${data.files_counts[id] ?? 0}</td><td>${category_type}</td><td>${published}</td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row">${record['published_at']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${data.files_counts[id] ?? 0}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
             });
             news.setBody(rowsHTML);
             news.setReady();

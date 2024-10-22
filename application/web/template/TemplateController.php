@@ -15,8 +15,8 @@ class TemplateController extends \Raptor\Controller
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $index->set($key, $value);
         }
-        $index->set('mainmenu', $this->getMainMenu($this->getLanguageCode()));
-        $index->set('footer_navigation', $this->getFooterNavigation($this->getLanguageCode()));
+        $index->set('main_menu', $this->getMainMenu($this->getLanguageCode()));
+        $index->set('important_menu', $this->getImportantMenu($this->getLanguageCode()));
         return $index;
     }
     
@@ -25,8 +25,10 @@ class TemplateController extends \Raptor\Controller
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
-            'SELECT id, parent_id, title, position, category, type, link, name ' .
-            "FROM $pages_table WHERE code=:code AND is_active=1 AND published=1 AND (type='menu' OR type='important-menu' OR type='mega-menu') ORDER BY position, id";
+            'SELECT id, parent_id, title, position, category, type, link ' .
+            "FROM $pages_table " .
+            "WHERE code=:code AND is_active=1 AND published=1 AND type!='special-page' " .
+            'ORDER BY position, id';
         $stmt = $this->prepare($pages_query);
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
         if ($stmt->execute() && $stmt->rowCount() > 0) {
@@ -52,13 +54,15 @@ class TemplateController extends \Raptor\Controller
         return $navigation;
     }
     
-    public function getFooterNavigation(string $code): array
+    public function getImportantMenu(string $code): array
     {
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
-            'SELECT id, title, position, link, name ' .
-            "FROM $pages_table WHERE code=:code AND is_active=1 AND published=1 AND type='footer-menu' ORDER BY position, id";
+            'SELECT id, title, position, link ' .
+            "FROM $pages_table " .
+            "WHERE code=:code AND is_active=1 AND published=1 AND type='important-menu' " .
+            'ORDER BY position, id';
         $stmt = $this->prepare($pages_query);
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
         if ($stmt->execute() && $stmt->rowCount() > 0) {

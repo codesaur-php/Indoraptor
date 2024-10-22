@@ -245,7 +245,7 @@ class TextInitial
         $model->insert(['keyword' => 'path', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зам'], 'en' => ['text' => 'Path']]);
         $model->insert(['keyword' => 'thumbnail', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өнгөц зураг'], 'en' => ['text' => 'Thumbnail']]);
         $model->insert(['keyword' => 'visible', 'type' => 'sys-defined'], ['mn' => ['text' => 'Харагдах'], 'en' => ['text' => 'Visible']]);
-        $model->insert(['keyword' => 'contact-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбоо барих'], 'en' => ['text' => 'Contact Us']]);
+        $model->insert(['keyword' => 'contact-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бидэнтэй холбогдох'], 'en' => ['text' => 'Contact Us']]);
         $model->insert(['keyword' => 'about-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бидний тухай'], 'en' => ['text' => 'About Us']]);
         $model->insert(['keyword' => 'events', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үйл явдлууд'], 'en' => ['text' => 'Events']]);
         $model->insert(['keyword' => 'announcement', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зар мэдээ'], 'en' => ['text' => 'Announcement']]);

@@ -1,11 +1,11 @@
-{% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
+{% set types = {
+  'common': { 'mn': 'Нийтлэг' },
   'video': { 'mn': 'Видео' },
   'announcement': { 'mn': 'Зар мэдээлэл' },
   'special': { 'mn': 'Тусгай' }
 } %}
-{% set types = {
-  'common': { 'mn': 'Нийтлэг' },
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' },
   'hot': { 'mn': 'Халуун' },
   'fun': { 'mn': 'Хөгжилтэй' }
@@ -40,18 +40,6 @@
                     <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
                 {% endfor %}
             </select>
-        </div>
-        <div class="col-4">
-            <label class="form-label">{{ 'category'|text }}</label>
-            <div class="input-group">
-                <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
-                    {% for value,name in categories %}
-                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
         </div>  
         <div class="col-4">
             <label class="form-label">{{ 'type'|text }}</label>
@@ -60,6 +48,18 @@
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                 <ul class="dropdown-menu dropdown-menu-end" id="type_list">
                     {% for value,name in types %}
+                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-4">
+            <label class="form-label">{{ 'category'|text }}</label>
+            <div class="input-group">
+                <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                    {% for value,name in categories %}
                         <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
                     {% endfor %}
                 </ul>

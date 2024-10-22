@@ -64,9 +64,12 @@
                     title = `<span class="fw-lighter"><small>${data.infos[id]['parent_titles']}</small></span>`;
                 }
                 title += ` <span class="fw-medium">${page.title}</span>`;
+                if (page.link) {
+                    title += `<small class="bg-light d-block text-primary">${page.link}</small>`;
+                }
                 
-                let category_type = `<span class="badge bg-secondary">${page.category}</span>`;
-                category_type += ` <span class="badge bg-warning text-dark">${page.type}</span>`;
+                let type_category = `<span class="badge bg-warning text-dark">${page.type}</span>`;
+                type_category += ` <span class="badge bg-secondary">${page.category}</span>`;
                 
                 let published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}` : '<i class="bi bi-eye-slash"></i>';
 
@@ -80,7 +83,7 @@
                 }
                 let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
-                rowsHTML += `<tr><th scope="row">${id}</th><td>${flag} <span class="text-secondary fw-lighter">${page.code}</span> </td><td>${image}</td><td>${title}</td><td>${data.files_counts[id] ?? 0}</td><td>${category_type}</td><td>${page.position}</td><td>${published}</td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row">${id}</th><td>${flag} <span class="text-secondary fw-lighter">${page.code}</span> </td><td>${image}</td><td>${title}</td><td>${data.files_counts[id] ?? 0}</td><td>${type_category}</td><td>${page.position}</td><td>${published}</td><td>${actions}</td></tr>`;
             });
             pages.setBody(rowsHTML);
             pages.setReady();

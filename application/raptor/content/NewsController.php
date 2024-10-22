@@ -35,7 +35,7 @@ class NewsController extends \Raptor\Controller
             
             $table = (new NewsModel($this->pdo))->getName();
             $select_news = 
-                'SELECT id, photo, title, code, category, type, published, published_at ' .
+                'SELECT id, photo, title, code, type, category, published, published_at ' .
                 "FROM $table WHERE is_active=1 ORDER BY published_at desc";
             $news = $this->query($select_news)->fetchAll();
             $files_counts = $this->getFilesCounts($table);

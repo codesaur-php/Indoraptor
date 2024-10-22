@@ -86,7 +86,7 @@
                 {% endmacro %}
                 {% from _self import dropdownMenu %}
 
-                {% for menu in mainmenu %}
+                {% for menu in main_menu %}
                     {% if menu['submenu'] is not empty %}
                         <h4 class="text-secondary">
                             {{ menu['title'] }}
@@ -129,7 +129,17 @@
                         <div class="col-6">
                             <h5>{{ 'usefull-links'|text }}</h5>
                             <ul class="list-unstyled mb-0">
-                                {% for item in footer_navigation %}
+                                <li>
+                                    <a class="text-light" href="{{ index }}/dashboard" target="__blank">
+                                        <i class="bi bi-angle-right"></i> {{ 'dashboard'|text }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="text-light" href="{{ 'contact'|link }}">
+                                        <i class="bi bi-angle-right"></i> {{ 'contact'|text }}
+                                    </a>
+                                </li>
+                                {% for item in important_menu %}
                                     {% if item['link'] is not empty %}
                                         {% set href = item['link'] %}
                                     {% else %}

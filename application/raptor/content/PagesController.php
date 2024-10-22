@@ -35,7 +35,7 @@ class PagesController extends \Raptor\Controller
             
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages = 
-                'SELECT id, photo, title, code, category, type, position, published ' .
+                'SELECT id, photo, title, code, type, category, position, link, published ' .
                 "FROM $table WHERE is_active=1 ORDER BY position";
             $pages = $this->query($select_pages)->fetchAll();
             $infos = $this->getInfos($table);

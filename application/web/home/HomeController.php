@@ -35,7 +35,8 @@ class HomeController extends TemplateController
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT id FROM $pages_table " .
-            "WHERE is_active=1 AND published=1 AND code=:code AND name='contact'"
+            "WHERE is_active=1 AND published=1 AND code=:code AND link='/contact' " .
+            'ORDER BY published_at desc LIMIT 1'
         );
         $contact = $stmt->execute([':code' => $this->getLanguageCode()]) ? $stmt ->fetch() : [];
         return $this->page($contact['id'] ?? -1);
