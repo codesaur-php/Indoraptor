@@ -25,7 +25,7 @@ class TemplateController extends \Raptor\Controller
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
-            'SELECT id, parent_id, title, position, category, type, link ' .
+            'SELECT id, parent_id, title, link ' .
             "FROM $pages_table " .
             "WHERE code=:code AND is_active=1 AND published=1 AND type!='special-page' " .
             'ORDER BY position, id';
@@ -59,7 +59,7 @@ class TemplateController extends \Raptor\Controller
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
-            'SELECT id, title, position, link ' .
+            'SELECT id, title, link ' .
             "FROM $pages_table " .
             "WHERE code=:code AND is_active=1 AND published=1 AND type='important-menu' " .
             'ORDER BY position, id';
