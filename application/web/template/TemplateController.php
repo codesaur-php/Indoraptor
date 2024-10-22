@@ -26,7 +26,7 @@ class TemplateController extends \Raptor\Controller
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
             'SELECT id, parent_id, title, position, category, type, link, name ' .
-            "FROM $pages_table WHERE code=:code AND is_active=1 AND published=1 AND (type='menu' OR type='mega-menu' OR type='footer-menu') ORDER BY position, id";
+            "FROM $pages_table WHERE code=:code AND is_active=1 AND published=1 AND (type='menu' OR type='important-menu' OR type='mega-menu') ORDER BY position, id";
         $stmt = $this->prepare($pages_query);
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
         if ($stmt->execute() && $stmt->rowCount() > 0) {
