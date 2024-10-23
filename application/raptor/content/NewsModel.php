@@ -20,7 +20,7 @@ class NewsModel extends Model
             new Column('code', 'varchar', 6),
             new Column('type', 'varchar', 32, 'common'),
             new Column('category', 'varchar', 32, 'general'),
-            new Column('comment', 'tinyint', 1, 0),
+            new Column('comment', 'tinyint', 1, 1),
             new Column('read_count', 'int', 4, 0),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('published', 'tinyint', 1, 0),
