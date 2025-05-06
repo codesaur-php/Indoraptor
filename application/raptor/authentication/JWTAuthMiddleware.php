@@ -10,6 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Fig\Http\Message\StatusCodeInterface;
 
+use Raptor\RBAC\RBAC;
 use Raptor\User\UsersModel;
 use Raptor\Authentication\User;
 use Raptor\Organization\OrganizationModel;
@@ -20,7 +21,7 @@ use Raptor\Organization\OrganizationUserModel;
 
 class JWTAuthMiddleware implements MiddlewareInterface
 {
-    public function generateJWT(array $data): string
+    public function generate(array $data): string
     {
         $issuedAt = \time();
         $lifeSeconds = (int) ($_ENV['INDO_JWT_LIFETIME'] ?? 2592000);
@@ -37,84 +38,61 @@ class JWTAuthMiddleware implements MiddlewareInterface
         return JWT::encode($payload, $key, $alg);
     }
     
-    public function validate(string $jwt, $secret = null, ?string $algorithm = null): array
+    public function validate(string $jwt): array
     {
-        if (empty($jwt)) {
-            throw new \Exception('Please provide JWT information!', StatusCodeInterface::STATUS_BAD_REQUEST);
-        }
-        
-        $key = new Key($secret ?? INDO_JWT_SECRET, $algorithm ?? INDO_JWT_ALGORITHM);
+        $key = new Key(
+            $_ENV['INDO_JWT_SECRET'] ?? 'codesaur-indoraptor-not-so-secret',
+            $_ENV['INDO_JWT_ALGORITHM'] ?? 'HS256'
+        );
         $result = (array) JWT::decode($jwt, $key);
         $expirationTime = $result['exp'] ?? 0;
         if ($expirationTime < \time()) {
             throw new \Exception('Invalid JWT data or expired!');
         }
-        if (!isset($result['user_id'])) {
+        if (!isset($result['user_id']) || !isset($result['organization_id'])) {
             throw new \Exception('Invalid JWT data for codesaur!', StatusCodeInterface::STATUS_UNAUTHORIZED);
         }
         return $result;
-    }
-
-    private function retrieveJWTUser(ServerRequestInterface $request, string $jwt): User
-    {
-        $pdo = $request->getAttribute('pdo');
-        $validation = $this->validate($jwt);
-        $users = new UsersModel($pdo);
-        $user = $users->getById($validation['user_id']);
-        if (!isset($user['id'])) {
-            throw new \Exception('User not found', StatusCodeInterface::STATUS_NOT_FOUND);
-        }
-        if ($user['status'] != 1) {
-            throw new \Exception('Inactive user', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
-        }
-        unset($user['password']);
-
-        $organizations = [];
-        $org_table = (new OrganizationModel($pdo))->getName();
-        $org_user_table = (new OrganizationUserModel($pdo))->getName();
-        $stmt = $pdo->prepare(
-            'SELECT t2.* ' .
-            "FROM $org_user_table t1 INNER JOIN $org_table t2 ON t1.organization_id=t2.id " .
-            'WHERE t1.user_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name'
-        );
-        $stmt->bindParam(':id', $user['id'], \PDO::PARAM_INT);
-        if ($stmt->execute()) {
-            $index = 0;
-            $current = $validation['organization_id'] ?? 1;
-            if ($stmt->rowCount() > 0) {
-                while ($row = $stmt->fetch()) {
-                    $index++;
-                    $row['id'] = (int) $row['id'];
-                    $organizations[$row['id'] == $current ? 0 : $index] = $row;
-                }
-            }
-        }
-
-        if (empty($organizations)) {
-            throw new \Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
-        } elseif (!isset($organizations[0])) {
-            $organizations[0] = $organizations[1];
-            unset($organizations[1]);
-        }
-        
-
-        return new User(
-            $user,
-            $organizations,
-            (new \Raptor\RBAC\RBAC($pdo, $user['id']))->jsonSerialize(),
-            $jwt
-        );
     }
     
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
             if (empty($_SESSION['RAPTOR_JWT'])) {
-                throw new \Exception('There is no JWT on the session!');
+                throw new \Exception('There is no JWT on the session!', 5000);
             }
-            $user = $this->retrieveJWTUser($request, $_SESSION['RAPTOR_JWT']);
+            $result = $this->validate($_SESSION['RAPTOR_JWT']);
+            
+            $pdo = $request->getAttribute('pdo');
+            $users = new UsersModel($pdo);
+            $profile = $users->getById($result['user_id']);
+            if (!isset($profile['id'])) {
+                throw new \Exception('User not found', StatusCodeInterface::STATUS_NOT_FOUND);
+            }
+            if ($profile['status'] != 1) {
+                throw new \Exception('Inactive user', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
+            }
+            unset($profile['password']);
+
+            $orgModel = new OrganizationModel($pdo);
+            $orgUserModel = new OrganizationUserModel($pdo);
+            $stmt = $orgUserModel->prepare(
+                'SELECT t2.* ' .
+                "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
+                'WHERE t1.user_id=:user AND t1.organization_id=:org AND t1.is_active=1 AND t2.is_active=1 LIMIT 1'
+            );
+            $stmt->bindParam(':user', $result['user_id'], \PDO::PARAM_INT);
+            $stmt->bindParam(':org', $result['organization_id'], \PDO::PARAM_INT);
+            if (!$stmt->execute() || $stmt->rowCount() != 1) {
+                throw new \Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
+            }
+            $organization = $stmt->fetch();
+            
+            return $handler->handle($request->withAttribute('user', new User(
+                $profile, $organization, (new RBAC($pdo, $profile['id']))->jsonSerialize())
+            ));
         } catch (\Throwable $e) {
-            if ($e->getCode() >= 5000 && CODESAUR_DEVELOPMENT) {
+            if ($e->getCode() != 5000 && CODESAUR_DEVELOPMENT) {
                 \error_log($e->getMessage());
             }
             
@@ -132,6 +110,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             } else {
                 $script_path = '';
             }
+            
             if ((\explode('/', $path)[2] ?? '' ) != 'login') {
                 $loginUri = (string) $request->getUri()->withPath("$script_path/dashboard/login");
                 \header("Location: $loginUri", false, 302);
@@ -140,7 +119,5 @@ class JWTAuthMiddleware implements MiddlewareInterface
             
             return $handler->handle($request);
         }
-        
-        return $handler->handle($request->withAttribute('user', $user));
     }
 }
