@@ -10,7 +10,7 @@ class Application extends \codesaur\Http\Application\Application
         
         $this->use(new Template\ExceptionHandler());
         
-        $this->use(new \Raptor\PDOConnectMiddleware());
+        $this->use(new \Raptor\PostgresConnectMiddleware());
         $this->use(new SessionMiddleware());
         $this->use(new LocalizationMiddleware());
         $this->use(new \Raptor\Content\SettingsMiddleware());
