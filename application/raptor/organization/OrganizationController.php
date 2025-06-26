@@ -288,7 +288,7 @@ class OrganizationController extends \Raptor\Controller
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
-            if ($this->getUser()->getOrganization()['id'] == $id) {
+            if ($this->getUser()->organization['id'] == $id) {
                 throw new \Exception('Cannot remove currently active organization!', 403);
             } elseif ($id == 1) {
                 throw new \Exception('Cannot remove first organization!', 403);

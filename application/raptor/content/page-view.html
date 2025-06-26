@@ -8,10 +8,12 @@
   'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' }
 } %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
-<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"/>
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<link rel="stylesheet" href="{{ index }}/assets/vendor/sceditor-3.2.0/themes/default.min.css">
+<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/sceditor.min.js"></script>
+<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/formats/xhtml.js"></script>
+<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/icons/monocons.js"></script>
+<link rel="stylesheet" href="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.css">
+<script defer src="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.umd.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
         <i class="bi bi-eye"></i> {{ record['title']|e }}
@@ -22,8 +24,8 @@
         </a>
     </div>
 </div>
-<div class="row mt-1">
-    <div class="col-8">
+<div class="row mt-3">
+    <div class="col-6">
         <div class="form-floating">
             <input class="form-control" name="parent_id" readonly value="{{ (infos[record['parent_id']] is not null ? infos[record['parent_id']]['parent_titles'] ~ infos[record['parent_id']]['title'] : '-')|e }}" placeholder="" type="text" autocomplete="off">
             <label>{{ 'parent'|text }}</label>
@@ -31,34 +33,9 @@
     </div>
     <div class="col-2">
         <div class="form-floating">
-            <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
-            <label>{{ 'type'|text }}</label>
-        </div>
-    </div>
-    <div class="col-2">
-        <div class="form-floating">
             <input class="form-control" name="position" readonly value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
             <label>{{ 'position'|text }}</label>
         </div>
-    </div>
-</div>
-<div class="row mt-3">
-    <div class="col-2">
-        <label class="form-label">{{ 'language'|text }}</label>
-        <span class="form-control">
-            {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
-            {% set lang = (localization.language[record['code']] ?? record['code'])|e %}
-            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang }}">
-            {{ lang }}
-        </span>
-    </div>
-    <div class="col-3">
-        <label class="form-label">{{ 'date'|text }}</label>
-        <input class="form-control" name="published_at" value="{{ record['published_at']|e }}" readonly placeholder="" type="datetime-local" autocomplete="off">
-    </div>
-    <div class="col-3">
-        <label class="form-label">{{ 'category'|text }}</label>
-        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
     </div>
     <div class="col-4">
         <label class="form-label">{{ 'publish'|text }}</label>
@@ -68,21 +45,56 @@
         </div>
     </div>
 </div>
-<ul class="nav nav-tabs nav-tabs-content mt-3">
+<div class="row mt-3">
+    <div class="col-2">
+        <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
+        <span class="form-control">
+            {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
+            {% set lang = (localization.language[record['code']] ?? record['code'])|e %}
+            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang }}">
+            {{ lang }}
+        </span>
+    </div>
+    <div class="col-3">
+        <label class="form-label">{{ 'type'|text }}</label>
+        <input class="form-control" name="type" value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" readonly placeholder="" type="text" autocomplete="off">
+    </div>
+    <div class="col-3">
+        <label class="form-label">{{ 'category'|text }}</label>
+        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
+    </div>
+    <div class="col-4">
+        <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
+        <input class="form-control" name="link" value="{{ record['link']|e }}" readonly placeholder="" type="url" autocomplete="off">
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="form-group">
+        <label class="form-label">{{ 'title'|text }}</label>
+        <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+    </div>
+    <div class="form-group mt-3">
+        <label class="form-label">{{ 'description'|text }}</label>
+        <textarea class="form-control" name="description" readonly>{{ record['description']|e }}</textarea>
+    </div>
+    {% if record['photo'] is not empty %}
+    <div class="form-group mt-3">
+        <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
+        <br/>
+        <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}">
+    </div>
+    {% endif %}
+    <div class="form-group mt-3">
+        <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
+        <textarea class="form-control" id="content" name="content" readonly rows="10">{{ record['content']|e }}</textarea>
+    </div>
+</div>
+<ul class="nav nav-tabs nav-tabs-content mt-4">
     <li class="nav-item">
-        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-contents">{{ 'content'|text }}</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-meta">{{ 'meta'|text }} <i class="bi bi-share"></i></a>
+        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
     </li>
     <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#tab-comment">{{ 'comment'|text }} <i class="bi bi-chat-left-text"></i></a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
     </li>
     <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
@@ -91,31 +103,8 @@
         <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
     </li>
 </ul>
-<div class="tab-content">
-    <div class="tab-pane active show" id="tab-contents">
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'title'|text }}</label>
-            <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
-        </div>
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'description'|text }}</label>
-            <textarea class="form-control" name="description" readonly>{{ record['description']|e }}</textarea>
-        </div>
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'photo'|text }}</label>
-            <br/>
-            {% if record['photo'] is not empty %}
-                <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}">
-            {% else %}
-                <img class="img-fluid img-thumbnail" src="https://via.placeholder.com/50?text=no%20photo">
-            {% endif %}
-        </div>
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'content'|text }}</label>
-            <textarea class="form-control" id="content" name="content" readonly rows="10">{{ record['content']|e }}</textarea>
-        </div>
-    </div>
-    <div class="tab-pane pt-2" id="tab-files">
+<div class="tab-content mb-3">
+    <div class="tab-pane active show pt-2" id="tab-files">
         <table class="table table-sm table-striped table-hover" id="pages_files">
             <thead>
                 <tr>
@@ -128,35 +117,12 @@
             </thead>
         </table>
     </div>
-    <div class="tab-pane" id="tab-meta">
-        <div class="alert alert-secondary shadow-sm fade mt-3 show" role="alert">
-            <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
-            {% if localization.code == 'mn' %}
-                Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-            {% else %}
-                Sorry, this feature isn’t available right now
-            {% endif %}
-        </div>
-    </div>
     <div class="tab-pane" id="tab-comment">
-        <div class="alert alert-primary shadow-sm fade mt-3 show" role="alert">
-            <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
-            {% if localization.code == 'mn' %}
-                Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-            {% else %}
-                Sorry, this feature isn’t available right now
-            {% endif %}
+        <div class="form-check form-switch mt-4 ms-2">
+            <input class="form-check-input" disabled {{ record['comment'] > 0 ? 'checked ' :  '' }}type="checkbox" role="switch">
+            {{ 'can-comment'|text }}
         </div>
-    </div>
-    <div class="tab-pane" id="tab-link">
-        <div class="alert alert-warning shadow-sm fade mt-3 show" role="alert">
-            <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
-            {% if localization.code == 'mn' %}
-                Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-            {% else %}
-                Sorry, this feature isn’t available right now
-            {% endif %}
-        </div>
+        <hr>
     </div>
     <div class="tab-pane" id="tab-history">
         <div class="row mt-3">

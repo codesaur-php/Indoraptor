@@ -54,10 +54,10 @@ class LocalizationMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $language = $this->retrieveLanguage($request);
-        if (isset($_SESSION['WEB_LANGUAGE_CODE'])
-            && isset($language[$_SESSION['WEB_LANGUAGE_CODE']])
+        if (isset($_SESSION['MRPAM_LANGUAGE_CODE'])
+            && isset($language[$_SESSION['MRPAM_LANGUAGE_CODE']])
         ) {
-            $code = $_SESSION['WEB_LANGUAGE_CODE'];
+            $code = $_SESSION['MRPAM_LANGUAGE_CODE'];
         } else {
             $code = \key($language);
         }

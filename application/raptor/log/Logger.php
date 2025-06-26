@@ -11,23 +11,23 @@ class Logger extends AbstractLogger
 {
     use \codesaur\DataObject\TableTrait;
     
-    private $_created_by_once = null;
+    private ?int $_created_by_once = null;
     
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
         
         $this->columns = [
-            'id' => (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-            'level' => new Column('level', 'varchar', 16, LogLevel::NOTICE),
+            'id' => (new Column('id', 'bigint'))->primary(),
+            'level' => (new Column('level', 'varchar', 16))->default(LogLevel::NOTICE),
             'message' => (new Column('message', 'text'))->notNull(),
             'context' => (new Column('context', 'mediumtext'))->notNull(),
-            'created_at' => new Column('created_at', 'datetime'),
-            'created_by' => new Column('created_by', 'bigint', 8)
+            'created_at' => new Column('created_at', 'timestamp'),
+            'created_by' => new Column('created_by', 'bigint')
         ];
     }
     
-    public function setTable(string $name, ?string $collate = null)
+    public function setTable(string $name)
     {
         $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
@@ -39,7 +39,7 @@ class Logger extends AbstractLogger
             return;
         }
         
-        $this->createTable($this->name, $this->getColumns(), $collate ?? $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->createTable($this->name, $this->getColumns());
         $this->__initial();
     }
     
@@ -53,7 +53,8 @@ class Logger extends AbstractLogger
     {
         $this->setForeignKeyChecks(false);
         $table = $this->getName();
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
     }
     
@@ -77,6 +78,7 @@ class Logger extends AbstractLogger
         
         if (isset($this->_created_by_once)) {
             $record['created_by'] = $this->_created_by_once;
+            $this->_created_by_once = null;
         }
         
         $column = $param = [];
@@ -92,8 +94,6 @@ class Logger extends AbstractLogger
             $insert->bindValue(":$name", $value, $this->getColumn($name)->getDataType());
         }
         $insert->execute();
-        
-        $this->setCreatedByOnce(null);
     }
     
     private function interpolate(string $message, array $context = []): string
@@ -107,7 +107,7 @@ class Logger extends AbstractLogger
         return \strtr($message, $replace);
     }
     
-    public function setCreatedByOnce(?int $id)
+    public function createdByOnce(?int $id)
     {
         $this->_created_by_once = $id;
     }
@@ -118,12 +118,8 @@ class Logger extends AbstractLogger
         if (empty($condition)) {
             $condition['ORDER BY'] = 'id Desc';
         }
-        $stmt = $this->selectFrom($this->getName(), '*', $condition);
+        $stmt = $this->selectStatement($this->getName(), '*', $condition);
         while ($record = $stmt->fetch()) {
-            $record['id'] = (int) $record['id'];
-            if (!empty($record['created_by'])) {
-                $record['created_by'] = (int) $record['created_by'];
-            }
             $record['context'] =
                 \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)
                 ?? ['log-context-read-error' => \json_last_error_msg()];
@@ -140,16 +136,12 @@ class Logger extends AbstractLogger
             'WHERE' => 'id=:id',
             'PARAM' => [':id' => $id]
         ];
-        $stmt = $this->selectFrom($this->getName(), '*', $condition);
+        $stmt = $this->selectStatement($this->getName(), '*', $condition);
         if ($stmt->rowCount() != 1) {
             return null;
         }
         
         $record = $stmt->fetch();
-        $record['id'] = (int) $record['id'];
-        if (!empty($record['created_by'])) {
-            $record['created_by'] = (int) $record['created_by'];
-        }
         $record['context'] = 
             \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)
             ?? ['log-context-read-error' => \json_last_error_msg()];

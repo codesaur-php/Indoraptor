@@ -1,0 +1,432 @@
+{% set lang = localization.code ?? 'en' %}
+<!DOCTYPE html>
+<html lang="{{ record['code'] ?? lang }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{{ title }}</title>
+        {% if description is not empty %}<meta name="description" content="{{ description|e }}">{% endif %}
+        {% if keywords is not empty %}<meta name="keywords" content="{{ keywords|e }}">{% endif %}
+        {% if favico is not empty %}<link rel="icon" href="{{ favico }}" type="image/x-icon">{% endif %}
+        {% if shortcut_icon is not empty %}<link rel="shortcut icon" href="{{ shortcut_icon }}" type="image/png">{% endif %}
+        {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
+        {% if config['author'] is not empty %}<meta name="author" content="{{ config['author'] }}">{% endif %}
+        {% if config['generator'] is not empty %}<meta name="generator" content="{{ config['generator']|e }}">{% endif %}        
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no">
+        {% if config['google-site-verification'] is not empty %}<meta name="google-site-verification" content="{{ config['google-site-verification']|e }}">{% endif %}
+        {% if config['mobile-web-app-capable'] is not empty %}<meta name="mobile-web-app-capable" content="{{ config['mobile-web-app-capable']|e }}">{% endif %}
+        {% if config['apple-mobile-web-app-status-bar-style'] is not empty %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ config['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
+        {% if config['og']['title'] is not empty %}<meta property="og:title" content="{{ config['og']['title']|e }}">{% endif %}
+        {% if config['og']['description'] is not empty %}<meta property="og:description" content="{{ config['og']['description']|e }}">{% endif %}
+        {% if config['og']['type'] is not empty %}<meta property="og:type" content="{{ config['og']['type']|e }}">{% endif %}
+        {% if config['og']['url'] is not empty %}<meta property="og:url" content="{{ config['og']['url']|e }}">{% endif %}
+        {% if config['og']['site_name'] is not empty %}<meta property="og:site_name" co ntent="{{ config['og']['site_name']|e }}">{% endif %}
+        {% if config['og']['image'] is not empty %}<meta property="og:image" content="{{ config['og']['image']|e }}">{% endif %}
+        {% if config['og']['image:width'] is not empty %}<meta property="og:image:width" content="{{ config['og']['image:width']|e }}">{% endif %}
+        {% if config['og']['image:height'] is not empty %}<meta property="og:image:height" content="{{ config['og']['image:height']|e }}">{% endif %}
+        {% if config['fb']['app']['id'] is not empty %}<meta property="fb:app_id" content="{{ config['fb']['app']['id']|e}}">{% endif %}
+        {% if config['fb']['page']['id'] is not empty %}<meta property="fb:page_id" content="{{ config['fb']['page']['id']|e }}">{% endif %}
+        {% if config['fb']['admins'] is not empty %}<meta property="fb:admins" content="{{ config['fb']['admins']|e }}">{% endif %}
+        {% if config['twitter']['card'] is not empty %}<meta name="twitter:card" content="{{ config['twitter']['card']|e }}">{% endif %}
+        {% if config['twitter']['url'] is not empty %}<meta name="twitter:url" content="{{ config['twitter']['url']|e }}">{% endif %}
+        {% if config['twitter']['title'] is not empty %}<meta name="twitter:title" content="{{ config['twitter']['title']|e }}">{% endif %}
+        {% if config['twitter']['description'] is not empty %}<meta name="twitter:description" content="{{ config['twitter']['description']|e }}">{% endif %}
+        {% if config['twitter']['image'] is  not empty %}<meta name="twitter:image" content="{{ config['twitter']['image']|e }}">{% endif %}
+        {% if config['twitter']['image:width'] is not empty %}<meta name="twitter:image:width" content="{{ config['twitter']['image:width']|e }}">{% endif %}
+        {% if config['twitter']['image:height'] is not empty %}<meta name="twitter:image:height" content="{{ config['twitter']['image:height']|e }}">{% endif %}
+        {% if config['twitter']['site'] is not empty %}<meta name="twitter:site" content="{{ config['twitter']['site']|e }}">{% endif %}        
+        <link id="googleFonts" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,600,700,800%7CShadows+Into+Light%7CPlayfair+Display:400&display=swap" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/fontawesome-free/css/all.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/animate/animate.compat.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/simple-line-icons/css/simple-line-icons.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/owl.carousel/assets/owl.carousel.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/owl.carousel/assets/owl.theme.default.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/magnific-popup/magnific-popup.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/css/theme.css">
+        <link rel="stylesheet" href="{{ index }}/assets/css/theme-elements.css">
+        <link rel="stylesheet" href="{{ index }}/assets/css/theme-blog.css">
+        <link rel="stylesheet" href="{{ index }}/assets/css/theme-shop.css">
+        <link rel="stylesheet" href="{{ index }}/assets/vendor/bootstrap-icons/bootstrap-icons.css">
+        <link id="skinCSS" rel="stylesheet" href="{{ index }}/assets/css/skins/skin-corporate-8.css">
+        <link rel="stylesheet" href="{{ index }}/assets/css/custom.css">
+        <script defer src="{{ index }}/assets/vendor/plugins/js/plugins.min.js"></script>
+        <script defer src="{{ index }}/assets/js/theme.js"></script>
+        <script defer src="{{ index }}/assets/js/custom.js"></script>
+        <script defer src="{{ index }}/assets/js/theme.init.js"></script>
+    </head>
+    <body data-plugin-page-transition>
+        <div class="body">
+            <header id="header" data-plugin-options="{'stickyEnabled': true, 'stickyEnableOnBoxed': true, 'stickyEnableOnMobile': false, 'stickyStartAt': 203, 'stickySetTop': '-203px', 'stickyChangeLogo': false}">
+                <div class="header-body border-0">
+                    <div class="header-top header-top-default border-bottom-0 bg-color-primary">
+                        <div class="container">
+                            <div class="header-row">
+                                <div class="header-column">
+                                    <div class="header-row">
+                                        <nav class="header-nav-top">
+                                            <ul class="nav nav-pills text-2">
+                                                <li class="nav-item nav-item-left-borderdropdown pe-2">
+                                                    <a class="nav-link text-light opacity-9" href="javascript:;" role="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        {% set flag = lang == 'en' ? 'us' : lang %}
+                                                        <img src="https://flagcdn.com/w20/{{ flag }}.png" srcset="https://flagcdn.com/w40/{{ flag }}.png 2x" width="20" alt="Language" style="vertical-align:top;padding-top:.42rem;margin-right:.15rem"> {{ localization.language[lang] }}
+                                                    </a>
+                                                    <div class="dropdown-menu dropdown-menu-arrow-centered" aria-labelledby="dropdownLanguage">
+                                                        {% for code, country in localization.language %}
+                                                            {% set flag = code == 'en' ? 'us' : code %}
+                                                            <a class="dropdown-item{{ code == lang ? ' active' : '' }} text-dark" href="{{ 'language'|link({'code': code}) }}">
+                                                                <img src="https://flagcdn.com/16x12/{{ flag }}.png" srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x, https://flagcdn.com/48x36/{{ flag }}.png 3x" width="16" height="12" alt="{{ country }}" style="vertical-align:top;margin-top:.35rem"> {{ country }}
+                                                            </a>
+                                                        {% endfor %}
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                                <div class="header-column d-none d-lg-block" style="width:34.375rem">
+                                    <marquee style="position:relative;top:0.313rem;color:#f5f5f5" onmouseover="this.stop();" onmouseout="this.start();">
+                                        {{ urgent }}
+                                    </marquee>
+                                </div>
+                                <div class="header-column justify-content-end">
+                                    <div class="header-row">
+                                        <ul class="header-social-icons social-icons social-icons-clean social-icons-icon-light">
+                                            {% if config['fb']['page']['url'] is not empty %}
+                                                <li class="social-icons-facebook">
+                                                    <a href="{{ config['fb']['page']['url'] }}" target="_blank" title="Facebook">
+                                                        <i class="fab fa-facebook-f"></i>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            {% if config['youtube']['url'] is not empty %}
+                                                <li class="social-icons-youtube">
+                                                    <a href="{{ config['youtube']['url'] }}" target="_blank" title="YouTube">
+                                                        <i class="fab fa-youtube"></i>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            {% if config['twitter']['url'] is not empty %}
+                                                <li class="social-icons-twitter">
+                                                    <a href="{{ config['twitter']['url'] }}" target="_blank" title="Twitter">
+                                                        <i class="fab fa-twitter"></i>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            {% if config['linkedin']['url'] is not empty %}
+                                                <li class="social-icons-linkedin">
+                                                    <a href="{{ config['linkedin']['url'] }}" target="_blank" title="Linkedin">
+                                                        <i class="fab fa-linkedin-in"></i>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            <li class="ps-2">
+                                                <a href="{{ 'contact'|link }}"><i class="fas fa-phone"></i></a>
+                                            </li>
+                                            <li class="nav-item nav-item-anim-icon">
+                                                <a href="{{ 'faq'|link }}"><i class="fas fa-question-circle"></i></a>
+                                            </li>
+                                            <li class="nav-item nav-item-anim-icon">
+                                                <a href="{{ 'rss'|link }}"><i class="fas fa-rss"></i></a>
+                                            </li>
+                                            <li class="nav-item nav-item-anim-icon">
+                                                <a href="/dashboard" target="__blank"><i class="fas fa-user"></i></a>
+                                            </li>
+                                        </ul>
+                                        <div class="header-nav-features">
+                                            <div class="header-nav-feature header-nav-features-search d-inline-flex pt-1">
+                                                <a href="javascript:;" class="header-nav-features-toggle text-decoration-none" data-focus="headerSearch" aria-label="{{ 'search'|text|e }}">
+                                                    <i class="fas fa-search header-nav-top-icon text-light opacity-9"></i>
+                                                </a>
+                                                <div class="header-nav-features-dropdown" id="headerTopSearchDropdown">
+                                                    <form role="search" action="{{ 'search'|link }}" method="POST">
+                                                        <div class="simple-search input-group">
+                                                            <input class="form-control text-1" id="headerSearch" name="q" type="search" value="" placeholder="{{ 'enter-search-terms'|text|e }}">
+                                                            <button class="btn" type="submit" aria-label="{{ 'search'|text|e }}">
+                                                                <i class="fas fa-search header-nav-top-icon"></i>
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-container container" style="background:linear-gradient(rgba(255,255,255,0.6),rgba(255,255,255,0.6)),url('{{ index }}/assets/mrpam/header_back.png');background-size:cover;background-repeat:no-repeat;background-position:bottom">
+                        <div class="header-row py-2">
+                            <div class="header-column justify-content-start w-50 order-md-1 d-none d-md-flex">
+                                <div class="header-row">
+                                    <ul class="header-extra-info">
+                                        <li class="m-0">
+                                            <div class="feature-box feature-box-style-2 align-items-center">
+                                                <div class="feature-box-icon">
+                                                    <i class="far fa-clock text-7 p-relative"></i>
+                                                </div>
+                                                <div class="feature-box-info">
+                                                    <p class="pb-0 font-weight-semibold line-height-5 text-2">
+                                                        {{ config['open-hours'][lang] ?? 'MON - FRI: 08:00 - 18:00<br>SAT - SUN: closed' }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="header-column justify-content-start justify-content-md-center order-1 order-md-2">
+                                <div class="header-row">
+                                    <div class="header-logo">
+                                        <a href="{{ 'home'|link }}">
+                                            <img alt="MRPAM" height="140" src="{{ logo }}" style="-webkit-filter:drop-shadow(1px 1px 2px #222);filter:drop-shadow(1px 1px 2px #222)">
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="header-column justify-content-end w-50 order-2 order-md-3">
+                                <div class="header-row">
+                                    <ul class="header-extra-info">
+                                        <li class="m-0">
+                                            <div class="feature-box reverse-allres feature-box-style-2 align-items-center">
+                                                <div class="feature-box-icon">
+                                                    <a href="{{ 'contact'|link }}"><i class="fab fa-whatsapp text-7 p-relative" style="top: -2px;"></i></a>
+                                                </div>
+                                                <div class="feature-box-info">
+                                                    <p class="pb-0 font-weight-semibold line-height-5 text-2"><a href="https://11-11.mn/" class="text-color-default text-color-hover-primary text-decoration-none" target="___blank">11-11 {{ lang == 'mn' ? 'Төв' : 'Centre' }}</a><br><a href="https://iaac.mn/gomdol-medeelel-uguh" class="text-color-default text-color-hover-primary text-decoration-none" target="___blank">(976) 110</a></p>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-nav-bar header-nav-bar-top-border bg-light">
+                        <div class="header-container container">
+                            <div class="header-row">
+                                <div class="header-column">
+                                    <div class="header-row justify-content-end">
+                                        <div class="header-nav p-0">
+                                            <div class="header-nav header-nav-line header-nav-divisor header-nav-spaced justify-content-lg-center">
+                                                <div class="header-nav-main header-nav-main-square header-nav-main-effect-1 header-nav-main-sub-effect-1">
+                                                    <nav class="collapse">
+                                                        <ul class="nav nav-pills flex-column flex-lg-row" id="mainNav">
+                                                            {% macro dropdownMenu(submenu) %}
+                                                                {% import _self as self %}
+                                                                <ul class="dropdown-menu">
+                                                                    {% for item in submenu %}                                                                        
+                                                                        {% if item['link'] is not empty %}
+                                                                            {% set href = item['link'] %}
+                                                                        {% else %}
+                                                                            {% set href = 'page'|link({'id':item['id']}) %}
+                                                                        {% endif %}
+                                                                        {% if item['submenu'] is not empty %}
+                                                                            <li class="dropdown-submenu">
+                                                                                <a class="dropdown-item" href="javascript:;">{{ item['title'] }}</a>
+                                                                                {{ _self.dropdownMenu(item['submenu']) }}
+                                                                            </li>
+                                                                        {% else %}
+                                                                            <li>
+                                                                                <a class="dropdown-item" href="{{ href }}">{{ item['title'] }}</a>
+                                                                            </li>
+                                                                        {% endif %}
+                                                                    {% endfor %}
+                                                                </ul>
+                                                            {% endmacro %}
+                                                            {% from _self import dropdownMenu %}
+
+                                                            {% for menu in main_menu %}
+                                                                {% if menu['submenu'] is not empty %}
+                                                                    {% if menu['type'] == 'mega-menu' %}
+                                                                        <li class="dropdown dropdown-mega">
+                                                                            <a class="dropdown-item dropdown-toggle" href="javascript:;">
+                                                                                {{ menu['title'] }}
+                                                                            </a>
+                                                                            <ul class="dropdown-menu">
+                                                                                <li>
+                                                                                    <div class="dropdown-mega-content">
+                                                                                        <div class="row">
+                                                                                            {% set megaMenus = menu['submenu']|length %}
+                                                                                            {% set eachCol = 12/(megaMenus > 4 ? 4 : megaMenus) %}
+                                                                                            {% for mega in menu['submenu'] %}
+                                                                                                <div class="col-lg-{{ eachCol }}">
+                                                                                                    <span class="dropdown-mega-sub-title">{{ mega['title'] }}</span>
+                                                                                                    <ul class="dropdown-mega-sub-nav">
+                                                                                                        {% for item in mega['submenu'] %}
+                                                                                                            {% if item['link'] is not empty %}
+                                                                                                                {% set href = item['link'] %}
+                                                                                                            {% else %}
+                                                                                                                {% set href = 'page'|link({'id':item['id']}) %}
+                                                                                                            {% endif %}
+                                                                                                            <li>
+                                                                                                                <a class="dropdown-item" href="{{ href }}">{{ item['title'] }}</a>
+                                                                                                            </li>
+                                                                                                        {% endfor %}
+                                                                                                    </ul>
+                                                                                                </div>
+                                                                                            {% endfor %}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </li>
+                                                                            </ul>
+                                                                        </li>
+                                                                    {% else %}
+                                                                        <li class="dropdown">
+                                                                            <a class="dropdown-item dropdown-toggle" href="javascript:;">
+                                                                                {{ menu['title'] }}
+                                                                            </a>
+                                                                            {{ dropdownMenu(menu['submenu']) }}
+                                                                        </li>
+                                                                    {% endif %}
+                                                                {% else %}
+                                                                    {% if menu['link'] is not empty %}
+                                                                        {% set href = menu['link'] %}
+                                                                    {% else %}
+                                                                        {% set href = 'page'|link({'id':menu['id']}) %}
+                                                                    {% endif %}
+                                                                    <li>
+                                                                        <a href="{{ href }}">
+                                                                            {{ menu['title'] }}
+                                                                        </a>
+                                                                    </li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </nav>
+                                                </div>
+                                                <button class="btn header-btn-collapse-nav" data-bs-toggle="collapse" data-bs-target=".header-nav-main nav">
+                                                    <i class="fas fa-bars"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div role="main" class="main">
+                {{ content }}
+            </div>
+
+            <footer id="footer" class="border-top mt-0" style="background:linear-gradient(rgba(0,110,183,0.8),rgba(0,110,183,0.9)),url('{{ index }}/assets/mrpam/mongolmining.jpg');background-size:cover;background-position:0 100%;">
+                <div class="container text-color-light mt-5">
+                    <div class="row">
+                        <div class="col-md-6 col-lg-4 mb-5 mb-lg-2">
+                            <h5 class="text-3 mb-3 opacity-8">{{ 'contact'|text }}</h5>
+                            <ul class="list list-icons list-icons-lg">
+                                <li class="mb-1">
+                                    <i class="fa fa-map-marker-alt text-color-light"></i>
+                                    <p class="m-0 text-color-light">{{ address }}</p>
+                                </li>
+                                <li class="mb-1">
+                                    <i class="fa fa-phone text-color-light"></i>
+                                    <p class="m-0"><a class="text-color-light" href="tel:{{ phone|e }}">{{ phone }}</a></p>
+                                </li>
+                                <li class="mb-1">
+                                    <i class="fa fa-fax text-color-light"></i>
+                                    <p class="m-0"><a class="text-color-light" href="tel:+97611310370">976-11-310370</a></p>
+                                </li>
+                                <li class="mb-1">
+                                    <i class="far fa-envelope text-color-light"></i>
+                                    <p class="m-0"><a class="text-color-light" href="mailto:{{ email|e }}">{{ email }}</a></p>
+                                </li>
+                            </ul>
+                            <h5 class="text-3 pt-4 mb-3 opacity-7">{{ 'follow-us'|text }}</h5>
+                            <ul class="header-social-icons social-icons">
+                                {% if config['fb']['page']['url'] is not empty %}
+                                    <li class="social-icons-facebook">
+                                        <a href="{{ config['fb']['page']['url'] }}" target="_blank" title="Facebook">
+                                            <i class="fab fa-facebook-f text-2"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if config['youtube']['url'] is not empty %}
+                                    <li class="social-icons-youtube">
+                                        <a href="{{ config['youtube']['url'] }}" target="_blank" title="YouTube">
+                                            <i class="fab fa-youtube text-2"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if config['twitter']['url'] is not empty %}
+                                    <li class="social-icons-twitter">
+                                        <a href="{{ config['twitter']['url'] }}" target="_blank" title="Twitter">
+                                            <i class="fab fa-twitter text-2"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if config['linkedin']['url'] is not empty %}
+                                    <li class="social-icons-linkedin">
+                                        <a href="{{ config['linkedin']['url'] }}" target="_blank" title="Linkedin">
+                                            <i class="fab fa-linkedin-in text-2"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6 col-lg-8 mb-3">
+                            <h5 class="text-3 mb-3 opacity-8">{{ 'quick-links'|text }}</h5>
+                            <div class="row">
+                                {% set firstCol = (important_menu|length/3)|round %}
+                                <div class="col-4 mb-2 mb-lg-0">
+                                    <ul class="list-unstyled mb-0">
+                                        {% for item in important_menu %}
+                                            {% if item['link'] is not empty %}
+                                                {% set href = item['link'] %}
+                                            {% else %}
+                                                {% set href = 'page'|link({'id':item['id']}) %}
+                                            {% endif %}
+                                            <li class="mb-2 pb-1">
+                                                <a href="{{ href }}" class="text-hover-primary">
+                                                    <p class="text-color-light mb-0 text-hover-secondary">
+                                                        <i class="text-1 fas fa-angle-right me-1"></i> {{ item['title'] }}
+                                                    </p>
+                                                </a>
+                                            </li>
+                                            {% if loop.index == (firstCol + 1) %}
+                                        </ul>
+                                    </div>
+                                    <div class="col-4 mb-2 mb-lg-0">
+                                    <ul class="list-unstyled mb-">
+                                        {% set firstCol = firstCol + firstCol %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-copyright bg-color-primary bg-color-scale-overlay bg-color-scale-overlay-1" style="border-top: solid #3177c7;">
+                    <div class="bg-color-scale-overlay-wrapper">
+                        <div class="container">
+                            <div class="row py-1">
+                                <div class="col-lg-1 d-flex align-items-center justify-content-center justify-content-lg-start">
+                                    <a href="{{ 'home'|link }}" class="logo pe-0 pe-lg-2">
+                                        <img alt="MRPAM" src="{{ logo }}" style="height:3rem;margin-top:-.2rem;">
+                                    </a>
+                                </div>
+                                <div class="col-lg-5 d-flex align-items-center justify-content-center justify-content-lg-start mb-4 mb-lg-0">
+                                    <p class="text-light text-center" style="line-height:1.6">{{ copyright }}</p>
+                                </div>
+                                <div class="col-lg-6 d-flex align-items-center justify-content-center justify-content-lg-end">
+                                    <nav id="sub-menu">
+                                        <ul>
+                                            <li><a href="{{ index }}/assets/mrpam/mrpam_logo_rgb.jpg" target="___blank" class="text-color-light"><i class="fas fa-file-image"></i> {{ lang == 'mn' ? 'ЛОГО татаж авах' : 'Download LOGO' }}</a></li>
+                                            <li><a href="{{ 'disclaimer'|link }}" class="text-color-light"><i class="fas fa-lock"></i> {{ lang == 'mn' ? 'Нууцлалын бодлого' : 'Disclaimer' }}</a></li>
+                                            <li><a href="{{ 'sitemap'|link }}" class="text-color-light"><i class="fas fa-sitemap"></i> {{ 'sitemap'|text }}</a></li>
+                                            <li><a href="{{ 'contact'|link }}" class="text-color-light"><i class="fas fa-phone"></i> {{ 'contact'|text }}</a></li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

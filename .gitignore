@@ -10,5 +10,3 @@
 /vendor/
 
 composer.lock
-
-.env

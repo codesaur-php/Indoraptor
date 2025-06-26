@@ -16,7 +16,16 @@ class LogsController extends \Raptor\Controller
             }
         
             $logs = [];
-            $pdostmt = $this->prepare('SHOW TABLES LIKE ' . $this->quote('%_log'));
+            
+            if ($this->getDriverName() == 'pgsql') {
+                $query = 
+                    'SELECT tablename FROM pg_catalog.pg_tables ' .
+                    "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_log'";
+            } else {
+                $query = 'SHOW TABLES LIKE ' . $this->quote('%_log');
+            }
+            
+            $pdostmt = $this->prepare($query);
             if ($pdostmt->execute()) {
                 while ($rows = $pdostmt->fetch()) {
                     $name = \substr(\current($rows), 0, -\strlen('_log'));
@@ -87,8 +96,8 @@ class LogsController extends \Raptor\Controller
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $condition = ['ORDER BY' => 'id Desc', 'LIMIT' => $limit];
-            $logs = \array_values($logger->getLogs($condition));
-            \array_walk_recursive($logs, [$this, 'hideSecret']);
+            $logs = $logger->getLogs($condition);
+            \array_walk_recursive($logs, [self::class, 'hideSecret']);
             return $logs;
         } catch (\Throwable $e) {
             $this->errorLog($e);
@@ -96,7 +105,7 @@ class LogsController extends \Raptor\Controller
         }
     }
     
-    private function hideSecret(&$v, $k)
+    public static function hideSecret(&$v, $k)
     {
         $key = \strtoupper($k);
         if (!empty($key)

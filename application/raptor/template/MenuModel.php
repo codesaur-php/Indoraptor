@@ -3,56 +3,57 @@
 namespace Raptor\Template;
 
 use codesaur\DataObject\Column;
-use codesaur\DataObject\MultiModel;
+use codesaur\DataObject\LocalizedModel;
 
-class MenuModel extends MultiModel
+class MenuModel extends LocalizedModel
 {
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
         
         $this->setColumns([
-           (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
-            new Column('parent_id', 'bigint', 8, 0),
+           (new Column('id', 'bigint'))->primary(),
+           (new Column('parent_id', 'bigint'))->default(0),
             new Column('icon', 'varchar', 64),
             new Column('href', 'varchar', 255),
             new Column('alias', 'varchar', 64),
             new Column('permission', 'varchar', 128),
-            new Column('position', 'smallint', 2, 100),
-            new Column('is_visible', 'tinyint', 1, 1),
-            new Column('is_active', 'tinyint', 1, 1),
+           (new Column('position', 'smallint'))->default(100),
+           (new Column('is_visible', 'tinyint'))->default(1),
+           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 8),
+            new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint', 8)
+            new Column('updated_by', 'bigint')
         ]);
         
         $this->setContentColumns([new Column('title', 'varchar', 128)]);
         
-        $this->setTable('raptor_menu', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $this->setTable('raptor_menu');
     }
     
     protected function __initial()
     {
         $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $uzers = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $uzers(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $uzers(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->setForeignKeyChecks(true);
         
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
         
-        $contents_id = $this->insert(
+        $contents = $this->insert(
             ['position' => '200'],
             ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']]
         );
-        if ($contents_id != false) {
+        if (isset($contents['id'])) {
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '201',
+                    'parent_id' => $contents['id'], 'position' => '201',
                     'alias' => 'system',
                     'icon' => 'bi bi-rocket-takeoff', 'href' => "$path/home\" target=\"__blank"
                 ],
@@ -60,7 +61,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '250',
+                    'parent_id' => $contents['id'], 'position' => '250',
                     'alias' => 'system', 'permission' => 'system_content_index',
                     'icon' => 'bi bi-book-half', 'href' => "$path/dashboard/pages"
                 ],
@@ -68,7 +69,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '260',
+                    'parent_id' => $contents['id'], 'position' => '260',
                     'alias' => 'system', 'permission' => 'system_content_index',
                     'icon' => 'bi bi-newspaper', 'href' => "$path/dashboard/news"
                 ],
@@ -76,7 +77,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '270',
+                    'parent_id' => $contents['id'], 'position' => '270',
                     'alias' => 'system', 'permission' => 'system_content_index',
                     'icon' => 'bi bi-folder', 'href' => "$path/dashboard/files"
                 ],
@@ -84,7 +85,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '280',
+                    'parent_id' => $contents['id'], 'position' => '280',
                     'alias' => 'system', 'permission' => 'system_localization_index',
                     'icon' => 'bi bi-translate', 'href' => "$path/dashboard/localization"
                 ],
@@ -92,7 +93,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '290',
+                    'parent_id' => $contents['id'], 'position' => '290',
                     'alias' => 'system', 'permission' => 'system_templates_index',
                     'icon' => 'bi bi-layout-wtf', 'href' => "$path/dashboard/references"
                 ],
@@ -100,7 +101,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $contents_id, 'position' => '295',
+                    'parent_id' => $contents['id'], 'position' => '295',
                     'alias' => 'system', 'permission' => 'system_content_settings',
                     'icon' => 'bi bi-gear-wide-connected', 'href' => "$path/dashboard/settings"
                 ],
@@ -108,14 +109,14 @@ class MenuModel extends MultiModel
             );
         }
 
-        $system_id = $this->insert(
+        $system = $this->insert(
             ['position' => '300'],
             ['mn' => ['title' => 'Систем'], 'en' => ['title' => 'System']]
         );
-        if ($system_id != false) {
+        if (isset($system['id'])) {
             $this->insert(
                 [
-                    'parent_id' => $system_id, 'position' => '310',
+                    'parent_id' => $system['id'], 'position' => '310',
                     'permission' => 'system_user_index',
                     'icon' => 'bi bi-people-fill', 'href' => "$path/dashboard/users"
                 ],
@@ -123,7 +124,7 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $system_id, 'position' => '320',
+                    'parent_id' => $system['id'], 'position' => '320',
                     'permission' => 'system_organization_index',
                     'icon' => 'bi bi-building', 'href' => "$path/dashboard/organizations"
                 ],
@@ -131,14 +132,28 @@ class MenuModel extends MultiModel
             );
             $this->insert(
                 [
-                    'parent_id' => $system_id, 'position' => '340',
+                    'parent_id' => $system['id'], 'position' => '340',
                     'permission' => 'system_logger',
                     'icon' => 'bi bi-list-stars', 'href' => "$path/dashboard/logs"
                 ],
                 ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']]
             );
+        }            
+    }
+    
+    public function insert(array $record, array $content): array|false
+    {
+        if (!isset($record['created_at'])) {
+            $record['created_at'] = \date('Y-m-d H:i:s');
         }
-            
-        $this->setForeignKeyChecks(true);
+        return parent::insert($record, $content);
+    }
+    
+    public function updateById(int $id, array $record, array $content): array|false
+    {
+        if (!isset($record['updated_at'])) {
+            $record['updated_at'] = \date('Y-m-d H:i:s');
+        }
+        return parent::updateById($id, $record, $content);
     }
 }

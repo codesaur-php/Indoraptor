@@ -20,7 +20,7 @@
         "getbrevo/brevo-php": ">=1.0.2",
         "firebase/php-jwt": ">=6.7.0",
         "codesaur/http-application": ">=5.7.0",
-        "codesaur/dataobject": ">=5.2.0",
+        "codesaur/dataobject": ">=6.4.1",
         "codesaur/http-client": ">=1.5.0",
         "codesaur/template": ">=1.6.0"
     },
@@ -42,7 +42,10 @@
             "Raptor\\Organization\\": "application/raptor/organization/",
             "Raptor\\RBAC\\": "application/raptor/rbac/",
             "Raptor\\Localization\\": "application/raptor/localization/",
-            "Raptor\\Content\\": "application/raptor/content/",
+            "Raptor\\Content\\": [
+                "application/raptor/content/",
+                "application/raptor/content/news"
+            ],
             "Raptor\\Mail\\": "application/raptor/mail/",
             "Raptor\\Log\\": "application/raptor/log/"
         }

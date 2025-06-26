@@ -69,11 +69,11 @@ trait DashboardTrait
         $sidemenu = [];
         try {
             $model = new MenuModel($this->pdo);
-            $alias = $this->getUser()->getAlias();
+            $alias = $this->getUser()->organization['alias'];
             $code = $this->getLanguageCode();
             $rows = $model->getRows(['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1 AND p.is_visible=1']);
             foreach ($rows as $row) {
-                $title = $row['content']['title'][$code] ?? null;
+                $title = $row['localized']['title'][$code] ?? null;
                 if (!isset($title)) {
                     continue;
                 }
@@ -93,7 +93,7 @@ trait DashboardTrait
                         $sidemenu[$row['id']] = ['title' => $title, 'submenu' => []];
                     }
                 } else {
-                    unset($row['content']);
+                    unset($row['localized']);
                     $row['title'] = $title;
                     if (!isset($sidemenu[$row['parent_id']])) {
                         $sidemenu[$row['parent_id']] = ['title' => '', 'submenu' => [$row]];

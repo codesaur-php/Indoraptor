@@ -1,4 +1,5 @@
-<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<link rel="stylesheet" href="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.css">
+<script defer src="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.js" type="text/javascript"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
         <i class="bi bi-book-half"></i> {{ 'pages'|text }}
@@ -57,7 +58,10 @@
                     flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
                 }
                 
-                let image =  `<img style="max-width:60px;max-height:60px" src="${!page.photo ? placeholder : page.photo}">`;
+                let image = '';
+                if (page.photo) {
+                    image = `<img style="max-width:60px;max-height:60px" src="${page.photo}">`;
+                }
                 
                 let title = '';
                 if (data.infos[id]['parent_titles']) {
@@ -71,7 +75,7 @@
                 let type_category = `<span class="badge bg-warning text-dark">${page.type}</span>`;
                 type_category += ` <span class="badge bg-secondary">${page.category}</span>`;
                 
-                let published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}` : '<i class="bi bi-eye-slash"></i>';
+                let published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
                 let buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${page.id}"><i class="bi bi-book"></i></a>`];
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}"><i class="bi bi-eye"></i></a>`);

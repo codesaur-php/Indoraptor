@@ -10,7 +10,7 @@ abstract class Application extends \codesaur\Http\Application\Application
         
         $this->use(new Exception\ErrorHandler());
         
-        $this->use(new PDOConnectMiddleware());
+        $this->use(new PostgresConnectMiddleware());
         $this->use(new Authentication\SessionMiddleware());
         $this->use(new Authentication\JWTAuthMiddleware());
         $this->use(new Localization\LocalizationMiddleware());

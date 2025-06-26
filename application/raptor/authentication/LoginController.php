@@ -33,7 +33,7 @@ class LoginController extends \Raptor\Controller
         $reference->setTable('templates');
         $rows = $reference->getRows(['WHERE' => "c.code='{$this->getLanguageCode()}' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1"]);
         foreach ($rows as $row) {
-            $vars[$row['keyword']] = $row['content'];
+            $vars[$row['keyword']] = $row['localized'];
         }
         
         $login = $this->twigTemplate(\dirname(__FILE__) . '/login.html', $vars);
@@ -59,7 +59,7 @@ class LoginController extends \Raptor\Controller
             }
             
             $users = new UsersModel($this->pdo);
-            $stmt = $users->prepare("SELECT * FROM {$users->getName()} WHERE username=:usr OR email=:eml LIMIT 1");
+            $stmt = $users->prepare("SELECT * FROM {$users->getName()} WHERE (username=:usr OR email=:eml) AND is_active=1 LIMIT 1");
             $stmt->bindParam(':eml', $payload['username'], \PDO::PARAM_STR, $users->getColumn('email')->getLength());
             $stmt->bindParam(':usr', $payload['username'], \PDO::PARAM_STR, $users->getColumn('username')->getLength());
             if (!$stmt->execute() || $stmt->rowCount() != 1) {
@@ -68,41 +68,37 @@ class LoginController extends \Raptor\Controller
             $user = $stmt->fetch();
             if (!\password_verify($payload['password'], $user['password'])) {
                 throw new \Exception('Invalid username or password', StatusCodeInterface::STATUS_UNAUTHORIZED);
-            }
-            
-            foreach ($users->getColumns() as $column) {
-                if (isset($user[$column->getName()])) {
-                    if ($column->isInt()) {
-                        $user[$column->getName()] = (int) $user[$column->getName()];
-                    }
-                }
-            }
-            if ($user['status'] != 1) {
+            }            
+            if (((int) $user['status']) != 1) {
                 throw new \Exception('Inactive user', StatusCodeInterface::STATUS_FORBIDDEN);
             }
             unset($user['password']);
             
-            $org_table = (new OrganizationModel($this->pdo))->getName();
-            $org_user_table = (new OrganizationUserModel($this->pdo))->getName();
-            $stmt_check_org = $this->prepare(
-                'SELECT t2.* ' .
-                "FROM $org_user_table t1 INNER JOIN $org_table t2 ON t1.organization_id=t2.id " .
-                'WHERE t1.user_id=:id AND t1.is_active=1 AND t2.is_active=1 ORDER BY t2.name'
+            $org_model = new OrganizationModel($this->pdo);
+            $org_user_model = new OrganizationUserModel($this->pdo);
+            $stmt_user_org = $this->prepare(
+                'SELECT t1.* ' .
+                "FROM {$org_user_model->getName()} t1 INNER JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
+                'WHERE t1.user_id=:id AND t1.status=:status AND t1.is_active=1 AND t2.is_active=1 LIMIT 1'
             );
-            $stmt_check_org->bindParam(':id', $user['id'], \PDO::PARAM_INT);
-            if ($stmt_check_org->execute()) {
-                $has_organization = $stmt_check_org->rowCount() > 0;
-            }
-            if (!isset($has_organization) || !$has_organization) {
-                throw new \Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
+            $stmt_user_org->execute([':id' => $user['id'], ':status' => 1]);
+            if ($stmt_user_org->rowCount() == 1) {
+                $userOrg = $stmt_user_org->fetch();
+            } else {
+                $stmt_user_org->execute([':id' => $user['id'], ':status' => 0]);
+                if ($stmt_user_org->rowCount() == 1) {
+                    $userOrg = $stmt_user_org->fetch();
+                    $org_user_model->updateById($userOrg['id'], ['status' => 1]);
+                } else {
+                    throw new \Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
+                }
             }
             
-            $login_info = ['user_id' => $user['id']];
-            $last = $this->getLastLoginOrg($user['id']);
-            if ($last !== null) {
-                $login_info['organization_id'] = $last;
-            }
-            $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->generateJWT($login_info);
+            $login_info = [
+                'user_id' => $user['id'],
+                'organization_id' => $userOrg['organization_id']
+            ];
+            $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->generate($login_info);
 
             $level = LogLevel::INFO;
             $message = "Хэрэглэгч {$user['first_name']} {$user['last_name']} системд нэвтрэв.";
@@ -134,7 +130,7 @@ class LoginController extends \Raptor\Controller
     public function logout()
     {
         if (isset($_SESSION['RAPTOR_JWT'])
-            && $user = $this->getUser()->getProfile()
+            && $user = $this->getUser()?->profile
         ) {
             $message = "Хэрэглэгч {$user['first_name']} {$user['last_name']} системээс гарлаа.";
             $context = ['reason' => 'logout', 'jwt' => $_SESSION['RAPTOR_JWT']];
@@ -184,10 +180,10 @@ class LoginController extends \Raptor\Controller
                     'p.is_active' => 1
                 ]
             );
-            if (empty($reference['content'])) {
+            if (empty($reference['localized'])) {
                 throw new \Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
-            $content = $reference['content'];
+            $content = $reference['localized'];
             
             if (empty($payload['email']) || empty($payload['username'])) {
                 throw new \Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
@@ -219,17 +215,17 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception("Шинээр [{$payload['username']}] нэртэй хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, уг мэдээллээр урьд нь хүсэлт өгч байсныг бүртгэсэн байсан учир дахин хүсэлт бүртгэхээс татгалзав.", StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
-            $id = $userRequest->insert($payload);
-            if (empty($id)) {
+            $profile = $userRequest->insert($payload);
+            if (empty($profile)) {
                 throw new \Exception("Шинээр [{$payload['username']}] нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
             
             $template = new MemoryTemplate();
-            $template->set('email', $payload['email']);
-            $template->set('username', $payload['username']);
-            $template->source($content['full'][$payload['code']]);
+            $template->set('email', $profile['email']);
+            $template->set('username', $profile['username']);
+            $template->source($content['content'][$profile['code']]);
             if ((new Mailer($this->pdo))
-                    ->mail($payload['email'], null, $content['title'][$payload['code']], $template->output())
+                    ->mail($profile['email'], null, $content['title'][$profile['code']], $template->output())
                     ->send()
             ) {
                 $this->respondJSON(['status' => 'success', 'message' => $this->text('to-complete-registration-check-email')]);
@@ -238,7 +234,7 @@ class LoginController extends \Raptor\Controller
             }
             
             $level = LogLevel::ALERT;
-            $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
+            $message = "{$profile['username']} нэртэй {$profile['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
         } catch (\Throwable $e) {
             $message = $e->getMessage();
             $this->respondJSON(['message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $message], $e->getCode());
@@ -271,10 +267,10 @@ class LoginController extends \Raptor\Controller
                     'p.is_active' => 1
                 ]
             );
-            if (empty($reference['content'])) {
+            if (empty($reference['localized'])) {
                 throw new \Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
-            $content = $reference['content'];
+            $content = $reference['localized'];
             
             if (empty($payload['code'])) {
                 $payload['code'] = $this->getLanguageCode();
@@ -290,7 +286,7 @@ class LoginController extends \Raptor\Controller
             }
             
             $forgot = new ForgotModel($this->pdo);
-            $record = [
+            $request = $forgot->insert([
                 'status'      => 1,
                 'use_id'      => \uniqid('use'),
                 'email'       => $user['email'],
@@ -300,22 +296,20 @@ class LoginController extends \Raptor\Controller
                 'last_name'   => $user['last_name'],
                 'first_name'  => $user['first_name'],
                 'remote_addr' => $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? ''
-            ];
-            $id = $forgot->insert($record);
-            if (empty($id)) {
+            ]);
+            if (!$request) {
                 throw new \Exception("Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
             
             $level = LogLevel::INFO;
             $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгэлээ";
-            $record['id'] = $id;
-            $context += ['forgot' => $record];
+            $context += ['forgot' => $request];
 
             $template = new MemoryTemplate();
             $template->set('email', $payload['email']);
             $template->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
-            $template->set('link', "{$this->generateRouteLink('login', [], true)}?forgot={$record['use_id']}");
-            $template->source($content['full'][$payload['code']]);
+            $template->set('link', "{$this->generateRouteLink('login', [], true)}?forgot={$request['use_id']}");
+            $template->source($content['content'][$payload['code']]);
             if ((new Mailer($this->pdo))
                     ->mail($payload['email'], null, $content['title'][$payload['code']], $template->output())
                     ->send()
@@ -462,7 +456,11 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception('Invalid user', StatusCodeInterface::STATUS_NOT_FOUND);
             }
 
-            $result = $users->updateById($user['id'], ['password' => \password_hash($password_new, \PASSWORD_BCRYPT)]);
+            $result = $users->updateById($user['id'], [
+                'updated_by' => $user['id'],
+                'updated_at' => \date('Y-m-d H:i:s'),
+                'password' => \password_hash($password_new, \PASSWORD_BCRYPT)
+            ]);
             if (empty($result)) {
                 throw new \Exception("Can't reset user [{$user['username']}] password", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
@@ -504,12 +502,12 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception('Unauthorized', StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
 
-            $current_org_id = $this->getUser()->getOrganization()['id'];
+            $current_org_id = $this->getUser()->organization['id'];
             if ($id == $current_org_id) {
                 throw new \Exception("Organization [$id] currently selected", StatusCodeInterface::STATUS_BAD_REQUEST);
             }
 
-            $user_id = $this->getUser()->getProfile()['id'];
+            $user_id = $this->getUserId();
             $payload = ['user_id' => $user_id, 'organization_id' => $id];
             $org_user_model = new OrganizationUserModel($this->pdo);
             if (!$this->isUser('system_coder')) {
@@ -520,7 +518,7 @@ class LoginController extends \Raptor\Controller
             }
             
             $JWT_AUTH = new JWTAuthMiddleware();
-            $current_login = $JWT_AUTH->validate($this->getUser()->getToken());
+            $current_login = $JWT_AUTH->validate($_SESSION['RAPTOR_JWT']);
             $users = new UsersModel($this->pdo);
             $user = $users->getById($current_login['user_id']);
             if (!isset($user['id'])
@@ -537,16 +535,19 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception('Invalid organization', StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
+            $current_org_user = $org_user_model->retrieve($current_login['organization_id'], $current_login['user_id']);
             $org_user = $org_user_model->retrieve($payload['organization_id'], $payload['user_id']);
             if (!$org_user) {
                 $rbac = new \Raptor\RBAC\RBAC($this->pdo, $payload['user_id']);
                 if (!$rbac->hasRole('system_coder')) {
                     throw new \Exception('User does not belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
                 }
-                $org_user_model->insert($payload + ['is_active' => 1]);
-            }
+                $org_user = $org_user_model->insert($payload + ['is_active' => 1, 'created_by' => $this->getUserId()]);
+            }            
+            $org_user_model->updateById($org_user['id'], ['status' => 1, 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')]);
+            $org_user_model->updateById($current_org_user['id'], ['status' => 0, 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')]);
             
-            $jwt = $JWT_AUTH->generateJWT($payload);
+            $jwt = $JWT_AUTH->generate($payload);
             $_SESSION['RAPTOR_JWT'] = $jwt;
             
             $context = ['reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt];
@@ -577,7 +578,7 @@ class LoginController extends \Raptor\Controller
         if (isset($language[$code]) && $code != $from) {
             $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code;
             if ($this->isUserAuthorized()) {
-                $user = $this->getUser()->getProfile();
+                $user = $this->getUser()->profile;
                 (new UsersModel($this->pdo))->updateById($user['id'], ['code' => $code]);
 
                 $message = "Хэрэглэгч {$user['first_name']} {$user['last_name']} системд ажиллах хэлийг $from-с $code болгон өөрчиллөө";
@@ -588,45 +589,5 @@ class LoginController extends \Raptor\Controller
         
         \header("Location: $location", false, 302);
         exit;
-    }
-    
-    private function getLastLoginOrg(int $user_id): int|null
-    {
-        if (!$this->hasTable('dashboard_log')) {
-            return null;
-        }
-        
-        $level = LogLevel::INFO;
-        $login_like = '%"reason":"login-to-organization"%';
-        $stmt = $this->prepare('SELECT context FROM dashboard_log WHERE created_by=:id AND context LIKE :co AND level=:le ORDER BY id Desc LIMIT 1');
-        $stmt->bindParam(':le', $level);
-        $stmt->bindParam(':co', $login_like);
-        $stmt->bindParam(':id', $user_id, \PDO::PARAM_INT);
-        if (!$stmt->execute() || $stmt->rowCount() != 1) {
-            return null;
-        }
-        
-        $result = $stmt->fetch();
-        $context = \json_decode($result['context'], true);
-        if (isset($context['enter'])
-            || !\is_int($context['enter'])
-        ) {
-            return null;
-        }
-        
-        $org_id = (int) $context['enter'];
-        $org_user_table = (new OrganizationUserModel($this->pdo))->getName();
-        $org_user_query =
-            "SELECT id FROM $org_user_table " .
-            'WHERE organization_id=:org AND user_id=:user AND is_active=1 ' .
-            'ORDER BY id Desc LIMIT 1';
-        $org_user_stmt = $this->prepare($org_user_query);
-        $org_user_stmt->bindParam(':org', $org_id, \PDO::PARAM_INT);
-        $org_user_stmt->bindParam(':user', $user_id, \PDO::PARAM_INT);
-        if (!$org_user_stmt->execute() || $org_user_stmt->rowCount() != 1) {
-            return null;
-        }
-
-        return $org_id;
     }
 }

@@ -57,7 +57,7 @@ class LanguageController extends \Raptor\Controller
                 }
                 $context['record'] = $id;
                 
-                $this->copyMultimodelContent($mother['code'], $payload['code']);
+                $this->copyLocalizedContent($mother['code'], $payload['code']);
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -255,13 +255,13 @@ class LanguageController extends \Raptor\Controller
         }
     }
     
-    private function copyMultimodelContent(string $from, string $to) 
+    private function copyLocalizedContent(string $from, string $to) 
     {
         try {
             $database = (string)$this->query('select database()')->fetchColumn();
             $stmt = $this->prepare("SHOW TABLES FROM $database LIKE " . $this->quote('%_content'));
             if (!$stmt->execute()) {
-                throw new \Exception('There seems like no multimodel content tables!');
+                throw new \Exception('There seems like no localized content tables!');
             }
 
             $copied = [];
@@ -308,7 +308,7 @@ class LanguageController extends \Raptor\Controller
                 $primary = false;
                 $updates = [];
                 $update_arguments = [];
-                $by_account = $this->getUser()->getProfile()['id'] ?? false;
+                $by_account = $this->getUserId();
                 foreach ($table_columns as $column) {
                     $name = $column['Field'];
                     if ($name == 'id') {
@@ -316,7 +316,7 @@ class LanguageController extends \Raptor\Controller
                     } elseif ($name == 'updated_at') {
                         $updates[] = 'updated_at=:at';
                     } elseif ($name == 'updated_by'
-                            && $by_account !== false
+                            && !empty($by_account)
                     ) {
                         $updates[] = 'updated_by=:by';
                         $update_arguments = [':by' => $by_account];
@@ -372,7 +372,7 @@ class LanguageController extends \Raptor\Controller
                     'localization',
                     LogLevel::ALERT,
                     __CLASS__ . " объект нь $from хэлнээс $to хэлийг хуулбарлан үүсгэлээ",
-                    ['reason' => 'copy-multimodel-content', 'from' => $from, 'to' => $to, 'copied' => $copied]
+                    ['reason' => 'copy-localized-content', 'from' => $from, 'to' => $to, 'copied' => $copied]
                 );
             }
         } catch (\Exception $e) {

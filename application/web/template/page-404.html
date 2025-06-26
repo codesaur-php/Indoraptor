@@ -1,19 +1,189 @@
 <!DOCTYPE html>
-<html>
+<html lang="mn">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ title }} {{ code }}</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-        <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+        <meta name="description" content="Засгийн газрын хэрэгжүүлэгч агентлаг">
+        <link rel="icon" href="/public/settings/favico.ico" type="image/x-icon">
+        <link rel="shortcut icon" href="/public/settings/mrpam-logo-compact.png" type="image/png">
+        <link rel="apple-touch-icon" href="/public/settings/mrpam-apple-touch.png">                        
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no">                                                                    
+        <link id="googleFonts" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,600,700,800%7CShadows+Into+Light%7CPlayfair+Display:400&display=swap" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="/assets/vendor/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/assets/vendor/fontawesome-free/css/all.min.css">
+        <link rel="stylesheet" href="/assets/vendor/animate/animate.compat.css">
+        <link rel="stylesheet" href="/assets/vendor/simple-line-icons/css/simple-line-icons.min.css">
+        <link rel="stylesheet" href="/assets/vendor/owl.carousel/assets/owl.carousel.min.css">
+        <link rel="stylesheet" href="/assets/vendor/owl.carousel/assets/owl.theme.default.min.css">
+        <link rel="stylesheet" href="/assets/vendor/magnific-popup/magnific-popup.min.css">
+        <link rel="stylesheet" href="/assets/css/theme.css">
+        <link rel="stylesheet" href="/assets/css/theme-elements.css">
+        <link rel="stylesheet" href="/assets/css/theme-blog.css">
+        <link rel="stylesheet" href="/assets/css/theme-shop.css">
+        <link id="skinCSS" rel="stylesheet" href="/assets/css/skins/skin-corporate-8.css">
+        <link rel="stylesheet" href="/assets/css/custom.css">
+        <script defer src="/assets/vendor/plugins/js/plugins.min.js"></script>
+        <script defer src="/assets/js/theme.js"></script>
+        <script defer src="/assets/js/custom.js"></script>
+        <script defer src="/assets/js/theme.init.js"></script>
     </head>
-    <body>
-        <main class="container" style="width:50rem;margin-top:.75rem;margin-bottom:.75rem;">
-            <h1>{{ title }} {{ code }}!</h2>
-            <div>{{ message }}</div>
-        </main>
+    <body data-plugin-page-transition>
+        <div class="body">
+            <header id="header" data-plugin-options="{'stickyEnabled': true, 'stickyEnableOnBoxed': true, 'stickyEnableOnMobile': false, 'stickyStartAt': 203, 'stickySetTop': '-203px', 'stickyChangeLogo': false}">
+                <div class="header-body border-0">
+                    <div class="header-top header-top-default border-bottom-0 bg-color-primary">
+                        <div class="container">
+                            <div class="header-row">
+                                <div class="header-column">
+                                    <div class="header-row">
+                                    </div>
+                                </div>
+                                <div class="header-column d-none d-lg-block" style="width:34.375rem">
+                                </div>
+                                <div class="header-column justify-content-end">
+                                    <div class="header-row">
+                                        <ul class="header-social-icons social-icons social-icons-clean social-icons-icon-light">
+                                            <li class="social-icons-facebook">
+                                                <a href="https://www.facebook.com/AsigtMaltmalGazrinTosniiGazar" target="_blank" title="Facebook">
+                                                    <i class="fab fa-facebook-f"></i>
+                                                </a>
+                                            </li>
+                                            <li class="ps-2">
+                                                <a href="/contact"><i class="fas fa-phone"></i></a>
+                                            </li>
+                                            <li class="nav-item nav-item-anim-icon">
+                                                <a href="/faq"><i class="fas fa-question-circle"></i></a>
+                                            </li>
+                                            <li class="nav-item nav-item-anim-icon">
+                                                <a href="/rss"><i class="fas fa-rss"></i></a>
+                                            </li>
+                                        </ul>
+                                        <div class="header-nav-features">
+                                            <div class="header-nav-feature header-nav-features-search d-inline-flex pt-1">
+                                                <a href="javascript:;" class="header-nav-features-toggle text-decoration-none" data-focus="headerSearch" aria-label="Хайх">
+                                                    <i class="fas fa-search header-nav-top-icon text-light opacity-9"></i>
+                                                </a>
+                                                <div class="header-nav-features-dropdown" id="headerTopSearchDropdown">
+                                                    <form role="search" action="/search" method="POST">
+                                                        <div class="simple-search input-group">
+                                                            <input class="form-control text-1" id="headerSearch" name="q" type="search" value="" placeholder="Хайх утгаа оруулна уу..">
+                                                            <button class="btn" type="submit" aria-label="Хайх">
+                                                                <i class="fas fa-search header-nav-top-icon"></i>
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-container container" style="background:linear-gradient(rgba(255,255,255,0.6),rgba(255,255,255,0.6)),url('/assets/mrpam/header_back.png');background-size:cover;background-repeat:no-repeat;background-position:bottom">
+                        <div class="header-row py-2">
+                            <div class="header-column justify-content-start w-50 order-md-1 d-none d-md-flex">
+                                <div class="header-row">
+                                    <ul class="header-extra-info">
+                                        <li class="m-0">
+                                            <div class="feature-box feature-box-style-2 align-items-center">
+                                                <div class="feature-box-icon">
+                                                    <i class="far fa-clock text-7 p-relative"></i>
+                                                </div>
+                                                <div class="feature-box-info">
+                                                    <p class="pb-0 font-weight-semibold line-height-5 text-2">
+                                                        Даваа - Баасан: 08:00 - 18:00<br>Бямба - Ням: амарна
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="header-column justify-content-start justify-content-md-center order-1 order-md-2">
+                                <div class="header-row">
+                                    <div class="header-logo">
+                                        <a href="/">
+                                            <img alt="MRPAM" height="140" src="/public/settings/mrpam-logo-320-white.png" style="-webkit-filter:drop-shadow(1px 1px 2px #222);filter:drop-shadow(1px 1px 2px #222)">
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="header-column justify-content-end w-50 order-2 order-md-3">
+                                <div class="header-row">
+                                    <ul class="header-extra-info">
+                                        <li class="m-0">
+                                            <div class="feature-box reverse-allres feature-box-style-2 align-items-center">
+                                                <div class="feature-box-icon">
+                                                    <a href="javascript:;"><i class="fab fa-whatsapp text-7 p-relative" style="top: -2px;"></i></a>
+                                                </div>
+                                                <div class="feature-box-info">
+                                                    <p class="pb-0 font-weight-semibold line-height-5 text-2"><a href="https://11-11.mn/" class="text-color-default text-color-hover-primary text-decoration-none" target="___blank">11-11 Төв</a><br><a href="https://iaac.mn/gomdol-medeelel-uguh" class="text-color-default text-color-hover-primary text-decoration-none" target="___blank">(976) 110</a></p>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-nav-bar header-nav-bar-top-border bg-light">
+                    </div>
+                </div>
+            </header>
+
+            <div role="main" class="main">
+                <section class="page-header page-header-modern bg-color-grey mb-0">
+                    <div class="container">
+                        <div class="row">
+                            <div class="align-self-center p-static text-center">
+                                <h1 class="font-weight-bold text-dark">{{ title }}</h1>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <div class="container">
+                    <section class="http-error pb-0">
+                        <div class="row justify-content-center py-0">
+                            <div class="text-center">
+                                <div class="http-error-main">
+                                    <h2>{{ code }}!</h2>
+                                    <p>{{ message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <footer id="footer" class="border-top">
+                <div class="footer-copyright bg-color-primary bg-color-scale-overlay bg-color-scale-overlay-1" style="border-top: solid #3177c7;">
+                    <div class="bg-color-scale-overlay-wrapper">
+                        <div class="container">
+                            <div class="row py-1">
+                                <div class="col-lg-1 d-flex align-items-center justify-content-center justify-content-lg-start">
+                                    <a href="/" class="logo pe-0 pe-lg-2">
+                                        <img alt="MRPAM" src="/public/settings/mrpam-logo-320-white.png" style="height:3rem;margin-top:-.2rem;">
+                                    </a>
+                                </div>
+                                <div class="col-lg-5 d-flex align-items-center justify-content-center justify-content-lg-start mb-4 mb-lg-0">
+                                    <p class="text-light text-center" style="line-height:1.6">Засгийн газрын хэрэгжүүлэгч агентлаг <br><strong>АШИГТ МАЛТМАЛ, ГАЗРЫН ТОСНЫ ГАЗАР.</strong></p>
+                                </div>
+                                <div class="col-lg-6 d-flex align-items-center justify-content-center justify-content-lg-end">
+                                    <nav id="sub-menu">
+                                        <ul>
+                                            <li><a href="/assets/mrpam/mrpam_logo_rgb.jpg" target="___blank" class="text-color-light"><i class="fas fa-file-image"></i> ЛОГО татаж авах</a></li>
+                                            <li><a href="/disclaimer" class="text-color-light"><i class="fas fa-lock"></i> Нууцлалын бодлого</a></li>
+                                            <li><a href="/sitemap" class="text-color-light"><i class="fas fa-sitemap"></i> Сайтын бүтэц</a></li>
+                                            <li><a href="/contact" class="text-color-light"><i class="fas fa-phone"></i> Холбоо барих</a></li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
     </body>
 </html>

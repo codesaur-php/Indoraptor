@@ -1,12 +1,12 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-<div class="container">
-    <div class="row">
-        <div class="align-self-center p-static text-center mt-4">
-            <h2>{{ title }}</h2>
+<section class="page-header page-header-modern bg-color-grey page-header-lg p-1">
+    <div class="container">
+        <div class="row">
+            <div class="align-self-center p-static text-center mt-4">
+                <h3 class="font-weight-bold text-dark">{{ title }}</h3>
+            </div>
         </div>
     </div>
-</div>
+</section>
 <style>
     .page-article > p {
         text-align:justify;
@@ -19,14 +19,9 @@
         margin-bottom:0;
     }
 </style>
-<div class="container page-article">
+<div class="container page-article pb-4">
     {% if photo is not null and photo is not empty %}
-        <img class="img-fluid mb-3" file-data-fancybox src="{{ photo }}" alt="{{ title|e }}">
+        <img class="img-fluid mb-3" src="{{ photo }}" alt="{{ title|e }}">
     {% endif %}
     {{ content }}
 </div>
-<script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-    });
-</script>

@@ -1,12 +1,26 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-<div class="container">
-    <div class="row">
-        <div class="align-self-center p-static text-center mt-4">
-            <h2>{{ title }}</h2>
+<script defer src="{{ index }}/assets/js/motable.js"></script>
+<section class="page-header page-header-classic">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <ul class="breadcrumb">
+                    <li><a href="{{ 'home'|link }}"><i class="fa fa-house"></i> {{ 'home'|text }}</a></li>
+                    {% for parent in breadcrumbs %}
+                        <li{{ loop.last ? ' class="active text-color-light"' : '' }}>{{ parent['title'] }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col p-static">
+                <h1 data-title-border>{{ title }}</h1>
+                {% if description is not empty %}
+                    <span class="sub-title text-color-grey">{{ description }}</span>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
+</section>
 <style>
     .page-article > p {
         text-align:justify;
@@ -19,14 +33,40 @@
         margin-bottom:0;
     }
 </style>
-<div class="container page-article">
-    {% if photo is not null and photo is not empty %}
-        <img class="img-fluid mb-3" file-data-fancybox src="{{ photo }}" alt="{{ title|e }}">
+<div class="container page-article pb-4">
+    {% if photo is not empty %}
+        <img class="img-fluid mb-3" src="{{ photo }}" alt="{{ title|e }}">
     {% endif %}
     {{ content }}
+    {% if category == 'list' and files is not empty %}
+    <table class="table table-sm table-bordered table-striped table-hover" id="files">
+        <thead>
+            <tr>
+                <th scope="col">№</th>
+                <th scope="col">{{ 'name'|text }}</th>
+                <th scope="col">{{ 'date'|text }}</th>
+                <th scope="col">{{ 'file'|text }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for file in files %}
+            <tr>
+                <th scope="row">{{ loop.index }}</th>
+                <td>{{ file['description'] }}</td>
+                <td>{{ file['keyword'] }}</td>
+                <td>
+                    <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm" href="{{ file['path'] }}" target="__blank">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const files = new motable('table#files');
+        });
+    </script>
+    {% endif %}
 </div>
-<script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-    });
-</script>

@@ -8,12 +8,15 @@
   'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' }
 } %}
-<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
-<script defer src="https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/plupload.full.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
-<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<link rel="stylesheet" href="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.css">
+<script defer src="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.js" type="text/javascript"></script>
+<script defer src="{{ index }}/assets/vendor/plupload-3.1.5/js/plupload.full.min.js"></script>
+<link rel="stylesheet" href="{{ index }}/assets/vendor/sceditor-3.2.0/themes/default.min.css">
+<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/sceditor.min.js"></script>
+<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/formats/xhtml.js"></script>
+<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/icons/monocons.js"></script>
+<link rel="stylesheet" href="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.css">
+<script defer src="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.umd.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
@@ -146,7 +149,7 @@
             </div>
         </div>
         <div class="tab-pane pt-2" id="tab-files">
-            <div class="row mb-2">
+            <div class="row text-danger mb-2">
                 <div class="col-12" id="filelist">Your browser doesn't have Silverlight or HTML5 support.</div>
             </div>
             <div class="row">
@@ -359,8 +362,8 @@
         reader.readAsDataURL(photo.files[0]);
     });
     
+    const content = document.getElementById('content');
     document.addEventListener('DOMContentLoaded', function () {
-        let content = document.getElementById('content');
         sceditor.create(content, {
             format: 'xhtml',
             emoticonsEnabled: false,
@@ -431,6 +434,11 @@
                         }
                         
                         files.append(res);
+                        
+                        if (res.type === 'image') {
+                            let sceditorInstance = sceditor.instance(content);
+                            sceditorInstance.insert(`<br /><p><img class="img-fluid" src="${res.path}"></p>`);
+                        }
 
                         NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
                     } catch (err) {

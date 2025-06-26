@@ -67,7 +67,7 @@ class TextController extends \Raptor\Controller
             } else {
                 $this->twigTemplate(\dirname(__FILE__) . '/text-insert-modal.html', ['table' => $table])->render();
                 
-                $level = LogLevel::NOTICE   ;
+                $level = LogLevel::NOTICE;
                 $message = "$table хүснэгт дээр шинэ текст үүсгэх үйлдлийг эхлүүллээ";
             }
         } catch (\Throwable $e) {

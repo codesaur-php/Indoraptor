@@ -22,7 +22,7 @@ class OrganizationUserController extends \Raptor\Controller
             } else {
                 $select_org =
                     "SELECT t2.* FROM $org_users_table as t1 INNER JOIN $org_table as t2 ON t1.organization_id=t2.id " .
-                    'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.user_id=' . $this->getUser()->getProfile()['id'];
+                    'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.user_id=' . $this->getUserId();
             }
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/organization-user.html',

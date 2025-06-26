@@ -1,25 +1,224 @@
 <div class="container">
     <div class="row">
-        <h5 class="text-light bg-danger text-uppercase">
-            {{ 'recent-news'|text }}
-        </h5>
-        <ul>
-            {% for news in recent %}
-                {% set href = 'news'|link({id:news['id']}) %}
-                <li class="mt-2 mb-4 {{ loop.index0 is odd ? '' : 'bg-light' }}">
-                    {% if news['photo'] is not empty and news['photo'] is not null %}
-                    <div class="img-fluid img-thumbnail d-block">
+        <div class="col-lg-8">
+            <div class="col">
+                <div class="mrpam-slider owl-carousel nav-inside show-nav-hover dots-inside mb-0" data-plugin-options="{'items': 1, 'loop': true, 'autoplay': true, 'autoplayTimeout': 5000, 'autoplayHoverPause': true, 'nav': true, 'dots': true, 'animateOut': 'fadeOut'}">
+                    {% for item in sliders %}
+                        <div>
+                            <p>
+                                <a href="{{ 'news'|link({id:item['id']}) }}">{{ item['title'] }}</a>
+                                <br/><span>{{ item['description'] }}</span>
+                            </p>
+                            <img src="{{ item['photo'] }}" alt="{{ item['title']|e }}" />
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            {% for news in latest %}
+                <div class="row align-items-center latest-news{{ loop.index0 is odd ? '' : ' bg-grey' }}">
+                    {% set href = 'news'|link({id:news['id']}) %}
+                    <div class="col-sm-4 latest-news-thumbnail d-none d-sm-block">
                         <a href="{{ href }}">
-                            <img src="{{ news['photo'] }}" height="100">
+                            <img src="{{ news['photo'] is empty or news['photo'] is null ? assets ~ '/assets/mrpam/mrpam_blue.png' : news['photo'] }}" alt="MRPAM">
                         </a>
                     </div>
-                    {% endif %}
-                    <span class="text-secondary d-block">{{ news['published_at'] }}</span>
-                    <h6 class="d-block">
-                        <a href="{{ href }}" class="text-decoration-none">{{ news['title'] }}</a>
-                    </h6>
-                </li>
+                    <div class="col-sm-8 latest-news-title">
+                        <a href="{{ href }}" class="bg-secondary">
+                            {{ news['published_at']|date('Y-m-d') }}
+                        </a>
+                        <a href="{{ href }}" class="text-color-dark text-color-hover-primary"">
+                            {{ news['title'] }}
+                        </a>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     </div>
 </div>
+<section class="section mt-1 border-0 p-3">
+    <div class="container">
+        <h5 class="text-secondary mb-1">{{ 'information-systems'|text }}</h5>
+        <div class="row justify-content-center">
+            <div class="col-6 col-sm-4 col-lg-2 mt-1">
+                <a href="https://oil.mrpam.gov.mn/" target="_blank">
+                    <div class="mr_links_item">
+                        <div class="__links_icon oil_warehouse"></div>
+                        <h3>{{ localization.code == 'mn' ? 'Газрын тосны бүтээгдэхүүний агуулах, түгээх станцын бүртгэлийн систем' : 'Registration system of oil product warehouses and distribution stations' }}</h3>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-lg-2 mt-1">
+                <a href="https://mpetro.smartsolution.mn/" target="_blank">
+                    <div class="mr_links_item">
+                        <div class="__links_icon icon_1"></div>
+                        <h3>{{ localization.code == 'mn' ? 'Газрын тосны бүтээгдэхүүний хангамжийн мэдээллийн систем' : 'Petroleum product supply information system' }}</h3>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-lg-2 mt-1">
+                <a href="http://edu.mrpam.gov.mn/" target="_blank">
+                    <div class="mr_links_item">
+                        <div class="__links_icon icon_2"></div>
+                        <h3>{{ localization.code == 'mn' ? 'Эрдэс баялгийн боловсрол' : 'Public education of mining sector' }}</h3>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-lg-2 mt-1">
+                <a href="https://cmcs.mrpam.gov.mn/cmcs" target="_blank">
+                    <div class="mr_links_item">
+                        <div class="__links_icon icon_3"></div>
+                        <h3>{{ localization.code == 'mn' ? 'Уул уурхайн кадастрын компьютержсэн систем' : 'Computerized mining cadastre system' }}</h3>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-lg-2 mt-1">
+                <a href="https://gmis.mrpam.gov.mn/" target="_blank">
+                    <div class="mr_links_item">
+                        <div class="__links_icon icon_4"></div>
+                        <h3>{{ localization.code == 'mn' ? 'Геологи, уул уурхайн мэдээллийн систем' : 'Geology and Mining information system' }}</h3>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-lg-2 mt-1">
+                <a href="https://ereports.eitimongolia.mn/" target="_blank">
+                    <div class="mr_links_item">
+                        <div class="__links_icon icon_5"></div>
+                        <h3>{{ localization.code == 'mn' ? 'ОҮИТБС-ын цахим тайлангийн систем' : 'EITIM e-reporting system' }}</h3>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="heading heading-border heading-middle-border">
+                <h3 class="text-3 px-3 py-1 text-light bg-primary">
+                    {{ 'recent-news'|text }}
+                </h3>
+            </div>
+            <ul class="simple-post-list">
+                {% for news in recent %}
+                    {% set href = 'news'|link({id:news['id']}) %}
+                    <li class="{{ loop.index0 is odd ? '' : 'bg-grey' }}">
+                        <article>
+                            <div class="post-image">
+                                <div class="img-thumbnail img-thumbnail-no-borders">
+                                    <a href="{{ href }}">
+                                        <img src="{{ news['photo'] is empty or news['photo'] is null ? assets ~ '/assets/mrpam/mrpam_colored.png' : news['photo'] }}" class="border-radius-0" width="100" alt="MRPAM">
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="post-info">
+                                <div class="post-meta">
+                                    {{ news['published_at']|date('Y-m-d') }}
+                                </div>
+                                <h4 class="font-weight-normal text-3 mb-0">
+                                    <a href="{{ href }}" class="text-dark text-decoration-none text-hover-primary">{{ news['title'] }}</a>
+                                </h4>
+                            </div>
+                        </article>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ 'news-type'|link({'type':'general'}) }}" class="text-decoration-none">
+                {{ localization.code == 'mn' ? 'Нийт жагсаалт' : 'Total list' }} <i class="fa fa-angle-double-right text-1 ms-1"></i>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <div class="heading heading-border heading-middle-border">
+                <h3 class="text-3 px-3 py-1 text-light bg-danger">
+                    {{ 'announcement-news'|text }}
+                </h3>
+            </div>
+            <ul class="simple-post-list">
+                {% for announcement in announcements %}
+                    {% set href = 'news'|link({id:announcement['id']}) %}
+                    <li class="{{ loop.index0 is odd ? '' : 'bg-grey' }}">
+                        <article>
+                            <div class="post-info">
+                                <div class="post-meta">
+                                    {{ announcement['published_at']|date('Y-m-d') }}
+                                </div>
+                                <h4 class="font-weight-normal text-3 mb-0">
+                                    <a href="{{ href }}" class="text-dark text-decoration-none text-hover-tertiary">{{ announcement['title'] }}</a>
+                                </h4>
+                            </div>
+                        </article>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ 'news-type'|link({'type':'announcement'}) }}" class="text-danger text-decoration-none">
+                {{ localization.code == 'mn' ? 'Нийт жагсаалт' : 'Total list' }} <i class="fa fa-angle-double-right text-1 ms-1"></i>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <div class="heading heading-border heading-middle-border">
+                <h3 class="text-3 px-3 py-1 text-light bg-tertiary">
+                    {{ 'video-news'|text }}
+                </h3>
+            </div>
+            <ul class="simple-post-list" style="min-height:160px;max-height:160px">
+                {% for video in videos %}
+                    {% set href = 'news'|link({id:video['id']}) %}
+                    <h4 class="font-weight-normal text-3 mb-0">
+                        <a href="{{ href }}" class="text-grey text-decoration-none text-hover-dark">{{ video['title'] }}</a>
+                    </h4>
+                {% endfor %}
+            </ul>
+            <div class="heading heading-border heading-middle-border mt-4">
+                <h3 class="text-3 px-3 py-1 text-light bg-warning">
+                    {{ 'price-news'|text }}
+                </h3>
+            </div>
+            <ul class="simple-post-list" style="min-height:309px;max-height:309px">
+                {% for price in prices %}
+                    {% set href = 'news'|link({id:price['id']}) %}
+                    <li class="{{ loop.index0 is odd ? '' : 'bg-grey' }}">
+                        <article>
+                            <div class="post-info">
+                                <div class="post-meta">
+                                    {{ price['published_at']|date('Y-m-d') }}
+                                </div>
+                                <h4 class="font-weight-normal text-3 mb-0">
+                                    <a href="{{ href }}" class="text-dark text-decoration-none text-hover-secondary">{{ price['title'] }}</a>
+                                </h4>
+                            </div>
+                        </article>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ 'news-type'|link({'type':'price'}) }}" class="text-warning text-decoration-none">
+                {{ localization.code == 'mn' ? 'Нийт жагсаалт' : 'Total list' }} <i class="fa fa-angle-double-right text-1 ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<section class="section section-primary text-center mt-3 p-3">
+    <div class="container">
+        <div class="row mt-2">
+            <div class="col-md-8">
+                {{ 'call-to-action-text'|text }}
+            </div>
+            <div class="col-md-4">
+                <a class="btn btn-rounded text-5 btn-info shadow" href="tel:+97677771900">
+                    <i class="fa fa-phone"></i> 7777-1900
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section section-default section-with-divider mb-0 d-none">
+    <div class="divider divider-solid divider-style-4">
+        <i class="fas fa-chevron-down"></i>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            </div>
+        </div>
+    </div>
+</section>

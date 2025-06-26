@@ -46,7 +46,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
         
         if (CODESAUR_DEVELOPMENT) {
             $vars['message'] .=
-                '<br/><pre style="text-align:left;height:500px;overflow-y:auto;overflow-x:hidden;">'
+                '<br/><pre style="text-align:left;height:300px;overflow-y:auto;overflow-x:hidden;">'
                 . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT) . '</pre>';
         }
         

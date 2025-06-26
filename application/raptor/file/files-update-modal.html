@@ -103,10 +103,10 @@
 
                 if (resp.record === undefined || resp.record.id === undefined) return;
 
+                document.getElementById(`file_${resp.record.id}_close`).click();
+                
                 let row = document.getElementById(`file_${resp.record.id}`);
                 if (!row || row === null) return;
-
-                document.getElementById(`file_${resp.record.id}_close`).click();
 
                 row.children[2].innerHTML = resp.record.description;
                 row.children[3].innerHTML = resp.record.category;

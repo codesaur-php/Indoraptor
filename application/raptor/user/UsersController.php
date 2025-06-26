@@ -143,8 +143,8 @@ class UsersController extends \Raptor\Controller
                 $record['password'] = \password_hash($password, \PASSWORD_BCRYPT);                
                 $status = $parsedBody['status'] ?? 'off';
                 $record['status'] = $status != 'on' ? 0 : 1;
-                $id = $model->insert($record);
-                if ($id == false) {
+                $insert = $model->insert($record);
+                if ($insert == false) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 
@@ -154,16 +154,16 @@ class UsersController extends \Raptor\Controller
                         && !empty($orgModel->getById($organization))
                     ) {
                         (new OrganizationUserModel($this->pdo))
-                            ->insert(['user_id' => $id, 'organization_id' => $organization]);
+                            ->insert(['user_id' => $insert['id'], 'organization_id' => $organization]);
                     }
                 }
                 
                 $file = new FilesController($this->getRequest());
-                $file->setFolder("/{$model->getName()}/$id");
+                $file->setFolder("/{$model->getName()}/{$insert['id']}");
                 $file->allowImageOnly();
                 $photo = $file->moveUploaded('photo', $model->getName());
                 if ($photo) {
-                    $model->updateById($id, ['photo' => $photo['path']]);
+                    $model->updateById($insert['id'], ['photo' => $photo['path']]);
                     $context += ['photo' => $photo];
                 }
                 
@@ -173,7 +173,7 @@ class UsersController extends \Raptor\Controller
                 ]);
                 
                 $level = LogLevel::INFO;
-                $context += ['id' => $id, 'record' => $record];
+                $context += ['id' => $insert['id'], 'record' => $record];
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $dashboard = $this->twigDashboard(
@@ -207,13 +207,13 @@ class UsersController extends \Raptor\Controller
             $context = [];
             
             if (!$this->isUserAuthorized()
-                || (!$this->getUser()->can('system_user_update')
-                && $this->getUser()->getProfile()['id'] != $id)
+                || (!$this->isUserCan('system_user_update')
+                    && $this->getUserId() != $id)
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            if ($id == 1 && $this->getUser()->getProfile()['id'] != $id) {
+            if ($id == 1 && $this->getUserId() != $id) {
                 throw new \Exception('No one but root can edit this account!', 403);
             }
             
@@ -297,7 +297,11 @@ class UsersController extends \Raptor\Controller
                     $organizations[$org_id] = true;
                 }
                 if ($this->isUserCan('system_user_organization_set')) {
-                    $userOrgs = $orgUserModel->fetchAllOrgsByUser($id);
+                    $sql =
+                        'SELECT t1.* ' .
+                        "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
+                        "WHERE t1.user_id=$id AND t1.is_active=1 AND t2.is_active=1";
+                    $userOrgs = $this->query($sql)->fetchAll();
                     foreach ($userOrgs as $row) {
                         if (isset($organizations[$row['organization_id']])) {
                             unset($organizations[$row['organization_id']]);
@@ -338,7 +342,7 @@ class UsersController extends \Raptor\Controller
                             unset($roles[$row['role_id']]);
                         } elseif ($row['role_id'] == 1 && $id == 1) {
                             // can't delete root user's coder role!
-                        } elseif ($row['role_id'] == 1 && !$this->getUser()->is('system_coder')) {
+                        } elseif ($row['role_id'] == 1 && !$this->isUser('system_coder')) {
                             // only coder can strip another coder role
                         } else {
                             $userRoleModel->deleteById($row['id']);
@@ -353,7 +357,7 @@ class UsersController extends \Raptor\Controller
                     
                     foreach (\array_keys($roles) as $role_id) {
                         if ($role_id == 1 && (
-                            !$this->getUser()->is('system_coder') || $this->getUser()->getProfile()['id'] != 1)
+                            !$this->isUser('system_coder') || $this->getUserId() != 1)
                         ) {
                             // only root coder can add another coder role
                             continue;
@@ -461,8 +465,8 @@ class UsersController extends \Raptor\Controller
     {
         try {
             if (!$this->isUserAuthorized()
-                || (!$this->getUser()->can('system_user_index')
-                && $this->getUser()->getProfile()['id'] != $id)
+                || (!$this->isUserCan('system_user_index')
+                && $this->getUserId() != $id)
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -529,7 +533,7 @@ class UsersController extends \Raptor\Controller
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             
-            if ($this->getUser()->getProfile()['id'] == $id) {
+            if ($this->getUserId() == $id) {
                 throw new \Exception('Cannot suicide myself :(', 403);
             } elseif ($id == 1) {
                 throw new \Exception('Cannot remove first acccount!', 403);
@@ -804,7 +808,7 @@ class UsersController extends \Raptor\Controller
                         unset($roles[$row['role_id']]);
                     } elseif ($row['role_id'] == 1 && $id == 1) {
                         // can't delete root account's coder role!
-                    } elseif ($row['role_id'] == 1 && !$this->getUser()->is('system_coder')) {
+                    } elseif ($row['role_id'] == 1 && !$this->isUser('system_coder')) {
                         // only coder can strip another coder role
                     } else {
                         $userRoleModel->deleteById($row['id']);
@@ -819,7 +823,7 @@ class UsersController extends \Raptor\Controller
                 
                 foreach (\array_keys($roles) as $role_id) {
                     if ($role_id == 1 && (
-                        !$this->getUser()->is('system_coder') || $this->getUser()->getProfile()['id'] != 1)
+                        !$this->isUser('system_coder') || $this->getUserId() != 1)
                     ) {
                         // only root coder can add another coder role
                         continue;
@@ -950,7 +954,11 @@ class UsersController extends \Raptor\Controller
                     throw new \Exception('Default user must belong to an organization', 503);
                 }
 
-                $user_orgs = $orgUserModel->fetchAllOrgsByUser($user_id);
+                $sql =
+                    'SELECT t1.* ' .
+                    "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
+                    "WHERE t1.user_id=$user_id AND t1.is_active=1 AND t2.is_active=1";
+                $user_orgs = $this->query($sql)->fetchAll();
                 foreach ($user_orgs as $row) {
                     if (isset($organizations[$row['organization_id']])) {
                         unset($organizations[$row['organization_id']]);

@@ -107,12 +107,15 @@ class FilesController extends FileController
             if ($id > 0) {
                 $record['record_id'] = $id;
             }
+            $record['created_by'] = $this->getUserId();
+            
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $record['id'] = $model->insert($record);
-            if ($record['id'] == false) {
+            $insert = $model->insert($record);
+            if (!isset($insert['id'])) {
                 throw new \Exception($this->text('record-insert-error'));
             }
+            $record['id'] = $insert['id'];
             
             $text = "$id-р бичлэгт зориулж {$record['id']} дугаартай файлыг байршуулан холболоо";
             $this->indolog($table, LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $table, 'record' => $record]);
@@ -127,7 +130,7 @@ class FilesController extends FileController
         }
     }
     
-    public function moveToFolder(string $table, int $record_id, int $file_id, int $mode = 0755)
+    public function moveToFolder(string $table, int $record_id, int $file_id, int $mode = 0755): array|false
     {
         try {
             if (!$this->isUserAuthorized()) {
@@ -136,7 +139,6 @@ class FilesController extends FileController
             
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $model->updateById($file_id, ['record_id' => $record_id]);
             $record = $model->getById($file_id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
@@ -155,7 +157,11 @@ class FilesController extends FileController
             if (!\rename($record['file'], $newPath)) {
                 throw new \Exception("Can't rename file [{$record['file']}] to [$newPath]");
             }
-            $update = ['file' => $newPath, 'path' => $this->getPath($file_name)];
+            $update = [
+                'file' => $newPath,
+                'path' => $this->getPath($file_name),
+                'record_id' => $record_id,
+            ];
             $updated = $model->updateById($file_id, $update);
             if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));
@@ -164,16 +170,10 @@ class FilesController extends FileController
             $this->indolog(
                 $table,
                 LogLevel::INFO,
-                "$record_id-р бичлэгт зориулж $file_id дугаартай файлыг бүртгэлээ",
-                ['reason' => 'register-file', 'table' => $table, 'record_id' => $record_id, 'file_id' => $file_id]
+                "$table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг бүртгэн, байршлийг солив. <a target=\"__blank\" href=\"{$update['path']}\">{$update['path']}</a>",
+                ['reason' => 'move-to-folder', 'table' => $table, 'record_id' => $record_id, 'file_id' => $file_id, 'mode' => $mode]
             );
-            $this->indolog(
-                $table,
-                LogLevel::INFO,
-                "$record_id-р бичлэгт зориулcан $file_id дугаартай файлын байршил солигдлоо. <a target=\"__blank\" href=\"{$update['path']}\">{$update['path']}</a>",
-                ['reason' => 'rename-file-folder', 'table' => $table, 'record' => $update + $record, 'mode' => $mode
-            ]);
-            return true;
+            return $update;
         } catch (\Throwable $e) {
             $this->errorLog($e);
             return false;

@@ -312,10 +312,7 @@ class TextInitial
         $model->insert(['keyword' => 'invalid-values', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утга буруу байна!'], 'en' => ['text' => 'Invalid values!']]);
         $model->insert(['keyword' => 'invalid-request', 'type' => 'sys-defined'], ['en' => ['text' => 'Request is not valid!'], 'mn' => ['text' => 'Хүсэлт буруу байна!']]);
         $model->insert(['keyword' => 'system-no-permission', 'type' => 'sys-defined'], ['mn' => ['text' => 'Уучлаарай, таньд энэ мэдээлэлд хандах эрх олгогдоогүй байна!'], 'en' => ['text' => 'Access Denied, You don\'t have permission to access on this resource!']]);
-        $model->insert(['keyword' => 'show-comment', 'type' => 'sys-defined'], ['en' => ['text' => 'Show posted comments'], 'mn' => ['text' => 'Бичигдсэн сэтгэгдлүүдийг харуулна']]);
-        $model->insert(['keyword' => 'hide-comment', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичигдсэн сэтгэгдлүүдийг харуулахгүй'], 'en' => ['text' => 'Hide posted comments']]);
-        $model->insert(['keyword' => 'enable-comment', 'type' => 'sys-defined'], ['en' => ['text' => 'Users can comment on this post'], 'mn' => ['text' => 'Зочид сэтгэгдэл үлдээж(бичиж) болно']]);
-        $model->insert(['keyword' => 'disable-comment', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зочид сэтгэгдэл үлдээж(бичиж) болохгүй'], 'en' => ['text' => 'Users cannot comment on this post']]);
+        $model->insert(['keyword' => 'can-comment', 'type' => 'sys-defined'], ['en' => ['text' => 'Can user comment on this post?'], 'mn' => ['text' => 'Хэрэглэгч сэтгэгдэл үлдээж(бичиж) болох эсэх']]);
         $model->insert(['keyword' => 'no-record-selected', 'type' => 'sys-defined'], ['en' => ['text' => 'No record selected'], 'mn' => ['text' => 'Бичлэг сонгогдоогүй байна']]);
         $model->insert(['keyword' => 'select-files', 'type' => 'sys-defined'], ['mn' => ['text' => 'Файлуудыг сонгох'], 'en' => ['text' => 'Select Files']]);
         $model->insert(['keyword' => 'upload-files', 'type' => 'sys-defined'], ['mn' => ['text' => 'Файлуудыг илгээх'], 'en' => ['text' => 'Upload Files']]);

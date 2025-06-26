@@ -136,6 +136,8 @@ class PrivateFilesController extends FilesController
 
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
+            $record['updated_at'] = \date('Y-m-d H:i:s');
+            $record['updated_by'] = $this->getUserId();
             $updated = $model->updateById($id, $record);
             if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));

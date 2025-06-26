@@ -35,8 +35,8 @@ class PagesController extends \Raptor\Controller
             
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages = 
-                'SELECT id, photo, title, code, type, category, position, link, published ' .
-                "FROM $table WHERE is_active=1 ORDER BY position";
+                'SELECT id, photo, title, code, type, category, position, link, published, published_at ' .
+                "FROM $table WHERE is_active=1 ORDER BY position, id";
             $pages = $this->query($select_pages)->fetchAll();
             $infos = $this->getInfos($table);
             $files_counts = $this->getFilesCounts($table);            
@@ -62,40 +62,37 @@ class PagesController extends \Raptor\Controller
             }
             
             $model = new PagesModel($this->pdo);
+            $table = $model->getName();
             if ($is_submit) {
                 $record = $this->getParsedBody();
+                $record['created_by'] = $this->getUserId();
                 $context['payload'] = $record;
                 
-                if (empty($record['published_at'])) {
-                    $record['published_at'] = \date('Y-m-d H:i:s');
+                if (empty($record['title'])){
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
+                
                 $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                if ($record['published'] == 1) {
+                    if (!$this->isUserCan('system_content_publish')
+                    ) {
+                        throw new \Exception($this->text('system-no-permission'), 401);
+                    }
+                    $record['published_at'] = \date('Y-m-d H:i:s');
+                    $record['published_by'] = $this->getUserId();
+                }
+                $record['comment'] = ($record['comment'] ?? 'off' ) == 'on' ? 1 : 0;
                 
                 if (isset($record['files'])) {
                     $files = $record['files'];
                     unset($record['files']);
                 }
                 
-                if ($record['published'] == 1
-                    && !$this->isUserCan('system_content_publish')
-                ) {
-                    throw new \Exception($this->text('system-no-permission'), 401);
-                }
-                
-                $id = $model->insert($record);
-                if ($id == false) {
+                $insert = $model->insert($record);
+                if (!isset($insert['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                
-                $file = new FileController($this->getRequest());
-                $file->setFolder("/{$model->getName()}/$id");
-                $file->allowImageOnly();
-                $photo = $file->moveUploaded('photo', $model->getName());
-                if ($photo) {
-                    $model->updateById($id, ['photo' => $photo['path']]);
-                    $context['photo'] = $photo;
-                }
-                
+                $id = $insert['id'];                
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
@@ -104,19 +101,48 @@ class PagesController extends \Raptor\Controller
                 $level = LogLevel::INFO;
                 $message = "Шинэ хуудас [{$record['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
                 
-                if (!isset($files)
-                    || empty($files)
-                    || !\is_array($files)
+                $file = new FileController($this->getRequest());
+                $file->setFolder("/$table/$id");
+                $file->allowImageOnly();                
+                if (!empty($files)
+                    && \is_array($files)
                 ) {
-                    return;
+                    $html = $record['content'];
+                    \preg_match_all('/src="([^"]+)"/', $html, $srcs);
+                    \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
+                    $filesController = new FilesController($this->getRequest());
+                    foreach ($files as $file_id) {
+                        $update = $filesController->moveToFolder($table, $id, (int)$file_id);
+                        if (!empty($update['path'])) {
+                            foreach ($srcs[1] as $src) {
+                                $src_path = \str_replace("/$table/", "/$table/$id/", $src);
+                                if ($src_path == $update['path']) {
+                                    $html = \str_replace($src, $update['path'], $html);
+                                    continue;
+                                }
+                            }
+                            foreach ($hrefs[1] as $href) {
+                                $href_path = \str_replace("/$table/", "/$table/$id/", $href);
+                                if ($href_path == $update['path']) {
+                                    $html = \str_replace($href, $update['path'], $html);
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    if ($html != $record['content']) {
+                        $model->updateById($id, ['content' => $html]);
+                    }
                 }
-                $filesController = new FilesController($this->getRequest());
-                foreach ($files as $file_id) {
-                    $filesController->moveToFolder($model->getName(), $id, (int)$file_id);
+                
+                $photo = $file->moveUploaded('photo', $table);
+                if ($photo) {
+                    $model->updateById($id, ['photo' => $photo['path']]);
+                    $context['photo'] = $photo;
                 }
             } else {
                 $vars = [
-                    'infos' => $this->getInfos($model->getName()),
+                    'infos' => $this->getInfos($table),
                     'max_file_size' => $this->getMaximumFileUploadSize()
                 ];
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-insert.html', $vars);
@@ -159,12 +185,7 @@ class PagesController extends \Raptor\Controller
             
             $files = new FilesModel($this->pdo);
             $files->setTable($model->getName());
-            $context['files'] = $files->getRows(
-                [
-                    'WHERE' => "record_id=$id AND is_active=1",
-                    'ORDER BY' => 'updated_at'
-                ]
-            );
+            $context['files'] = $files->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             
             $template = $this->twigTemplate(\dirname(__FILE__) . '/page-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
@@ -208,9 +229,7 @@ class PagesController extends \Raptor\Controller
             $context['record'] = $record;
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($model->getName());
-            $context['files'] = $filesModel->getRows(
-                ['WHERE' => "record_id=$id AND is_active=1"]
-            );
+            $context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/page-view.html',
@@ -245,54 +264,65 @@ class PagesController extends \Raptor\Controller
             }
             
             $model = new PagesModel($this->pdo);
+            $table = $model->getName();
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
             $current = $model->getById($id);
             if (empty($current)) {
                 throw new \Exception($this->text('no-record-selected'));
+            } elseif ($current['published'] == 1 && !$this->isUserCan('system_content_publish')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
                 $record = $this->getParsedBody();
+                $record['updated_by'] = $this->getUserId();
                 $context['payload'] = $record;
                 
-                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                if (empty($record['title'])){
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
                 
                 if (isset($record['files'])) {
                     $files = $record['files'];
                     unset($record['files']);
                 }
                 
-                if (empty($record['title'])){
-                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                if ($record['published'] != $current['published']) {
+                    if (!$this->isUserCan('system_content_publish')) {
+                        throw new \Exception($this->text('system-no-permission'), 401);
+                    }
+                    if ($record['published'] == 1) {
+                        $record['published_at'] = \date('Y-m-d H:i:s');
+                        $record['published_by'] = $this->getUserId();
+                    }
                 }
-                
-                if ($record['published'] != $current['published']
-                    && !$this->isUserCan('system_content_publish')
-                ) {
-                    throw new \Exception($this->text('system-no-permission'), 401);
-                }
+                $record['comment'] = ($record['comment'] ?? 'off' ) == 'on' ? 1 : 0;
                 
                 $file = new FileController($this->getRequest());
-                $file->setFolder("/{$model->getName()}/$id");
+                $file->setFolder("/$table/$id");
                 $file->allowImageOnly();
-                $photo = $file->moveUploaded('photo', $model->getName());
+                $photo = $file->moveUploaded('photo', $table);
                 if ($photo) {
                     $record['photo'] = $photo['path'];
                 }
                 $current_photo_file = empty($current['photo']) ? '' : \basename($current['photo']);
                 if (!empty($current_photo_file)) {
                     if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($current_photo_file, $model->getName());
+                        $file->tryDeleteFile($current_photo_file, $table);
                         $record['photo'] = '';
                     } elseif (isset($record['photo'])
                         && \basename($record['photo']) != $current_photo_file
                     ) {
-                        $file->tryDeleteFile($current_photo_file, $model->getName());
+                        $file->tryDeleteFile($current_photo_file, $table);
                     }
                 }
                 if (isset($record['photo'])) {
                     $context['record']['photo'] = $record['photo'];
                 }
                 
+                $record['updated_at'] = \date('Y-m-d H:i:s');
                 $updated = $model->updateById($id, $record);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
@@ -314,33 +344,26 @@ class PagesController extends \Raptor\Controller
                     return;
                 }
                 
-                $filesModel = new FilesModel($this->pdo);
-                $filesModel->setTable($model->getName());
-                $current_files = $filesModel->getRows(
-                    ['WHERE' => "record_id=$id AND is_active=1"]
-                );
+                $current_files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 foreach ($files as $file_id) {
-                    $fid = (int) $file_id;
-                    if (\array_key_exists($fid, $current_files)) {
+                    if (\array_key_exists($file_id, $current_files)) {
                         continue;
                     }
-                    $filesModel->updateById($fid, ['record_id' => $id]);
+                    $filesModel->updateById($file_id, [
+                        'record_id' => $id, 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
+                    ]);
                     $this->indolog(
                         'pages',
                         LogLevel::INFO,
-                        "{$current['title']} хуудаст зориулж $fid дугаартай файлыг бүртгэлээ",
-                        ['reason' => 'register-file', 'table' => $model->getName(), 'record_id' => $id, 'file_id' => $fid]
+                        "{$current['title']} хуудаст зориулж $file_id дугаартай файлыг бүртгэлээ",
+                        ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $file_id]
                     );
                 }
             } else {
                 $context['record'] = $current;
                 $context['record']['rbac_users'] = $this->retrieveUsers($current['created_by'], $current['updated_by']);
-                $filesModel = new FilesModel($this->pdo);
-                $filesModel->setTable($model->getName());
-                $context['files'] = $filesModel->getRows(
-                    ['WHERE' => "record_id=$id AND is_active=1"]
-                );
-                $context['infos'] = $this->getInfos($model->getName(), "id!=$id AND parent_id!=$id");
+                $context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+                $context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
                 $context['max_file_size'] = $this->getMaximumFileUploadSize();
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $context);
                 $dashboard->set('title', $this->text('edit-record') . ' | Pages');
@@ -483,7 +506,7 @@ class PagesController extends \Raptor\Controller
                 'SELECT n.id as id, COUNT(*) as files ' .
                 "FROM $table as n INNER JOIN {$table}_files as f ON n.id=f.record_id " .
                 'WHERE n.is_active=1 AND f.is_active=1 ' .
-                'GROUP BY f.record_id';
+                'GROUP BY n.id';
             $result = $this->query($files_count)->fetchAll();
             $counts = [];
             foreach ($result as $count) {

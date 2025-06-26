@@ -28,6 +28,11 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         return $this->getAttribute('user');
     }
     
+    public final function getUserId(): ?int
+    {
+        return $this->getUser()?->profile['id'];
+    }
+    
     public final function isUserAuthorized(): bool
     {
         return $this->getUser() instanceof User;
@@ -93,7 +98,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         return $this->getAttribute('localization')['language'] ?? [];
     }
 
-    public final function text($key): string
+    public final function text($key, $default = null): string
     {
         if (isset($this->getAttribute('localization')['text'][$key])) {
             return $this->getAttribute('localization')['text'][$key];
@@ -103,7 +108,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             \error_log("TEXT NOT FOUND: $key");
         }
 
-        return '{' . $key . '}';
+        return $default ?? '{' . $key . '}';
     }
     
     public function twigTemplate(string $template, array $vars = []): TwigTemplate
@@ -116,9 +121,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         $twig->set('request', \rawurldecode($request_path));
         $twig->set('localization', $this->getAttribute('localization'));
 
-        $twig->addFilter(new TwigFilter('text', function (string $key): string
+        $twig->addFilter(new TwigFilter('text', function (string $key, $default = null): string
         {
-            return $this->text($key);
+            return $this->text($key, $default);
         }));
 
         $twig->addFilter(new TwigFilter('link', function (string $routeName, array $params = [], bool $is_absolute = false): string
@@ -172,7 +177,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
-            $logger->setCreatedByOnce($created_by ?? \getenv('CODESAUR_USER_ID', true) ?: null);
+            $logger->createdByOnce($created_by ?? $this->getUserId());
             $logger->log($level, $message, $context);
         } catch (\Throwable $e) {
             $this->errorLog($e);
