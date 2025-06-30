@@ -41,10 +41,17 @@
             "Raptor\\File\\": "application/raptor/file/",
             "Raptor\\Organization\\": "application/raptor/organization/",
             "Raptor\\RBAC\\": "application/raptor/rbac/",
-            "Raptor\\Localization\\": "application/raptor/localization/",
+            "Raptor\\Localization\\": [
+                "application/raptor/localization/",
+                "application/raptor/localization/language",
+                "application/raptor/localization/text"
+            ],
             "Raptor\\Content\\": [
                 "application/raptor/content/",
-                "application/raptor/content/news"
+                "application/raptor/content/news",
+                "application/raptor/content/page",
+                "application/raptor/content/reference",
+                "application/raptor/content/settings"
             ],
             "Raptor\\Mail\\": "application/raptor/mail/",
             "Raptor\\Log\\": "application/raptor/log/"

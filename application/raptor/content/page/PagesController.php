@@ -7,6 +7,8 @@ use Psr\Log\LogLevel;
 use Raptor\File\FilesModel;
 use Raptor\File\FilesController;
 use Raptor\File\FileController;
+use Raptor\Log\Logger;
+use Raptor\Log\LogsController;
 
 class PagesController extends \Raptor\Controller
 {
@@ -112,7 +114,7 @@ class PagesController extends \Raptor\Controller
                     \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
                     $filesController = new FilesController($this->getRequest());
                     foreach ($files as $file_id) {
-                        $update = $filesController->moveToFolder($table, $id, (int)$file_id);
+                        $update = $filesController->moveToFolder($table, $id, $file_id);
                         if (!empty($update['path'])) {
                             foreach ($srcs[1] as $src) {
                                 $src_path = \str_replace("/$table/", "/$table/$id/", $src);
@@ -132,6 +134,7 @@ class PagesController extends \Raptor\Controller
                     }
                     if ($html != $record['content']) {
                         $model->updateById($id, ['content' => $html]);
+                        $context['payload']['content'] = $html;
                     }
                 }
                 

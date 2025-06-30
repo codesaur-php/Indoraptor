@@ -159,7 +159,7 @@ class NewsController extends \Raptor\Controller
                 $message = 'Шинэ мэдээ үүсгэх үйлдлийг эхлүүллээ';
             }
         } catch (\Throwable $e) {
-            if ($is_submit) {
+            if ($is_submit) {   
                 $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
