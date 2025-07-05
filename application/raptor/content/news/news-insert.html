@@ -144,7 +144,7 @@
     </div>
     {% endif %}
 </form>
-<div class="rounded p-2 mt-3 shadow">
+<div class="rounded p-2 mt-4 shadow">
     {% if user.can('system_content_insert') %}
         <button class="submit-insert btn btn-success text-uppercase shadow-sm">
             <i class="bi bi-check2"></i> {{ 'save'|text }}
@@ -405,8 +405,8 @@
         uploader.init();
         
         const newsFilesLink = `{{ 'files-modal'|link({'table':'news'}) }}`;
-        const userCanUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
-        const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
+        const userCanUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
+        const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
         motable.prototype.append = function (record) {
             let fileIcon;
             let fileName = escape(basename(record['path']));
@@ -489,14 +489,14 @@
             }
 
             let rowModals = row.querySelectorAll('.ajax-modal');
-            rowModals.forEach(a => a.addEventListener('click', function (e) {
+            rowModals?.forEach(a => a.addEventListener('click', function (e) {
                 e.preventDefault();
                 ajaxModal(a);
             }));
 
             let thisTable = this;
             const deleteFile = row.querySelector('.delete-file');
-            deleteFile.addEventListener('click', function (e) {
+            deleteFile?.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 let questiondel;
@@ -547,7 +547,7 @@
 
                             Swal.close();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deactivated`);
 
                             row.remove();
                             thisTable.setReady();

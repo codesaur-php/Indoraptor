@@ -8,7 +8,8 @@ class Application extends \codesaur\Http\Application\Application
     {
         parent::__construct();
         
-        $this->use(new Template\ExceptionHandler());
+        $this->use(new \Raptor\Exception\ErrorHandler());
+   //     $this->use(new Template\ExceptionHandler());
         
         $this->use(new \Raptor\PostgresConnectMiddleware());
         $this->use(new SessionMiddleware());

@@ -141,7 +141,7 @@ class OrganizationController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsers($record['created_by'], $record['updated_by']);
+            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             if (!empty($record['parent_id'])) {
                 $parent = $model->getById($record['parent_id']);

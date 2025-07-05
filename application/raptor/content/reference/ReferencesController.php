@@ -144,7 +144,7 @@ class ReferencesController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsers($record['created_by'], $record['updated_by']);
+            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             
             $dashboard = $this->twigDashboard(
@@ -219,7 +219,7 @@ class ReferencesController extends \Raptor\Controller
                 if (empty($record)) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
-                $record['rbac_users'] = $this->retrieveUsers($record['created_by'], $record['updated_by']);
+                $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
                 $context['record'] = $record;
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/reference-update.html',

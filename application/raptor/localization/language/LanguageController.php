@@ -97,7 +97,7 @@ class LanguageController extends \Raptor\Controller
             }
             
             $record = $this->indoget('/record?model=' . LanguageModel::class, ['id' => $id]);
-            $record['rbac_users'] = $this->retrieveUsers($record['created_by'], $record['updated_by']);
+            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             $this->twigTemplate(\dirname(__FILE__) . '/language-retrieve-modal.html', ['record' => $record])->render();
 

@@ -1,5 +1,4 @@
-<link rel="stylesheet" href="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.css">
-<script defer src="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.js" type="text/javascript"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
         <i class="bi bi-book-half"></i> {{ 'pages'|text }}
@@ -12,6 +11,35 @@
         {% endif %}
     </div>
 </div>
+<nav class="d-flex navbar navbar-expand navbar-dark bg-secondary mb-2 rounded">
+    <div class="container">
+        <span class="text-light pe-2 my-auto">{{ 'filter'|text }}</span>
+        <ul class="navbar-nav">
+            {% for name,filter in filters %}
+            <li class="nav-item dropdown ps-2 my-auto">
+                <button class="btn btn-dark btn-sm dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
+                    {{ filter.title }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                    {% for val,label in filter.values %}
+                        <li><button class="dropdown-item filter-values-{{ name }}" data-id="{{ val }}" type="button">{{ label }}</button></li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endfor %}
+            <li class="nav-item ps-2 my-auto">
+                <button class="btn btn-secondary btn-sm shadow-sm disabled" id="set_filter" type="button">
+                    <i class="bi bi-filter"></i>
+                </button>
+            </li>
+            <li class="nav-item ps-2 my-auto">
+                <button class="btn btn-danger btn-sm shadow-sm disabled" id="reset_filter" type="button">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </li>
+        </ul>
+    </div>
+</nav>
 <table class="table table-sm table-hover table-striped table-bordered" id="pages">
     <thead>
         <tr class="text-uppercase">
@@ -28,10 +56,79 @@
     </thead>
 </table>
 <script type="text/javascript">
+    const urlParams = new URLSearchParams(window.location.search);
+    const setFilter = document.querySelector('button[id="set_filter"]');
+    const resetFilter = document.querySelector('button[id="reset_filter"]');
+    const filterBtns = document.querySelectorAll('button.content-filters');
+    
+    function onFilterChange()
+    {
+        let filterParams = new URLSearchParams();
+        filterBtns.forEach(filter => {
+            filter.classList.toggle('btn-outline-light', !!filter.dataset.id);
+            if (filter.dataset.id) {
+                filterParams.append(filter.dataset.name, filter.dataset.id);
+            }
+        });
+        if (filterParams?.toString() !== urlParams?.toString()) {
+            setFilter.classList.remove('disabled', 'btn-secondary');
+            setFilter.classList.add('btn-primary', 'btn-outline-light');
+        } else {
+            setFilter.classList.remove('btn-primary', 'btn-outline-light');
+            setFilter.classList.add('disabled', 'btn-secondary');
+        }
+    }
+    
+    filterBtns.forEach(filter => {
+        document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                filter.textContent = e.target.textContent;
+                filter.dataset.id = e.target.dataset?.id;
+                onFilterChange();
+            });
+        });
+    });
+    
+    setFilter.addEventListener('click', function (btn) {
+        btn.preventDefault();
+        
+        let params = [];
+        filterBtns.forEach(filter => {
+            if (filter.dataset.id) {
+                params.push(`${filter.dataset.name}=${filter.dataset.id}`);
+            }
+        });
+        if (params.length === 0) {
+            return NotifyTop('danger', `{{ 'warning'|text|e }}`, 'Та шүүлтүүрээс ядаж нэгийг сонгоорой!');
+        }
+        window.location.href = window.location.pathname + '?' + params.join('&');
+    });
+
+    resetFilter.addEventListener('click', function (a) {
+        a.preventDefault();
+        window.location.href = window.location.pathname;
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
+        if (urlParams?.size > 0) {
+            resetFilter.classList.remove('disabled');
+            resetFilter.classList.add('btn-outline-light');
+            filterBtns.forEach(filter => {
+                let value = urlParams.get(filter.dataset.name);
+                if (value) {
+                    filter.dataset.id = value;
+                    let selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
+                    let titleElement = document.querySelector(selector);
+                    filter.textContent = titleElement?.textContent || value;
+                    filter.classList.add('btn-outline-light');
+                }
+            });
+        }
+
         const pages = new motable('table#pages');
         fetch(
-            `{{ 'pages-list'|link }}`
+            `{{ 'pages-list'|link }}` + window.location.search
         ).then(res => {
             let contentType = res.headers.get('content-type');
             if (contentType.indexOf('application/json') !== -1) {
@@ -45,9 +142,8 @@
 
             let rowsHTML = '';
             let indexLink = `{{ 'pages'|link }}`;
-            let canUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
-            let canDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
-            let placeholder = `https://via.placeholder.com/60?text=no%20photo`;
+            let canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
+            let canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
             let published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
             data.list.forEach(page => {
                 let id = page.id;
@@ -120,10 +216,7 @@
 
                 let src = '';
                 let photo = thisRow.children[2].querySelector('img');
-                if (photo
-                    && photo.src
-                    && !photo.src.includes('https://via.placeholder.com')
-                ) {
+                if (photo && photo.src) {
                     src = photo.src;
                 } else {
                     question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
@@ -161,7 +254,7 @@
                             thisRow.remove();
                             pages.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deactivated`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

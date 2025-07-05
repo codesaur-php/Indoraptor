@@ -21,7 +21,43 @@ class PagesController extends \Raptor\Controller
             return;
         }
         
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html');
+        $model = new PagesModel($this->pdo);
+        $table = $model->getName();
+        
+        $filters = [];
+        $codes_result = $this->query(
+            "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
+        )->fetchAll();
+        $languages = $this->getLanguages();
+        $filters['code']['title'] = $this->text('language');
+        foreach ($codes_result as $row) {
+            $filters['code']['values'][$row['code']] = "{$languages[$row['code']]} [{$row['code']}]";
+        }
+        $types_result = $this->query(
+            "SELECT DISTINCT (type) FROM $table WHERE is_active=1"
+        )->fetchAll();
+        $filters['type']['title'] = $this->text('type');
+        foreach ($types_result as $row) {
+            $filters['type']['values'][$row['type']] = $row['type'];
+        }
+        $categories_result = $this->query(
+            "SELECT DISTINCT (category) FROM $table WHERE is_active=1"
+        )->fetchAll();
+        $filters['category']['title'] = $this->text('category');
+        foreach ($categories_result as $row) {
+            $filters['category']['values'][$row['category']] = $row['category'];
+        }
+        $filters += [
+            'published' => [
+                'title' => $this->text('status'),
+                'values' => [
+                    0 => 'unpublished',
+                    1 => 'published'
+                ]
+            ]
+        ];
+
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
         
@@ -35,13 +71,27 @@ class PagesController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $params = $this->getQueryParams() + ['is_active' => 1];
+            $conditions = [];
+            $allowed = ['code', 'type', 'category', 'published', 'is_active'];
+            foreach (\array_keys($params) as $name) {
+                if (\in_array($name, $allowed)) {
+                    $conditions[] = "$name=:$name";
+                }
+            }
+            $where = \implode(' AND ', $conditions);
+         
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages = 
-                'SELECT id, photo, title, code, type, category, position, link, published, published_at ' .
-                "FROM $table WHERE is_active=1 ORDER BY position, id";
-            $pages = $this->query($select_pages)->fetchAll();
+                'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active ' .
+                "FROM $table WHERE $where ORDER BY position, id";
+            $pages_stmt = $this->prepare($select_pages);
+            foreach ($params as $name => $value) {
+                $pages_stmt->bindValue(":$name", $value);
+            }
+            $pages = $pages_stmt->execute() ? $pages_stmt->fetchAll() : [];
             $infos = $this->getInfos($table);
-            $files_counts = $this->getFilesCounts($table);            
+            $files_counts = $this->getFilesCounts($table);
             $this->respondJSON([
                 'status' => 'success',
                 'list' => $pages,
@@ -100,6 +150,7 @@ class PagesController extends \Raptor\Controller
                     'message' => $this->text('record-insert-success')
                 ]);
                 
+                $context['id'] = $id;
                 $level = LogLevel::INFO;
                 $message = "Шинэ хуудас [{$record['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
                 
@@ -201,6 +252,7 @@ class PagesController extends \Raptor\Controller
 
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
             
+            $context['id'] = $id;
             $level = LogLevel::NOTICE;
             $message = "{$record['title']} - хуудсыг уншиж байна";
         } catch (\Throwable $e) {
@@ -228,21 +280,34 @@ class PagesController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsers($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($model->getName());
-            $context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             
+            $logger = new Logger($this->pdo);
+            $logger->setTable($model->getName());
+            $condition = ['ORDER BY' => 'id Desc'];
+            if ($this->getDriverName() == 'pgsql') {
+                $condition['WHERE'] =
+                    '(context::json->>\'id\')::bigint=' . $id .
+                    ' AND context::json->>\'model\'=' . $this->quote($context['model']);
+            } else {
+                $condition['WHERE'] =
+                    'JSON_EXTRACT(context, "$.id")=' . $id .
+                    ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']);
+            }
+            $logs = $logger->getLogs($condition);
+            \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
+                
+            $files = new FilesModel($this->pdo);
+            $files->setTable($model->getName());
+            $context['files'] = $files->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            $context['infos'] = $this->getInfos($model->getName(), "(id=$id OR id={$record['parent_id']})");
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/page-view.html',
-                $context + [
-                    'infos' => $this->getInfos($model->getName(), "(id=$id OR id={$record['parent_id']})")
-                ]
+                $context + ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
             );
             $dashboard->set('title', $this->text('view-record') . ' | Pages');
             $dashboard->render();
-
+            
             $level = LogLevel::NOTICE;
             $message = "{$record['title']} - хуудасны мэдээллийг нээж үзэж байна";
         } catch (\Throwable $e) {
@@ -268,8 +333,6 @@ class PagesController extends \Raptor\Controller
             
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
             $current = $model->getById($id);
             if (empty($current)) {
                 throw new \Exception($this->text('no-record-selected'));
@@ -277,18 +340,15 @@ class PagesController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
+            
             if ($is_submit) {
                 $record = $this->getParsedBody();
-                $record['updated_by'] = $this->getUserId();
                 $context['payload'] = $record;
                 
                 if (empty($record['title'])){
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }
-                
-                if (isset($record['files'])) {
-                    $files = $record['files'];
-                    unset($record['files']);
                 }
                 
                 $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
@@ -325,7 +385,28 @@ class PagesController extends \Raptor\Controller
                     $context['record']['photo'] = $record['photo'];
                 }
                 
+                $context['updates'] = [];
+                foreach ($record as $field => $value) {
+                    if ($current[$field] != $value) {
+                        $context['updates'][] = $field;
+                    }
+                }
+                
+                $date = $current['updated_at'] ?? $current['created_at'];
+                $count_updated_files =
+                    "SELECT id FROM {$filesModel->getName()} " .
+                    "WHERE record_id=$id AND (created_at > '$date' OR updated_at > '$date')";
+                $files_changed = $filesModel->prepare($count_updated_files);
+                if ($files_changed->execute() && $files_changed->rowCount() > 0) {
+                    $context['updates'][] = 'files';
+                }
+                
+                if (empty($context['updates'])) {
+                    throw new \InvalidArgumentException('No update!');
+                }
+                
                 $record['updated_at'] = \date('Y-m-d H:i:s');
+                $record['updated_by'] = $this->getUserId();
                 $updated = $model->updateById($id, $record);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
@@ -339,36 +420,31 @@ class PagesController extends \Raptor\Controller
                 
                 $level = LogLevel::INFO;
                 $message = "{$record['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
-                
-                if (!isset($files)
-                    || empty($files)
-                    || !\is_array($files)
-                ) {
-                    return;
-                }
-                
-                $current_files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-                foreach ($files as $file_id) {
-                    if (\array_key_exists($file_id, $current_files)) {
-                        continue;
-                    }
-                    $filesModel->updateById($file_id, [
-                        'record_id' => $id, 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-                    ]);
-                    $this->indolog(
-                        'pages',
-                        LogLevel::INFO,
-                        "{$current['title']} хуудаст зориулж $file_id дугаартай файлыг бүртгэлээ",
-                        ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $file_id]
-                    );
-                }
             } else {
                 $context['record'] = $current;
-                $context['record']['rbac_users'] = $this->retrieveUsers($current['created_by'], $current['updated_by']);
                 $context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-                $context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
                 $context['max_file_size'] = $this->getMaximumFileUploadSize();
-                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $context);
+                $context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
+                
+                $logger = new Logger($this->pdo);
+                $logger->setTable($table);
+                $condition = ['ORDER BY' => 'id Desc'];
+                if ($this->getDriverName() == 'pgsql') {
+                    $condition['WHERE'] =
+                        '(context::json->>\'id\')::bigint=' . $id .
+                        ' AND context::json->>\'model\'=' . $this->quote($context['model']);
+                } else {
+                    $condition['WHERE'] =
+                        'JSON_EXTRACT(context, "$.id")=' . $id .
+                        ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']);
+                }
+                $logs = $logger->getLogs($condition);
+                \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
+                
+                $dashboard = $this->twigDashboard(
+                    \dirname(__FILE__) . '/page-update.html',
+                    $context + ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
+                );
                 $dashboard->set('title', $this->text('edit-record') . ' | Pages');
                 $dashboard->render();
                 
@@ -409,9 +485,13 @@ class PagesController extends \Raptor\Controller
             $context['payload'] = $payload;
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $context['id'] = $id;
+            
             $model = new PagesModel($this->pdo);
-            $deleted = $model->deleteById($id);
-            if (empty($deleted)) {
+            $deactivated = $model->deactivateById($id, [
+                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
+            ]);
+            if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
             
@@ -422,7 +502,7 @@ class PagesController extends \Raptor\Controller
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "{$payload['title']} - хуудсыг устгалаа";
+            $message = "{$payload['title']} - хуудсыг идэвхгүй болголоо";
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -431,7 +511,7 @@ class PagesController extends \Raptor\Controller
             ], $e->getCode());
             
             $level = LogLevel::ERROR;
-            $message = 'Хуудсыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('pages', $level, $message, $context);

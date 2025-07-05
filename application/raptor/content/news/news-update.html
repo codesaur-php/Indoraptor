@@ -10,7 +10,6 @@
   'hot': { 'mn': 'Халуун' },
   'fun': { 'mn': 'Хөгжилтэй' }
 } %}
-
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/themes/default.min.css" integrity="sha512-9TfMTQR1fqjvuXo8Vas7DnLUZJr5kGFT6gHaFXG7dAZlzh+kFMDEQvbYxzaWXoFwchYSZCwU++Z24Kv1cSpVZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -176,7 +175,6 @@
             {% endif %}
 
             {% set info_uri=('logs-view'|link) ~ '?table=news' ~ '&id=' ~ item['id'] %}
-
             <li class="list-group-item list-group-item-action list-group-item-{{ type }}">
                 <a class="float-left" data-bs-target="#static-modal" data-bs-toggle="modal" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
                 <span class="pl-2 pr-2">
@@ -186,15 +184,15 @@
                     {{ item['message'] }}
                 {% endif %}
                 </span>
-                {% if users[item['created_by']] is defined %}
-                {% set user = users[item['created_by']] %}
-                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ user }}</u></span>
+                {% if users_detail[item['created_by']] is defined %}
+                    {% set created_by_detail = users_detail[item['created_by']] %}
+                    <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ created_by_detail }}</u></span>
                 {% endif %}
                 {% if item['info']['path'] is defined %}
                 <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>
                 {% endif %}
             </li>
-        {% endfor %}
+        {% endfor %}`
     </ul>
 </div>
 <script type="text/javascript">
@@ -456,8 +454,8 @@
         uploader.init();
         
         const newsFilesLink = `{{ 'files-modal'|link({'table':'news'}) }}`;
-        const userCanUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
-        const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
+        const userCanUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
+        const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
         motable.prototype.append = function (record) {
             let fileIcon;
             let fileName = escape(basename(record['path']));
@@ -495,7 +493,6 @@
             
             let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
             fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
-
             let row = document.createElement('tr');
             row.id = `file_${record['id']}`;
             row.style.fontSize = '.875rem';
@@ -539,14 +536,14 @@
             }
 
             let rowModals = row.querySelectorAll('.ajax-modal');
-            rowModals.forEach(a => a.addEventListener('click', function (e) {
+            rowModals?.forEach(a => a.addEventListener('click', function (e) {
                 e.preventDefault();
                 ajaxModal(a);
             }));
             
             let thisTable = this;
             const deleteFile = row.querySelector('.delete-file');
-            deleteFile.addEventListener('click', function (e) {
+            deleteFile?.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 let questiondel;
@@ -597,7 +594,7 @@
 
                             Swal.close();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deactivated`);
 
                             row.remove();
                             thisTable.setReady();

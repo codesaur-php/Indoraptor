@@ -8,12 +8,12 @@
   'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' }
 } %}
-<link rel="stylesheet" href="{{ index }}/assets/vendor/sceditor-3.2.0/themes/default.min.css">
-<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/sceditor.min.js"></script>
-<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/formats/xhtml.js"></script>
-<script defer src="{{ index }}/assets/vendor/sceditor-3.2.0/icons/monocons.js"></script>
-<link rel="stylesheet" href="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.css">
-<script defer src="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.umd.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/themes/default.min.css" integrity="sha512-9TfMTQR1fqjvuXo8Vas7DnLUZJr5kGFT6gHaFXG7dAZlzh+kFMDEQvbYxzaWXoFwchYSZCwU++Z24Kv1cSpVZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/sceditor.min.js" integrity="sha512-vTXYqh9aMw9z7j2KaQuGMHFyeIKixbOhsIGfPTNCeGd1EAj+Ju1Gm5z3aAat7N+FWscIdV3BPg9f0IzDGUaifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/formats/xhtml.min.js" integrity="sha512-KqPn4r6fCBEj1ZW6FXn8sD4J84IiGcGj8Onr2yAtrbBm6iT7rTclXbQhS0Nqxc9E2oU0JR8QEc8C+SuRTdh4Bw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/icons/monocons.min.js" integrity="sha512-UQApvlNbeoc7G9i+5A3pT0D/kCmNcX3Nbw0mbh7IxmifLDSXdYpiviDKer0BN2ZNcaXL8wiEClUqYgwUJrR3tQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
         <i class="bi bi-eye"></i> {{ record['title']|e }}
@@ -25,28 +25,7 @@
     </div>
 </div>
 <div class="row mt-3">
-    <div class="col-6">
-        <div class="form-floating">
-            <input class="form-control" name="parent_id" readonly value="{{ (infos[record['parent_id']] is not null ? infos[record['parent_id']]['parent_titles'] ~ infos[record['parent_id']]['title'] : '-')|e }}" placeholder="" type="text" autocomplete="off">
-            <label>{{ 'parent'|text }}</label>
-        </div>
-    </div>
-    <div class="col-2">
-        <div class="form-floating">
-            <input class="form-control" name="position" readonly value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
-            <label>{{ 'position'|text }}</label>
-        </div>
-    </div>
     <div class="col-4">
-        <label class="form-label">{{ 'publish'|text }}</label>
-        <div class="form-check form-switch">
-            <input class="form-check-input"{{ record['published'] == 1 ? ' checked' : '' }} disabled name="published" type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
-            <div class="form-text" id="IsVisibleHelp">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
-        </div>
-    </div>
-</div>
-<div class="row mt-3">
-    <div class="col-2">
         <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
         <span class="form-control">
             {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
@@ -55,17 +34,27 @@
             {{ lang }}
         </span>
     </div>
-    <div class="col-3">
+    <div class="col-4">
         <label class="form-label">{{ 'type'|text }}</label>
         <input class="form-control" name="type" value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" readonly placeholder="" type="text" autocomplete="off">
     </div>
-    <div class="col-3">
+    <div class="col-4">
         <label class="form-label">{{ 'category'|text }}</label>
         <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
     </div>
+</div>
+<div class="row mt-3">
+    <div class="col-8">
+        <div class="form-floating">
+            <input class="form-control" name="parent_id" readonly value="{{ (infos[record['parent_id']] is not null ? infos[record['parent_id']]['parent_titles'] ~ infos[record['parent_id']]['title'] : '-')|e }}" placeholder="" type="text" autocomplete="off">
+            <label>{{ 'parent'|text }}</label>
+        </div>
+    </div>
     <div class="col-4">
-        <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-        <input class="form-control" name="link" value="{{ record['link']|e }}" readonly placeholder="" type="url" autocomplete="off">
+        <div class="form-floating">
+            <input class="form-control" name="position" readonly value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
+            <label>{{ 'position'|text }}</label>
+        </div>
     </div>
 </div>
 <div class="row mt-3">
@@ -88,78 +77,84 @@
         <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
         <textarea class="form-control" id="content" name="content" readonly rows="10">{{ record['content']|e }}</textarea>
     </div>
+    <div class="form-group mt-3">
+        <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
+        <input class="form-control" name="link" value="{{ record['link']|e }}" readonly placeholder="" type="url" autocomplete="off">
+    </div>
 </div>
-<ul class="nav nav-tabs nav-tabs-content mt-4">
-    <li class="nav-item">
-        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-comment">{{ 'comment'|text }} <i class="bi bi-chat-left-text"></i></a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
-    </li>
-</ul>
-<div class="tab-content mb-3">
-    <div class="tab-pane active show pt-2" id="tab-files">
-        <table class="table table-sm table-striped table-hover" id="pages_files">
-            <thead>
-                <tr>
-                    <th>{{ 'file'|text }}</th>
-                    <th>{{ 'properties'|text }}</th>
-                    <th>{{ 'description'|text }}</th>
-                    <th>{{ 'category'|text }}</th>
-                    <th>{{ 'keyword'|text }}</th>
-                </tr>
-            </thead>
-        </table>
-    </div>
-    <div class="tab-pane" id="tab-comment">
-        <div class="form-check form-switch mt-4 ms-2">
-            <input class="form-check-input" disabled {{ record['comment'] > 0 ? 'checked ' :  '' }}type="checkbox" role="switch">
-            {{ 'can-comment'|text }}
-        </div>
-        <hr>
-    </div>
-    <div class="tab-pane" id="tab-history">
-        <div class="row mt-3">
-            <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
-            <div class="col-9">
-                <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
+<div class="row mt-4">
+    <label class="form-label fw-bolder">{{ 'files'|text }} <i class="bi bi-paperclip"></i></label>
+    <table class="table table-striped table-hover" id="pages_files">
+        <thead>
+            <tr>
+                <th>{{ 'file'|text }}</th>
+                <th>{{ 'properties'|text }}</th>
+                <th>{{ 'description'|text }}</th>
+                <th>{{ 'category'|text }}</th>
+                <th>{{ 'keyword'|text }}</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+<div class="rounded border border-success mt-4 p-3">
+    <div class="row">
+        <div class="col-6">
+            <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}
             </div>
         </div>
-        <div class="row mt-3">
-            <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
-            <div class="col-9">
-                <input class="form-control" readonly value="{{ (record['rbac_users'][record['created_by']] ?? record['created_by'])|e }}" type="text">
-            </div>
-        </div>
-        <div class="row mt-3">
-            <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
-            <div class="col-9">
-                <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
-            </div>
-        </div>
-        <div class="row mt-3">
-            <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
-            <div class="col-9">
-                <input class="form-control" readonly value="{{ (record['rbac_users'][record['updated_by']] ?? record['updated_by'])|e }}" type="text">
+        <div class="col-6">
+            <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="comment"{{ record['comment'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ 'can-comment'|text }}
             </div>
         </div>
     </div>
-    <div class="tab-pane" id="tab-version">
-        <div class="alert alert-info shadow-sm fade mt-3 show" role="alert">
-            <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
-            {% if localization.code == 'mn' %}
-                Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-            {% else %}
-                Sorry, this feature isn’t available right now
+</div>
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">{{ 'log'|text }} <i class="bi bi-clock-history"></i></label>
+    <ul class="list-group">
+        {% for item in logs %}
+            {% if item['level'] == 'notice' %}
+                {% set type='light' %}
+            {%  elseif item['level'] == 'info' %}
+                {% set type='primary' %}
+            {%  elseif item['level'] == 'error' %}
+                {% set type='danger' %}
+            {%  elseif item['level'] == 'warning' %}
+                {% set type='warning' %}
+            {%  elseif item['level'] == 'alert' %}
+                {% set type='info' %}
+            {%  elseif item['level'] == 'debug' %}
+                {% set type='secondary' %}
+            {%  else %}
+                {% set type='dark' %}
             {% endif %}
-        </div>
-    </div>
+
+            {% set info_uri=('logs-view'|link) ~ '?table=pages' ~ '&id=' ~ item['id'] %}
+            <li class="list-group-item list-group-item-action list-group-item-{{ type }}">
+                <a class="float-left" data-bs-target="#static-modal" data-bs-toggle="modal" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
+                <span class="pl-2 pr-2">
+                {% if item['message'] is not defined or item['message'] is empty %}
+                    <span class="text-danger">{{ item['context']['reason'] }}</span> {{ item['context']['server_request']['uri']|e }}
+                {% else %}
+                    {{ item['message'] }}
+                {% endif %}
+                </span>
+                {% if users_detail[item['created_by']] is defined %}
+                {% set created_by_detail = users_detail[item['created_by']] %}
+                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ created_by_detail }}</u></span>
+                {% endif %}
+                {% if item['info']['path'] is defined %}
+                <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
 </div>
 <script type="text/javascript">
     function copy(elem) {
@@ -213,16 +208,18 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         let content = document.getElementById('content');
+        {% if record['type'] != 'embed' %}
         sceditor.create(content, {
             format: 'xhtml',
             emoticonsEnabled: false,
-            toolbarExclude: 'emoticon',
+            toolbar: 'maximize,source,print',
             icons: 'monocons',
-            readOnly: true,
+            colors: '#ffff00,#ff00ff,#00ffff|#ff0000,#00ff00,#0000ff',
             width: '100%',
             height: '360px',
             style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
         });
+        {% endif %}
         
         let pageFilesLink = `{{ 'files-modal'|link({'table':'pages'}) }}`;
         motable.prototype.append = function (record) {
@@ -265,7 +262,7 @@
             row.id = `file_${record['id']}`;
             row.style.fontSize = '.875rem';
             let cell1 = document.createElement('td');
-            cell1.innerHTML = `<input name="files[]" value="${record['id']}" type="hidden">${fileFigure}`;
+            cell1.innerHTML = fileFigure;
             row.appendChild(cell1);
 
             let cell2 = document.createElement('td');

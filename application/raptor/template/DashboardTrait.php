@@ -37,7 +37,7 @@ trait DashboardTrait
             ['alert' => $alert ?? $this->text('system-no-permission'), 'close' => $this->text('close')]);
     }
     
-    protected function retrieveUsers(?int ...$ids)
+    protected function retrieveUsersDetail(?int ...$ids)
     {
         $users = [];
         try {

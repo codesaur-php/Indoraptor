@@ -189,8 +189,10 @@ class PrivateFilesController extends FilesController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $deleted = $model->deleteById($id);
-            if (empty($deleted)) {
+            $deactivated = $model->deactivateById($id, [
+                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
+            ]);
+            if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
             
@@ -201,7 +203,7 @@ class PrivateFilesController extends FilesController
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "{$record['record_id']} дугаартай бичлэгт зориулсан $id дугаартай {$payload['title']} файлыг устгалаа";
+            $message = "{$record['record_id']} дугаартай бичлэгт зориулсан $id дугаартай {$payload['title']} файлыг идэвхгүй болголоо";
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -210,7 +212,7 @@ class PrivateFilesController extends FilesController
             ], $e->getCode());
             
             $level = LogLevel::ERROR;
-            $message = 'Файлыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $message = 'Файлыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog($table, $level, $message, $context);

@@ -476,7 +476,7 @@ class UsersController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsers($record['created_by'], $record['updated_by']);
+            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
             
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_user_table = (new OrganizationUserModel($this->pdo))->getName();

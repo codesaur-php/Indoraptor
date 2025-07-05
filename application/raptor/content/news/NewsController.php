@@ -20,8 +20,43 @@ class NewsController extends \Raptor\Controller
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
+        $model = new NewsModel($this->pdo);
+        $table = $model->getName();
         
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-index.html');
+        $filters = [];
+        $codes_result = $this->query(
+            "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
+        )->fetchAll();
+        $languages = $this->getLanguages();
+        $filters['code']['title'] = $this->text('language');
+        foreach ($codes_result as $row) {
+            $filters['code']['values'][$row['code']] = "{$languages[$row['code']]} [{$row['code']}]";
+        }
+        $types_result = $this->query(
+            "SELECT DISTINCT (type) FROM $table WHERE is_active=1"
+        )->fetchAll();
+        $filters['type']['title'] = $this->text('type');
+        foreach ($types_result as $row) {
+            $filters['type']['values'][$row['type']] = $row['type'];
+        }
+        $categories_result = $this->query(
+            "SELECT DISTINCT (category) FROM $table WHERE is_active=1"
+        )->fetchAll();
+        $filters['category']['title'] = $this->text('category');
+        foreach ($categories_result as $row) {
+            $filters['category']['values'][$row['category']] = $row['category'];
+        }
+        $filters += [
+            'published' => [
+                'title' => $this->text('status'),
+                'values' => [
+                    0 => 'unpublished',
+                    1 => 'published'
+                ]
+            ]
+        ];
+        
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
         
@@ -35,11 +70,25 @@ class NewsController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $params = $this->getQueryParams() + ['is_active' => 1];
+            $conditions = [];
+            $allowed = ['code', 'type', 'category', 'published', 'is_active'];
+            foreach (\array_keys($params) as $name) {
+                if (\in_array($name, $allowed)) {
+                    $conditions[] = "$name=:$name";
+                }
+            }
+            $where = \implode(' AND ', $conditions);
+            
             $table = (new NewsModel($this->pdo))->getName();
-            $select_news = 
+            $select_pages = 
                 "SELECT id, photo, title, code, type, category, published, published_at, date(created_at) as created_date " .
-                "FROM $table WHERE is_active=1 ORDER BY created_at desc";
-            $news = $this->query($select_news)->fetchAll();
+                "FROM $table WHERE $where ORDER BY created_at desc";
+            $news_stmt = $this->prepare($select_pages);
+            foreach ($params as $name => $value) {
+                $news_stmt->bindValue(":$name", $value);
+            }
+            $news = $news_stmt->execute() ? $news_stmt->fetchAll() : [];
             $files_counts = $this->getFilesCounts($table);
             $this->respondJSON([
                 'status' => 'success',
@@ -105,9 +154,9 @@ class NewsController extends \Raptor\Controller
                 ]);
                 
                 
+                $context['id'] = $id;
                 $level = LogLevel::INFO;
                 $message = "Шинэ мэдээ [{$record['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
-                $context['id'] = $id;
                 
                 $file = new FileController($this->getRequest());
                 $file->setFolder("/$table/$id");
@@ -247,8 +296,7 @@ class NewsController extends \Raptor\Controller
                 $date = $current['updated_at'] ?? $current['created_at'];
                 $count_updated_files =
                     "SELECT id FROM {$filesModel->getName()} " .
-                    "WHERE is_active=1 AND record_id=$id " .
-                    "AND (created_at > '$date' OR updated_at > '$date')";
+                    "WHERE record_id=$id AND (created_at > '$date' OR updated_at > '$date')";
                 $files_changed = $filesModel->prepare($count_updated_files);
                 if ($files_changed->execute() && $files_changed->rowCount() > 0) {
                     $context['updates'][] = 'files';
@@ -295,7 +343,7 @@ class NewsController extends \Raptor\Controller
                 
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/news-update.html',
-                    $context + ['logs' => $logs, 'users' => $this->retrieveUsers()]
+                    $context + ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | News');
                 $dashboard->render();
@@ -399,7 +447,7 @@ class NewsController extends \Raptor\Controller
             
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/news-view.html',
-                $context + ['logs' => $logs, 'users' => $this->retrieveUsers()]
+                $context + ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
             );
             $dashboard->set('title', $this->text('view-record') . ' | News');
             $dashboard->render();
@@ -436,7 +484,8 @@ class NewsController extends \Raptor\Controller
             $context['payload'] = $payload;
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            
+            $context['id'] = $id;
+                    
             $model = new NewsModel($this->pdo);
             $deactivated = $model->deactivateById($id, [
                 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
@@ -452,7 +501,7 @@ class NewsController extends \Raptor\Controller
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "{$payload['title']} - мэдээг устгалаа";
+            $message = "{$payload['title']} - мэдээг идэвхгүй болголоо";
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -461,7 +510,7 @@ class NewsController extends \Raptor\Controller
             ], $e->getCode());
             
             $level = LogLevel::ERROR;
-            $message = 'Мэдээг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('news', $level, $message, $context);

@@ -120,7 +120,6 @@
             {% endif %}
 
             {% set info_uri=('logs-view'|link) ~ '?table=news' ~ '&id=' ~ item['id'] %}
-
             <li class="list-group-item list-group-item-action list-group-item-{{ type }}">
                 <a class="float-left" data-bs-target="#static-modal" data-bs-toggle="modal" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
                 <span class="pl-2 pr-2">
@@ -130,9 +129,9 @@
                     {{ item['message'] }}
                 {% endif %}
                 </span>
-                {% if users[item['created_by']] is defined %}
-                {% set user = users[item['created_by']] %}
-                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ user }}</u></span>
+                {% if users_detail[item['created_by']] is defined %}
+                {% set created_by_detail = users_detail[item['created_by']] %}
+                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ created_by_detail }}</u></span>
                 {% endif %}
                 {% if item['info']['path'] is defined %}
                 <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>
@@ -247,7 +246,7 @@
             row.id = `file_${record['id']}`;
             row.style.fontSize = '.875rem';
             let cell1 = document.createElement('td');
-            cell1.innerHTML = `<input name="files[]" value="${record['id']}" type="hidden">${fileFigure}`;
+            cell1.innerHTML = fileFigure;
             row.appendChild(cell1);
 
             let cell2 = document.createElement('td');

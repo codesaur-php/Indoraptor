@@ -28,7 +28,7 @@ class TemplateController extends \Raptor\Controller
             $model = new MenuModel($this->pdo);
             $menu = $model->getRows(['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']);
             
-            $users = $this->retrieveUsers();
+            $users = $this->retrieveUsersDetail();
             foreach ($menu as &$item) {
                 if (isset($users[$item['created_by']])) {
                     $item['created_by'] = $users[$item['created_by']];

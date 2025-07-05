@@ -68,6 +68,7 @@ class TextInitial
         $model->insert(['keyword' => 'female', 'type' => 'sys-defined'], ['mn' => ['text' => 'Эмэгтэй'], 'en' => ['text' => 'Female']]);
         $model->insert(['keyword' => 'file', 'type' => 'sys-defined'], ['mn' => ['text' => 'Файл'], 'en' => ['text' => 'File']]);
         $model->insert(['keyword' => 'files', 'type' => 'sys-defined'], ['en' => ['text' => 'Files'], 'mn' => ['text' => 'Файлууд']]);
+        $model->insert(['keyword' => 'filter', 'type' => 'sys-defined'], ['en' => ['text' => 'Filter'], 'mn' => ['text' => 'Шүүлтүүр']]);
         $model->insert(['keyword' => 'first', 'type' => 'sys-defined'], ['en' => ['text' => 'First'], 'mn' => ['text' => 'Эхний']]);
         $model->insert(['keyword' => 'firstname', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэр'], 'en' => ['text' => 'First Name']]);
         $model->insert(['keyword' => 'fixed', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бэхэлсэн'], 'en' => ['text' => 'Fixed']]);

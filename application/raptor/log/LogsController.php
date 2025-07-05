@@ -34,10 +34,7 @@ class LogsController extends \Raptor\Controller
             }
             $dashboard =  $this->twigDashboard(
                 \dirname(__FILE__) . '/index-list-logs.html',
-                [
-                    'logs' => $logs,
-                    'users' => $this->retrieveUsers()
-                ]
+                ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
             );
             $dashboard->set('title', $this->text('log'));
             $dashboard->render();
@@ -67,9 +64,17 @@ class LogsController extends \Raptor\Controller
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $logdata = $logger->getLogById($id);
-            if (isset($logdata['created_by']) && $logdata['created_by'] !== null) {
-                $logdata['created_by'] = $this->retrieveUsers($logdata['created_by'])[$logdata['created_by']];
+            
+            $users_table = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $select_user = "SELECT username,first_name,last_name,email FROM $users_table WHERE id=:id LIMIT 1";
+            $pdo_stmt = $this->prepare($select_user);
+            if ($pdo_stmt->execute([':id' => $logdata['created_by']])
+                && $pdo_stmt->rowCount() > 0
+            ) {
+                $row = $pdo_stmt->fetch();
+                $logdata['created_by_detail'] = "{$row['username']} » {$row['first_name']} {$row['last_name']} ({$row['email']})";
             }
+            
             \array_walk_recursive($logdata, [$this, 'hideSecret']);
             (new TwigTemplate(
                 \dirname(__FILE__) . '/retrieve-log-modal.html',
