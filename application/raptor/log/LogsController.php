@@ -56,7 +56,7 @@ class LogsController extends \Raptor\Controller
             if ($id == null || !\is_numeric($id)
                 || empty($table) || !$this->hasTable("{$table}_log")
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             } else {
                 $id = (int) $id;
             }
@@ -95,6 +95,22 @@ class LogsController extends \Raptor\Controller
         }
     }
     
+    public function context(string $table): array
+    {
+        try {
+            $logger = new Logger($this->pdo);
+            $logger->setTable($table);
+            $condition = $this->getParsedBody();
+            $logs = $logger->getLogs();
+            \array_walk_recursive($logs, [self::class, 'hideSecret']);
+            $this->respondJSON($logs);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
+            $this->respondJSON(['error' => $e->getMessage()], $e->getCode());
+            exit;
+        }
+    }
+    
     private function getLogsFrom(string $table, int $limit = 1000): array
     {
         try {
@@ -107,18 +123,6 @@ class LogsController extends \Raptor\Controller
         } catch (\Throwable $e) {
             $this->errorLog($e);
             return [];
-        }
-    }
-    
-    public static function hideSecret(&$v, $k)
-    {
-        $key = \strtoupper($k);
-        if (!empty($key)
-            && (\in_array($key, ['JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'])
-                || \str_contains($key, 'PASSWORD')
-            )
-        ) {
-            $v = '*** hidden info ***';
         }
     }
 }

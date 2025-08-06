@@ -24,14 +24,14 @@ class LanguageController extends \Raptor\Controller
                     || empty($payload['code'])
                     || empty($payload['full'])
                 ) {
-                    throw new \Exception($this->text('invalid-values'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-values'), 400);
                 }
                 $context['payload'] = $payload;
                 
                 $model = new LanguageModel($this->pdo);
                 $mother = $model->getRowBy(['code' => $payload['copy'], 'is_active' => 1]);
                 if (!isset($mother['code'])) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $languages = $model->retrieve();
@@ -129,7 +129,7 @@ class LanguageController extends \Raptor\Controller
                 if (empty($payload['code'])
                     || empty($payload['full'])
                 ) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 $record = [
                     'code' => $payload['code'],
@@ -210,7 +210,7 @@ class LanguageController extends \Raptor\Controller
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             

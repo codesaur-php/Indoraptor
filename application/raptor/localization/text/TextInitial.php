@@ -261,7 +261,7 @@ class TextInitial
         $model->insert(['keyword' => 'social-network', 'type' => 'sys-defined'], ['en' => ['text' => 'Social network'], 'mn' => ['text' => 'Олон нийтийн сүлжээ']]);
         $model->insert(['keyword' => 'slide', 'type' => 'sys-defined'], ['en' => ['text' => 'Slide'], 'mn' => ['text' => 'Слайд']]);
         $model->insert(['keyword' => 'style', 'type' => 'sys-defined'], ['en' => ['text' => 'Style'], 'mn' => ['text' => 'Загвар']]);
-        $model->insert(['keyword' => 'version', 'type' => 'sys-defined'], ['en' => ['text' => 'Version'], 'mn' => ['text' => 'Цуврал']]);
+        $model->insert(['keyword' => 'version', 'type' => 'sys-defined'], ['en' => ['text' => 'Version'], 'mn' => ['text' => 'Хувилбар']]);
         $model->insert(['keyword' => 'icon', 'type' => 'sys-defined'], ['en' => ['text' => 'Icon'], 'mn' => ['text' => 'Дүрс']]);
         $model->insert(['keyword' => 'options', 'type' => 'sys-defined'], ['en' => ['text' => 'Options'], 'mn' => ['text' => 'Сонголтууд']]);
         $model->insert(['keyword' => 'option', 'type' => 'sys-defined'], ['en' => ['text' => 'Option'], 'mn' => ['text' => 'Сонголт']]);

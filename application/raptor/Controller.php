@@ -160,20 +160,19 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     protected final function indolog(string $table, string $level, string $message, array $context = [], ?int $created_by = null)
     {
         try {
-            if (!isset($context['server_request'])) {
-                $context['server_request'] = [
-                    'code' => $this->getLanguageCode(),
-                    'method' => $this->getRequest()->getMethod(),
-                    'uri' => (string) $this->getRequest()->getUri()
-                ];
-                if ($this->getRequest()->getServerParams()['REMOTE_ADDR']) {
-                    $context['server_request']['remote_addr'] = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
-                }
+            if (empty($table) || empty($message)) {
+                throw new \InvalidArgumentException("Log table info can't be empty!");
             }
             
-            if (empty($table) || empty($message)) {
-                throw new \Exception("Log table info can't be empty!");
+            $server_request = [
+                'code' => $this->getLanguageCode(),
+                'method' => $this->getRequest()->getMethod(),
+                'uri' => (string) $this->getRequest()->getUri()
+            ];
+            if ($this->getRequest()->getServerParams()['REMOTE_ADDR']) {
+                $server_request = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
             }
+            $context['server_request'] = $server_request;
             
             $logger = new Logger($this->pdo);
             $logger->setTable($table);

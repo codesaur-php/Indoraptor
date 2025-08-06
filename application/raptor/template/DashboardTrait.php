@@ -47,7 +47,7 @@ trait DashboardTrait
             if ($had_condition) {
                 $ids = \array_filter($ids, function ($v) { return $v !== null; });
                 if (empty($ids)) {
-                    throw new \Exception(__FUNCTION__ . ': invalid arguments!');
+                    throw new \InvalidArgumentException(__FUNCTION__ . ': invalid arguments!');
                 }
                 \array_walk($ids, function(&$v) { $v = "id=$v"; });
                 $select_users .= ' WHERE ' . \implode(' OR ', $ids);

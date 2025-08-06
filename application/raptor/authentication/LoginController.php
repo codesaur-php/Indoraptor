@@ -163,7 +163,7 @@ class LoginController extends \Raptor\Controller
                 $passwordRe = '';
             }
             if (empty($password) || $password != $passwordRe) {
-                throw new \Exception($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new \InvalidArgumentException($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
             } else {
                 unset($payload['password_re']);
             }
@@ -186,9 +186,9 @@ class LoginController extends \Raptor\Controller
             $content = $reference['localized'];
             
             if (empty($payload['email']) || empty($payload['username'])) {
-                throw new \Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new \InvalidArgumentException('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
             } elseif (\filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false) {
-                throw new \Exception('Please provide valid email address.', StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new \InvalidArgumentException('Please provide valid email address.', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
             $users = new UsersModel($this->pdo);
@@ -255,7 +255,7 @@ class LoginController extends \Raptor\Controller
             if (empty($payload['email'])
                 || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
             ) {
-                throw new \Exception('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new \InvalidArgumentException('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
             $referenceModel = new ReferenceModel($this->pdo);

@@ -283,7 +283,7 @@ class PagesController extends \Raptor\Controller
             $context['record'] = $record;
             
             $logger = new Logger($this->pdo);
-            $logger->setTable($model->getName());
+            $logger->setTable('pages');
             $condition = ['ORDER BY' => 'id Desc'];
             if ($this->getDriverName() == 'pgsql') {
                 $condition['WHERE'] =
@@ -427,7 +427,7 @@ class PagesController extends \Raptor\Controller
                 $context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
                 
                 $logger = new Logger($this->pdo);
-                $logger->setTable($table);
+                $logger->setTable('pages');
                 $condition = ['ORDER BY' => 'id Desc'];
                 if ($this->getDriverName() == 'pgsql') {
                     $condition['WHERE'] =
@@ -449,7 +449,7 @@ class PagesController extends \Raptor\Controller
                 $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
-                $message = "{$context['record']['title']} - хуудасны мэдээллийг шинэчлэхээр нээж байна";
+                $message = "{$current['title']} - хуудасны мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -480,7 +480,7 @@ class PagesController extends \Raptor\Controller
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             

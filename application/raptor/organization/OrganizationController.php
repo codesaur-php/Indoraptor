@@ -69,7 +69,7 @@ class OrganizationController extends \Raptor\Controller
                 if (empty($parsedBody['alias'])
                     || empty($parsedBody['name'])
                 ) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $record = [
@@ -187,7 +187,7 @@ class OrganizationController extends \Raptor\Controller
                 if (empty($payload['alias'])
                     || empty($payload['name'])
                 ) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $record = [
@@ -282,7 +282,7 @@ class OrganizationController extends \Raptor\Controller
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             

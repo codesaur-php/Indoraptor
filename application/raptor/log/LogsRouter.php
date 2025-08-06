@@ -10,5 +10,6 @@ class LogsRouter extends Router
     {
         $this->GET('/dashboard/logs', [LogsController::class, 'index'])->name('logs');
         $this->GET('/dashboard/logs/view', [LogsController::class, 'view'])->name('logs-view');
+        $this->POST('/dashboard/logs/{table}/context', [LogsController::class, 'context'])->name('logs-context');
     }
 }

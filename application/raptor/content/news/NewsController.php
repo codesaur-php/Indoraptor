@@ -327,7 +327,7 @@ class NewsController extends \Raptor\Controller
                 $context['max_file_size'] = $this->getMaximumFileUploadSize();
                 
                 $logger = new Logger($this->pdo);
-                $logger->setTable($table);
+                $logger->setTable('news');
                 $condition = ['ORDER BY' => 'id Desc'];
                 if ($this->getDriverName() == 'pgsql') {
                     $condition['WHERE'] =
@@ -349,7 +349,7 @@ class NewsController extends \Raptor\Controller
                 $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
-                $message = "{$context['record']['title']} - мэдээг шинэчлэхээр нээж байна";
+                $message = "{$current['title']} - мэдээг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -427,7 +427,7 @@ class NewsController extends \Raptor\Controller
             $context['record'] = $record;
             
             $logger = new Logger($this->pdo);
-            $logger->setTable($model->getName());
+            $logger->setTable('news');
             $condition = ['ORDER BY' => 'id Desc'];
             if ($this->getDriverName() == 'pgsql') {
                 $condition['WHERE'] =
@@ -479,7 +479,7 @@ class NewsController extends \Raptor\Controller
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             

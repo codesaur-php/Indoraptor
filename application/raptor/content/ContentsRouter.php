@@ -14,7 +14,8 @@ class ContentsRouter extends Router
         $this->GET('/dashboard/references/view/{table}/{uint:id}', [ReferencesController::class, 'view'])->name('reference-view');
         $this->DELETE('/dashboard/references/delete', [ReferencesController::class, 'delete'])->name('reference-delete');
 
-        $this->GET_POST('/dashboard/settings', [SettingsController::class, 'index'])->name('settings');
+        $this->GET('/dashboard/settings', [SettingsController::class, 'index'])->name('settings');
+        $this->POST('/dashboard/settings', [SettingsController::class, 'post']);
         $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
     
         $this->GET('/dashboard/pages', [PagesController::class, 'index'])->name('pages');

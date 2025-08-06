@@ -123,7 +123,7 @@ class PrivateFilesController extends FilesController
             $payload = $this->getParsedBody();
             $context['payload'] = $payload;
             if (empty($payload)) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
             $record = [];
@@ -179,7 +179,7 @@ class PrivateFilesController extends FilesController
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);

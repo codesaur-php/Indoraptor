@@ -172,6 +172,7 @@
         <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
     </a>
 </div>
+{% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
     <label class="form-label fw-bolder">{{ 'log'|text }} <i class="bi bi-clock-history"></i></label>
@@ -214,6 +215,7 @@
         {% endfor %}
     </ul>
 </div>
+{% endif %}
 <script type="text/javascript">
     function copy(elem) {
         let text = document.getElementById(elem);

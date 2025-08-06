@@ -48,7 +48,7 @@
                 {% for code,title in localization.language %}
                     <li class="nav-item">
                         <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
-                            {{ 'content'|text }}
+                            {{ 'version'|text }}
                             {% set flag = code == 'en' ? 'us' : code %}
                             <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12">
                         </a>
@@ -64,12 +64,8 @@
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                     <div class="form-group mt-2">
-                        <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
-                        <textarea class="form-control" name="short[{{ code }}]"></textarea>
-                    </div>
-                    <div class="form-group mt-2">
-                        <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
-                        <textarea class="form-control" name="full[{{ code }}]" required rows="10"></textarea>
+                        <label class="form-label">{{ 'content'|text }} ({{ code }})</label>
+                        <textarea class="form-control" name="content[{{ code }}]" required rows="10"></textarea>
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>

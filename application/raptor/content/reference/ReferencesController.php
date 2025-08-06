@@ -4,6 +4,9 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
+use Raptor\Log\Logger;
+use Raptor\Log\LogsController;
+
 class ReferencesController extends \Raptor\Controller
 {
     use \Raptor\Template\DashboardTrait;
@@ -15,7 +18,15 @@ class ReferencesController extends \Raptor\Controller
             return;
         }
         
-        $reference_likes = $this->query("SHOW TABLES LIKE 'reference_%'")->fetchAll();
+        if ($this->getDriverName() == 'pgsql') {
+            $query = 
+                'SELECT tablename FROM pg_catalog.pg_tables ' .
+                "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like 'reference_%'";
+        } else {
+            $query = 'SHOW TABLES LIKE ' . $this->quote('reference_%');
+        }
+
+        $reference_likes = $this->query($query)->fetchAll();
         $names = [];
         foreach ($reference_likes as $name) {
             $names[] = \reset($name);
@@ -79,7 +90,7 @@ class ReferencesController extends \Raptor\Controller
                 if (empty($payload['keyword'])
                     || empty($payload['category'])
                 ) {
-                    throw new \Exception($this->text('invalid-values'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-values'), 400);
                 }
                 
                 $initials = \get_class_methods(ReferenceInitial::class);
@@ -91,11 +102,13 @@ class ReferencesController extends \Raptor\Controller
                 
                 $reference = new ReferenceModel($this->pdo);
                 $reference->setTable($table);
-                $id = $reference->insert($record, $content);
-                if ($id == false) {
+                $record['created_by'] = $this->getUserId();
+                $insert = $reference->insert($record, $content);
+                if (!isset($insert['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                $context['record'] = $id;
+                $id = $insert['id'];
+                $context['id'] = $id;
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -144,12 +157,31 @@ class ReferencesController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             
+            $logger = new Logger($this->pdo);
+            $logger->setTable('content');
+            $condition = ['ORDER BY' => 'id Desc'];
+            if ($this->getDriverName() == 'pgsql') {
+                $condition['WHERE'] =
+                    '(context::json->>\'id\'=' . $this->quote($id) .
+                    ' AND context::json->>\'model\'=' . $this->quote($context['model']) .
+                    ' AND context::json->>\'table\'=' . $this->quote($context['table']);
+            } else {
+                $condition['WHERE'] =
+                    'JSON_EXTRACT(context, "$.id")=' . $this->quote($id) .
+                    ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']) .
+                    ' AND JSON_EXTRACT(context, "$.table")=' . $this->quote($context['table']);
+            }
+            $logs = $logger->getLogs($condition);
+            \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
+
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/reference-view.html',
-                ['table' => $table, 'record' => $record]
+                [
+                    'table' => $table, 'record' => $record,
+                    'logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()
+                ]
             );
             $dashboard->set('title', $this->text('view-record') . ' | ' . \ucfirst($table));
             $dashboard->render();
@@ -179,26 +211,45 @@ class ReferencesController extends \Raptor\Controller
                 throw new \Exception("Table reference_$table not found", 404);
             }
             
+            $reference = new ReferenceModel($this->pdo);
+            $reference->setTable($table);
+            $current = $reference->getById($id);
+            if (empty($current)) {
+                throw new \Exception($this->text('no-record-selected'), 400);
+            }
+            $context['record'] = $current;
+            
             if ($is_submit) {
+                $payload = $this->getParsedBody();
+                $context['payload'] = $payload;
+                if (empty($payload)) {
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
+
                 $record = [];
                 $content = [];
-                $payload = $this->getParsedBody();
+                $context['updates'] = [];
                 foreach ($payload as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
+                            if ($current['localized'][$index][$key] != $value) {
+                                $context['updates'][] = "{$index}_{$key}";
+                            }
                         }
                     } else {
                         $record[$index] = $value;
+                        if ($current[$index] != $value) {
+                            $context['updates'][] = $index;
+                        }
                     }
                 }
-                $context['payload'] = $payload;
-                if (empty($payload)) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                if (empty($context['updates'])) {
+                    throw new \InvalidArgumentException('No update!');
                 }
                 
-                $reference = new ReferenceModel($this->pdo);
-                $reference->setTable($table);
+                $record['updated_at'] = \date('Y-m-d H:i:s');
+                $record['updated_by'] = $this->getUserId();
                 $updated = $reference->updateById($id, $record, $content);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
@@ -213,23 +264,35 @@ class ReferencesController extends \Raptor\Controller
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $reference = new ReferenceModel($this->pdo);
-                $reference->setTable($table);
-                $record = $reference->getById($id);
-                if (empty($record)) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                $logger = new Logger($this->pdo);
+                $logger->setTable('content');
+                $condition = ['ORDER BY' => 'id Desc'];
+                if ($this->getDriverName() == 'pgsql') {
+                    $condition['WHERE'] =
+                        '(context::json->>\'id\')::bigint=' . $id .
+                        ' AND context::json->>\'model\'=' . $this->quote($context['model']) .
+                        ' AND context::json->>\'table\'=' . $this->quote($context['table']);
+                } else {
+                    $condition['WHERE'] =
+                        'JSON_EXTRACT(context, "$.id")=' . $id .
+                        ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']) .
+                        ' AND JSON_EXTRACT(context, "$.table")=' . $this->quote($context['table']);
                 }
-                $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
-                $context['record'] = $record;
+                $logs = $logger->getLogs($condition);
+                \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
+                
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/reference-update.html',
-                    ['table' => $table, 'record' => $record]
+                    [
+                        'table' => $table, 'record' => $current,
+                        'logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()
+                    ]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
-                $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна";
+                $message = "$table хүснэгтийн $id дугаартай [{$current['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -261,13 +324,15 @@ class ReferencesController extends \Raptor\Controller
                 || !isset($payload['keyword'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             } elseif (!$this->hasTable('reference_' . \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['table']))) {
-                throw new \Exception("Table reference_{$payload['table']} not found", 404);
+                throw new \InvalidArgumentException("Table reference_{$payload['table']} not found", 404);
             }
             
             $table = $payload['table'];
+            $context['table'] = $table;
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $context['id'] = $id;
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
             $deleted = $reference->deleteById($id);

@@ -37,7 +37,7 @@ class TextController extends \Raptor\Controller
                 if (empty($record['keyword'])
                     || !\in_array($table, $tables)
                 ) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $found = $this->findByKeyword($tables, $payload['keyword']);
@@ -96,7 +96,7 @@ class TextController extends \Raptor\Controller
             
             $tables = $this->getTextTableNames();
             if (!\in_array($table, $tables)) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
             $model = new TextModel($this->pdo);
@@ -137,7 +137,7 @@ class TextController extends \Raptor\Controller
             
             $tables = $this->getTextTableNames();
             if (!\in_array($table, $tables)) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
             $model = new TextModel($this->pdo);
@@ -163,7 +163,7 @@ class TextController extends \Raptor\Controller
                 $context['payload'] = $payload;
                 
                 if (empty($record['keyword'])) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 $found = $this->findByKeyword($tables, $payload['keyword']);
                 if (isset($found['table']) && isset($found['id'])
@@ -228,7 +228,7 @@ class TextController extends \Raptor\Controller
                 || !isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             

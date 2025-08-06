@@ -32,7 +32,7 @@ class ReferenceModel extends LocalizedModel
     {
         $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $name);
         if (empty($table)) {
-            throw new \Exception(__CLASS__ . ': Table name must be provided', 1103);
+            throw new \InvalidArgumentException(__CLASS__ . ': Table name must be provided', 1103);
         }
         
         parent::setTable("reference_$table");

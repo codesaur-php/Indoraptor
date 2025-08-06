@@ -5,6 +5,8 @@ namespace Raptor\Content;
 use Psr\Log\LogLevel;
 
 use Raptor\File\FileController;
+use Raptor\Log\Logger;
+use Raptor\Log\LogsController;
 
 class SettingsController extends \Raptor\Controller
 {
@@ -12,9 +14,34 @@ class SettingsController extends \Raptor\Controller
     
     public function index()
     {
+        if (!$this->isUserCan('system_content_settings')) {
+            $this->dashboardProhibited(null, 401)->render();
+            return;
+        }
+        
+        $dashboard = $this->twigDashboard(
+            \dirname(__FILE__) . '/settings.html',
+            [
+                'record' => (new SettingsModel($this->pdo))->retrieve()
+            ]
+        );
+        $dashboard->set('title', $this->text('settings'));
+        $dashboard->render();
+
+        $this->indolog(
+            'content',
+            LogLevel::NOTICE,
+            'Системийн тохируулгыг нээж үзэж байна',
+            ['model' => SettingsModel::class]
+        );
+    }
+    
+    public function post()
+    {
         $context = ['model' => SettingsModel::class];
                 
         $model = new SettingsModel($this->pdo);
+        $current = $model->getRowBy(['p.is_active' => 1]);
         if ($this->getRequest()->getMethod() == 'POST') {
             try {
                 if (!$this->isUserCan('system_content_settings')) {
@@ -24,27 +51,42 @@ class SettingsController extends \Raptor\Controller
                 $record = [];
                 $content = [];
                 $payload = $this->getParsedBody();
+                $context['updates'] = [];
+                $is_update = isset($current['id']);
                 foreach ($payload as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
+                            if (($current['localized'][$index][$key] ?? $value) != $value) {
+                                $context['updates'][] = "{$index}_{$key}";
+                            }
                         }
                     } else {
                         $record[$index] = $value;
+                        if (($current[$index] ?? $value) != $value) {
+                            $context['updates'][] = $index;
+                        }
                     }
                 }
+                if ($is_update) {
+                    if (empty($context['updates'])) {
+                        throw new \InvalidArgumentException('No update!');
+                    }
+                } elseif ($this->isArrayAllEmpty($record + $content)) {
+                    throw new \InvalidArgumentException('No inputs!');
+                }
+                
+                if (!empty($current['config'])) {
+                    if (\json_decode($current['config']) == null) {
+                        throw new \InvalidArgumentException('Extra config must be valid JSON!', 400);
+                    }
+                }
+                            
                 $context['payload'] = $payload;
                 
-                if (!empty($record['config'])) {
-                    if (\json_decode($record['config']) == null) {
-                        throw new \Exception('Extra config must be valid JSON!', 400);
-                    }
-                }
-                
-                $current = $model->getRowBy(['p.is_active' => 1]);                
                 if (isset($current['id'])) {
                     $id = $current['id'];
-                    $updated = $model->updateById($id, $record, $content);
+                    $updated = $model->updateById($id, $current, $content);
                     if (empty($updated)) {
                         throw new \Exception($this->text('no-record-selected'));
                     }
@@ -53,8 +95,8 @@ class SettingsController extends \Raptor\Controller
                 } else {
                     if (empty($content)) {
                         $content[$this->getLanguageCode()]['title'] = '';
-                    }
-                    $id = $model->insert($record, $content);
+                    }   
+                    $id = $model->insert($current, $content);
                     if ($id == false) {
                         throw new \Exception($this->text('record-insert-error'));
                     }
@@ -72,6 +114,7 @@ class SettingsController extends \Raptor\Controller
                 
                 $level = LogLevel::ERROR;
                 $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
+                $context['error'] = $e->getMessage();
             } finally {
                 $this->indolog('content', $level, $message, $context);
             }
@@ -80,10 +123,136 @@ class SettingsController extends \Raptor\Controller
                 $this->dashboardProhibited(null, 401)->render();
                 return;
             }
-
-            $record = $model->getRowBy(['p.is_active' => 1]);
             
-            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record ?? []]);
+            $logger = new Logger($this->pdo);
+            $logger->setTable('content');
+            $condition = ['ORDER BY' => 'id Desc'];
+            if ($this->getDriverName() == 'pgsql') {
+                $condition['WHERE'] =
+                    'context::json->>\'model\'=' . $this->quote($context['model']);
+            } else {
+                $condition['WHERE'] =
+                    'JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']);
+            }
+            $logs = $logger->getLogs($condition);
+            \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
+            
+            $dashboard = $this->twigDashboard(
+                \dirname(__FILE__) . '/settings.html',
+                ['record' => $current ?? [], 'logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
+            );
+            $dashboard->set('title', $this->text('settings'));
+            $dashboard->render();
+
+            $this->indolog('content', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
+        }
+    }
+    
+    public function index11()
+    {
+        $context = ['model' => SettingsModel::class];
+                
+        $model = new SettingsModel($this->pdo);
+        $current = $model->getRowBy(['p.is_active' => 1]);
+        if ($this->getRequest()->getMethod() == 'POST') {
+            try {
+                if (!$this->isUserCan('system_content_settings')) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
+                
+                $record = [];
+                $content = [];
+                $payload = $this->getParsedBody();
+                $context['updates'] = [];
+                $is_update = isset($current['id']);
+                foreach ($payload as $index => $value) {
+                    if (\is_array($value)) {
+                        foreach ($value as $key => $value) {
+                            $content[$key][$index] = $value;
+                            if (($current['localized'][$index][$key] ?? $value) != $value) {
+                                $context['updates'][] = "{$index}_{$key}";
+                            }
+                        }
+                    } else {
+                        $record[$index] = $value;
+                        if (($current[$index] ?? $value) != $value) {
+                            $context['updates'][] = $index;
+                        }
+                    }
+                }
+                if ($is_update) {
+                    if (empty($context['updates'])) {
+                        throw new \InvalidArgumentException('No update!');
+                    }
+                } elseif ($this->isArrayAllEmpty($record + $content)) {
+                    throw new \InvalidArgumentException('No inputs!');
+                }
+                
+                if (!empty($current['config'])) {
+                    if (\json_decode($current['config']) == null) {
+                        throw new \InvalidArgumentException('Extra config must be valid JSON!', 400);
+                    }
+                }
+                            
+                $context['payload'] = $payload;
+                
+                if (isset($current['id'])) {
+                    $id = $current['id'];
+                    $updated = $model->updateById($id, $current, $content);
+                    if (empty($updated)) {
+                        throw new \Exception($this->text('no-record-selected'));
+                    }
+                    $notify = 'primary';
+                    $notice = $this->text('record-update-success');
+                } else {
+                    if (empty($content)) {
+                        $content[$this->getLanguageCode()]['title'] = '';
+                    }   
+                    $id = $model->insert($current, $content);
+                    if ($id == false) {
+                        throw new \Exception($this->text('record-insert-error'));
+                    }
+                    $notify = 'success';
+                    $notice = $this->text('record-insert-success');
+                }
+                $context['record']['id'] = $id;
+                
+                $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
+
+                $level = LogLevel::INFO;
+                $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
+            } catch (\Throwable $e) {
+                echo $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                
+                $level = LogLevel::ERROR;
+                $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
+                $context['error'] = $e->getMessage();
+            } finally {
+                $this->indolog('content', $level, $message, $context);
+            }
+        } else {
+            if (!$this->isUserCan('system_content_settings')) {
+                $this->dashboardProhibited(null, 401)->render();
+                return;
+            }
+            
+            $logger = new Logger($this->pdo);
+            $logger->setTable('content');
+            $condition = ['ORDER BY' => 'id Desc'];
+            if ($this->getDriverName() == 'pgsql') {
+                $condition['WHERE'] =
+                    'context::json->>\'model\'=' . $this->quote($context['model']);
+            } else {
+                $condition['WHERE'] =
+                    'JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']);
+            }
+            $logs = $logger->getLogs($condition);
+            \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
+            
+            $dashboard = $this->twigDashboard(
+                \dirname(__FILE__) . '/settings.html',
+                ['record' => $current ?? [], 'logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
+            );
             $dashboard->set('title', $this->text('settings'));
             $dashboard->render();
 
@@ -103,7 +272,6 @@ class SettingsController extends \Raptor\Controller
             $model = new SettingsModel($this->pdo);
             $current_record = $model->getRowBy(['p.is_active' => 1]) ?? [];            
             $current_favico_file = \basename($current_record['favico'] ?? '');
-            $current_shortcut_icon_file = \basename($current_record['shortcut_icon'] ?? '');
             $current_apple_touch_icon_file = \basename($current_record['apple_touch_icon'] ?? '');
             
             $file = new FileController($this->getRequest());
@@ -153,24 +321,6 @@ class SettingsController extends \Raptor\Controller
             }
             
             $file->allowImageOnly();
-            $shortcut_icon = $file->moveUploaded('shortcut_icon', 'content');
-            if ($shortcut_icon) {
-                $record['shortcut_icon'] = $shortcut_icon['path'];
-            }
-            if (!empty($current_shortcut_icon_file)) {
-                if ($file->getLastError() == -1) {
-                    $file->tryDeleteFile($current_shortcut_icon_file, 'content');
-                    $record['shortcut_icon'] = '';
-                } elseif (isset($record['shortcut_icon'])
-                    && \basename($record['shortcut_icon']) != $current_shortcut_icon_file
-                ) {
-                    $file->tryDeleteFile($current_shortcut_icon_file, 'content');
-                }
-            }
-            if (isset($record['shortcut_icon'])) {
-                $context['record']['shortcut_icon'] = $record['shortcut_icon'];
-            }
-            
             $apple_touch_icon = $file->moveUploaded('apple_touch_icon', 'content');
             if ($apple_touch_icon) {
                 $record['apple_touch_icon'] = $apple_touch_icon['path'];
@@ -220,5 +370,21 @@ class SettingsController extends \Raptor\Controller
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
+    }
+    
+    protected function isArrayAllEmpty($array): bool
+    {
+        foreach ($array as $value) {
+            if (\is_array($value)) {
+                if (!$this->isArrayAllEmpty($value)) {
+                    return false;
+                }
+            } elseif ($value !== null
+                && !(\is_string($value) && \trim($value) === '')
+            ) {
+                return false;
+            }
+        }
+        return true;
     }
 }

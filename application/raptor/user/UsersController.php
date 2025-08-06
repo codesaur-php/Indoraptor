@@ -124,7 +124,7 @@ class UsersController extends \Raptor\Controller
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
                     || \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $record = [
@@ -234,7 +234,7 @@ class UsersController extends \Raptor\Controller
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
                     || \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
-                    throw new \Exception($this->text('invalid-request'), 400);
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $record = [
@@ -528,7 +528,7 @@ class UsersController extends \Raptor\Controller
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
@@ -575,7 +575,7 @@ class UsersController extends \Raptor\Controller
             }
 
             if (!\in_array($table, ['forgot', 'newbie'])) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
             if ($table == 'forgot') {
@@ -626,7 +626,7 @@ class UsersController extends \Raptor\Controller
             if (empty($id)
                 || !\filter_var($id, \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context += ['payload' => $parsedBody, 'id' => $id];
             
@@ -733,7 +733,7 @@ class UsersController extends \Raptor\Controller
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context += ['payload' => $payload];
             
@@ -779,7 +779,7 @@ class UsersController extends \Raptor\Controller
             if (empty($params['id'])
                 || \filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $id = (int) $params['id'];
             $context['id'] = $id;
@@ -928,7 +928,7 @@ class UsersController extends \Raptor\Controller
             if (empty($params['user_id'])
                 || \filter_var($params['user_id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $user_id = (int) $params['user_id'];
             

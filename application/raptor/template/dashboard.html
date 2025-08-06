@@ -4,12 +4,10 @@
     <head>
         <meta charset="utf-8">
         <title>{{ (title is not empty ? title : 'dashboard'|text)|e }}</title>
-        <meta name="robots" content="index,follow">
+        <meta name="robots" content="noindex, nofollow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if description is not empty %}<meta name="description" content="{{ description|e }}">{% endif %}
-        {% if keywords is not empty %}<meta name="keywords" content="{{ keywords|e }}">{% endif %}
         {% if favico is not empty %}<link rel="icon" href="{{ favico }}" type="image/x-icon">{% endif %}
-        {% if shortcut_icon is not empty %}<link rel="shortcut icon" href="{{ shortcut_icon }}" type="image/png">{% endif %}
         {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
         {% if config['author'] is not empty %}<meta name="author" content="{{ config['author'] }}">{% endif %}
         {% if config['generator'] is not empty %}<meta name="generator" content="{{ config['generator']|e }}">{% endif %}

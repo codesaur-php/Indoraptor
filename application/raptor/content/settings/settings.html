@@ -31,7 +31,7 @@
         <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code]|e }}" maxlength="70" id="title_{{ code }}" autocomplete="off">
+                    <input class="form-control" name="title[{{ code }}]" value="{{ record['localized']['title'][code]|e }}" maxlength="70" id="title_{{ code }}" autocomplete="off">
                     <label for="title_{{ code }}">
                         {{ 'title'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -42,7 +42,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code]|e }}" maxlength="255" id="description_{{ code }}" autocomplete="off">
+                    <input class="form-control" name="description[{{ code }}]" value="{{ record['localized']['description'][code]|e }}" maxlength="255" id="description_{{ code }}" autocomplete="off">
                     <label for="description_{{ code }}">
                         {{ 'description'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -53,7 +53,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:200px">{{ record['content']['urgent'][code] }}</textarea>
+                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:200px">{{ record['localized']['urgent'][code] }}</textarea>
                     <label for="urgent_{{ code }}">
                         {{ 'urgent'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -62,10 +62,6 @@
                 </div>
             {% endfor %}
             <hr>
-            <div class="form-floating mt-2">
-                <input class="form-control" name="keywords" value="{{ record['keywords']|e }}" maxlength="255" id="keywords" autocomplete="off">
-                <label for="keywords">SEO search keywords</label>
-            </div>
             <div class="form-floating mt-2">
                 <input class="form-control" name="email" type="email" value="{{ record['email']|e }}" maxlength="70" id="email" autocomplete="off">
                 <label for="email">{{ 'email'|text }}</label>
@@ -77,7 +73,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:200px">{{ record['content']['contact'][code] }}</textarea>
+                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:200px">{{ record['localized']['contact'][code] }}</textarea>
                     <label for="contact_{{ code }}">
                         {{ 'contact'|text }}{% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
@@ -87,7 +83,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="address[{{ code }}]" id="address_{{ code }}" style="height:120px">{{ record['content']['address'][code] }}</textarea>
+                    <textarea class="form-control" name="address[{{ code }}]" id="address_{{ code }}" style="height:120px">{{ record['localized']['address'][code] }}</textarea>
                     <label for="address_{{ code }}">
                         {{ 'address'|text }}{% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
@@ -97,7 +93,7 @@
             <hr>
             {% for code,lang in localization.language %}
                 <div class="form-floating mt-2">
-                    <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code]|e }}" maxlength="255" id="copyright_{{ code }}" autocomplete="off">
+                    <input class="form-control" name="copyright[{{ code }}]" value="{{ record['localized']['copyright'][code]|e }}" maxlength="255" id="copyright_{{ code }}" autocomplete="off">
                     <label for="copyright_{{ code }}">
                         Copyright{% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
@@ -122,16 +118,16 @@
                             <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ lang|e }}">
                         </label>
                         <div class="input-group">
-                            <input class="form-control" type="text" id="logo_{{ code }}_name" disabled value="{{ record['content']['logo'][code]|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                            <input class="form-control" type="text" id="logo_{{ code }}_name" disabled value="{{ record['localized']['logo'][code]|e }}" placeholder="{{ 'select-an-image'|text|e }}">
                             <div class="input-group-append">
                                 <div class="btn-group">
                                     <input type="file" name="logo_{{ code }}" id="logo_{{ code }}" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
                                     <button class="btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                                    <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['content']['logo'][code] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+                                    <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['localized']['logo'][code] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
                                 </div>
                             </div>
                         </div>
-                        <img class="img-thumbnail img-fluid" id="logo_{{ code }}_preview" src="{{ record['content']['logo'][code]|e }}" style="max-height:480px;{% if record['content']['logo'][code] is empty %}display:none;{% endif %}">
+                        <img class="img-thumbnail img-fluid" id="logo_{{ code }}_preview" src="{{ record['localized']['logo'][code]|e }}" style="max-height:480px;{% if record['localized']['logo'][code] is empty %}display:none;{% endif %}">
                     {% endfor %}
                 </div>
                 <div class="col">
@@ -148,20 +144,8 @@
                     </div>
                     <img class="img-thumbnail img-fluid" id="favico_preview" src="{{ record['favico']|e }}" style="max-height:256px;{% if record['favico'] is empty %}display:none;{% endif %}">
                     <hr>
-                    <label class="form-label">Shortcut image icon</label>
-                    <div class="input-group">
-                        <input class="form-control" type="text" id="shortcut_icon_name" disabled value="{{ record['shortcut_icon']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
-                        <div class="input-group-append">
-                            <div class="btn-group">
-                                <input type="file" name="shortcut_icon" id="shortcut_icon" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
-                                <button class="btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                                <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['shortcut_icon'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
-                            </div>
-                        </div>
-                    </div>
-                    <img class="img-thumbnail img-fluid" id="shortcut_icon_preview" src="{{ record['shortcut_icon']|e }}" style="max-height:480px;{% if record['shortcut_icon'] is empty %}display:none;{% endif %}">
                     <hr>
-                    <label class="form-label">Apple touch image icon</label>
+                    <label class="form-label">Apple touch image icon (min 180x180 pixels recommended)</label>
                     <div class="input-group">
                         <input class="form-control" type="text" id="apple_touch_icon_name" disabled value="{{ record['apple_touch_icon']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
                         <div class="input-group-append">
@@ -195,6 +179,24 @@
         </form>
     </div>  
 </div>
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">{{ 'log'|text }} <i class="bi bi-clock-history"></i></label>
+    <ul class="list-group" id="logger-protocol">
+        {% for item in logs %}
+            
+                {% if users_detail[item['created_by']] is defined %}
+                {% set created_by_detail = users_detail[item['created_by']] %}
+                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ created_by_detail }}</u></span>
+                {% endif %}
+                {% if item['info']['path'] is defined %}
+                <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>
+                {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
 <script type="text/javascript">
     const prettyPrint = function () {
         try {
@@ -328,5 +330,72 @@
                 submitters.forEach(function (btn) { btn.spinNstop(); });
             });
         });
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        let protocol = document.getElementById('logger-protocol');
+        if (protocol && protocol.tagName === 'UL') {
+            fetch(
+                `{{ 'logs-context'|link({'table':'content'}) }}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({'s':'sss'})
+                }
+            ).then(res => {
+                return res.json();
+            }).then(response => {
+                if (response.error) {
+                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+                }
+                
+                let logViewLink = `{{ 'logs-view'|link }}?table=content&id=`;
+                Object.values(response).forEach(log => {
+                    console.log(log);
+                    let log_li = document.createElement('li');
+                    log_li.classList.add('list-group-item', 'list-group-item-action');
+                    switch (log.level) {
+                        case 'notice': log_li.classList.add('list-group-item-light'); break;
+                        case 'info': log_li.classList.add('list-group-item-primary'); break;
+                        case 'error': log_li.classList.add('list-group-item-danger'); break;
+                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                        case 'alert': log_li.classList.add('list-group-item-info'); break;
+                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                        default: log_li.classList.add('list-group-item-dark'); break;
+                    }
+                    
+                    let a_link = document.createElement('a');
+                    a_link.textContent = log.created_at;
+                    a_link.href = logViewLink + log.id;
+                    a_link.classList.add('float-left');
+                    a_link.setAttribute('data-bs-target', '#static-modal');
+                    a_link.setAttribute('data-bs-toggle', 'modal');
+                    a_link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        ajaxModal(a_link);
+                    });
+                    log_li.appendChild(a_link);
+                    
+                    let span_msg = document.createElement('span');
+                    span_msg.textContent = log.message;
+                    span_msg.classList.add('pl-2', 'pr-2');
+                    log_li.appendChild(span_msg);
+                    
+                    let span_created = document.createElement('span');
+                    span_created.innerHTML = `<span class="text-muted small"><u>${log.context.reason ?? ''} by ${log.context.created_by ?? log.created_by}</u></span>`;
+                    span_created.classList.add('text-muted', 'small');
+                    log_li.appendChild(span_created);
+                    
+                    protocol.appendChild(log_li);
+                });
+                
+            }).catch(error => {
+                console.log(error);
+            }).finally(() => {
+
+            });
+        }
     });
 </script>

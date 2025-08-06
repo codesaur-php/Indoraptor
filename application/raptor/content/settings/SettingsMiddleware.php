@@ -15,7 +15,7 @@ class SettingsMiddleware implements MiddlewareInterface
             $pdo = $request->getAttribute('pdo');
             $model = new SettingsModel($pdo);
             $stmt = $pdo->prepare(
-                'SELECT p.keywords, p.email, p.phone, p.favico, p.shortcut_icon, p.apple_touch_icon, p.config, ' .
+                'SELECT p.email, p.phone, p.favico, p.apple_touch_icon, p.config, ' .
                 'c.title, c.logo, c.description, c.urgent, c.contact, c.address, c.copyright ' .
                 "FROM {$model->getName()} as p INNER JOIN {$model->getContentName()} as c ON p.id=c.parent_id " .
                 'WHERE p.is_active=1 AND c.code=:code LIMIT 1'

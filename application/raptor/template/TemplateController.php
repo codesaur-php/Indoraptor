@@ -109,7 +109,7 @@ class TemplateController extends \Raptor\Controller
             $context['record'] = $record;
             $context['content'] = $content;
             if (empty($record) || empty($content)) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
 
             $model = new MenuModel($this->pdo);
@@ -163,7 +163,7 @@ class TemplateController extends \Raptor\Controller
             if (!isset($record['id'])
                 || !\filter_var($record['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
@@ -206,7 +206,7 @@ class TemplateController extends \Raptor\Controller
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             

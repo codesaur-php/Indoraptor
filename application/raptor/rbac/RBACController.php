@@ -219,7 +219,7 @@ class RBACController extends \Raptor\Controller
                 || empty($payload['role_id'])
                 || empty($payload['permission_id'])
             ) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $record = [
                 'alias' => $alias,

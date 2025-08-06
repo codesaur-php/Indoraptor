@@ -13,11 +13,9 @@ class SettingsModel extends LocalizedModel
         
         $this->setColumns([
            (new Column('id', 'bigint'))->primary(),
-            new Column('keywords', 'varchar', 255),
             new Column('email', 'varchar', 70),
             new Column('phone', 'varchar', 70),
             new Column('favico', 'varchar', 255),
-            new Column('shortcut_icon', 'varchar', 255),
             new Column('apple_touch_icon', 'varchar', 255),
             new Column('config', 'text'),
            (new Column('is_active', 'tinyint'))->default(1),
@@ -56,5 +54,10 @@ class SettingsModel extends LocalizedModel
             $record['created_at'] = \date('Y-m-d H:i:s');
         }
         return parent::insert($record, $content);
+    }
+
+    public function retrieve(): array
+    {
+        return $this->getRowBy(['p.is_active' => 1]) ?? [];
     }
 }
