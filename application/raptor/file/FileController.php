@@ -95,10 +95,12 @@ class FileController extends \Raptor\Controller
         return $filename;
     }
 
-    public function moveUploaded(string $input, ?string $recordTableName = null, int $mode = 0755): array|false
+    public function moveUploaded($uploadedFile, ?string $recordTableName = null, int $mode = 0755): array|false
     {
         try {
-            $uploadedFile = $this->getRequest()->getUploadedFiles()[$input] ?? null;
+            if (\is_string($uploadedFile)) {
+                $uploadedFile = $this->getRequest()->getUploadedFiles()[$uploadedFile] ?? null;
+            }
             if (!$uploadedFile instanceof UploadedFileInterface) {
                 throw new \Exception('No file upload provided', -1);
             }

@@ -63,25 +63,13 @@ class LogsController extends \Raptor\Controller
             
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
-            $logdata = $logger->getLogById($id);
-            
-            $users_table = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $select_user = "SELECT username,first_name,last_name,email FROM $users_table WHERE id=:id LIMIT 1";
-            $pdo_stmt = $this->prepare($select_user);
-            if ($pdo_stmt->execute([':id' => $logdata['created_by']])
-                && $pdo_stmt->rowCount() > 0
-            ) {
-                $row = $pdo_stmt->fetch();
-                $logdata['created_by_detail'] = "{$row['username']} » {$row['first_name']} {$row['last_name']} ({$row['email']})";
-            }
-            
-            \array_walk_recursive($logdata, [$this, 'hideSecret']);
+            $log = $logger->getLogById($id);
             (new TwigTemplate(
                 \dirname(__FILE__) . '/retrieve-log-modal.html',
                 [
                     'id' => $id,
                     'table' => $table,
-                    'data' => $logdata,
+                    'logdata' => $log,
                     'detailed' => $this->text('detailed'),
                     'close' => $this->text('close')
                 ]
@@ -95,34 +83,39 @@ class LogsController extends \Raptor\Controller
         }
     }
     
-    public function context(string $table): array
+    public function retrieve(string $table)
     {
         try {
+            if (!$this->hasTable("{$table}_log")) {
+                throw new \InvalidArgumentException($this->text('invalid-request'));
+            }
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $condition = $this->getParsedBody();
-            $logs = $logger->getLogs();
-            \array_walk_recursive($logs, [self::class, 'hideSecret']);
-            $this->respondJSON($logs);
+            if (isset($condition['CONTEXT'])) {
+                $context = $condition['CONTEXT'];
+                unset($condition['CONTEXT']);
+                $wheres = [];
+                foreach (\is_array($context) ? $context : [] as $field => $value) {
+                    if ($this->getDriverName() == 'pgsql') {
+                        $wheres[] = "context::json->>'$field'=" . $this->quote($value);
+                    } else {
+                        $wheres[] = "JSON_EXTRACT(context, '$.$field')=" . $this->quote($value);
+                    }
+                }
+                $clause = \implode(' AND ', $wheres);
+                if (!empty($clause)) {
+                    if (empty($condition['WHERE'])) {
+                        $condition['WHERE'] = '';
+                    } else {
+                        $condition['WHERE'] .= ' AND ';
+                    }
+                    $condition['WHERE'] .= $clause;
+                }
+            }
+            $this->respondJSON($logger->getLogs($condition));
         } catch (\Throwable $e) {
-            $this->errorLog($e);
             $this->respondJSON(['error' => $e->getMessage()], $e->getCode());
-            exit;
-        }
-    }
-    
-    private function getLogsFrom(string $table, int $limit = 1000): array
-    {
-        try {
-            $logger = new Logger($this->pdo);
-            $logger->setTable($table);
-            $condition = ['ORDER BY' => 'id Desc', 'LIMIT' => $limit];
-            $logs = $logger->getLogs($condition);
-            \array_walk_recursive($logs, [self::class, 'hideSecret']);
-            return $logs;
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-            return [];
         }
     }
 }

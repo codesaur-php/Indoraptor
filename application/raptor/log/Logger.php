@@ -7,13 +7,9 @@ use Psr\Log\AbstractLogger;
 
 use codesaur\DataObject\Column;
 
-use Raptor\User\UsersModel;
-
 class Logger extends AbstractLogger
 {
     use \codesaur\DataObject\TableTrait;
-    
-    private ?int $_created_by_once = null;
     
     public function __construct(\PDO $pdo)
     {
@@ -24,8 +20,7 @@ class Logger extends AbstractLogger
             'level' => (new Column('level', 'varchar', 16))->default(LogLevel::NOTICE),
             'message' => (new Column('message', 'text'))->notNull(),
             'context' => (new Column('context', 'mediumtext'))->notNull(),
-            'created_at' => new Column('created_at', 'timestamp'),
-            'created_by' => new Column('created_by', 'bigint')
+            'created_at' => new Column('created_at', 'timestamp')
         ];
     }
     
@@ -53,11 +48,6 @@ class Logger extends AbstractLogger
     
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-        $table = $this->getName();
-        $users = (new UsersModel($this->pdo))->getName();
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->setForeignKeyChecks(true);
     }
     
     /**
@@ -77,11 +67,6 @@ class Logger extends AbstractLogger
                 ?: \json_encode(\mb_convert_encoding($context, 'UTF-8', 'UTF-8'))
                 ?: ('{"log-context-write-error":"' . \addslashes(\json_last_error_msg()) . '"}')
         ];
-        
-        if (isset($this->_created_by_once)) {
-            $record['created_by'] = $this->_created_by_once;
-            $this->_created_by_once = null;
-        }
         
         $column = $param = [];
         foreach (\array_keys($record) as $key) {
@@ -109,11 +94,6 @@ class Logger extends AbstractLogger
         return \strtr($message, $replace);
     }
     
-    public function createdByOnce(?int $id)
-    {
-        $this->_created_by_once = $id;
-    }
-    
     public function getLogs(array $condition = []): array
     {
         $rows = [];
@@ -126,8 +106,9 @@ class Logger extends AbstractLogger
                 $record['context'] =
                     \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)
                     ?? ['log-context-read-error' => \json_last_error_msg()];
+                \array_walk_recursive($record['context'], [$this, 'hideSecret']);
                 $record['message'] = $this->interpolate($record['message'], $record['context'] ?? []);
-                $rows[$record['id']] = $record;
+                $rows[] = $record;
             }
         } catch (\Throwable $e) {
             if (CODESAUR_DEVELOPMENT) {
@@ -139,30 +120,17 @@ class Logger extends AbstractLogger
     
     public function getLogById(int $id): array|null
     {
-        $condition = [
-            'LIMIT' => 1,
-            'WHERE' => 'id=:id',
-            'PARAM' => [':id' => $id]
-        ];
-        $stmt = $this->selectStatement($this->getName(), '*', $condition);
-        if ($stmt->rowCount() != 1) {
+        $stmt = $this->prepare("SELECT * from $this->name WHERE id=$id LIMIT 1");
+        if (!$stmt->execute() || $stmt->rowCount() != 1) {
             return null;
         }
         
-        $table = $this->getName();
-        $userTable = (new UsersModel($this->pdo))->getName();
-        $select =
-            'SELECT t.*, u.username, u.first_name, u.last_name, u.email ' . 
-            "FROM $table t INNER JOIN $userTable u ON t.created_by=u.id";
-        $stmt = $this->prepare($select);
-        $logdata['created_by_detail'] = "{$row['username']} » {$row['first_name']} {$row['last_name']} ({$row['email']})";
         $record = $stmt->fetch();
         $record['context'] = 
             \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)
             ?? ['log-context-read-error' => \json_last_error_msg()];
         \array_walk_recursive($record['context'], [$this, 'hideSecret']);
-        $record['message'] =
-            $this->interpolate($record['message'], $record['context'] ?? []);
+        $record['message'] = $this->interpolate($record['message'], $record['context'] ?? []);
         return $record;
     }
     
@@ -170,7 +138,7 @@ class Logger extends AbstractLogger
     {
         $key = \strtoupper($k);
         if (!empty($key)
-            && (\in_array($key, ['JWT', 'TOKEN', 'PIN', 'USE_ID', 'REGISTER'])
+            && (\in_array($key, ['JWT', 'TOKEN', 'PIN'])
                 || \str_contains($key, 'PASSWORD')
             )
         ) {

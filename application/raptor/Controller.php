@@ -157,7 +157,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         exit;
     }
     
-    protected final function indolog(string $table, string $level, string $message, array $context = [], ?int $created_by = null)
+    protected final function indolog(string $table, string $level, string $message, array $context = [])
     {
         try {
             if (empty($table) || empty($message)) {
@@ -170,13 +170,23 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                 'uri' => (string) $this->getRequest()->getUri()
             ];
             if ($this->getRequest()->getServerParams()['REMOTE_ADDR']) {
-                $server_request = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
+                $server_request['remote_addr'] = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
             }
             $context['server_request'] = $server_request;
             
+            $auth_user = $this->getUser()?->profile ?? [];
+            if (isset($auth_user['id'])) {
+                $context['auth_user'] = [
+                    'id' => $auth_user['id'],
+                    'username' => $auth_user['username'],
+                    'first_name' => $auth_user['first_name'],
+                    'last_name' => $auth_user['last_name'],
+                    'phone' => $auth_user['phone'],
+                    'email' => $auth_user['email']
+                ];
+            }
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
-            $logger->createdByOnce($created_by ?? $this->getUserId());
             $logger->log($level, $message, $context);
         } catch (\Throwable $e) {
             $this->errorLog($e);
