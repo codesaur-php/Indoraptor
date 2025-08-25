@@ -99,9 +99,10 @@
                 <input class="form-control" type="text" id="photo_name" disabled value="{{ record['photo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
                 <div class="input-group-append">
                     <div class="btn-group">
-                        <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
+                        <input type="file" name="photo" id="photo" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
                         <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                        {% if record['photo'] is not empty %}<button class="btn btn-danger" type="button" onclick="fileClear(this);">{{ 'remove'|text }}</button>{% endif %}
+                        <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['photo'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+                        <input type="hidden" name="photo_removed" value="0" type="number">
                     </div>
                 </div>
             </div>
@@ -175,65 +176,18 @@
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
-    <label class="form-label fw-bolder">{{ 'log'|text }} <i class="bi bi-clock-history"></i></label>
-    <ul class="list-group">
-        {% for item in logs %}
-            {% if item['level'] == 'notice' %}
-                {% set type='light' %}
-            {%  elseif item['level'] == 'info' %}
-                {% set type='primary' %}
-            {%  elseif item['level'] == 'error' %}
-                {% set type='danger' %}
-            {%  elseif item['level'] == 'warning' %}
-                {% set type='warning' %}
-            {%  elseif item['level'] == 'alert' %}
-                {% set type='info' %}
-            {%  elseif item['level'] == 'debug' %}
-                {% set type='secondary' %}
-            {%  else %}
-                {% set type='dark' %}
-            {% endif %}
-
-            {% set info_uri=('logs-view'|link) ~ '?table=pages' ~ '&id=' ~ item['id'] %}
-            <li class="list-group-item list-group-item-action list-group-item-{{ type }}">
-                <a class="float-left" data-bs-target="#static-modal" data-bs-toggle="modal" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
-                <span class="pl-2 pr-2">
-                {% if item['message'] is not defined or item['message'] is empty %}
-                    <span class="text-danger">{{ item['context']['reason'] }}</span> {{ item['context']['server_request']['uri']|e }}
-                {% else %}
-                    {{ item['message'] }}
-                {% endif %}
-                </span>
-                {% if users_detail[item['created_by']] is defined %}
-                {% set created_by_detail = users_detail[item['created_by']] %}
-                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ created_by_detail }}</u></span>
-                {% endif %}
-                {% if item['info']['path'] is defined %}
-                <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>
-                {% endif %}
-            </li>
-        {% endfor %}
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-{{ table }}" style="max-height:240px; overflow-y:auto">
     </ul>
 </div>
 {% endif %}
 <script type="text/javascript">
-    function copy(elem) {
-        let text = document.getElementById(elem);
-        if (document.body.createTextRange) {
-            let range = document.body.createTextRange();
-            range.moveToElementText(text);
-            range.select();
-        } else if (window.getSelection) {
-            let selection = window.getSelection();
-            let range = document.createRange();
-            range.selectNodeContents(text);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
-        document.execCommand('copy');
-    }
-
-    function basename(url) {
+    function getBasename(url) {
         return url.split(/.*[\/|\\]/)[1];
     }
 
@@ -255,7 +209,7 @@
         return bytes.toFixed(1) + units[u];
     }
     
-    function escape(s) {
+    function escapeStr(s) {
         let lookup = {
             '&': "&amp;",
             '"': "&quot;",
@@ -280,55 +234,67 @@
         }
     });
     
-    const photoName = document.getElementById('photo_name');
-    const photoBrowse = document.querySelector('button.photo-browse');
-    const photoPreview = document.getElementById('photo_preview');
-    const photo = document.querySelector('input[name="photo"]');
-    const fileClear = function (button) {
-        photoPreview.removeAttribute('src');
-        photoPreview.style.display = 'none';
-
-        photoName.value = '';
-        photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
-
-        photo.value = '';
-        photo.removeAttribute('name');
-
-        button.remove();
-    };
-    
-    photo.addEventListener('change', function (e) {
-        e.preventDefault();
-        
-        photo.name = 'photo';
-        photoName.value = photo.files[0].name;
-        
-        photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
-        if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
-            let photoClear = document.createElement('button');
-            photoClear.classList.add('btn', 'btn-danger');
-            photoClear.type = 'button';
-            photoClear.innerHTML = `{{ 'remove'|text }}`;
-            photoClear.addEventListener('click', function (e) {
-                e.preventDefault();
-                fileClear(this);
-            });
-            if (photoBrowse.nextSibling) {
-                photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
-            } else {
-                photoBrowse.parentNode.appendChild(photoClear);
-            }
+    const onFileInput = function (fileInput) {
+        let id = fileInput.id;
+        if (!id) {
+            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
         }
+        
+        let nameInput = document.getElementById(id + '_name');
+        if (nameInput) {
+            nameInput.value = fileInput.files[0].name;
+        }
+
+        let browseBtn = fileInput.nextElementSibling;
+        if (browseBtn) {
+            browseBtn.textContent = `{{ 'change'|text|e }}`;
+        }
+
+        let removeBtn = browseBtn.nextElementSibling;
+        if (removeBtn && removeBtn.style.display === 'none') {
+            removeBtn.style.display = 'block';
+        }
+        let fileDeletedInput = removeBtn.nextElementSibling;
+        if (fileDeletedInput) fileDeletedInput.value = 0;
 
         let reader = new FileReader();
         reader.onload = function (e) {
-            photoPreview.src = e.target.result;
-            if (photoPreview.style.display === 'none') {
-                photoPreview.style.display = 'block';
+            let previewImg = document.getElementById(id + '_preview');
+            if (previewImg) {
+                previewImg.src = e.target.result;
+                if (previewImg.style.display === 'none') {
+                    previewImg.style.display = 'block';
+                }
             }
         };
-        reader.readAsDataURL(photo.files[0]);
-    });
+        reader.readAsDataURL(fileInput.files[0]);
+    };
+
+    const onFileClear = function (removeBtn) {
+        let fileInput = removeBtn?.previousElementSibling?.previousElementSibling;
+        if (fileInput?.tagName === 'INPUT' && fileInput.type === 'file') {
+            let previewImg = document.getElementById(fileInput.id + '_preview');
+            if (previewImg) {
+                previewImg.removeAttribute('src');
+            }
+            let nameInput = document.getElementById(fileInput.id + '_name');
+            if (nameInput) {
+                nameInput.value = '';
+            }
+
+            let browseBtn = fileInput.nextElementSibling;
+            if (browseBtn) {
+                browseBtn.textContent = `{{ 'choose'|text|e }}`;
+            }
+
+            removeBtn.style.display = 'none';
+
+            fileInput.value = '';
+            
+            let fileDeletedInput = removeBtn.nextElementSibling;
+            if (fileDeletedInput) fileDeletedInput.value = 1;
+        }
+    };
     
     const content = document.getElementById('content');
     document.addEventListener('DOMContentLoaded', function () {
@@ -351,7 +317,7 @@
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
             container: document.getElementById('container'),
-            url: `{{ 'files-post'|link({'input':'file', 'table':'pages', 'id':record['id']}) }}`,
+            url: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':record['id']}) }}`,
             filters: {
                 max_file_size: `{{ max_file_size ?? '8mb' }}`,
                 mime_types: [
@@ -459,12 +425,12 @@
         });
         uploader.init();
         
-        const pageFilesLink = `{{ 'files-modal'|link({'table':'pages'}) }}`;
+        const pageFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
         const userCanUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
         const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
         motable.prototype.append = function (record) {
             let fileIcon;
-            let fileName = escape(basename(record['path']));
+            let fileName = escapeStr(getBasename(record['path']));
             let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
             let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
             switch (record['type']) {
@@ -473,7 +439,7 @@
                         fileIcon = `<img src="${record['path']}" style="max-height:120px;height:100%">`;
                         if (record['mime_content_type'] !== 'image/gif') {
                             if (record['description']) {
-                                fileLinkAttr = `file-data-fancybox data-caption="${escape(record['description'])}"`;
+                                fileLinkAttr = `file-data-fancybox data-caption="${escapeStr(record['description'])}"`;
                             } else {
                                 fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
                             }
@@ -584,7 +550,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            `{{ 'files-delete'|link({'table':'pages'}) }}`,
+                            `{{ 'files-delete'|link({'table':table}) }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -673,5 +639,87 @@
         files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
         {% endfor %}
         Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+        
+        const logger = document.querySelector('ul.logger-protocol');
+        if (logger && logger.tagName === 'UL') {
+            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+            const logsViewLink = `{{ 'logs-view'|link }}`;
+            let logger_id = logger.id ?? '';
+            let table = logger_id.substring(logger_id.indexOf('-') + 1);
+            if (!table) return;
+
+            logger.style.display = 'none';
+            let spinner = logger.previousElementSibling;
+            spinner.style.display = 'block';
+            fetch(
+                `${logsRetrieveLink}?table=${table}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'ORDER BY': 'id Desc',
+                        'CONTEXT': {
+                            'record_id': '{{ record['id'] }}'
+                        },
+                        'LIMIT':  10000
+                    })
+                }
+            ).then(res => {
+                return res.json();
+            }).then(response => {
+                if (response.error) {
+                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+                }
+
+                logger.innerHTML = '';
+
+                let logModalLink = `${logsViewLink}?table=${table}&id=`;
+                Object.values(response).forEach(log => {
+                    let log_li = document.createElement('li');
+                    log_li.classList.add('list-group-item', 'list-group-item-action');
+                    switch (log.level) {
+                        case 'notice': log_li.classList.add('list-group-item-light'); break;
+                        case 'info': log_li.classList.add('list-group-item-primary'); break;
+                        case 'error': log_li.classList.add('list-group-item-danger'); break;
+                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                        case 'alert': log_li.classList.add('list-group-item-info'); break;
+                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                        default: log_li.classList.add('list-group-item-dark'); break;
+                    }
+
+                    let a_link = document.createElement('a');
+                    a_link.textContent = `${log.created_at} [${log.id}]`;
+                    a_link.href = logModalLink + log.id;
+                    a_link.setAttribute('data-bs-target', '#static-modal');
+                    a_link.setAttribute('data-bs-toggle', 'modal');
+                    a_link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        ajaxModal(a_link);
+                    });
+                    log_li.appendChild(a_link);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    let span_msg = document.createElement('span');
+                    span_msg.innerHTML = log.message;
+                    log_li.appendChild(span_msg);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    let span_user_action = document.createElement('span');
+                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.reason ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.classList.add('text-muted', 'small');
+                    log_li.appendChild(span_user_action);
+
+                    logger.appendChild(log_li);
+                });
+
+            }).catch(error => {
+                console.log(error.message);
+            }).finally(() => {
+                logger.style.display = '';
+                spinner.style.display = 'none';
+            });
+        }
     });
 </script>

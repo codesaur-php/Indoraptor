@@ -437,7 +437,7 @@ class NewsController extends FileController
     public function delete()
     {
         try {
-            $context = ['reason' => 'delete'];
+            $log_context = ['reason' => 'delete'];
                     
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
@@ -446,7 +446,7 @@ class NewsController extends FileController
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
-            $context['payload'] = $payload = $this->getParsedBody();
+            $log_context['payload'] = $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
@@ -455,7 +455,7 @@ class NewsController extends FileController
             }
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $context['record_id'] = $id;
+            $log_context['record_id'] = $id;
             $deactivated = $model->deactivateById($id, [
                 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
             ]);
@@ -469,8 +469,8 @@ class NewsController extends FileController
                 'message' => $this->text('record-successfully-deleted')
             ]);
             
-            $level = LogLevel::ALERT;
-            $message = '{record_id} дугаартай [{payload.title}] мэдээг идэвхгүй болголоо';
+            $log_level = LogLevel::ALERT;
+            $log_message = '{record_id} дугаартай [{payload.title}] мэдээг идэвхгүй болголоо';
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -478,11 +478,11 @@ class NewsController extends FileController
                 'message' => $e->getMessage()
             ], $e->getCode());
             
-            $level = LogLevel::ERROR;
-            $message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+            $log_level = LogLevel::ERROR;
+            $log_message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog($table ?? 'news', $level, $message, $context);
+            $this->indolog($table ?? 'news', $log_level, $log_message, $log_context);
         }
     }
     

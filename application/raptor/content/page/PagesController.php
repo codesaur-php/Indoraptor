@@ -407,19 +407,20 @@ class PagesController extends FileController
                 ]);
                 
                 $log_level = LogLevel::INFO;
-                $log_message = '{record_id} дугаартай [{payload.title}] мэдээг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $log_message = '{record_id} дугаартай [{payload.title}] хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $log_context['record'] = $record;
-                $log_context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);                
+                $log_context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
+                $log_context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/news-update.html',
+                    \dirname(__FILE__) . '/page-update.html',
                     $log_context + ['table' => $table, 'max_file_size' => $this->getMaximumFileUploadSize()]
                 );
-                $dashboard->set('title', $this->text('edit-record') . ' | News');
+                $dashboard->set('title', $this->text('edit-record') . ' | Pages');
                 $dashboard->render();
                 
                 $log_level = LogLevel::NOTICE;
-                $log_message = '{record_id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
+                $log_message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -429,178 +430,35 @@ class PagesController extends FileController
             }
             
             $log_level = LogLevel::ERROR;
+            $log_message = 'Хуудсыг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
             $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $log_message = 'Мэдээг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
         } finally {
             $this->indolog($table ?? 'pages', $log_level, $log_message, $log_context);
-        }
-        
-        
-        try {
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $context = ['id' => $id, 'model' => PagesModel::class];
-            
-            if (!$this->isUserCan('system_content_update')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $model = new PagesModel($this->pdo);
-            $table = $model->getName();
-            $current = $model->getById($id);
-            if (empty($current)) {
-                throw new \Exception($this->text('no-record-selected'));
-            } elseif ($current['published'] == 1 && !$this->isUserCan('system_content_publish')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            
-            if ($is_submit) {
-                $record = $this->getParsedBody();
-                $context['payload'] = $record;
-                
-                if (empty($record['title'])){
-                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }
-                
-                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
-                if ($record['published'] != $current['published']) {
-                    if (!$this->isUserCan('system_content_publish')) {
-                        throw new \Exception($this->text('system-no-permission'), 401);
-                    }
-                    if ($record['published'] == 1) {
-                        $record['published_at'] = \date('Y-m-d H:i:s');
-                        $record['published_by'] = $this->getUserId();
-                    }
-                }
-                $record['comment'] = ($record['comment'] ?? 'off' ) == 'on' ? 1 : 0;
-                
-                $file = new FileController($this->getRequest());
-                $file->setFolder("/$table/$id");
-                $file->allowImageOnly();
-                $photo = $file->moveUploaded('photo', $table);
-                if ($photo) {
-                    $record['photo'] = $photo['path'];
-                }
-                $current_photo_file = empty($current['photo']) ? '' : \basename($current['photo']);
-                if (!empty($current_photo_file)) {
-                    if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($current_photo_file, $table);
-                        $record['photo'] = '';
-                    } elseif (isset($record['photo'])
-                        && \basename($record['photo']) != $current_photo_file
-                    ) {
-                        $file->tryDeleteFile($current_photo_file, $table);
-                    }
-                }
-                if (isset($record['photo'])) {
-                    $context['record']['photo'] = $record['photo'];
-                }
-                
-                $context['updates'] = [];
-                foreach ($record as $field => $value) {
-                    if ($current[$field] != $value) {
-                        $context['updates'][] = $field;
-                    }
-                }
-                
-                $date = $current['updated_at'] ?? $current['created_at'];
-                $count_updated_files =
-                    "SELECT id FROM {$filesModel->getName()} " .
-                    "WHERE record_id=$id AND (created_at > '$date' OR updated_at > '$date')";
-                $files_changed = $filesModel->prepare($count_updated_files);
-                if ($files_changed->execute() && $files_changed->rowCount() > 0) {
-                    $context['updates'][] = 'files';
-                }
-                
-                if (empty($context['updates'])) {
-                    throw new \InvalidArgumentException('No update!');
-                }
-                
-                $record['updated_at'] = \date('Y-m-d H:i:s');
-                $record['updated_by'] = $this->getUserId();
-                $updated = $model->updateById($id, $record);
-                if (empty($updated)) {
-                    throw new \Exception($this->text('no-record-selected'));
-                }
-                
-                $this->respondJSON([
-                    'status' => 'success',
-                    'type' => 'primary',
-                    'message' => $this->text('record-update-success')
-                ]);
-                
-                $level = LogLevel::INFO;
-                $message = "{$record['title']} - 3 шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
-            } else {
-                $context['record'] = $current;
-                $context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-                $context['max_file_size'] = $this->getMaximumFileUploadSize();
-                $context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
-                
-                $logger = new Logger($this->pdo);
-                $logger->setTable('pages');
-                $condition = ['ORDER BY' => 'id Desc'];
-                if ($this->getDriverName() == 'pgsql') {
-                    $condition['WHERE'] =
-                        '(context::json->>\'id\')::bigint=' . $id .
-                        ' AND context::json->>\'model\'=' . $this->quote($context['model']);
-                } else {
-                    $condition['WHERE'] =
-                        'JSON_EXTRACT(context, "$.id")=' . $id .
-                        ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']);
-                }
-                $logs = $logger->getLogs($condition);
-                \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
-                
-                $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/page-update.html',
-                    $context + ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
-                );
-                $dashboard->set('title', $this->text('edit-record') . ' | Pages');
-                $dashboard->render();
-                
-                $level = LogLevel::NOTICE;
-                $message = "{$current['title']} - хуудасны мэдээллийг шинэчлэхээр нээж байна";
-            }
-        } catch (\Throwable $e) {
-            if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
-            } else {
-                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
-            }
-            
-            $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $message = 'Хуудсыг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-        } finally {
-            $this->indolog('pages', $level, $message, $context);
         }
     }
     
     public function delete()
     {
         try {
-            $context = ['model' => PagesModel::class];
+            $log_context = ['reason' => 'delete'];
+                    
+            $model = new PagesModel($this->pdo);
+            $table = $model->getName();
             
             if (!$this->isUserCan('system_content_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
-            $payload = $this->getParsedBody();
+            $log_context['payload'] = $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $context['payload'] = $payload;
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $context['id'] = $id;
-            
-            $model = new PagesModel($this->pdo);
+            $log_context['record_id'] = $id;
             $deactivated = $model->deactivateById($id, [
                 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
             ]);
@@ -614,8 +472,8 @@ class PagesController extends FileController
                 'message' => $this->text('record-successfully-deleted')
             ]);
             
-            $level = LogLevel::ALERT;
-            $message = "{$payload['title']} - хуудсыг идэвхгүй болголоо";
+            $log_level = LogLevel::ALERT;
+            $log_message = '{record_id} дугаартай [{payload.title}] хуудсыг идэвхгүй болголоо';
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -623,11 +481,11 @@ class PagesController extends FileController
                 'message' => $e->getMessage()
             ], $e->getCode());
             
-            $level = LogLevel::ERROR;
-            $message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+            $log_level = LogLevel::ERROR;
+            $log_message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog('pages', $level, $message, $context);
+            $this->indolog($table ?? 'pages', $log_level, $log_message, $log_context);
         }
     }
     
