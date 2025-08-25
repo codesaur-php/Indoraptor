@@ -62,8 +62,8 @@ class FilesController extends FileController
         $dashboard->render();
 
         $this->indolog(
-            $table, LogLevel::NOTICE, "$table файлын жагсаалтыг нээж үзэж байна",
-            ['model' => FilesModel::class, 'tables' => $tables, 'total' => $total, 'table' => $table]
+            $table, LogLevel::NOTICE, '{table} файлын жагсаалтыг нээж үзэж байна',
+            ['tables' => $tables, 'total' => $total, 'table' => $table]
         );
     }
     

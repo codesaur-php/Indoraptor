@@ -1,8 +1,7 @@
-<link rel="stylesheet" href="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.css">
-<script defer src="{{ index }}/assets/vendor/sweetalert2/sweetalert2.min.js" type="text/javascript"></script>
-<script defer src="{{ index }}/assets/vendor/plupload-3.1.5/js/plupload.full.min.js"></script>
-<link rel="stylesheet" href="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.css">
-<script defer src="{{ index }}/assets/vendor/fancyapps-ui-5.0.36-dist/fancybox/fancybox.umd.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <div class="bd-callout bd-callout-dark text-bg-light alert alert-dismissible fade show shadow-sm">
     <span class="d-block mb-2">
         <i class="bi bi-folder-fill"></i> Мэдээллийн санд нийт <strong>{{ total['tables'] }}</strong> хүснэгтэд <strong>{{ total['rows'] }}</strong> ширхэг файл хатуу дискний <strong>{{ total['sizes'] }}</strong>  хэмжээг эзэлсэн байна.
@@ -38,23 +37,7 @@
     </thead>
 </table>
 <script type="text/javascript">
-    function copy(elem) {
-        let text = document.getElementById(elem);
-        if (document.body.createTextRange) {
-            let range = document.body.createTextRange();
-            range.moveToElementText(text);
-            range.select();
-        } else if (window.getSelection) {
-            let selection = window.getSelection();
-            let range = document.createRange();
-            range.selectNodeContents(text);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
-        document.execCommand('copy');
-    }
-
-    function basename(url) {
+    function getBasename(url) {
         return url.split(/.*[\/|\\]/)[1];
     }
 
@@ -76,7 +59,7 @@
         return bytes.toFixed(1) + units[u];
     }
     
-    function escape(s) {
+    function escapeStr(s) {
         let lookup = {
             '&': "&amp;",
             '"': "&quot;",
@@ -93,7 +76,7 @@
         const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
         motable.prototype.append = function (file) {
             let fileIcon;
-            let fileName = escape(basename(file['path']));
+            let fileName = escapeStr(getBasename(file['path']));
             let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
             let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${filesModalLink}?modal=${file['type']}-tag&id=${file['id']}"><i class="bi bi-code"></i></a>`;
             switch (file['type']) {
@@ -102,7 +85,7 @@
                         fileIcon = `<img src="${file['path']}" style="max-height:7.5rem;max-width:20rem;height:100%">`;
                         if (file['mime_content_type'] !== 'image/gif') {
                             if (file['description']) {
-                                fileLinkAttr = `file-data-fancybox data-caption="${escape(file['description'])}"`;
+                                fileLinkAttr = `file-data-fancybox data-caption="${escapeStr(file['description'])}"`;
                             } else {
                                 fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
                             }
