@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\File;
+namespace Raptor\Content;
 
 use Twig\TwigFilter;
 use Psr\Log\LogLevel;
@@ -153,7 +153,7 @@ class PrivateFilesController extends FilesController
             ]);
 
             $level = LogLevel::INFO;
-            $message = "{$file_record['record_id']} дугаартай бичлэгт зориулсан $id дугаартай файлын мэдээллийг засварлалаа";
+            $message = "{$file_record['record_id']}-р бичлэгт зориулсан $id дугаартай файлын мэдээллийг засварлалаа";
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             
@@ -168,7 +168,7 @@ class PrivateFilesController extends FilesController
     public function delete(string $table)
     {
         try {
-            $context = ['model' => FilesModel::class, 'table' => $table];
+            $context = ['reason' => 'deactivate-file', 'table' => $table];
             
             if (!$this->isUserCan('system_content_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);

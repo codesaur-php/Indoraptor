@@ -7,8 +7,7 @@
         <meta name="robots" content="index,follow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if description is not empty %}<meta name="description" content="{{ description|e }}">{% endif %}
-        {% if favico is not empty %}<link rel="icon" href="{{ favico }}" type="image/png">{% endif %}
-        {% if shortcut_icon is not empty %}<link rel="shortcut icon" href="{{ shortcut_icon }}" type="image/x-icon">{% endif %}
+        {% if favico is not empty %}<link rel="icon" href="{{ favico }}" type="image/x-icon">{% endif %}
         {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
         {% if config['author'] is not empty %}<meta name="author" content="{{ config['author'] }}">{% endif %}
         {% if config['generator'] is not empty %}<meta name="generator" content="{{ config['generator']|e }}">{% endif %}

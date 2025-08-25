@@ -215,6 +215,22 @@ btnScroll.addEventListener('mouseout', function () {
     btnScroll.style.backgroundColor = '#7952b3';
 });
 
+function copyContent(elem) {
+    let text = document.getElementById(elem);
+    if (document.body.createTextRange) {
+        let range = document.body.createTextRange();
+        range.moveToElementText(text);
+        range.select();
+    } else if (window.getSelection) {
+        let selection = window.getSelection();
+        let range = document.createRange();
+        range.selectNodeContents(text);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+    document.execCommand('copy');
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     activateLink(window.location.pathname);
     

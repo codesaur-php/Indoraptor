@@ -173,23 +173,7 @@
     </a>
 </div>
 <script type="text/javascript">
-    function copy(elem) {
-        let text = document.getElementById(elem);
-        if (document.body.createTextRange) {
-            let range = document.body.createTextRange();
-            range.moveToElementText(text);
-            range.select();
-        } else if (window.getSelection) {
-            let selection = window.getSelection();
-            let range = document.createRange();
-            range.selectNodeContents(text);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
-        document.execCommand('copy');
-    }
-
-    function basename(url) {
+    function getBasename(url) {
         return url.split(/.*[\/|\\]/)[1];
     }
 
@@ -211,7 +195,7 @@
         return bytes.toFixed(1) + units[u];
     }
 
-    function escape(s) {
+    function escapeStr(s) {
         let lookup = {
             '&': "&amp;",
             '"': "&quot;",
@@ -304,7 +288,7 @@
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
             container: document.getElementById('container'),
-            url: `{{ 'files-post'|link({'input':'file', 'table':'pages', 'id':0}) }}`,
+            url: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`,
             filters: {
                 max_file_size: `{{ max_file_size ?? '8mb' }}`,
                 mime_types: [
@@ -412,12 +396,12 @@
         });
         uploader.init();
 
-        const pageFilesLink = `{{ 'files-modal'|link({'table':'pages'}) }}`;
+        const pageFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
         const userCanUpdate = {{ user.can('system_content_update') ? 'false' : 'false' }};
         const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
         motable.prototype.append = function (record) {
             let fileIcon;
-            let fileName = escape(basename(record['path']));
+            let fileName = escapeStr(getBasename(record['path']));
             let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
             let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
             switch (record['type']) {
@@ -426,7 +410,7 @@
                         fileIcon = `<img src="${record['path']}" style="max-height:7.5rem;height:100%">`;
                         if (record['mime_content_type'] !== 'image/gif') {
                             if (record['description']) {
-                                fileLinkAttr = `file-data-fancybox data-caption="${escape(record['description'])}"`;
+                                fileLinkAttr = `file-data-fancybox data-caption="${escapeStr(record['description'])}"`;
                             } else {
                                 fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
                             }
@@ -539,7 +523,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                                `{{ 'files-delete'|link({'table':'pages'}) }}`,
+                                `{{ 'files-delete'|link({'table':table}) }}`,
                                 {
                                     method: 'DELETE',
                                     headers: {

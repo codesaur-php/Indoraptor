@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\File;
+namespace Raptor\Content;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;

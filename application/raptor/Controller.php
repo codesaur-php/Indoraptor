@@ -175,7 +175,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             $context['server_request'] = $server_request;
             
             $auth_user = $this->getUser()?->profile ?? [];
-            if (isset($auth_user['id'])) {
+            if (isset($auth_user['id'])
+                && !isset($context['auth_user']))
+            {
                 $context['auth_user'] = [
                     'id' => $auth_user['id'],
                     'username' => $auth_user['username'],

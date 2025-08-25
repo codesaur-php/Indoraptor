@@ -186,13 +186,13 @@
 <div class="mt-5">
     <hr>
     <label class="form-label fw-bolder">
-        {{ 'log'|text }}
-        <i class="bi bi-clock-history"></i>
-        <div class="spinner-border spinner-border-sm text-secondary" role="status" style="display:none">
-            <span class="visually-hidden">Loading logs...</span>
-        </div>
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
     </label>
-    <ul class="list-group" id="logger-protocol" style="max-height:240px; overflow-y:auto"></ul>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-content" style="max-height:240px; overflow-y:auto">
+    </ul>
 </div>
 {% endif %}
 <script type="text/javascript">
@@ -333,16 +333,19 @@
     });
     
     document.addEventListener('DOMContentLoaded', function () {
-        let protocol = document.getElementById('logger-protocol');
-        if (protocol && protocol.tagName === 'UL') {
-            let label = protocol.previousElementSibling;
-            let spinner = label?.querySelector('.spinner-border');
-            let icon = label?.querySelector('i');
-            protocol.style.display = 'none';
-            if (icon) icon.style.display = 'none';
-            if (spinner) spinner.style.display = '';
+        const logger = document.querySelector('ul.logger-protocol');
+        if (logger && logger.tagName === 'UL') {
+            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+            const logsViewLink = `{{ 'logs-view'|link }}`;
+            let logger_id = logger.id ?? '';
+            let table = logger_id.substring(logger_id.indexOf('-') + 1);
+            if (!table) return;
+
+            logger.style.display = 'none';
+            let spinner = logger.previousElementSibling;
+            spinner.style.display = 'block';
             fetch(
-                `{{ 'logs-retrieve'|link({'table':'content'}) }}`,
+                `${logsRetrieveLink}?table=${table}`,
                 {
                     method: 'POST',
                     headers: {
@@ -352,7 +355,8 @@
                         'ORDER BY': 'id Desc',
                         'CONTEXT': {
                             'reason': 'settings'
-                        }
+                        },
+                        'LIMIT':  10000
                     })
                 }
             ).then(res => {
@@ -361,10 +365,10 @@
                 if (response.error) {
                     throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
                 }
-                
-                protocol.innerHTML = '';
-                
-                let logViewLink = `{{ 'logs-view'|link }}?table=content&id=`;
+
+                logger.innerHTML = '';
+
+                let logModalLink = `${logsViewLink}?table=${table}&id=`;
                 Object.values(response).forEach(log => {
                     let log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
@@ -377,10 +381,10 @@
                         case 'debug': log_li.classList.add('list-group-item-secondary'); break;
                         default: log_li.classList.add('list-group-item-dark'); break;
                     }
-                    
+
                     let a_link = document.createElement('a');
-                    a_link.textContent = log.created_at;
-                    a_link.href = logViewLink + log.id;
+                    a_link.textContent = `${log.created_at} [${log.id}]`;
+                    a_link.href = logModalLink + log.id;
                     a_link.setAttribute('data-bs-target', '#static-modal');
                     a_link.setAttribute('data-bs-toggle', 'modal');
                     a_link.addEventListener('click', function (e) {
@@ -389,26 +393,25 @@
                     });
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
-                    
+
                     let span_msg = document.createElement('span');
-                    span_msg.textContent = log.message;
+                    span_msg.innerHTML = log.message;
                     log_li.appendChild(span_msg);
                     log_li.appendChild(document.createTextNode(' '));
-                    
+
                     let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.reason ?? ''} by ${log.context.auth_user?.username}</u></span>`;
+                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.reason ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                     span_user_action.classList.add('text-muted', 'small');
                     log_li.appendChild(span_user_action);
-                    
-                    protocol.appendChild(log_li);
+
+                    logger.appendChild(log_li);
                 });
-                
+
             }).catch(error => {
                 console.log(error.message);
             }).finally(() => {
-                protocol.style.display = '';
-                if (icon) icon.style.display = '';
-                if (spinner) spinner.style.display = 'none';
+                logger.style.display = '';
+                spinner.style.display = 'none';
             });
         }
     });

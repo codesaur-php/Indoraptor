@@ -8,11 +8,11 @@
         </div>
         <div class="modal-body">
             <strong>Relative:</strong>
-            <a class="btn btn-sm btn-dark" onclick="copy('relative');">copy</a>
+            <a class="btn btn-sm btn-dark" onclick="copyContent('relative');">copy</a>
             <pre class="border border-dark bg-secondary text-light" id="relative" style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ record['path'] ~ '"></video>')|e }}</pre>
             <hr>
             <strong>Absolute:</strong>
-            <a class="btn btn-sm btn-dark" onclick="copy('absolute');">copy</a>
+            <a class="btn btn-sm btn-dark" onclick="copyContent('absolute');">copy</a>
             <pre class="border border-dark bg-secondary text-light" id="absolute" style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ host ~ record['path'] ~ '"></video>')|e }}</pre>
         </div>
         <div class="modal-footer">

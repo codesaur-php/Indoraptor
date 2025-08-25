@@ -14,8 +14,6 @@ class LogsController extends \Raptor\Controller
             if (!$this->isUserCan('system_logger')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-        
-            $logs = [];
             
             if ($this->getDriverName() == 'pgsql') {
                 $query = 
@@ -24,18 +22,14 @@ class LogsController extends \Raptor\Controller
             } else {
                 $query = 'SHOW TABLES LIKE ' . $this->quote('%_log');
             }
-            
+            $log_tables = [];
             $pdostmt = $this->prepare($query);
             if ($pdostmt->execute()) {
-                while ($rows = $pdostmt->fetch()) {
-                    $name = \substr(\current($rows), 0, -\strlen('_log'));
-                    $logs[$name] = $this->getLogsFrom($name);
+                while ($row = $pdostmt->fetch()) {
+                    $log_tables[] = \substr(\current($row), 0, -\strlen('_log'));
                 }
             }
-            $dashboard =  $this->twigDashboard(
-                \dirname(__FILE__) . '/index-list-logs.html',
-                ['logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()]
-            );
+            $dashboard =  $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html', ['log_tables' => $log_tables]);
             $dashboard->set('title', $this->text('log'));
             $dashboard->render();
         } catch (\Throwable $e) {
@@ -52,7 +46,8 @@ class LogsController extends \Raptor\Controller
             
             $params = $this->getQueryParams();
             $id = $params['id'] ?? null;
-            $table = $params['table'] ?? null;
+            $table_name = $params['table'] ?? null;
+            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table_name);
             if ($id == null || !\is_numeric($id)
                 || empty($table) || !$this->hasTable("{$table}_log")
             ) {
@@ -83,12 +78,21 @@ class LogsController extends \Raptor\Controller
         }
     }
     
-    public function retrieve(string $table)
+    public function retrieve()
     {
         try {
-            if (!$this->hasTable("{$table}_log")) {
+            if (!$this->isUserCan('system_logger')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $params = $this->getQueryParams();
+            $table_name = $params['table'] ?? null;
+            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table_name);
+            if (empty($table) || !$this->hasTable("{$table}_log")
+            ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'));
             }
+            
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $condition = $this->getParsedBody();
@@ -97,10 +101,11 @@ class LogsController extends \Raptor\Controller
                 unset($condition['CONTEXT']);
                 $wheres = [];
                 foreach (\is_array($context) ? $context : [] as $field => $value) {
+                    $value = $this->quote($value);
                     if ($this->getDriverName() == 'pgsql') {
-                        $wheres[] = "context::json->>'$field'=" . $this->quote($value);
+                        $wheres[] = "context::json->>'$field'=$value";
                     } else {
-                        $wheres[] = "JSON_EXTRACT(context, '$.$field')=" . $this->quote($value);
+                        $wheres[] = "JSON_EXTRACT(context, '$.$field')=$value";
                     }
                 }
                 $clause = \implode(' AND ', $wheres);

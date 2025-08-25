@@ -38,7 +38,6 @@
             "Raptor\\Template\\": "application/raptor/template/",
             "Raptor\\Authentication\\": "application/raptor/authentication/",
             "Raptor\\User\\": "application/raptor/user/",
-            "Raptor\\File\\": "application/raptor/file/",
             "Raptor\\Organization\\": "application/raptor/organization/",
             "Raptor\\RBAC\\": "application/raptor/rbac/",
             "Raptor\\Localization\\": [
@@ -51,6 +50,7 @@
                 "application/raptor/content/news",
                 "application/raptor/content/page",
                 "application/raptor/content/reference",
+                "application/raptor/content/file",
                 "application/raptor/content/settings"
             ],
             "Raptor\\Mail\\": "application/raptor/mail/",

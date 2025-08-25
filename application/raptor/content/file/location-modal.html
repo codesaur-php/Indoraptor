@@ -8,11 +8,11 @@
         </div>
         <div class="modal-body">
             <strong>Relative URL:</strong>
-            <a class="btn btn-sm btn-info" onclick="copy('relative_url');">copy</a>
+            <a class="btn btn-sm btn-info" onclick="copyContent('relative_url');">copy</a>
             <pre class="border border-info" id="relative_url" style="white-space:pre-wrap">{{ record['path'] }}</pre>
             <hr>
             <strong>Absolute URL:</strong>
-            <a class="btn btn-sm btn-info" onclick="copy('absolute_url');">copy</a>
+            <a class="btn btn-sm btn-info" onclick="copyContent('absolute_url');">copy</a>
             <pre class="border border-info" id="absolute_url" style="white-space:pre-wrap">{{ host ~ record['path'] }}</pre>
         </div>
         <div class="modal-footer">

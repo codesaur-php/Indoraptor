@@ -13,7 +13,7 @@ class ForgotModel extends Model
         
         $this->setColumns([
            (new Column('id', 'bigint'))->primary(),
-            new Column('use_id', 'varchar', 255),
+            new Column('forgot_password', 'varchar', 255),
             new Column('user_id', 'bigint'),
             new Column('username', 'varchar', 255),
             new Column('first_name', 'varchar', 255),

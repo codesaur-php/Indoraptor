@@ -63,9 +63,7 @@ class Logger extends AbstractLogger
             'level' => (string) $level,
             'message' => $message,
             'created_at' => \date('Y-m-d H:i:s'),
-            'context' => \json_encode($context, \JSON_INVALID_UTF8_SUBSTITUTE)
-                ?: \json_encode(\mb_convert_encoding($context, 'UTF-8', 'UTF-8'))
-                ?: ('{"log-context-write-error":"' . \addslashes(\json_last_error_msg()) . '"}')
+            'context' => $this->encodeContext($context)
         ];
         
         $column = $param = [];
@@ -85,12 +83,13 @@ class Logger extends AbstractLogger
     
     private function interpolate(string $message, array $context = []): string
     {
+        $flat = $this->flattenArray($context);
+
         $replace = [];
-        foreach ($context as $key => $val) {
-            if (!\is_array($val)) {
-                $replace['{{ ' . $key . ' }}'] = $val;
-            }
+        foreach ($flat as $key => $val) {
+            $replace['{' . $key . '}'] = (string)$val;
         }
+
         return \strtr($message, $replace);
     }
     
@@ -103,12 +102,7 @@ class Logger extends AbstractLogger
             }
             $stmt = $this->selectStatement($this->getName(), '*', $condition);
             while ($record = $stmt->fetch()) {
-                $record['context'] =
-                    \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)
-                    ?? ['log-context-read-error' => \json_last_error_msg()];
-                \array_walk_recursive($record['context'], [$this, 'hideSecret']);
-                $record['message'] = $this->interpolate($record['message'], $record['context'] ?? []);
-                $rows[] = $record;
+                $rows[] = $this->normalizeLogRecord($record);
             }
         } catch (\Throwable $e) {
             if (CODESAUR_DEVELOPMENT) {
@@ -125,13 +119,41 @@ class Logger extends AbstractLogger
             return null;
         }
         
-        $record = $stmt->fetch();
-        $record['context'] = 
+        return $this->normalizeLogRecord($stmt->fetch());
+    }
+    
+    private function encodeContext(array $context): string
+    {
+        $json = \json_encode($context, \JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($json === false) {
+            $context = \mb_convert_encoding($context, 'UTF-8', 'UTF-8');
+            $json = \json_encode($context, \JSON_INVALID_UTF8_SUBSTITUTE);
+        }
+        return $json ?: \json_encode(['log-context-write-error' => \json_last_error_msg()]);
+    }
+    
+    private function normalizeLogRecord(array $record): array
+    {
+        $record['context'] =
             \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)
             ?? ['log-context-read-error' => \json_last_error_msg()];
         \array_walk_recursive($record['context'], [$this, 'hideSecret']);
         $record['message'] = $this->interpolate($record['message'], $record['context'] ?? []);
         return $record;
+    }
+    
+    private function flattenArray(array $array, string $prefix = ''): array
+    {
+        $result = [];
+        foreach ($array as $key => $value) {
+            $newKey = $prefix === '' ? $key : $prefix . '.' . $key;
+            if (\is_array($value)) {
+                $result += $this->flattenArray($value, $newKey);
+            } else {
+                $result[$newKey] = $value;
+            }
+        }
+        return $result;
     }
     
     private function hideSecret(&$v, $k)

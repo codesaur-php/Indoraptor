@@ -44,7 +44,7 @@ class SettingsController extends \Raptor\Controller
             }
             
             $model = new SettingsModel($this->pdo);
-            $current = $model->getRowBy(['p.is_active' => 1]);
+            $current = $model->retrieve();
             
             $payload = $this->getParsedBody();
             $log_context['payload'] = $payload;
@@ -94,12 +94,12 @@ class SettingsController extends \Raptor\Controller
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
 
             $log_level = LogLevel::INFO;
-            $log_message = 'Системийн тохируулгыг амжилттай хадгаллаа';
+            $log_message = 'Системийн тохируулгыг амжилттай шинэчиллээ';
         } catch (\Throwable $e) {
             echo $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
 
             $log_level = LogLevel::ERROR;
-            $log_message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
+            $log_message = 'Системийн тохируулгыг шинэчлэх үед алдаа гарч зогслоо';
             $log_context['error'] = $e->getMessage();
         } finally {
             $this->indolog('content', $log_level, $log_message, $log_context);
@@ -116,11 +116,10 @@ class SettingsController extends \Raptor\Controller
             }
             
             $model = new SettingsModel($this->pdo);
-            $current_record = $model->getRowBy(['p.is_active' => 1]) ?? [];            
+            $current_record = $model->retrieve();            
             $current_favico_file = \basename($current_record['favico'] ?? '');
             $current_apple_touch_icon_file = \basename($current_record['apple_touch_icon'] ?? '');
-            
-            
+                        
             $file = new FileController($this->getRequest());
             $file->setFolder('/settings');
             $file->allowExtensions(['ico']);
@@ -203,12 +202,12 @@ class SettingsController extends \Raptor\Controller
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
 
             $log_level = LogLevel::INFO;
-            $log_message = 'Системийн тохируулгыг амжилттай хадгаллаа';
+            $log_message = 'Системийн тохируулгыг амжилттай шинэчиллээ';
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             
             $log_level = LogLevel::ERROR;
-            $log_message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
+            $log_message = 'Системийн тохируулгыг шинэчлэх үед алдаа гарч зогслоо';
         } finally {
             $this->indolog('content', $log_level, $log_message, $log_context);
         }

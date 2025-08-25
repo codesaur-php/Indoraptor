@@ -13,11 +13,7 @@ class ContentsRouter extends Router
         $this->GET_PUT('/dashboard/references/{table}/{uint:id}', [ReferencesController::class, 'update'])->name('reference-update');
         $this->GET('/dashboard/references/view/{table}/{uint:id}', [ReferencesController::class, 'view'])->name('reference-view');
         $this->DELETE('/dashboard/references/delete', [ReferencesController::class, 'delete'])->name('reference-delete');
-
-        $this->GET('/dashboard/settings', [SettingsController::class, 'index'])->name('settings');
-        $this->POST('/dashboard/settings', [SettingsController::class, 'post']);
-        $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
-    
+        
         $this->GET('/dashboard/pages', [PagesController::class, 'index'])->name('pages');
         $this->GET('/dashboard/pages/list', [PagesController::class, 'list'])->name('pages-list');
         $this->GET_POST('/dashboard/pages/insert', [PagesController::class, 'insert'])->name('page-insert');
@@ -33,5 +29,17 @@ class ContentsRouter extends Router
         $this->GET('/dashboard/news/read/{uint:id}', [NewsController::class, 'read'])->name('news-read');
         $this->GET('/dashboard/news/view/{uint:id}', [NewsController::class, 'view'])->name('news-view');
         $this->DELETE('/dashboard/news', [NewsController::class, 'delete'])->name('news-delete');
+        
+        $this->GET('/dashboard/files', [FilesController::class, 'index'])->name('files');
+        $this->GET('/dashboard/files/list/{table}', [FilesController::class, 'list'])->name('files-list');
+        $this->POST('/dashboard/files/{input}/{table}/{uint:id}', [FilesController::class, 'post'])->name('files-post');
+        $this->GET('/dashboard/files/modal/{table}', [PrivateFilesController::class, 'modal'])->name('files-modal');
+        $this->PUT('/dashboard/files/{table}/{uint:id}', [PrivateFilesController::class, 'update'])->name('files-update');
+        $this->DELETE('/dashboard/files/{table}', [PrivateFilesController::class, 'delete'])->name('files-delete');
+        $this->GET('/dashboard/private/file', [PrivateFilesController::class, 'read'])->name('private-files-read');
+
+        $this->GET('/dashboard/settings', [SettingsController::class, 'index'])->name('settings');
+        $this->POST('/dashboard/settings', [SettingsController::class, 'post']);
+        $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
     }
 }
