@@ -93,31 +93,49 @@ class LogsController extends \Raptor\Controller
                 throw new \InvalidArgumentException($this->text('invalid-request'));
             }
             
-            $logger = new Logger($this->pdo);
-            $logger->setTable($table);
             $condition = $this->getParsedBody();
             if (isset($condition['CONTEXT'])) {
                 $context = $condition['CONTEXT'];
                 unset($condition['CONTEXT']);
-                $wheres = [];
-                foreach (\is_array($context) ? $context : [] as $field => $value) {
-                    $value = $this->quote($value);
-                    if ($this->getDriverName() == 'pgsql') {
-                        $wheres[] = "context::json->>'$field'=$value";
-                    } else {
-                        $wheres[] = "JSON_EXTRACT(context, '$.$field')=$value";
-                    }
-                }
-                $clause = \implode(' AND ', $wheres);
-                if (!empty($clause)) {
-                    if (empty($condition['WHERE'])) {
-                        $condition['WHERE'] = '';
-                    } else {
-                        $condition['WHERE'] .= ' AND ';
-                    }
-                    $condition['WHERE'] .= $clause;
-                }
+            } else {
+                $context = null;
             }
+
+            $wheres = [];
+            foreach (\is_array($context) ? $context : [] as $field => $value) {
+                $isLike = \strpos($value, '*') !== false;
+                if ($isLike) {
+                    $value = \str_replace('*', '%', $value);
+                }
+                $quotedValue = $this->quote($value);
+                $keys = \explode('.', $field);
+
+                if ($this->getDriverName() == 'pgsql') {
+                    $expr = 'context';
+                    $lastKey = \array_pop($keys);
+                    foreach ($keys as $k) {
+                        $expr .= "->'$k'";
+                    }
+                    $expr .= "->>'$lastKey'";
+                } else {
+                    $jsonPath = '$';
+                    foreach ($keys as $k) {
+                        $jsonPath .= ".$k";
+                    }
+                    $expr = "JSON_UNQUOTE(JSON_EXTRACT(context, '$jsonPath'))";
+                }
+                
+                $wheres[] = $isLike ? "$expr LIKE $quotedValue" : "$expr=$quotedValue";
+            }
+            $clause = \implode(' AND ', $wheres);
+            if (!empty($clause)) {
+                $condition['WHERE'] = empty($condition['WHERE'])
+                    ? $clause
+                    : $condition['WHERE'] . ' AND ' . $clause;
+            }
+
+            $logger = new Logger($this->pdo);
+            $logger->setTable($table);
             $this->respondJSON($logger->getLogs($condition));
         } catch (\Throwable $e) {
             $this->respondJSON(['error' => $e->getMessage()], $e->getCode());

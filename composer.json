@@ -19,7 +19,7 @@
         "phpmailer/phpmailer": ">=6.8.0",
         "getbrevo/brevo-php": ">=1.0.2",
         "firebase/php-jwt": ">=6.7.0",
-        "codesaur/http-application": ">=5.7.0",
+        "codesaur/http-application": ">=5.7.1",
         "codesaur/dataobject": ">=6.5.0",
         "codesaur/http-client": ">=1.5.0",
         "codesaur/template": ">=1.6.0"
@@ -47,11 +47,11 @@
             ],
             "Raptor\\Content\\": [
                 "application/raptor/content/",
-                "application/raptor/content/news",
-                "application/raptor/content/page",
+                "application/raptor/content/settings",
                 "application/raptor/content/reference",
                 "application/raptor/content/file",
-                "application/raptor/content/settings"
+                "application/raptor/content/news",
+                "application/raptor/content/page"
             ],
             "Raptor\\Mail\\": "application/raptor/mail/",
             "Raptor\\Log\\": "application/raptor/log/"

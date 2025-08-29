@@ -164,15 +164,14 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                 throw new \InvalidArgumentException("Log table info can't be empty!");
             }
             
-            $server_request = [
+            $context['server_request'] = [
                 'code' => $this->getLanguageCode(),
                 'method' => $this->getRequest()->getMethod(),
-                'uri' => (string) $this->getRequest()->getUri()
+                'target' => $this->getRequest()->getRequestTarget(),
+                'remote_addr' => $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? '',
+                'body' => $this->getRequest()->getParsedBody(),
+                'files' => $this->getRequest()->getUploadedFiles()
             ];
-            if ($this->getRequest()->getServerParams()['REMOTE_ADDR']) {
-                $server_request['remote_addr'] = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
-            }
-            $context['server_request'] = $server_request;
             
             $auth_user = $this->getUser()?->profile ?? [];
             if (isset($auth_user['id'])

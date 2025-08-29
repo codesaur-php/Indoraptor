@@ -13,10 +13,8 @@ class PagesController extends FileController
             return;
         }
         
-        $model = new PagesModel($this->pdo);
-        $table = $model->getName();
-        
         $filters = [];
+        $table = (new PagesModel($this->pdo))->getName();
         $codes_result = $this->query(
             "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
         )->fetchAll();
@@ -48,7 +46,6 @@ class PagesController extends FileController
                 ]
             ]
         ];
-
         $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
@@ -63,16 +60,20 @@ class PagesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $params = $this->getQueryParams() + ['is_active' => 1];
+            $params = $this->getQueryParams();
+            if (!isset($params['is_active'])) {
+                $params['is_active'] = 1;
+            }
             $conditions = [];
             $allowed = ['code', 'type', 'category', 'published', 'is_active'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "$name=:$name";
+                } else {
+                    unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);
-         
+            $where = \implode(' AND ', $conditions);         
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages = 
                 'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active ' .
@@ -107,12 +108,12 @@ class PagesController extends FileController
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($is_submit) {
-                $log_context['payload'] = $payload = $this->getParsedBody();
+                $payload = $this->getParsedBody();
+                $log_context['payload'] = $payload;
                 if (empty($payload['title'])){
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['created_by'] = $this->getUserId();
-                
+                $payload['created_by'] = $this->getUserId();                
                 $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['published'] == 1) {
                     if (!$this->isUserCan('system_content_publish')
@@ -122,8 +123,7 @@ class PagesController extends FileController
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
                 }
-                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
-                
+                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;                
                 if (isset($payload['files'])) {
                     $files = $payload['files'];
                     unset($payload['files']);
@@ -175,8 +175,7 @@ class PagesController extends FileController
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
                     $model->updateById($id, ['photo' => $photo['path']]);
-                    $log_context['payload']['photo'] = $photo;
-                    
+                    $log_context['payload']['photo'] = $photo;                    
                     $this->indolog(
                         $table,
                         LogLevel::ALERT,
@@ -226,7 +225,8 @@ class PagesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $log_context['record'] = $record = $model->getById($id);
+            $record = $model->getById($id);
+            $log_context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -271,7 +271,8 @@ class PagesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $log_context['record'] = $record = $model->getById($id);
+            $record = $model->getById($id);
+            $log_context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }

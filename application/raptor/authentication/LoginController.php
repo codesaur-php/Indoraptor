@@ -48,14 +48,7 @@ class LoginController extends \Raptor\Controller
     public function entry()
     {
         try {
-            $log_context = ['reason' => 'login'];
             $payload = $this->getParsedBody();
-            
-            $log_context += ['payload' => $payload];
-            if (isset($log_context['payload']['password'])) {
-                unset($log_context['payload']['password']);
-            }
-
             if ($this->isUserAuthorized() || empty($payload['username']) || empty($payload['password'])) {
                 throw new \Exception($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
@@ -74,7 +67,6 @@ class LoginController extends \Raptor\Controller
             if (((int) $user['status']) != 1) {
                 throw new \Exception('Inactive user', StatusCodeInterface::STATUS_FORBIDDEN);
             }
-            unset($user['password']);
             
             $org_model = new OrganizationModel($this->pdo);
             $org_user_model = new OrganizationUserModel($this->pdo);
@@ -104,10 +96,6 @@ class LoginController extends \Raptor\Controller
             
             $this->respondJSON(['status' => 'success', 'message' => "Хэрэглэгч {$user['first_name']} системд нэвтрэв."]);
 
-            $log_level = LogLevel::INFO;
-            $log_context += ['auth_user' => $user];
-            $log_message = 'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системд нэвтрэв';
-
             if (empty($user['code'])) {
                 $users->updateById($user['id'], ['code' => $this->getLanguageCode()]);
             } elseif ($user['code'] != $this->getLanguageCode()
@@ -115,6 +103,16 @@ class LoginController extends \Raptor\Controller
             ) {
                 $_SESSION['RAPTOR_LANGUAGE_CODE'] = $user['code'];
             }
+            
+            $this->indolog(
+                'dashboard',
+                LogLevel::INFO,
+                'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системд нэвтрэв',
+                [
+                    'reason' => 'login',
+                    'auth_user' => $user
+                ]
+            );
         } catch (\Throwable $e) {
             if (isset($_SESSION['RAPTOR_JWT'])) {
                 unset($_SESSION['RAPTOR_JWT']);
@@ -123,11 +121,15 @@ class LoginController extends \Raptor\Controller
 
             $this->errorLog($e);
             
-            $log_level = LogLevel::ERROR;
-            $log_message = $e->getMessage();
-            $log_context += ['reason' => 'attempt', 'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
-        } finally {
-            $this->indolog('dashboard', $log_level, $log_message, $log_context);
+            $this->indolog(
+                'dashboard',
+                LogLevel::ERROR,
+                $e->getMessage(),
+                [
+                    'reason' => 'login',
+                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                ]
+            );
         }
     }
 

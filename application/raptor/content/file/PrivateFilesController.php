@@ -151,10 +151,9 @@ class PrivateFilesController extends FilesController
             ]);
 
             $log_level = LogLevel::INFO;
+            $log_message = '{id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
             if (!empty($updated['record_id'])) {
-                $log_message = '{record_id}-р бичлэгт зориулсан {id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
-            } else {
-                $log_message = '{id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
+                $log_message = "{record_id}-р бичлэгт зориулсан $log_message";
             }
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
@@ -177,14 +176,16 @@ class PrivateFilesController extends FilesController
             }
             
             $payload = $this->getParsedBody();
+            $log_context['payload'] = $payload;
+            
             if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $log_context['payload'] = $payload;
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
             $record = $model->getById($id);
@@ -206,10 +207,9 @@ class PrivateFilesController extends FilesController
             ]);
             
             $log_level = LogLevel::ALERT;
+            $log_message = '{id} дугаартай [{path}] файлыг идэвхгүй болголоо';
             if (!empty($record['record_id'])) {
-                $log_message = '{record_id}-р бичлэгт зориулсан {id} дугаартай [{path}] файлыг идэвхгүй болголоо';
-            } else {
-                $log_message = '{id} дугаартай [{path}] файлыг идэвхгүй болголоо';
+                $log_message = "{record_id}-р бичлэгт зориулсан $log_message";
             }
         } catch (\Throwable $e) {
             $this->respondJSON([

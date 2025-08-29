@@ -4,9 +4,6 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
-use Raptor\Log\Logger;
-use Raptor\Log\LogsController;
-
 class ReferencesController extends \Raptor\Controller
 {
     use \Raptor\Template\DashboardTrait;
@@ -60,22 +57,20 @@ class ReferencesController extends \Raptor\Controller
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
-        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['model' => ReferenceModel::class]);
+        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['reason' => 'reference']);
     }
     
     public function insert(string $table)
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = ['model' => ReferenceModel::class, 'table' => $table];
+            $log_context = ['reason' => 'reference-create', 'table' => $table];
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            if ($is_submit) {
+            } elseif ($is_submit) {
                 $record = [];
                 $content = [];
-                $payload = $this->getParsedBody();
+                $log_context['payload'] = $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
@@ -85,7 +80,6 @@ class ReferencesController extends \Raptor\Controller
                         $record[$index] = $value;
                     }
                 }
-                $context['payload'] = $payload;
                 
                 if (empty($payload['keyword'])
                     || empty($payload['category'])
@@ -107,23 +101,22 @@ class ReferencesController extends \Raptor\Controller
                 if (!isset($insert['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                $id = $insert['id'];
-                $context['id'] = $id;
+                $log_context['id'] = $id = $insert['id'];
                 
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
                 
-                $level = LogLevel::INFO;
-                $message = "Шинээр [{$payload['keyword']}] түлхүүртэй лавлах мэдээллийг [$table] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $log_level = LogLevel::INFO;
+                $log_message = 'Шинээр [{payload.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/reference-insert.html', ['table' => $table]);
                 $dashboard->set('title', $this->text('add-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
                 
-                $level = LogLevel::NOTICE;
-                $message = "Шинэ лавлах мэдээллийг [$table] хүснэгт дээр үйлдлийг эхлүүллээ";
+                $log_level = LogLevel::NOTICE;
+                $log_message = 'Шинэ лавлах мэдээллийг {table} хүснэгт дээр үйлдлийг эхлүүллээ';
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -132,18 +125,18 @@ class ReferencesController extends \Raptor\Controller
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
             
-            $level = LogLevel::ERROR;
-            $message = "Шинэ лавлах мэдээллийг [$table] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+            $log_level = LogLevel::ERROR;
+            $log_message = 'Шинэ лавлах мэдээллийг [{table}] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog('content', $level, $message, $context);
+            $this->indolog('content', $log_level, $log_message, $log_context);
         }
     }
     
     public function view(string $table, int $id)
     {
         try {
-            $context = ['id' => $id, 'model' => ReferenceModel::class, 'table' => $table];
+            $log_context = ['reason' => 'reference-view', 'table' => $table, 'id' => $id];
             
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -153,49 +146,27 @@ class ReferencesController extends \Raptor\Controller
 
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $record = $reference->getById($id);
+            $log_context['record'] = $record = $reference->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $context['record'] = $record;
-            
-            $logger = new Logger($this->pdo);
-            $logger->setTable('content');
-            $condition = ['ORDER BY' => 'id Desc'];
-            if ($this->getDriverName() == 'pgsql') {
-                $condition['WHERE'] =
-                    '(context::json->>\'id\'=' . $this->quote($id) .
-                    ' AND context::json->>\'model\'=' . $this->quote($context['model']) .
-                    ' AND context::json->>\'table\'=' . $this->quote($context['table']);
-            } else {
-                $condition['WHERE'] =
-                    'JSON_EXTRACT(context, "$.id")=' . $this->quote($id) .
-                    ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']) .
-                    ' AND JSON_EXTRACT(context, "$.table")=' . $this->quote($context['table']);
-            }
-            $logs = $logger->getLogs($condition);
-            \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
-
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/reference-view.html',
-                [
-                    'table' => $table, 'record' => $record,
-                    'logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()
-                ]
+                ['table' => $table, 'record' => $record]
             );
             $dashboard->set('title', $this->text('view-record') . ' | ' . \ucfirst($table));
             $dashboard->render();
 
-            $level = LogLevel::NOTICE;
-            $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна";
+            $log_level = LogLevel::NOTICE;
+            $log_message = '{table} хүснэгтийн {id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна';
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
-            $level = LogLevel::ERROR;
-            $message = "$table хүснэгтээс $id дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+            $log_level = LogLevel::ERROR;
+            $log_message = '{table} хүснэгтээс {id} дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog('content', $level, $message, $context);
+            $this->indolog('content', $log_level, $log_message, $log_context);
         }
     }
     
@@ -203,7 +174,7 @@ class ReferencesController extends \Raptor\Controller
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $context = ['id' => $id, 'model' => ReferenceModel::class, 'table' => $table];
+            $log_context = ['reason' => 'reference-update', 'table' => $table, 'id' => $id];
             
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -217,34 +188,34 @@ class ReferencesController extends \Raptor\Controller
             if (empty($current)) {
                 throw new \Exception($this->text('no-record-selected'), 400);
             }
-            $context['record'] = $current;
+            $log_context['record'] = $current;
             
             if ($is_submit) {
                 $payload = $this->getParsedBody();
-                $context['payload'] = $payload;
+                $log_context['payload'] = $payload;
                 if (empty($payload)) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
                 $record = [];
                 $content = [];
-                $context['updates'] = [];
+                $log_context['updates'] = [];
                 foreach ($payload as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                             if ($current['localized'][$index][$key] != $value) {
-                                $context['updates'][] = "{$index}_{$key}";
+                                $log_context['updates'][] = "{$index}_{$key}";
                             }
                         }
                     } else {
                         $record[$index] = $value;
                         if ($current[$index] != $value) {
-                            $context['updates'][] = $index;
+                            $log_context['updates'][] = $index;
                         }
                     }
                 }
-                if (empty($context['updates'])) {
+                if (empty($log_context['updates'])) {
                     throw new \InvalidArgumentException('No update!');
                 }
                 
@@ -264,29 +235,9 @@ class ReferencesController extends \Raptor\Controller
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $logger = new Logger($this->pdo);
-                $logger->setTable('content');
-                $condition = ['ORDER BY' => 'id Desc'];
-                if ($this->getDriverName() == 'pgsql') {
-                    $condition['WHERE'] =
-                        '(context::json->>\'id\')::bigint=' . $id .
-                        ' AND context::json->>\'model\'=' . $this->quote($context['model']) .
-                        ' AND context::json->>\'table\'=' . $this->quote($context['table']);
-                } else {
-                    $condition['WHERE'] =
-                        'JSON_EXTRACT(context, "$.id")=' . $id .
-                        ' AND JSON_EXTRACT(context, "$.model")=' . $this->quote($context['model']) .
-                        ' AND JSON_EXTRACT(context, "$.table")=' . $this->quote($context['table']);
-                }
-                $logs = $logger->getLogs($condition);
-                \array_walk_recursive($logs, [LogsController::class, 'hideSecret']);
-                
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/reference-update.html',
-                    [
-                        'table' => $table, 'record' => $current,
-                        'logs' => $logs, 'users_detail' => $this->retrieveUsersDetail()
-                    ]
+                    ['table' => $table, 'record' => $current]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
@@ -301,10 +252,10 @@ class ReferencesController extends \Raptor\Controller
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
             $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $message = "$table хүснэгтийн $id дугаартай лавлах мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
-            $this->indolog('content', $level, $message, $context);
+            $this->indolog('content', $level, $message, $log_context);
         }
     }
     

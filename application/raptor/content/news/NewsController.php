@@ -13,10 +13,8 @@ class NewsController extends FileController
             return;
         }
         
-        $model = new NewsModel($this->pdo);
-        $table = $model->getName();
-        
         $filters = [];
+        $table = (new NewsModel($this->pdo))->getName();
         $codes_result = $this->query(
             "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
         )->fetchAll();
@@ -47,8 +45,7 @@ class NewsController extends FileController
                     1 => 'published'
                 ]
             ]
-        ];
-        
+        ];        
         $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
@@ -63,16 +60,20 @@ class NewsController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $params = $this->getQueryParams() + ['is_active' => 1];
+            $params = $this->getQueryParams();
+            if (!isset($params['is_active'])) {
+                $params['is_active'] = 1;
+            }
             $conditions = [];
             $allowed = ['code', 'type', 'category', 'published', 'is_active'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "$name=:$name";
+                } else {
+                    unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);
-            
+            $where = \implode(' AND ', $conditions);            
             $table = (new NewsModel($this->pdo))->getName();
             $select_pages = 
                 'SELECT id, photo, title, code, type, category, published, published_at, date(created_at) as created_date ' .
@@ -105,11 +106,11 @@ class NewsController extends FileController
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($is_submit) {
-                $log_context['payload'] = $payload = $this->getParsedBody();
+                $payload = $this->getParsedBody();
+                $log_context['payload'] = $payload;
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }
-                
+                }                
                 $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['published'] == 1) {
                     if (!$this->isUserCan('system_content_publish')
@@ -118,15 +119,13 @@ class NewsController extends FileController
                     }
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
-                }
-                
+                }                
                 $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['comment'] == 1
                     && !$this->isUserCan('system_content_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
-                }
-                
+                }                
                 if (isset($payload['files'])) {
                     $files = $payload['files'];
                     unset($payload['files']);
@@ -178,8 +177,7 @@ class NewsController extends FileController
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
                     $model->updateById($id, ['photo' => $photo['path']]);
-                    $log_context['payload']['photo'] = $photo;
-                    
+                    $log_context['payload']['photo'] = $photo;                    
                     $this->indolog(
                         $table,
                         LogLevel::ALERT,
@@ -221,6 +219,8 @@ class NewsController extends FileController
             
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
             
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -231,13 +231,9 @@ class NewsController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            
-            if ($is_submit) {
-                $log_context['payload'] = $payload = $this->getParsedBody();                
+            } elseif ($is_submit) {
+                $payload = $this->getParsedBody();
+                $log_context['payload'] = $payload;
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
@@ -258,8 +254,7 @@ class NewsController extends FileController
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
-                    $payload['photo'] = $photo['path'];
-                    
+                    $payload['photo'] = $photo['path'];                    
                     $this->indolog(
                         $table,
                         LogLevel::ALERT,
@@ -361,11 +356,11 @@ class NewsController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $log_context['record'] = $record = $model->getById($id);
+            $record = $model->getById($id);
+            $log_context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
             $files = new FilesModel($this->pdo);
             $files->setTable($table);
             $log_context['files'] = $files->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
@@ -401,12 +396,14 @@ class NewsController extends FileController
             
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
-    
+            
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $log_context['record'] = $record = $model->getById($id);
+            $log_context['table'] = $table;
+            $record = $model->getById($id);
+            $log_context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -414,10 +411,7 @@ class NewsController extends FileController
             $files = new FilesModel($this->pdo);
             $files->setTable($table);
             $log_context['files'] = $files->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-            $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/news-view.html',
-                $log_context + ['table' => $table]
-            );
+            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-view.html', $log_context);
             $dashboard->set('title', $this->text('view-record') . ' | News');
             $dashboard->render();
 
@@ -446,7 +440,8 @@ class NewsController extends FileController
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
-            $log_context['payload'] = $payload = $this->getParsedBody();
+            $payload = $this->getParsedBody();
+            $log_context['payload'] = $payload;
             if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
