@@ -62,8 +62,10 @@ class FilesController extends FileController
         $dashboard->render();
 
         $this->indolog(
-            $table, LogLevel::NOTICE, '{table} файлын жагсаалтыг нээж үзэж байна',
-            ['tables' => $tables, 'total' => $total, 'table' => $table]
+            $table,
+            LogLevel::NOTICE,
+            '{table} файлын жагсаалтыг нээж үзэж байна',
+            ['action' => 'files-index', 'tables' => $tables, 'total' => $total, 'table' => $table]
         );
     }
     
@@ -86,6 +88,51 @@ class FilesController extends FileController
             $this->respondJSON(['status' => 'success', 'list' => $files]);
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+        }
+    }
+
+    public function post(string $input, string $table, int $id)
+    {
+        try {
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+
+            $this->setFolder("/$table" . ($id == 0 ? '' : "/$id"));
+            $this->allowCommonTypes();
+            $uploaded = $this->moveUploaded($input);
+            if (!$uploaded) {
+                throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload!', 400);
+            }
+            
+            if ($id > 0) {
+                $uploaded['record_id'] = $id;
+            }
+            $model = new FilesModel($this->pdo);
+            $model->setTable($table);
+            $record = $model->insert($uploaded + ['created_by' => $this->getUserId()]);
+            if (!isset($record['id'])) {
+                throw new \Exception($this->text('record-insert-error'));
+            }
+            $this->respondJSON($record);
+            
+            $log_context = ['action' => 'files-post'];
+            $log_message = '<a target="__blank" href="{path}">{path}</a> файлыг ';
+            if (!empty($record['record_id'])) {
+                $log_context += $record;
+                $log_message .= 'байршуулан {record_id}-р бичлэгт зориулж холболоо';
+            } else {
+                $log_message .= 'байршууллаа';
+            }
+            $log_context['file'] = $uploaded;            
+            $this->indolog($table, LogLevel::INFO, $log_message, $log_context);
+        } catch (\Throwable $e) {
+            $error = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            $this->respondJSON($error, $e->getCode());
+
+            if (!empty($uploaded['file'])) {
+                $this->deleteUnlink(\basename($uploaded['file']));
+            }
         }
     }
 }

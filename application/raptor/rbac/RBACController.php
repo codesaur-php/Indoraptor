@@ -75,7 +75,7 @@ class RBACController extends \Raptor\Controller
     {
         try {
             $title = $this->getQueryParams()['title'] ?? '';
-            $context = ['reason' => 'rbac-insert-role'];
+            $context = ['action' => 'rbac-insert-role'];
             $is_submit = $this->getRequest()->getMethod() == 'POST';
             
             $context['payload'] = $payload = $this->getParsedBody();
@@ -149,7 +149,7 @@ class RBACController extends \Raptor\Controller
     {
         try {
             $title = $this->getQueryParams()['title'] ?? '';
-            $context = ['reason' => 'rbac-insert-permission'];
+            $context = ['action' => 'rbac-insert-permission'];
             $is_submit = $this->getRequest()->getMethod() == 'POST';
             
             $context['payload'] = $payload = $this->getParsedBody();
@@ -208,7 +208,7 @@ class RBACController extends \Raptor\Controller
     public function setRolePermission(string $alias)
     {
         try {
-            $context = ['reason' => 'set-role-permission'];
+            $context = ['action' => 'set-role-permission'];
                 
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);

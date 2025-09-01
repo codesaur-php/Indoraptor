@@ -273,13 +273,13 @@ class UsersController extends \Raptor\Controller
                 }
                 $current_photo_file = empty($current['photo']) ? null : \basename($current['photo']);                
                 if (!empty($current_photo_file)) {
-                    if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($current_photo_file, $model->getName());
+                    if ($file->getLastUploadError() == -1) {
+                        $file->deleteUnlink($current_photo_file, $model->getName());
                         $record['photo'] = '';
                     } elseif (!empty($record['photo'])
                         && \basename($record['photo']) != $current_photo_file
                     ) {
-                        $file->tryDeleteFile($current_photo_file, $model->getName());
+                        $file->deleteUnlink($current_photo_file, $model->getName());
                     }
                 }                
                 if (isset($record['photo'])) {
@@ -313,7 +313,7 @@ class UsersController extends \Raptor\Controller
                                 'users',
                                 LogLevel::ALERT,
                                 "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс {$record['username']} хэрэглэгчийг хаслаа",
-                                ['reason' => 'organization-strip', 'user_id' => $id, 'organization_id' => $row['organization_id']]
+                                ['action' => 'organization-strip', 'user_id' => $id, 'organization_id' => $row['organization_id']]
                             );
                         }
                     }
@@ -323,7 +323,7 @@ class UsersController extends \Raptor\Controller
                                 'users',
                                 LogLevel::ALERT,
                                 "{$record['username']} хэрэглэгчийг $org_id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                                ['reason' => 'organization-set', 'user_id' => $id, 'organization_id' => $org_id]
+                                ['action' => 'organization-set', 'user_id' => $id, 'organization_id' => $org_id]
                             );
                         }
                     }
@@ -350,7 +350,7 @@ class UsersController extends \Raptor\Controller
                                 'users',
                                 LogLevel::ALERT,
                                 "{$record['username']} хэрэглэгчээс {$row['id']} дугаар бүхий дүрийг хаслаа",
-                                ['reason' => 'role-strip', 'user_id' => $id, 'role_id' => $row['role_id']]
+                                ['action' => 'role-strip', 'user_id' => $id, 'role_id' => $row['role_id']]
                             );
                         }
                     }
@@ -367,7 +367,7 @@ class UsersController extends \Raptor\Controller
                                 'users',
                                 LogLevel::ALERT,
                                 "{$record['username']} хэрэглэгч дээр $role_id дугаар бүхий дүр нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                                ['reason' => 'role-set', 'user_id' => $id, 'role_id' => $role_id]
+                                ['action' => 'role-set', 'user_id' => $id, 'role_id' => $role_id]
                             );
                         }
                     }
@@ -615,7 +615,7 @@ class UsersController extends \Raptor\Controller
     public function requestApprove()
     {
         try {
-            $context = ['reason' => 'user-request-approve'];
+            $context = ['action' => 'user-request-approve'];
             
             if (!$this->isUserCan('system_user_insert')) {
                 throw new \Exception('No permission for an action [approval]!', 401);
@@ -722,7 +722,7 @@ class UsersController extends \Raptor\Controller
     public function requestDelete()
     {
         try {
-            $context = ['reason' => 'user-request-delete', 'table' => 'newbie'];
+            $context = ['action' => 'user-request-delete', 'table' => 'newbie'];
             
             if (!$this->isUserCan('system_user_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
@@ -769,7 +769,7 @@ class UsersController extends \Raptor\Controller
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = ['reason' => 'set-user-role'];
+            $context = ['action' => 'set-user-role'];
             
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -816,7 +816,7 @@ class UsersController extends \Raptor\Controller
                             'users',
                             LogLevel::ALERT,
                             "{$user['username']} хэрэглэгчээс {$row['id']} дугаар бүхий дүрийг хаслаа",
-                            ['reason' => 'role-strip', 'user_id' => $id, 'role_id' => $row['role_id']]
+                            ['action' => 'role-strip', 'user_id' => $id, 'role_id' => $row['role_id']]
                         );
                     }
                 }
@@ -833,7 +833,7 @@ class UsersController extends \Raptor\Controller
                             'users',
                             LogLevel::ALERT,
                             "{$user['username']} хэрэглэгч дээр $role_id дугаар бүхий дүр нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                            ['reason' => 'role-set', 'user_id' => $id, 'role_id' => $role_id]
+                            ['action' => 'role-set', 'user_id' => $id, 'role_id' => $role_id]
                         );
                     }
                 }
@@ -918,7 +918,7 @@ class UsersController extends \Raptor\Controller
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = ['reason' => 'organization-user-set'];
+            $context = ['action' => 'organization-user-set'];
             
             if (!$this->isUserCan('system_user_organization_set')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -970,7 +970,7 @@ class UsersController extends \Raptor\Controller
                             'users',
                             LogLevel::ALERT,
                             "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс {$user['username']} хэрэглэгчийг хаслаа",
-                            ['reason' => 'organization-strip', 'user_id' => $user_id, 'organization_id' => $row['organization_id']]
+                            ['action' => 'organization-strip', 'user_id' => $user_id, 'organization_id' => $row['organization_id']]
                         );
                     }
                 }
@@ -980,7 +980,7 @@ class UsersController extends \Raptor\Controller
                             'users',
                             LogLevel::ALERT,
                             "{$user['username']} хэрэглэгчийг $org_id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                            ['reason' => 'organization-set', 'user_id' => $user_id, 'organization_id' => $org_id]
+                            ['action' => 'organization-set', 'user_id' => $user_id, 'organization_id' => $org_id]
                         );
                     }
                 }

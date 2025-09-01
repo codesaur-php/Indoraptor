@@ -635,7 +635,7 @@
             });
         }
         
-        {% for file in files  %}
+        {% for file in files %}
         files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
         {% endfor %}
         Fancybox.bind('[file-data-fancybox]', {groupAll: true});
@@ -707,15 +707,15 @@
                     log_li.appendChild(document.createTextNode(' '));
 
                     let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.reason ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                     span_user_action.classList.add('text-muted', 'small');
                     log_li.appendChild(span_user_action);
 
                     logger.appendChild(log_li);
                 });
 
-            }).catch(error => {
-                console.log(error.message);
+            }).catch(error => { 
+               console.log(error.message);
             }).finally(() => {
                 logger.style.display = '';
                 spinner.style.display = 'none';

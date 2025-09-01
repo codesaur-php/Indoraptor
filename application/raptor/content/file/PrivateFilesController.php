@@ -109,17 +109,11 @@ class PrivateFilesController extends FilesController
     public function update(string $table, int $id)
     {
         try {
-            $log_context = [
-                'id' => $id,
-                'reason' => 'update-file'
-            ];
-            
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             $payload = $this->getParsedBody();
-            $log_context['payload'] = $payload;
             if (empty($payload)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
@@ -140,7 +134,6 @@ class PrivateFilesController extends FilesController
             if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $log_context += $updated;
 
             $this->respondJSON([
                 'type' => 'primary',
@@ -150,34 +143,41 @@ class PrivateFilesController extends FilesController
                 'record' => $updated
             ]);
 
-            $log_level = LogLevel::INFO;
             $log_message = '{id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
             if (!empty($updated['record_id'])) {
                 $log_message = "{record_id}-р бичлэгт зориулсан $log_message";
             }
+            $this->indolog(
+                $table,
+                LogLevel::INFO,
+                $log_message,
+                [
+                    'action' => 'files-update'
+                ]  + $updated
+            );
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             
-            $log_level = LogLevel::ERROR;
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $log_message = '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-        } finally {
-            $this->indolog($table, $log_level, $log_message, $log_context);
+            $this->indolog(
+                $table,
+                LogLevel::ERROR,
+                '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо',
+                [
+                    'action' => 'files-update', 'id' => $id,
+                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                ]
+            );
         }
     }
     
     public function delete(string $table)
     {
         try {
-            $log_context = ['reason' => 'deactivate-file'];
-            
             if (!$this->isUserCan('system_content_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
             $payload = $this->getParsedBody();
-            $log_context['payload'] = $payload;
-            
             if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
@@ -198,7 +198,6 @@ class PrivateFilesController extends FilesController
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $log_context += $record;
             
             $this->respondJSON([
                 'status'  => 'success',
@@ -206,11 +205,18 @@ class PrivateFilesController extends FilesController
                 'message' => $this->text('record-successfully-deleted')
             ]);
             
-            $log_level = LogLevel::ALERT;
             $log_message = '{id} дугаартай [{path}] файлыг идэвхгүй болголоо';
             if (!empty($record['record_id'])) {
                 $log_message = "{record_id}-р бичлэгт зориулсан $log_message";
             }
+            $this->indolog(
+                $table,
+                LogLevel::ALERT,
+                $log_message,
+                [
+                    'action' => 'deactivate-file'
+                ] + $record
+            );
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -218,11 +224,15 @@ class PrivateFilesController extends FilesController
                 'message' => $e->getMessage()
             ], $e->getCode());
             
-            $log_level = LogLevel::ERROR;
-            $log_message = 'Файлыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-        } finally {
-            $this->indolog($table, $log_level, $log_message, $log_context);
+            $this->indolog(
+                $table,
+                LogLevel::ERROR,
+                'Файлыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо',
+                [
+                    'action' => 'deactivate-file',
+                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                ]
+            );
         }
     }
 }

@@ -109,7 +109,7 @@ class LoginController extends \Raptor\Controller
                 LogLevel::INFO,
                 'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системд нэвтрэв',
                 [
-                    'reason' => 'login',
+                    'action' => 'login',
                     'auth_user' => $user
                 ]
             );
@@ -126,7 +126,7 @@ class LoginController extends \Raptor\Controller
                 LogLevel::ERROR,
                 $e->getMessage(),
                 [
-                    'reason' => 'login',
+                    'action' => 'login',
                     'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
                 ]
             );
@@ -136,12 +136,14 @@ class LoginController extends \Raptor\Controller
     public function logout()
     {
         if (isset($_SESSION['RAPTOR_JWT'])) {
-            $log_message = 'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системээс гарлаа';
-            $log_context = ['reason' => 'logout', 'jwt' => $_SESSION['RAPTOR_JWT']];
-            
             unset($_SESSION['RAPTOR_JWT']);
             
-            $this->indolog('dashboard', LogLevel::NOTICE, $log_message, $log_context);
+            $this->indolog(
+                'dashboard',
+                LogLevel::NOTICE,
+                'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системээс гарлаа',
+                ['action' => 'logout']
+            );
         }
         
         $this->redirectTo('home');
@@ -150,22 +152,9 @@ class LoginController extends \Raptor\Controller
     public function signup()
     {
         try {
-            $log_context = ['reason' => 'request-new-user'];
-            
             $payload = $this->getParsedBody();
-            $log_context += ['payload' => $payload];
-            if (isset($payload['password'])) {
-                $password = $payload['password'];
-                unset($log_context['payload']['password']);
-            } else {
-                $password = '';
-            }
-            if (isset($payload['password_re'])) {
-                $passwordRe = $payload['password_re'];
-                unset($log_context['payload']['password_re']);
-            } else {
-                $passwordRe = '';
-            }
+            $password = $payload['password'] ?? '';
+            $passwordRe = $payload['password_re'] ??'';            
             if (empty($password) || $password != $passwordRe) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
             } else {
@@ -236,35 +225,41 @@ class LoginController extends \Raptor\Controller
                 $this->respondJSON(['status' => 'success', 'message' => 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг хүлээн авлаа!']);
             }
             
-            $log_level = LogLevel::ALERT;
-            $log_message = '{payload.username} нэртэй {payload.email} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ.';
+            $this->indolog(
+                'dashboard',
+                LogLevel::ALERT,
+                '{server_request.body.username} нэртэй {server_request.body.email} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ.',
+                ['action' => 'request-new-user', 'auth_user' => []]
+            );
         } catch (\Throwable $e) {
-            $log_message = $e->getMessage();
-            $this->respondJSON(['message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $log_message], $e->getCode());
+            $this->respondJSON(['message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $e->getMessage()], $e->getCode());
             
-            $log_level = LogLevel::ERROR;
-            $log_context += ['error' => ['code' => $e->getCode(), 'message' => $log_message]];
-        } finally {
-            $log_context['auth_user'] = [];
-            $this->indolog('dashboard', $log_level ?? LogLevel::NOTICE, $log_message ?? 'request-new-user', $log_context);
+            $this->indolog(
+                'dashboard',
+                LogLevel::ERROR,
+                $e->getMessage(),
+                [
+                    'action' => 'request-new-user', 'auth_user' => [],
+                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                ]
+            );
         }
     }
     
     public function forgot()
     {
         try {
+            $code = $this->getLanguageCode();
             $payload = $this->getParsedBody();
-            $log_context = ['reason' => 'login-forgot', 'payload' => $payload];
             if (empty($payload['email'])
                 || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
             ) {
                 throw new \InvalidArgumentException('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             if (empty($payload['code'])) {
-                $payload['code'] = $this->getLanguageCode();
+                $payload['code'] = $code;
             }
             
-            $code = $this->getLanguageCode();
             $referenceModel = new ReferenceModel($this->pdo);
             $referenceModel->setTable('templates');
             $reference = $referenceModel->getRowBy(
@@ -277,8 +272,7 @@ class LoginController extends \Raptor\Controller
             if (empty($reference['localized'])) {
                 throw new \Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
-            $content = $reference['localized'];
-            
+            $content = $reference['localized'];            
             
             $users = new UsersModel($this->pdo);
             $user = $users->getRowBy(['email' => $payload['email']]);
@@ -305,10 +299,6 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception("Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
             
-            $log_level = LogLevel::INFO;
-            $log_message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгэлээ";
-            $log_context += ['forgot' => $request];
-
             $template = new MemoryTemplate();
             $template->set('email', $payload['email']);
             $template->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
@@ -320,17 +310,27 @@ class LoginController extends \Raptor\Controller
             ) {
                 $this->respondJSON(['status' => 'success', 'message' => $this->text('reset-email-sent')]);
             } else {
-                $this->respondJSON(['status' => 'success', 'message' => $log_message]);
+                $this->respondJSON(['status' => 'success', 'message' => 'Хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгэлээ']);
             }
+            
+            $this->indolog(
+                'dashboard',
+                LogLevel::INFO,
+                '{server_request.body.email} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгэлээ',
+                ['action' => 'login-forgot', 'forgot' => $request,'auth_user' => []]
+            );
         } catch (\Throwable $e) {
-            $log_message = $e->getMessage();
-            $this->respondJSON(['message' => '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $log_message], $e->getCode());
+            $this->respondJSON(['message' => '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $e->getMessage()], $e->getCode());
 
-            $log_level = LogLevel::ERROR;
-            $log_context += ['error' => ['code' => $e->getCode(), 'message' => $log_message]];
-        } finally {
-            $log_context['auth_user'] = [];
-            $this->indolog('dashboard', $log_level ?? LogLevel::NOTICE, $log_message ?? 'login-forgot', $log_context);
+            $this->indolog(
+                'dashboard',
+                LogLevel::ERROR,
+                $e->getMessage(),
+                [
+                    'action' => 'login-forgot', 'auth_user' => [],
+                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                ]
+            );
         }
     }
     
@@ -338,7 +338,7 @@ class LoginController extends \Raptor\Controller
     {
         try {   
             $log_context = [
-                'reason' => 'forgot-password',
+                'action' => 'forgot-password',
                 'forgot_password' => $forgot_password
             ];
             
@@ -356,13 +356,13 @@ class LoginController extends \Raptor\Controller
             }
             
             $code = $forgot['code'];
-            if ($code != $this->getLanguageCode()) {
-                if (isset($this->getLanguages()[$code])) {
-                    $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code;
-                    $link = $this->generateRouteLink('login') . "?forgot=$forgot_password";
-                    \header("Location: $link", false, 302);
-                    exit;
-                }
+            if ($code != $this->getLanguageCode()
+                && isset($this->getLanguages()[$code])
+            ) {
+                $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code;
+                $link = $this->generateRouteLink('login') . "?forgot=$forgot_password";
+                \header("Location: $link", false, 302);
+                exit;
             }
             $log_context += ['forgot' => $forgot];
             
@@ -404,25 +404,12 @@ class LoginController extends \Raptor\Controller
     public function setPassword()
     {
         try {
-            $log_context = ['reason' => 'reset-password'];
             $parsedBody = $this->getParsedBody();
             $forgot_password = $parsedBody['forgot_password'];
-            
             $vars = (array)$this->getAttribute('settings');
             $vars['forgot_password'] = $forgot_password;
-            $log_context += ['payload' => $parsedBody];
-            if (isset($parsedBody['password_new'])) {
-                $password_new = $parsedBody['password_new'];
-                unset($log_context['payload']['password_new']);
-            } else {
-                $password_new = null;
-            }
-            if (isset($parsedBody['password_retype'])) {
-                $password_retype = $parsedBody['password_retype'];
-                unset($log_context['payload']['password_retype']);
-            } else {
-                $password_retype = null;
-            }
+            $password_new = $parsedBody['password_new'] ?? null;            
+            $password_retype = $parsedBody['password_retype'] ?? null;
             $user_id = \filter_var($parsedBody['user_id'], \FILTER_VALIDATE_INT);
             if ($user_id === false) {
                 throw new \Exception('<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>Мэдээлэл буруу оруулсан байна. Анхааралтай бөглөөд дахин оролдоно уу', StatusCodeInterface::STATUS_BAD_REQUEST);
@@ -433,9 +420,7 @@ class LoginController extends \Raptor\Controller
                 || !isset($password_new) || !isset($password_retype)
             ) {
                 return $this->redirectTo('home');
-            }
-            
-            if (empty($password_new) || $password_new != $password_retype) {
+            } elseif (empty($password_new) || $password_new != $password_retype) {
                 throw new \Exception('<span class="text-secondary">Шинэ нууц үгээ буруу бичсэн.</span><br/>' . $this->text('password-must-match'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
@@ -457,8 +442,7 @@ class LoginController extends \Raptor\Controller
             if (empty($user)) {
                 throw new \Exception('Invalid user', StatusCodeInterface::STATUS_NOT_FOUND);
             }
-            unset($user['password']);
-
+            
             $result = $users->updateById($user['id'], [
                 'updated_by' => $user['id'],
                 'updated_at' => \date('Y-m-d H:i:s'),
@@ -474,19 +458,26 @@ class LoginController extends \Raptor\Controller
             
             $vars += ['title' => $this->text('success'), 'notice' => $this->text('set-new-password-success')];
 
-            $log_level = LogLevel::INFO;
-            $log_message = 'Нууц үг шинээр тохируулав';
-            $log_context += ['auth_user' => $user];
+            $this->indolog(
+                'dashboard',
+                LogLevel::INFO,
+                'Нууц үгээ шинээр тохируулав',
+                ['action' => 'reset-password', 'auth_user' => $user]
+            );
         } catch (\Throwable $e) {
             $vars['error'] = $e->getMessage();
             
-            $log_level = LogLevel::ERROR;
-            $log_message = 'Шинээр нууц үг тааруулах үед алдаа гарлаа';
-            $log_context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            $this->indolog(
+                'dashboard',
+                LogLevel::ERROR,
+                'Шинээр нууц үг тааруулах үед алдаа гарлаа. {error.message}',
+                [
+                    'action' => 'reset-password', 'auth_user' => [],
+                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                ]
+            );
         } finally {
             $this->twigTemplate(\dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
-            
-            $this->indolog('dashboard', $log_level ?? LogLevel::NOTICE, $log_message ?? 'reset-password', $log_context);
         }
     }
     
@@ -553,9 +544,12 @@ class LoginController extends \Raptor\Controller
             $jwt = $JWT_AUTH->generate($payload);
             $_SESSION['RAPTOR_JWT'] = $jwt;
             
-            $log_context = ['reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt];
-            $log_message = 'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} нэвтэрсэн байгууллага сонгов';
-            $this->indolog('dashboard', LogLevel::NOTICE, $log_message, $log_context);
+            $this->indolog(
+                'dashboard',
+                LogLevel::NOTICE,
+                'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} нэвтэрсэн байгууллага сонгов',
+                ['action' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id]
+            );
         } catch (\Throwable $e) {
             $this->errorLog($e);
         } finally {
@@ -584,8 +578,12 @@ class LoginController extends \Raptor\Controller
                 $user = $this->getUser()->profile;
                 (new UsersModel($this->pdo))->updateById($user['id'], ['code' => $code]);
 
-                $log_message = 'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системд ажиллах хэлийг {from}-с {code} болгон өөрчиллөө';
-                $this->indolog('dashboard', LogLevel::NOTICE, $log_message, ['reason' => 'change-language', 'code' => $code, 'from' => $from]);
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::NOTICE,
+                    'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} системд ажиллах хэлийг {from}-с {code} болгон өөрчиллөө',
+                    ['action' => 'change-language', 'code' => $code, 'from' => $from]
+                );
             }
         }
         

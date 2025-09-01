@@ -30,14 +30,14 @@ class SettingsController extends \Raptor\Controller
             'content',
             LogLevel::NOTICE,
             'Системийн тохируулгыг нээж үзэж байна',
-            ['reason' => 'settings']
+            ['action' => 'settings']
         );
     }
     
     public function post()
     {
         try {
-            $log_context = ['reason' => 'settings'];
+            $log_context = ['action' => 'settings'];
             
             if (!$this->isUserCan('system_content_settings')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -109,7 +109,7 @@ class SettingsController extends \Raptor\Controller
     public function files()
     {
         try {
-            $log_context = ['reason' => 'settings'];
+            $log_context = ['action' => 'settings'];
             
             if (!$this->isUserCan('system_content_settings')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -131,12 +131,12 @@ class SettingsController extends \Raptor\Controller
             }
             if (!empty($current_favico_file)) {
                 if ($this->getParsedBody()['favico_removed'] == 1) {
-                    $file->tryDeleteFile($current_favico_file, 'content');
+                    $file->deleteUnlink($current_favico_file, 'content');
                     $record['favico'] = '';
                 } elseif (isset($record['favico'])
                     && \basename($record['favico']) != $current_favico_file
                 ) {
-                    $file->tryDeleteFile($current_favico_file, 'content');
+                    $file->deleteUnlink($current_favico_file, 'content');
                 }
             }
             if (isset($record['favico'])) {
@@ -150,12 +150,12 @@ class SettingsController extends \Raptor\Controller
             }
             if (!empty($current_apple_touch_icon_file)) {
                 if ($this->getParsedBody()['apple_touch_icon_removed'] == 1) {
-                    $file->tryDeleteFile($current_apple_touch_icon_file, 'content');
+                    $file->deleteUnlink($current_apple_touch_icon_file, 'content');
                     $record['apple_touch_icon'] = '';
                 } elseif (isset($record['apple_touch_icon'])
                     && \basename($record['apple_touch_icon']) != $current_apple_touch_icon_file
                 ) {
-                    $file->tryDeleteFile($current_apple_touch_icon_file, 'content');
+                    $file->deleteUnlink($current_apple_touch_icon_file, 'content');
                 }
             }
             if (isset($record['apple_touch_icon'])) {
@@ -172,12 +172,12 @@ class SettingsController extends \Raptor\Controller
                 }
                 if (!empty($current_logo_file)) {
                     if ($this->getParsedBody()["logo_{$code}_removed"] == 1) {
-                        $file->tryDeleteFile($current_logo_file, 'content');
+                        $file->deleteUnlink($current_logo_file, 'content');
                         $content[$code]['logo'] = '';
                     } elseif (isset($content[$code]['logo'])
                         && \basename($content[$code]['logo']) != $current_logo_file
                     ) {
-                        $file->tryDeleteFile($current_logo_file, 'content');
+                        $file->deleteUnlink($current_logo_file, 'content');
                     }
                 }
                 if (isset($content[$code]['logo'])) {

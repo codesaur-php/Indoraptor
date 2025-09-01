@@ -99,7 +99,7 @@ class PagesController extends FileController
     public function insert()
     {
         try {
-            $log_context = ['reason' => 'create'];
+            $log_context = ['action' => 'create'];
             $is_submit = $this->getRequest()->getMethod() == 'POST';
             
             $model = new PagesModel($this->pdo);
@@ -147,7 +147,7 @@ class PagesController extends FileController
                     \preg_match_all('/src="([^"]+)"/', $html, $srcs);
                     \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
                     foreach ($files as $file_id) {
-                        $update = $this->moveToFolder($table, $id, $file_id);
+                        $update = $this->renameTo($table, $id, $file_id);
                         if (empty($update['path'])) {
                             continue;
                         }
@@ -180,7 +180,7 @@ class PagesController extends FileController
                         $table,
                         LogLevel::ALERT,
                         '{record_id}-p бичлэгийн зургаар <a target="__blank" href="{path}">{path}</a> файлыг байршууллаа',
-                        ['reason' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
+                        ['action' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
                     );
                 }
             } else {
@@ -216,7 +216,7 @@ class PagesController extends FileController
     public function read(int $id)
     {
         try {
-            $log_context = ['reason' => 'read', 'record_id' => $id];
+            $log_context = ['action' => 'read', 'record_id' => $id];
             
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
@@ -262,7 +262,7 @@ class PagesController extends FileController
     public function view(int $id)
     {
         try {
-            $log_context = ['reason' => 'read', 'record_id' => $id];
+            $log_context = ['action' => 'read', 'record_id' => $id];
             
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
@@ -305,7 +305,7 @@ class PagesController extends FileController
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $log_context = ['reason' => 'update', 'record_id' => $id];
+            $log_context = ['action' => 'update', 'record_id' => $id];
             
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
@@ -352,7 +352,7 @@ class PagesController extends FileController
                         $table,
                         LogLevel::ALERT,
                         '{record_id}-p бичлэгийн зургаар <a target="__blank" href="{path}">{path}</a> файлыг байршууллаа',
-                        ['reason' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
+                        ['action' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
                     );
                 }
                 $current_photo_file = empty($record['photo']) ? '' : \basename($record['photo']);
@@ -361,12 +361,14 @@ class PagesController extends FileController
                 }
                 if (!empty($current_photo_file)) {
                     if ($payload['photo_removed'] == 1) {
-                        $this->tryDelete($current_photo_file, $table, $id);
+                        if ($this->deleteUnlink($current_photo_file)) {
+                            // TODO: Log unlink info
+                        }
                         $payload['photo'] = '';
                     } elseif (isset($payload['photo'])
                         && \basename($payload['photo']) != $current_photo_file
-                    ) {
-                        $this->tryDelete($current_photo_file, $table, $id);
+                        && $this->deleteUnlink($current_photo_file)) {
+                        // TODO: Log unlink info
                     }
                 }
                 if (isset($payload['photo'])) {
@@ -441,7 +443,7 @@ class PagesController extends FileController
     public function delete()
     {
         try {
-            $log_context = ['reason' => 'delete'];
+            $log_context = ['action' => 'delete'];
                     
             $model = new PagesModel($this->pdo);
             $table = $model->getName();

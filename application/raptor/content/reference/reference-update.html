@@ -115,14 +115,14 @@
                 <a class="float-left" data-bs-target="#static-modal" data-bs-toggle="modal" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
                 <span class="pl-2 pr-2">
                 {% if item['message'] is not defined or item['message'] is empty %}
-                    <span class="text-danger">{{ item['context']['reason'] }}</span> {{ item['context']['server_request']['uri']|e }}
+                    <span class="text-danger">{{ item['context']['action'] }}</span> {{ item['context']['server_request']['uri']|e }}
                 {% else %}
                     {{ item['message'] }}
                 {% endif %}
                 </span>
                 {% if users_detail[item['created_by']] is defined %}
                 {% set created_by_detail = users_detail[item['created_by']] %}
-                <span class="text-muted small"><u>{{ item['context']['reason'] }} by {{ created_by_detail }}</u></span>
+                <span class="text-muted small"><u>{{ item['context']['action'] }} by {{ created_by_detail }}</u></span>
                 {% endif %}
                 {% if item['info']['path'] is defined %}
                 <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>

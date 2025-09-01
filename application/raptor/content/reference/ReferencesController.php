@@ -57,14 +57,14 @@ class ReferencesController extends \Raptor\Controller
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
-        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['reason' => 'reference']);
+        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'reference']);
     }
     
     public function insert(string $table)
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $log_context = ['reason' => 'reference-create', 'table' => $table];
+            $log_context = ['action' => 'reference-create', 'table' => $table];
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($is_submit) {
@@ -136,7 +136,7 @@ class ReferencesController extends \Raptor\Controller
     public function view(string $table, int $id)
     {
         try {
-            $log_context = ['reason' => 'reference-view', 'table' => $table, 'id' => $id];
+            $log_context = ['action' => 'reference-view', 'table' => $table, 'id' => $id];
             
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -174,7 +174,7 @@ class ReferencesController extends \Raptor\Controller
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $log_context = ['reason' => 'reference-update', 'table' => $table, 'id' => $id];
+            $log_context = ['action' => 'reference-update', 'table' => $table, 'id' => $id];
             
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);

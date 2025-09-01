@@ -372,7 +372,7 @@ class LanguageController extends \Raptor\Controller
                     'localization',
                     LogLevel::ALERT,
                     __CLASS__ . " объект нь $from хэлнээс $to хэлийг хуулбарлан үүсгэлээ",
-                    ['reason' => 'copy-localized-content', 'from' => $from, 'to' => $to, 'copied' => $copied]
+                    ['action' => 'copy-localized-content', 'from' => $from, 'to' => $to, 'copied' => $copied]
                 );
             }
         } catch (\Exception $e) {

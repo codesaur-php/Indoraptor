@@ -214,13 +214,13 @@ class OrganizationController extends \Raptor\Controller
                 }
                 $current_logo_file = $current['logo'] ? '' : \basename($current['logo']);
                 if (!empty($current_logo_file)) {
-                    if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($current_logo_file, $model->getName());
+                    if ($file->getLastUploadError() == -1) {
+                        $file->deleteUnlink($current_logo_file, $model->getName());
                         $record['logo'] = '';
                     } elseif (isset($record['logo'])
                         && \basename($record['logo']) != $current_logo_file
                     ) {
-                        $file->tryDeleteFile($current_logo_file, $model->getName());
+                        $file->deleteUnlink($current_logo_file, $model->getName());
                     }
                 }
                 if (isset($record['logo'])) {

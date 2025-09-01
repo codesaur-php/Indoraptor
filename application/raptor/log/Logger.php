@@ -124,7 +124,15 @@ class Logger extends AbstractLogger
     
     private function encodeContext(array $context): string
     {
-        \array_walk_recursive($context, [$this, 'hidePassword']);
+        \array_walk_recursive($context, function(&$value, $k) {
+            $key = \strtoupper($k);
+            $secrets = ['PIN', 'JWT', 'TOKEN'];
+            if (\str_contains($key, 'PASSWORD')
+                || \in_array($key, $secrets)) {
+                $value = '*** hidden ***';
+            }
+        });
+        
         $json = \json_encode($context, \JSON_INVALID_UTF8_SUBSTITUTE);
         if ($json === false) {
             $context = \mb_convert_encoding($context, 'UTF-8', 'UTF-8');
@@ -154,15 +162,5 @@ class Logger extends AbstractLogger
             }
         }
         return $result;
-    }
-    
-    private function hidePassword(&$v, $k)
-    {
-        if (empty($k)) return;
-            
-        $key = \strtoupper($k);
-        if ($key == 'PIN' || \str_contains($key, 'PASSWORD')) {
-            $v = '*** hidden ***';
-        }
     }
 }

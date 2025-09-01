@@ -3,7 +3,6 @@
 namespace Raptor\Content;
 
 use Psr\Http\Message\UploadedFileInterface;
-use Psr\Log\LogLevel;
 
 class FileController extends \Raptor\Controller
 {
@@ -19,7 +18,7 @@ class FileController extends \Raptor\Controller
     
     private array|false $_allowed_exts = false;
     
-    private int $_error = \UPLOAD_ERR_OK;
+    private int $_upload_error = \UPLOAD_ERR_OK;
     
     public function setFolder(string $folder, bool $relative = true)
     {
@@ -136,7 +135,7 @@ class FileController extends \Raptor\Controller
             }
             
             $uploadedFile->moveTo($upload_path . $file_name);
-            $this->_error = \UPLOAD_ERR_OK;
+            $this->_upload_error = \UPLOAD_ERR_OK;
             
             $file_path = $upload_path . $file_name;
             $mime_type = \mime_content_type($file_path) ?: 'application/octet-stream';
@@ -151,65 +150,15 @@ class FileController extends \Raptor\Controller
             $this->errorLog($e);
             
             if (\is_numeric($e->getCode())) {
-                $this->_error = (int) $e->getCode();
+                $this->_upload_error = (int) $e->getCode();
             }
             
             // failed to move uploaded file!
             return false;
         }
     }
-
-    public function post(string $input, string $table, int $id)
-    {
-        try {
-            if (!$this->isUserAuthorized()) {
-                throw new \Exception('Unauthorized', 401);
-            }
-
-            $this->setFolder("/$table" . ($id == 0 ? '' : "/$id"));
-            $this->allowCommonTypes();
-            $uploaded = $this->moveUploaded($input);
-            if (!$uploaded) {
-                throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload!', 400);
-            }
-                        
-            $this->indolog(
-                $table,
-                LogLevel::ALERT,
-                '<a target="__blank" href="{path}">{path}</a> файл байршууллаа',
-                ['reason' => 'file-move-uploaded'] + $uploaded
-            );
-            
-            if ($id > 0) {
-                $uploaded['record_id'] = $id;
-            }
-            $model = new FilesModel($this->pdo);
-            $model->setTable($table);
-            $record = $model->insert($uploaded + ['created_by' => $this->getUserId()]);
-            if (!isset($record['id'])) {
-                throw new \Exception($this->text('record-insert-error'));
-            }
-            $this->respondJSON($record);
-            
-            if (!empty($uploaded['record_id'])) {
-                $this->indolog(
-                    $table,
-                    LogLevel::INFO,
-                    '{record_id}-р бичлэгт зориулж {id} дугаартай файлыг холболоо',
-                    ['reason' => 'insert-uploaded-file'] + $record
-                );
-            }
-        } catch (\Throwable $e) {
-            $error = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
-            $this->respondJSON($error, $e->getCode());
-
-            if (!empty($uploaded['file'])) {
-                $this->tryDelete(\basename($uploaded['file']), $table, $id);
-            }
-        }
-    }
     
-    public function moveToFolder(string $table, int $record_id, int $file_id, int $mode = 0755): array|false
+    public function renameTo(string $table, int $record_id, int $file_id, int $mode = 0755): array|false
     {
         try {
             if (!$this->isUserAuthorized()) {
@@ -225,7 +174,9 @@ class FileController extends \Raptor\Controller
             $this->setFolder("/$table/$record_id");
             $upload_path = "$this->local/";
             $file_name = \basename($record['file']);
-            if (!\file_exists($upload_path) || !\is_dir($upload_path)) {
+            if (!\file_exists($upload_path)
+                || !\is_dir($upload_path)
+            ) {
                 \mkdir($upload_path, $mode, true);
             } else {
                 $name = \pathinfo($file_name, \PATHINFO_FILENAME);
@@ -245,13 +196,6 @@ class FileController extends \Raptor\Controller
             if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
-            $this->indolog(
-                $table,
-                LogLevel::INFO,
-                '{record_id}-р бичлэгт зориулж {id} дугаартай файлын байршлийг солив. <a target="__blank" href="{path}">{path}</a>',
-                ['reason' => 'file-move-to-folder'] + $updated
-            );
             return $update;
         } catch (\Throwable $e) {
             $this->errorLog($e);
@@ -259,7 +203,7 @@ class FileController extends \Raptor\Controller
         }
     }
     
-    public function tryDelete(string $fileName, string $logTable, int $record_id = 0)
+    protected function deleteUnlink(string $fileName): bool
     {
         try {
             $filePath = $this->local . "/$fileName";
@@ -267,21 +211,17 @@ class FileController extends \Raptor\Controller
                 throw new \Exception(__CLASS__ . ": File [$filePath] doesn't exist!");
             }
             
-            \unlink($filePath);
-            
-            if ($record_id > 0) {
-                $this->indolog($logTable, LogLevel::ALERT, '{record_id}-р бичлэгтэй холбоотой {path} файлыг устгалаа', ['path' => $filePath, 'record_id' => $record_id]);
-            } else {
-                $this->indolog($logTable, LogLevel::ALERT, '{path} файлыг устгалаа', ['path' => $filePath]);
-            }
+            return \unlink($filePath);
         } catch (\Throwable $e) {
             $this->errorLog($e);
+            
+            return false;
         }
     }
     
-    public function getLastError(): int
+    protected function getLastUploadError(): int
     {
-        return $this->_error;
+        return $this->_upload_error;
     }
     
     protected function getMaximumFileUploadSize(): string
