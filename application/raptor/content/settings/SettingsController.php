@@ -117,8 +117,8 @@ class SettingsController extends \Raptor\Controller
             
             $model = new SettingsModel($this->pdo);
             $current_record = $model->retrieve();            
-            $current_favico_file = \basename($current_record['favico'] ?? '');
-            $current_apple_touch_icon_file = \basename($current_record['apple_touch_icon'] ?? '');
+            $current_favico_name = \basename($current_record['favico'] ?? '');
+            $current_apple_touch_icon_name = \basename($current_record['apple_touch_icon'] ?? '');
                         
             $file = new FileController($this->getRequest());
             $file->setFolder('/settings');
@@ -129,14 +129,14 @@ class SettingsController extends \Raptor\Controller
             if ($ico) {
                 $record['favico'] = $ico['path'];
             }
-            if (!empty($current_favico_file)) {
+            if (!empty($current_favico_name)) {
                 if ($this->getParsedBody()['favico_removed'] == 1) {
-                    $file->deleteUnlink($current_favico_file, 'content');
+                    $file->unlinkByName($current_favico_name, 'content');
                     $record['favico'] = '';
                 } elseif (isset($record['favico'])
-                    && \basename($record['favico']) != $current_favico_file
+                    && \basename($record['favico']) != $current_favico_name
                 ) {
-                    $file->deleteUnlink($current_favico_file, 'content');
+                    $file->unlinkByName($current_favico_name, 'content');
                 }
             }
             if (isset($record['favico'])) {
@@ -148,14 +148,14 @@ class SettingsController extends \Raptor\Controller
             if ($apple_touch_icon) {
                 $record['apple_touch_icon'] = $apple_touch_icon['path'];
             }
-            if (!empty($current_apple_touch_icon_file)) {
+            if (!empty($current_apple_touch_icon_name)) {
                 if ($this->getParsedBody()['apple_touch_icon_removed'] == 1) {
-                    $file->deleteUnlink($current_apple_touch_icon_file, 'content');
+                    $file->unlinkByName($current_apple_touch_icon_name, 'content');
                     $record['apple_touch_icon'] = '';
                 } elseif (isset($record['apple_touch_icon'])
-                    && \basename($record['apple_touch_icon']) != $current_apple_touch_icon_file
+                    && \basename($record['apple_touch_icon']) != $current_apple_touch_icon_name
                 ) {
-                    $file->deleteUnlink($current_apple_touch_icon_file, 'content');
+                    $file->unlinkByName($current_apple_touch_icon_name, 'content');
                 }
             }
             if (isset($record['apple_touch_icon'])) {
@@ -165,19 +165,19 @@ class SettingsController extends \Raptor\Controller
             $content = [];            
             $uploadedLogos = $this->getRequest()->getUploadedFiles()['logo'] ?? [];
             foreach (\array_keys($uploadedLogos) as $code) {
-                $current_logo_file = \basename($current_record['localized']['logo'][$code] ?? '');
+                $current_logo_name = \basename($current_record['localized']['logo'][$code] ?? '');
                 $logo = $file->moveUploaded($uploadedLogos[$code], 'content');
                 if ($logo) {
                     $content[$code]['logo'] = $logo['path'];
                 }
-                if (!empty($current_logo_file)) {
+                if (!empty($current_logo_name)) {
                     if ($this->getParsedBody()["logo_{$code}_removed"] == 1) {
-                        $file->deleteUnlink($current_logo_file, 'content');
+                        $file->unlinkByName($current_logo_name, 'content');
                         $content[$code]['logo'] = '';
                     } elseif (isset($content[$code]['logo'])
-                        && \basename($content[$code]['logo']) != $current_logo_file
+                        && \basename($content[$code]['logo']) != $current_logo_name
                     ) {
-                        $file->deleteUnlink($current_logo_file, 'content');
+                        $file->unlinkByName($current_logo_name, 'content');
                     }
                 }
                 if (isset($content[$code]['logo'])) {

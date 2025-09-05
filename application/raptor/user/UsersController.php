@@ -271,15 +271,15 @@ class UsersController extends \Raptor\Controller
                 if ($photo) {
                     $record['photo'] = $photo['path'];
                 }
-                $current_photo_file = empty($current['photo']) ? null : \basename($current['photo']);                
-                if (!empty($current_photo_file)) {
+                $current_photo_name = empty($current['photo']) ? null : \basename($current['photo']);                
+                if (!empty($current_photo_name)) {
                     if ($file->getLastUploadError() == -1) {
-                        $file->deleteUnlink($current_photo_file, $model->getName());
+                        $file->unlinkByName($current_photo_name, $model->getName());
                         $record['photo'] = '';
                     } elseif (!empty($record['photo'])
-                        && \basename($record['photo']) != $current_photo_file
+                        && \basename($record['photo']) != $current_photo_name
                     ) {
-                        $file->deleteUnlink($current_photo_file, $model->getName());
+                        $file->unlinkByName($current_photo_name, $model->getName());
                     }
                 }                
                 if (isset($record['photo'])) {

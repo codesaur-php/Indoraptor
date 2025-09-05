@@ -212,15 +212,15 @@ class OrganizationController extends \Raptor\Controller
                 if ($logo) {
                     $record['logo'] = $logo['path'];
                 }
-                $current_logo_file = $current['logo'] ? '' : \basename($current['logo']);
-                if (!empty($current_logo_file)) {
+                $current_logo_name = $current['logo'] ? '' : \basename($current['logo']);
+                if (!empty($current_logo_name)) {
                     if ($file->getLastUploadError() == -1) {
-                        $file->deleteUnlink($current_logo_file, $model->getName());
+                        $file->unlinkByName($current_logo_name, $model->getName());
                         $record['logo'] = '';
                     } elseif (isset($record['logo'])
-                        && \basename($record['logo']) != $current_logo_file
+                        && \basename($record['logo']) != $current_logo_name
                     ) {
-                        $file->deleteUnlink($current_logo_file, $model->getName());
+                        $file->unlinkByName($current_logo_name, $model->getName());
                     }
                 }
                 if (isset($record['logo'])) {

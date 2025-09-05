@@ -8,7 +8,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Fig\Http\Message\StatusCodeInterface;
 
 use Raptor\RBAC\RBAC;
 use Raptor\User\UsersModel;
@@ -50,7 +49,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             throw new \Exception('Invalid JWT data or expired!');
         }
         if (!isset($result['user_id']) || !isset($result['organization_id'])) {
-            throw new \Exception('Invalid JWT data for codesaur!', StatusCodeInterface::STATUS_UNAUTHORIZED);
+            throw new \Exception('Invalid JWT data for codesaur!', 401);
         }
         return $result;
     }
@@ -67,10 +66,10 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $users = new UsersModel($pdo);
             $profile = $users->getById($result['user_id']);
             if (!isset($profile['id'])) {
-                throw new \Exception('User not found', StatusCodeInterface::STATUS_NOT_FOUND);
+                throw new \Exception('User not found', 404);
             }
             if ($profile['status'] != 1) {
-                throw new \Exception('Inactive user', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
+                throw new \Exception('Inactive user', 406);
             }
             unset($profile['password']);
 
@@ -84,7 +83,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $stmt->bindParam(':user', $result['user_id'], \PDO::PARAM_INT);
             $stmt->bindParam(':org', $result['organization_id'], \PDO::PARAM_INT);
             if (!$stmt->execute() || $stmt->rowCount() != 1) {
-                throw new \Exception('User doesn\'t belong to an organization', StatusCodeInterface::STATUS_NOT_ACCEPTABLE);
+                throw new \Exception('User doesn\'t belong to an organization', 406);
             }
             $organization = $stmt->fetch();
             

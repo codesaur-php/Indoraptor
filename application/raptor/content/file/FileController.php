@@ -203,7 +203,7 @@ class FileController extends \Raptor\Controller
         }
     }
     
-    protected function deleteUnlink(string $fileName): bool
+    protected function unlinkByName(string $fileName): bool
     {
         try {
             $filePath = $this->local . "/$fileName";

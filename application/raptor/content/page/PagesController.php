@@ -50,7 +50,7 @@ class PagesController extends FileController
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
         
-        $this->indolog($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг нээж үзэж байна');
+        $this->indolog($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг нээж үзэж байна', ['action' => 'index']);
     }
     
     public function list()
@@ -109,7 +109,6 @@ class PagesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($is_submit) {
                 $payload = $this->getParsedBody();
-                $log_context['payload'] = $payload;
                 if (empty($payload['title'])){
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
@@ -138,10 +137,20 @@ class PagesController extends FileController
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
+                
                 $log_level = LogLevel::INFO;
                 $log_context['record_id'] = $id;
-                $log_message = '{record_id} дугаартай шинэ хуудас [{payload.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $log_message = '{record_id} дугаартай шинэ хуудас [{server_request.body.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
                 
+                $this->allowImageOnly();
+                $this->setFolder("/$table/$id");
+                $photo = $this->moveUploaded('photo');
+                if ($photo) {
+                    $model->updateById($id, ['photo' => $photo['path']]);
+                    $log_context['photo'] = $photo;
+                }
+                
+                $this->allowCommonTypes();
                 if (!empty($files) && \is_array($files)) {
                     $html = $payload['content'];
                     \preg_match_all('/src="([^"]+)"/', $html, $srcs);
@@ -151,6 +160,7 @@ class PagesController extends FileController
                         if (empty($update['path'])) {
                             continue;
                         }
+                        $log_context['rename-file'][] = $update;
                         foreach ($srcs[1] as $src) {
                             $src_updated = \str_replace("/$table/", "/$table/$id/", $src);
                             if (\str_contains($src_updated, $update['path'])) {
@@ -166,22 +176,8 @@ class PagesController extends FileController
                     }
                     if ($html != $payload['content']) {
                         $model->updateById($id, ['content' => $html]);
-                        $log_context['payload']['content'] = $html;
+                        $log_context['content-file-fixed'] = $html;
                     }
-                }
-                
-                $this->allowImageOnly();
-                $this->setFolder("/$table/$id");
-                $photo = $this->moveUploaded('photo');
-                if ($photo) {
-                    $model->updateById($id, ['photo' => $photo['path']]);
-                    $log_context['payload']['photo'] = $photo;                    
-                    $this->indolog(
-                        $table,
-                        LogLevel::ALERT,
-                        '{record_id}-p бичлэгийн зургаар <a target="__blank" href="{path}">{path}</a> файлыг байршууллаа',
-                        ['action' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
-                    );
                 }
             } else {
                 $dashboard = $this->twigDashboard(
@@ -355,19 +351,19 @@ class PagesController extends FileController
                         ['action' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
                     );
                 }
-                $current_photo_file = empty($record['photo']) ? '' : \basename($record['photo']);
+                $current_photo_name = empty($record['photo']) ? '' : \basename($record['photo']);
                 if (!isset($payload['photo_removed'])) {
                     $payload['photo_removed'] = 0;
                 }
-                if (!empty($current_photo_file)) {
+                if (!empty($current_photo_name)) {
                     if ($payload['photo_removed'] == 1) {
-                        if ($this->deleteUnlink($current_photo_file)) {
+                        if ($this->unlinkByName($current_photo_name)) {
                             // TODO: Log unlink info
                         }
                         $payload['photo'] = '';
                     } elseif (isset($payload['photo'])
-                        && \basename($payload['photo']) != $current_photo_file
-                        && $this->deleteUnlink($current_photo_file)) {
+                        && \basename($payload['photo']) != $current_photo_name
+                        && $this->unlinkByName($current_photo_name)) {
                         // TODO: Log unlink info
                     }
                 }

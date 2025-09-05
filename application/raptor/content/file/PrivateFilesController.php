@@ -142,31 +142,22 @@ class PrivateFilesController extends FilesController
                 'message' => $this->text('record-update-success'),
                 'record' => $updated
             ]);
-
-            $log_message = '{id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
-            if (!empty($updated['record_id'])) {
-                $log_message = "{record_id}-р бичлэгт зориулсан $log_message";
-            }
-            $this->indolog(
-                $table,
-                LogLevel::INFO,
-                $log_message,
-                [
-                    'action' => 'files-update'
-                ]  + $updated
-            );
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
-            
-            $this->indolog(
-                $table,
-                LogLevel::ERROR,
-                '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо',
-                [
-                    'action' => 'files-update', 'id' => $id,
-                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
-                ]
-            );
+        } finally {
+            if (empty($updated)) {
+                $level = LogLevel::ERROR;
+                $message = '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::INFO;
+                $message = '{id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
+                if (!empty($updated['record_id'])) {
+                    $message = "{record_id}-р бичлэгт зориулсан $message";
+                }
+                $context = $updated;
+            }
+            $this->indolog($table, $level, $message, ['action' => 'files-update', 'id' => $id]  + $context);
         }
     }
     
@@ -204,35 +195,26 @@ class PrivateFilesController extends FilesController
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-            
-            $log_message = '{id} дугаартай [{path}] файлыг идэвхгүй болголоо';
-            if (!empty($record['record_id'])) {
-                $log_message = "{record_id}-р бичлэгт зориулсан $log_message";
-            }
-            $this->indolog(
-                $table,
-                LogLevel::ALERT,
-                $log_message,
-                [
-                    'action' => 'deactivate-file'
-                ] + $record
-            );
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
             ], $e->getCode());
-            
-            $this->indolog(
-                $table,
-                LogLevel::ERROR,
-                'Файлыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо',
-                [
-                    'action' => 'deactivate-file',
-                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
-                ]
-            );
+        } finally {
+            if ($deactivated ?? false) {
+                $level = LogLevel::ALERT;
+                $message = '{id} дугаартай [{path}] файлыг идэвхгүй болголоо';
+                if (!empty($record['record_id'])) {
+                    $message = "{record_id}-р бичлэгт зориулсан $message";
+                }
+                $context = $record;
+            } else {
+                $level = LogLevel::ERROR;
+                $message = 'Файлыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            }
+            $this->indolog($table, $level, $message, ['action' => 'deactivate-file']  + $context);
         }
     }
 }

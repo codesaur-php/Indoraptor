@@ -2,7 +2,6 @@
 
 namespace Raptor;
 
-use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Twig\TwigFilter;
 
@@ -77,9 +76,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     
     protected function headerResponseCode(int|string $code)
     {
-        if (\headers_sent()
-            || empty($code)
-            || $code == StatusCodeInterface::STATUS_OK
+        if (\headers_sent() || empty($code) || $code == 200
             || !\defined(ReasonPrhase::class . "::STATUS_$code")
         ) {
             return;
@@ -113,33 +110,26 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     
     public function twigTemplate(string $template, array $vars = []): TwigTemplate
     {
-        $request_path = $this->getRequest()->getUri()->getPath();
-        
         $twig = new TwigTemplate($template, $vars);
         $twig->set('user', $this->getUser());
         $twig->set('index', $this->getScriptPath());
-        $twig->set('request', \rawurldecode($request_path));
         $twig->set('localization', $this->getAttribute('localization'));
-
+        $twig->set('request', \rawurldecode($this->getRequest()->getUri()->getPath()));
         $twig->addFilter(new TwigFilter('text', function (string $key, $default = null): string
         {
             return $this->text($key, $default);
         }));
-
         $twig->addFilter(new TwigFilter('link', function (string $routeName, array $params = [], bool $is_absolute = false): string
         {
             return $this->generateRouteLink($routeName, $params, $is_absolute);
-        }));
-        
+        }));        
         return $twig;
     }
     
     public function respondJSON(array $response, int|string $code = 0): void
     {
         if (!\headers_sent()) {
-            if (!empty($code)
-                && \is_int($code)
-                && $code != StatusCodeInterface::STATUS_OK
+            if (!empty($code) && \is_int($code) && $code != 200
                 && \defined(ReasonPrhase::class . "::STATUS_$code")
             ) {
                 \http_response_code($code);
@@ -193,6 +183,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                     'email' => $auth_user['email']
                 ];
             }
+            
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $logger->log($level, $message, $context);

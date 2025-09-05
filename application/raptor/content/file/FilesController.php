@@ -64,8 +64,13 @@ class FilesController extends FileController
         $this->indolog(
             $table,
             LogLevel::NOTICE,
-            '{table} файлын жагсаалтыг нээж үзэж байна',
-            ['action' => 'files-index', 'tables' => $tables, 'total' => $total, 'table' => $table]
+            '[{table}] файлын жагсаалтыг нээж үзэж байна',
+            [
+                'action' => 'files-index',
+                'tables' => $tables,
+                'total' => $total,
+                'table' => $table
+            ]
         );
     }
     
@@ -104,7 +109,6 @@ class FilesController extends FileController
             if (!$uploaded) {
                 throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload!', 400);
             }
-            
             if ($id > 0) {
                 $uploaded['record_id'] = $id;
             }
@@ -115,23 +119,20 @@ class FilesController extends FileController
                 throw new \Exception($this->text('record-insert-error'));
             }
             $this->respondJSON($record);
-            
-            $log_context = ['action' => 'files-post'];
-            $log_message = '<a target="__blank" href="{path}">{path}</a> файлыг ';
-            if (!empty($record['record_id'])) {
-                $log_context += $record;
-                $log_message .= 'байршуулан {record_id}-р бичлэгт зориулж холболоо';
-            } else {
-                $log_message .= 'байршууллаа';
-            }
-            $log_context['file'] = $uploaded;            
-            $this->indolog($table, LogLevel::INFO, $log_message, $log_context);
         } catch (\Throwable $e) {
             $error = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             $this->respondJSON($error, $e->getCode());
 
             if (!empty($uploaded['file'])) {
-                $this->deleteUnlink(\basename($uploaded['file']));
+                $this->unlinkByName(\basename($uploaded['file']));
+            }
+        } finally {
+            if (!empty($record)) {
+                $context = ['action' => 'files-post'] + $record;
+                $message = '<a target="__blank" href="{path}">{path}</a> файлыг ';
+                $message .= empty($record['record_id']) ?
+                    'байршууллаа' : 'байршуулан {record_id}-р бичлэгт зориулж холболоо';
+                $this->indolog($table, LogLevel::INFO, $message, $context);
             }
         }
     }
