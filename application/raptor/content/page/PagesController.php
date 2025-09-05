@@ -414,7 +414,7 @@ class PagesController extends FileController
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $record, 'files' => $files];                
+                $context += ['record' => $record, 'files' => $files];
             }
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }

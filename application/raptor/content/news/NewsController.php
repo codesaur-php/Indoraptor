@@ -313,7 +313,21 @@ class NewsController extends FileController
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
         } finally {
-             
+            $context = ['action' => 'update', 'record_id' => $id];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{record_id} дугаартай мэдээг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } elseif (!empty($updated)) {
+                $level = LogLevel::INFO;
+                $message = '{record_id} дугаартай [{record.title}] мэдээг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['updates' => $updates, 'record' => $updated];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
+                $context += ['record' => $record, 'files' => $files];
+            }
+            $this->indolog($table ?? 'news', $level, $message, $context);             
         }
     }
     
