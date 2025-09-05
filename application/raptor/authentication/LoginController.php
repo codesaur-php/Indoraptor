@@ -25,7 +25,7 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $login = $this->twigTemplate(\dirname(__FILE__) . '/login.html');        
+        $login = $this->twigTemplate(\dirname(__FILE__) . '/login.html');
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $login->set($key, $value);
         }    
@@ -58,7 +58,7 @@ class LoginController extends \Raptor\Controller
             $user = $stmt->fetch();
             if (!\password_verify($payload['password'], $user['password'])) {
                 throw new \Exception('Invalid username or password', 401);
-            }            
+            }
             if (((int) $user['status']) != 1) {
                 throw new \Exception('Inactive user', 403);
             }
@@ -273,7 +273,7 @@ class LoginController extends \Raptor\Controller
             if (empty($reference['localized'])) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
-            $content = $reference['localized'];            
+            $content = $reference['localized'];
             
             $users = new UsersModel($this->pdo);
             $user = $users->getRowBy(['email' => $payload['email']]);
@@ -382,9 +382,8 @@ class LoginController extends \Raptor\Controller
                 [
                     'action' => 'forgot-password',
                     'auth_user' => [],
-                    'forgot_password' => $forgot_password,
-                    'user_id' => $forgot['user_id'] ?? null
-                ] + ($error ?? [])
+                    'forgot_password' => $forgot_password
+                ] + ($error ?? []) + ($forgot ?? [])
             );
         }
     }

@@ -106,7 +106,7 @@ class NewsController extends FileController
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }                
+                }
                 $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['published'] == 1) {
                     if (!$this->isUserCan('system_content_publish')
@@ -115,13 +115,13 @@ class NewsController extends FileController
                     }
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
-                }                
+                }
                 $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['comment'] == 1
                     && !$this->isUserCan('system_content_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
-                }                
+                }
                 if (isset($payload['files'])) {
                     $files = \array_flip($payload['files']);
                     unset($payload['files']);
@@ -143,13 +143,12 @@ class NewsController extends FileController
                 if ($photo) {
                     $record = $model->updateById($id, ['photo' => $photo['path']]);
                 }
-                
                 $this->allowCommonTypes();
                 if (!empty($files) && \is_array($files)) {
                     $html = $record['content'];
                     \preg_match_all('/src="([^"]+)"/', $html, $srcs);
                     \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
-                    foreach (array_keys($files) as $file_id) {
+                    foreach (\array_keys($files) as $file_id) {
                         $update = $this->renameTo($table, $id, $file_id);
                         if (empty($update['path'])) {
                             continue;
@@ -170,8 +169,8 @@ class NewsController extends FileController
                     }
                     if ($html != $record['content']) {
                         $record = $model->updateById($id, ['content' => $html]);
-                        $record['files'] = $files;
                     }
+                    $record['files'] = $files;
                 }
             } else {
                 $dashboard = $this->twigDashboard(
@@ -195,7 +194,7 @@ class NewsController extends FileController
                 $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } elseif (isset($id)) {
                 $level = LogLevel::INFO;
-                $message = '{record_id} дугаартай шинэ мэдээ [{server_request.body.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record_id} дугаартай шинэ мэдээ [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += ['record_id' => $id, 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -208,17 +207,14 @@ class NewsController extends FileController
     public function update(int $id)
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $log_context = ['action' => 'update', 'record_id' => $id];
-            
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            $is_submit = $this->getRequest()->getMethod() == 'PUT';
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
             
             $record = $model->getById($id);
             if (empty($record)) {
@@ -229,8 +225,7 @@ class NewsController extends FileController
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }
-                
+                }                
                 $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['published'] != $record['published']) {
                     if (!$this->isUserCan('system_content_publish')) {
@@ -251,31 +246,26 @@ class NewsController extends FileController
                 if (!empty($current_photo_name)
                     && $payload['photo_removed'] == 1
                 ) {
-                    if ($this->unlinkByName($current_photo_name)) {
-                        $log_context['photo-deleted'] = $current_photo_name;
-                        $current_photo_name = null;
-                    }
-                    $payload['photo'] = '';                    
+                    $this->unlinkByName($current_photo_name);
+                    $current_photo_name = null;
+                    $payload['photo'] = '';
                 }
                 if ($photo) {
                     if (!empty($current_photo_name)
                         && \basename($photo['path']) != $current_photo_name
-                        && $this->unlinkByName($current_photo_name)
                     ) {
-                        $log_context['photo-deleted'] = $current_photo_name;
+                        $this->unlinkByName($current_photo_name);
                     }
                     $payload['photo'] = $photo['path'];
-                    $log_context['photo'] = $photo;
                 }
                 unset($payload['photo_removed']);
                 
-                $log_context['updates'] = [];
-                foreach ($payload as $field => $value) {                    
+                $updates = [];
+                foreach ($payload as $field => $value) {
                     if ($record[$field] != $value) {
-                        $log_context['updates'][] = $field;
+                        $updates[] = $field;
                     }
                 }
-                
                 $date = $record['updated_at'] ?? $record['created_at'];
                 $count_updated_files =
                     "SELECT id FROM {$filesModel->getName()} " .
@@ -284,10 +274,9 @@ class NewsController extends FileController
                 if ($files_changed->execute()
                     && $files_changed->rowCount() > 0
                 ) {
-                    $log_context['updates'][] = 'files';
+                    $updates[] = 'files';
                 }
-                
-                if (empty($log_context['updates'])) {
+                if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
                 
@@ -303,9 +292,6 @@ class NewsController extends FileController
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
-                
-                $log_level = LogLevel::INFO;
-                $log_message = '{record_id} дугаартай [{server_request.body.title}] мэдээг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
@@ -319,10 +305,6 @@ class NewsController extends FileController
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | News');
                 $dashboard->render();
-                
-                $log_level = LogLevel::NOTICE;
-                $log_context += ['record' => $record, 'files' => $files];                
-                $log_message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -330,12 +312,8 @@ class NewsController extends FileController
             } else {
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
-            
-            $log_level = LogLevel::ERROR;
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $log_message = 'Мэдээг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
         } finally {
-            $this->indolog($table ?? 'news', $log_level, $log_message, $log_context);
+             
         }
     }
     
@@ -344,19 +322,16 @@ class NewsController extends FileController
         try {
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
-            
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-            
+            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);            
             $template = $this->twigTemplate(\dirname(__FILE__) . '/news-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
@@ -365,28 +340,21 @@ class NewsController extends FileController
             $template->set('files', $files);
             $template->render();
             
-            $read_updated = $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
-            
-            $this->indolog(
-                $table,
-                LogLevel::NOTICE,
-                '{record_id} дугаартай [{title}] мэдээг уншиж байна',
-                [
-                    'action' => 'read', 'record_id' => $id
-                ] + $read_updated + ['files' => $files]
-            );
+            $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
-            
-            $this->indolog(
-                $table ?? 'news',
-                LogLevel::NOTICE,
-                '{record_id} дугаартай мэдээг унших үед алдаа гарч зогслоо',
-                [
-                    'action' => 'read', 'record_id' => $id,
-                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
-                ]
-            );
+        } finally {
+            $context = ['action' => 'read', 'record_id' => $id];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{record_id} дугаартай мэдээг унших үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record_id} дугаартай [{title}] мэдээг уншиж байна';
+                $context += $record + ['files' => $files];
+            }
+            $this->indolog($table ?? 'news', $level, $message, $context);
         }
     }
     
@@ -395,16 +363,13 @@ class NewsController extends FileController
         try {
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
-            
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
@@ -414,31 +379,20 @@ class NewsController extends FileController
             );
             $dashboard->set('title', $this->text('view-record') . ' | News');
             $dashboard->render();
-
-            $this->indolog(
-                $table,
-                LogLevel::NOTICE,
-                '{record_id} дугаартай [{record.title}] мэдээг нээж үзэж байна',
-                [
-                    'action' => 'view',
-                    'record_id' => $id,
-                    'table' => $table,
-                    'record' => $record,
-                    'files' => $files
-                ]
-            );
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
-            
-            $this->indolog(
-                $table ?? 'news',
-                LogLevel::NOTICE,
-                '{record_id} дугаартай мэдээг нээж үзэх үед алдаа гарч зогслоо',
-                [
-                    'action' => 'view', 'record_id' => $id,
-                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
-                ]
-            );
+        } finally {
+            $context = ['action' => 'view', 'record_id' => $id];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{record_id} дугаартай мэдээг нээж үзэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record_id} дугаартай [{record.title}] мэдээг нээж үзэж байна';
+                $context += ['record' => $record, 'files' => $files];
+            }
+            $this->indolog($table ?? 'news', $level, $message, $context);
         }
     }
     
@@ -486,16 +440,18 @@ class NewsController extends FileController
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
             ], $e->getCode());
-                        
-            $this->indolog(
-                $table ?? 'news',
-                LogLevel::ERROR,
-                'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогсло',
-                [
-                    'action' => 'deactivate', 'record_id' => $id ?? null,
-                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
-                ]
-            );
+        } finally {
+            $context = ['action' => 'deactivate'];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг идэвхгүй болголоо';
+                $context += ['record_id' => $id];
+            }
+            $this->indolog($table ?? 'news', $level, $message, $context);
         }
     }
     

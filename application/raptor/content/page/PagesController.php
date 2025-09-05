@@ -99,12 +99,9 @@ class PagesController extends FileController
     public function insert()
     {
         try {
-            $log_context = ['action' => 'create'];
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
-            
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($is_submit) {
@@ -112,7 +109,7 @@ class PagesController extends FileController
                 if (empty($payload['title'])){
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['created_by'] = $this->getUserId();                
+                $payload['created_by'] = $this->getUserId();
                 $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['published'] == 1) {
                     if (!$this->isUserCan('system_content_publish')
@@ -122,9 +119,9 @@ class PagesController extends FileController
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
                 }
-                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;                
+                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
                 if (isset($payload['files'])) {
-                    $files = $payload['files'];
+                    $files = \array_flip($payload['files']);
                     unset($payload['files']);
                 }
                 
@@ -138,29 +135,23 @@ class PagesController extends FileController
                     'message' => $this->text('record-insert-success')
                 ]);
                 
-                $log_level = LogLevel::INFO;
-                $log_context['record_id'] = $id;
-                $log_message = '{record_id} дугаартай шинэ хуудас [{server_request.body.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
-                
                 $this->allowImageOnly();
                 $this->setFolder("/$table/$id");
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
-                    $model->updateById($id, ['photo' => $photo['path']]);
-                    $log_context['photo'] = $photo;
+                    $record = $model->updateById($id, ['photo' => $photo['path']]);
                 }
-                
                 $this->allowCommonTypes();
                 if (!empty($files) && \is_array($files)) {
                     $html = $payload['content'];
                     \preg_match_all('/src="([^"]+)"/', $html, $srcs);
                     \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
-                    foreach ($files as $file_id) {
+                    foreach (\array_keys($files) as $file_id) {
                         $update = $this->renameTo($table, $id, $file_id);
                         if (empty($update['path'])) {
                             continue;
                         }
-                        $log_context['rename-file'][] = $update;
+                        $files[$file_id] = $update;
                         foreach ($srcs[1] as $src) {
                             $src_updated = \str_replace("/$table/", "/$table/$id/", $src);
                             if (\str_contains($src_updated, $update['path'])) {
@@ -175,9 +166,9 @@ class PagesController extends FileController
                         }
                     }
                     if ($html != $payload['content']) {
-                        $model->updateById($id, ['content' => $html]);
-                        $log_context['content-file-fixed'] = $html;
+                        $record = $model->updateById($id, ['content' => $html]);
                     }
+                    $record['files'] = $files;
                 }
             } else {
                 $dashboard = $this->twigDashboard(
@@ -190,9 +181,6 @@ class PagesController extends FileController
                 );
                 $dashboard->set('title', $this->text('add-record') . ' | Pages');
                 $dashboard->render();
-                
-                $log_level = LogLevel::NOTICE;
-                $log_message = 'Шинэ хуудас үүсгэх үйлдлийг эхлүүллээ';
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -200,132 +188,131 @@ class PagesController extends FileController
             } else {
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
-            
-            $log_level = LogLevel::ERROR;
-            $log_message = 'Шинэ хуудас үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-        } finally {
-            $this->indolog($table ?? 'pages', $log_level, $log_message ,$log_context);
+        }  finally {
+            $context = ['action' => 'create'];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Шинэ хуудас үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } elseif (isset($id)) {
+                $level = LogLevel::INFO;
+                $message = '{record_id} дугаартай шинэ хуудас [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['record_id' => $id, 'record' => $record];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = 'Шинэ хуудас үүсгэх үйлдлийг эхлүүллээ';
+            }
+            $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
     
     public function read(int $id)
     {
         try {
-            $log_context = ['action' => 'read', 'record_id' => $id];
-            
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $record = $model->getById($id);
-            $log_context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
-            $files = new FilesModel($this->pdo);
-            $files->setTable($table);
-            $log_context['files'] = $files->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-            
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
+            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             $template = $this->twigTemplate(\dirname(__FILE__) . '/page-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
             }
-            foreach ($log_context as $key => $value) {
-                $template->set($key, $value);
-            }
+            $template->set('record', $record);
+            $template->set('files', $files);
             $template->render();
             
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
-            
-            $log_level = LogLevel::NOTICE;
-            $log_message = '{record_id} дугаартай [{record.title}] хуудсыг уншиж байна';
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
-            
-            $log_level = LogLevel::ERROR;
-            $log_message = '{record_id} дугаартай хуудсыг унших үед алдаа гарч зогслоо';
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog($table ?? 'pages', $log_level, $log_message, $log_context);
+            $context = ['action' => 'read', 'record_id' => $id];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{record_id} дугаартай хуудсыг унших үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record_id} дугаартай [{title}] хуудсыг уншиж байна';
+                $context += $record + ['files' => $files];
+            }
+            $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
     
     public function view(int $id)
     {
         try {
-            $log_context = ['action' => 'read', 'record_id' => $id];
-            
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-    
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $record = $model->getById($id);
-            $log_context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
-            $files = new FilesModel($this->pdo);
-            $files->setTable($table);
-            $log_context['files'] = $files->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-            $log_context['infos'] = $this->getInfos($table, "(id=$id OR id={$record['parent_id']})");
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
+            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            $infos = $this->getInfos($table, "(id=$id OR id={$record['parent_id']})");
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/page-view.html',
-                $log_context + ['table' => $table]
+                [
+                    'table' => $table,
+                    'record' => $record,
+                    'files' => $files,
+                    'infos' => $infos
+                ]
             );
             $dashboard->set('title', $this->text('view-record') . ' | Pages');
             $dashboard->render();
-
-            $log_level = LogLevel::NOTICE;
-            $log_message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг нээж үзэж байна';
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
-            
-            $log_level = LogLevel::ERROR;
-            $log_message = '{record_id} дугаартай хуудасны мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog($table ?? 'pages', $log_level, $log_message, $log_context);
+            $context = ['action' => 'view', 'record_id' => $id];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{record_id} дугаартай хуудасны мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг нээж үзэж байна';
+                $context += ['record' => $record, 'files' => $files];
+            }
+            $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
     
     public function update(int $id)
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $log_context = ['action' => 'update', 'record_id' => $id];
-            
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+            $is_submit = $this->getRequest()->getMethod() == 'PUT';
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            
             if ($is_submit) {
-                $log_context['payload'] = $payload = $this->getParsedBody();                
+                $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                
                 $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 if ($payload['published'] != $record['published']) {
                     if (!$this->isUserCan('system_content_publish')) {
@@ -337,58 +324,46 @@ class PagesController extends FileController
                     }
                 }
                 $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
-                
+
                 $this->setFolder("/$table/$id");
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
-                if ($photo) {
-                    $payload['photo'] = $photo['path'];
-                    
-                    $this->indolog(
-                        $table,
-                        LogLevel::ALERT,
-                        '{record_id}-p бичлэгийн зургаар <a target="__blank" href="{path}">{path}</a> файлыг байршууллаа',
-                        ['action' => 'photo-move-uploaded'] + $photo + ['record_id' => $id]
-                    );
-                }
                 $current_photo_name = empty($record['photo']) ? '' : \basename($record['photo']);
-                if (!isset($payload['photo_removed'])) {
-                    $payload['photo_removed'] = 0;
+                $payload['photo_removed'] = $payload['photo_removed'] ?? 0;
+                if (!empty($current_photo_name)
+                    && $payload['photo_removed'] == 1
+                ) {
+                    $this->unlinkByName($current_photo_name);
+                    $current_photo_name = null;
+                    $payload['photo'] = '';
                 }
-                if (!empty($current_photo_name)) {
-                    if ($payload['photo_removed'] == 1) {
-                        if ($this->unlinkByName($current_photo_name)) {
-                            // TODO: Log unlink info
-                        }
-                        $payload['photo'] = '';
-                    } elseif (isset($payload['photo'])
-                        && \basename($payload['photo']) != $current_photo_name
-                        && $this->unlinkByName($current_photo_name)) {
-                        // TODO: Log unlink info
+                if ($photo) {
+                    if (!empty($current_photo_name)
+                        && \basename($photo['path']) != $current_photo_name
+                    ) {
+                        $this->unlinkByName($current_photo_name);
                     }
-                }
-                if (isset($payload['photo'])) {
-                    $log_context['payload']['photo'] = $payload['photo'];
+                    $payload['photo'] = $photo['path'];
                 }
                 unset($payload['photo_removed']);
                 
-                $log_context['updates'] = [];
+                $updates = [];
                 foreach ($payload as $field => $value) {
                     if ($record[$field] != $value) {
-                        $log_context['updates'][] = $field;
+                        $updates[] = $field;
                     }
                 }
-                
                 $date = $record['updated_at'] ?? $record['created_at'];
                 $count_updated_files =
                     "SELECT id FROM {$filesModel->getName()} " .
                     "WHERE record_id=$id AND (created_at > '$date' OR updated_at > '$date')";
                 $files_changed = $filesModel->prepare($count_updated_files);
-                if ($files_changed->execute() && $files_changed->rowCount() > 0) {
-                    $log_context['updates'][] = 'files';
+                if ($files_changed->execute()
+                    && $files_changed->rowCount() > 0
+                ) {
+                    $updates[] = 'files';
                 }
-                
-                if (empty($log_context['updates'])) {
+                if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
                 
@@ -404,22 +379,21 @@ class PagesController extends FileController
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
-                
-                $log_level = LogLevel::INFO;
-                $log_message = '{record_id} дугаартай [{payload.title}] хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
-                $log_context['record'] = $record;
-                $log_context['infos'] = $this->getInfos($table, "id!=$id AND parent_id!=$id");
-                $log_context['files'] = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+                $infos = $this->getInfos($table, "id!=$id AND parent_id!=$id");
+                $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/page-update.html',
-                    $log_context + ['table' => $table, 'max_file_size' => $this->getMaximumFileUploadSize()]
+                    [
+                        'table' => $table,
+                        'record' => $record,
+                        'infos' => $infos,
+                        'files' => $files,
+                        'max_file_size' => $this->getMaximumFileUploadSize()
+                    ]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | Pages');
                 $dashboard->render();
-                
-                $log_level = LogLevel::NOTICE;
-                $log_message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -427,64 +401,70 @@ class PagesController extends FileController
             } else {
                 $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
-            
-            $log_level = LogLevel::ERROR;
-            $log_message = 'Хуудсыг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog($table ?? 'pages', $log_level, $log_message, $log_context);
+            $context = ['action' => 'update', 'record_id' => $id];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{record_id} дугаартай хуудасны мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } elseif (!empty($updated)) {
+                $level = LogLevel::INFO;
+                $message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['updates' => $updates, 'record' => $updated];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
+                $context += ['record' => $record, 'files' => $files];                
+            }
+            $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
     
     public function delete()
     {
         try {
-            $log_context = ['action' => 'delete'];
-                    
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            
             if (!$this->isUserCan('system_content_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
-            
-            $log_context['payload'] = $payload = $this->getParsedBody();
+            $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }
-            
+            }            
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $log_context['record_id'] = $id;
             $deactivated = $model->deactivateById($id, [
                 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
             ]);
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
-            }
-            
+            }            
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-            
-            $log_level = LogLevel::ALERT;
-            $log_message = '{record_id} дугаартай [{payload.title}] хуудсыг идэвхгүй болголоо';
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
             ], $e->getCode());
-            
-            $log_level = LogLevel::ERROR;
-            $log_message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $log_context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog($table ?? 'pages', $log_level, $log_message, $log_context);
+            $context = ['action' => 'deactivate'];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{record_id} дугаартай [{server_request.body.title}] хуудсыг идэвхгүй болголоо';
+                $context += ['record_id' => $id];
+            }
+            $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
     
