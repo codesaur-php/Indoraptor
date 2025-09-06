@@ -150,9 +150,7 @@ class NewsController extends FileController
                     \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
                     foreach (\array_keys($files) as $file_id) {
                         $update = $this->renameTo($table, $id, $file_id);
-                        if (empty($update['path'])) {
-                            continue;
-                        }
+                        if (!$update) continue;
                         $files[$file_id] = $update;
                         foreach ($srcs[1] as $src) {
                             $src_updated = \str_replace("/$table/", "/$table/$id/", $src);
@@ -242,7 +240,6 @@ class NewsController extends FileController
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 $current_photo_name = empty($record['photo']) ? '' : \basename($record['photo']);
-                $payload['photo_removed'] = $payload['photo_removed'] ?? 0;
                 if (!empty($current_photo_name)
                     && $payload['photo_removed'] == 1
                 ) {

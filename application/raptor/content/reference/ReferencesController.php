@@ -55,7 +55,7 @@ class ReferencesController extends \Raptor\Controller
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
-        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'reference']);
+        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'reference-index']);
     }
     
     public function insert(string $table)
