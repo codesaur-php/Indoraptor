@@ -80,14 +80,16 @@ class SettingsController extends FileController
        } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
         } finally {
+            $context = ['action' => 'settings-post'];
             if (isset($e) && $e instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Тохируулгыг шинэчлэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = 'Тохируулгыг амжилттай шинэчиллээ';
             }
-            $this->indolog('content', $level, $message, ['action' => 'settings-post']);
+            $this->indolog('content', $level, $message, $context);
         }
     }
     
@@ -192,14 +194,16 @@ class SettingsController extends FileController
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
         } finally {
+            $context = ['action' => 'settings-files'];
             if (isset($e) && $e instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Тохируулга файлуудыг шинэчлэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = 'Тохируулга файлуудыг амжилттай шинэчиллээ';
             }
-            $this->indolog('content', $level, $message, ['action' => 'settings-files']);
+            $this->indolog('content', $level, $message, $context);
         }
     }
 }

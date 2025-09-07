@@ -15,9 +15,14 @@ class LocalizationController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $text_content_tables = $this->query(
-                'SHOW TABLES LIKE ' . $this->quote('localization_text_%_content')
-            )->fetchAll();
+            if ($this->getDriverName() == 'pgsql') {
+                $query = 
+                    'SELECT tablename FROM pg_catalog.pg_tables ' .
+                    "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like 'localization_text_%_content'";
+            } else {
+                $query = 'SHOW TABLES LIKE ' . $this->quote('localization_text_%_content');
+            }
+            $text_content_tables = $this->query($query)->fetchAll();
             $text_tables = [];
             foreach ($text_content_tables as $result) {
                 $text_tables[] = \substr(reset($result), \strlen('localization_text_'), -\strlen('_content'));
@@ -46,7 +51,7 @@ class LocalizationController extends \Raptor\Controller
         } catch (\Throwable $e) {
              $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
         } finally {
-            $this->indolog('localization', LogLevel::NOTICE, 'Хэл ба Текстүүдийн жагсаалтыг нээж үзэж байна');
+            $this->indolog('localization', LogLevel::NOTICE, 'Хэл ба Текстүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'localization-index']);
         }
     }
 }
