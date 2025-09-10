@@ -2,7 +2,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
-                <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} - {{ record['full']|e }}
+                <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} - {{ record['title']|e }}
             </h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
@@ -16,7 +16,7 @@
                     </div>
                     <div class="col">
                         <label class="form-label">{{ 'name'|text }}</label>
-                        <input class="form-control" name="full" required value="{{ record['full']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="title" required value="{{ record['title']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 <div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title fs-6 text-uppercase text-info">{{ record['full']|e }}</h3>
+            <h3 class="modal-title fs-6 text-uppercase text-info">{{ record['title']|e }}</h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
@@ -21,7 +21,7 @@
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'name'|text }}</label>
                 <div class="col-9">
-                    <input class="form-control" readonly value="{{ record['full']|e }}" type="text">
+                    <input class="form-control" readonly value="{{ record['title']|e }}" type="text">
                 </div>
             </div>
             <div class="row mb-2">
@@ -36,31 +36,6 @@
                     <div class="form-check form-switch pt-2">
                         <input class="form-check-input" type="checkbox" role="switch" {{ record['is_default'] == 1 ? 'checked ' : '' }}disabled>
                     </div>
-                </div>
-            </div>
-            <hr>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
-                </div>
-            </div>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ (record['rbac_users'][record['created_by']] ?? record['created_by'])|e }}" type="text">
-                </div>
-            </div>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
-                </div>
-            </div>
-            <div class="row">
-                <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ (record['rbac_users'][record['updated_by']] ?? record['updated_by'])|e }}" type="text">
                 </div>
             </div>
         </div>

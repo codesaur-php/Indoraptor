@@ -51,7 +51,7 @@
                             <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['full']|e }}">
                             {{ language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '' }}
                         </td>
-                        <td>{{ language['full'] }}</td>
+                        <td>{{ language['title'] }}</td>
                         <td>{{ language['description'] }}</td>
                         <td>{{ language['created_at'] }}</td>
                         <td>
@@ -97,7 +97,7 @@
                         <tr>
                             <td>{{ row['keyword'] }}</td>
                             {% for code in localization.language|keys %}
-                                <td>{{ row['content']['text'][code] }}</td>
+                                <td>{{ row['localized']['text'][code] }}</td>
                             {% endfor %}
                             <td>{{ row['type'] }}</td>
                             <td>

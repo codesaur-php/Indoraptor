@@ -85,7 +85,7 @@
                     </div>
                     <div class="mt-2">
                         <label>{{ 'name'|text }}</label>
-                        <input class="form-control lang_full" autocomplete="off" maxlength="128" placeholder="" value="" type="text">
+                        <input class="form-control lang_title" autocomplete="off" maxlength="128" placeholder="" value="" type="text">
                     </div>
                     <div class="mt-2">
                         <label>{{ 'description'|text }}</label>
@@ -124,7 +124,7 @@
                     </div>
                     <div class="mt-2">
                         <label>{{ 'name'|text }}</label>
-                        <input class="form-control" readonly autocomplete="off" maxlength="128" name="full" placeholder="" value="" type="text">
+                        <input class="form-control" readonly autocomplete="off" maxlength="128" name="title" placeholder="" value="" type="text">
                     </div>
                     <div class="mt-2">
                         <label>{{ 'description'|text }}</label>
@@ -160,7 +160,7 @@
     let headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
     let codeInput = document.querySelector('#generalPanel input.lang_code');
     let flagInput = document.querySelector('#generalPanel p.lang_flag');
-    let nameInput = document.querySelector('#generalPanel input.lang_full');
+    let nameInput = document.querySelector('#generalPanel input.lang_title');
     let descriprionInput = document.querySelector('#generalPanel input.lang_description');
     let copySelect = document.querySelector('#settingsPanel select.available_languages');
     let btnBack = document.querySelector('.modal-footer #back');
@@ -182,7 +182,7 @@
     }, false);
 
     nameInput.addEventListener('input', function () {
-        document.querySelector('#confirmPanel input[name="full"]').value = this.value;
+        document.querySelector('#confirmPanel input[name="title"]').value = this.value;
     }, false);
 
     descriprionInput.addEventListener('input', function () {

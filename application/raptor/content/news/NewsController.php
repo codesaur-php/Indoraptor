@@ -324,7 +324,7 @@ class NewsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->indolog($table ?? 'news', $level, $message, $context);             
+            $this->indolog($table ?? 'news', $level, $message, $context);
         }
     }
     

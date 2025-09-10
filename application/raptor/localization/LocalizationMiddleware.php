@@ -30,7 +30,7 @@ class LocalizationMiddleware implements MiddlewareInterface
     {
         $texts = [];
         try {
-            $tables = ['default', 'dashboard', 'user'];        
+            $tables = ['default', 'dashboard', 'user'];
             $pdo = $request->getAttribute('pdo');
             foreach ($tables as $table) {
                 $model = new TextModel($pdo);
