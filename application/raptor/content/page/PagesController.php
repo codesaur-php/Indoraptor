@@ -427,7 +427,6 @@ class PagesController extends FileController
             }
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
-                || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -457,7 +456,7 @@ class PagesController extends FileController
                 $message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } else {
-                $level = LogLevel::NOTICE;
+                $level = LogLevel::ALERT;
                 $message = '{record_id} дугаартай [{server_request.body.title}] хуудсыг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }

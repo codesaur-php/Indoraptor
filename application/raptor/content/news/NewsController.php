@@ -419,12 +419,10 @@ class NewsController extends FileController
             
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
-                || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $deactivated = $model->deactivateById($id, [
                 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
@@ -432,19 +430,11 @@ class NewsController extends FileController
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-            
-            $this->indolog(
-                $table,
-                LogLevel::ALERT,
-                '{record_id} дугаартай [{server_request.body.title}] мэдээг идэвхгүй болголоо',
-                ['action' => 'deactivate', 'record_id' => $id]
-            );
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -458,7 +448,7 @@ class NewsController extends FileController
                 $message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } else {
-                $level = LogLevel::NOTICE;
+                $level = LogLevel::ALERT;
                 $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }

@@ -12,12 +12,9 @@ class TextController extends \Raptor\Controller
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = ['model' => TextModel::class, 'table' => $table];
-            
             if (!$this->isUserCan('system_localization_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             if ($is_submit) {
                 $record = [];
                 $content = [];
@@ -31,7 +28,6 @@ class TextController extends \Raptor\Controller
                         $record[$index] = $value;
                     }
                 }
-                $context['payload'] = $payload;
                 
                 $tables = $this->getTextTableNames();
                 if (empty($record['keyword'])
@@ -52,23 +48,19 @@ class TextController extends \Raptor\Controller
                 
                 $model = new TextModel($this->pdo);
                 $model->setTable($table);
-                $id = $model->insert($record, $content);
-                if ($id == false) {
+                $insert = $model->insert($record, $content);
+                if (empty($insert)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
-                
-                $level = LogLevel::INFO;
-                $message = "$table хүснэгт дээр шинэ текст [{$payload['keyword']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $this->twigTemplate(\dirname(__FILE__) . '/text-insert-modal.html', ['table' => $table])->render();
-                
-                $level = LogLevel::NOTICE;
-                $message = "$table хүснэгт дээр шинэ текст үүсгэх үйлдлийг эхлүүллээ";
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/text-insert-modal.html',
+                    ['table' => $table]
+                )->render();
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -76,11 +68,20 @@ class TextController extends \Raptor\Controller
             } else {
                 $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
-            
-            $level = LogLevel::ERROR;
-            $message = "$table хүснэгт дээр шинэ текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
+            $context = ['action' => 'text-create', 'table' => $table];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{table} хүснэгт дээр шинэ текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } elseif (!empty($insert)) {
+                $level = LogLevel::INFO;
+                $message = '{table} хүснэгт дээр шинэ текст [{record.keyword}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['id' => $insert['id'], 'record' => $insert];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{table} хүснэгт дээр шинэ текст үүсгэх үйлдлийг эхлүүллээ';
+            }
             $this->indolog('localization', $level, $message, $context);
         }
     }
@@ -88,8 +89,6 @@ class TextController extends \Raptor\Controller
     public function view(string $table, int $id)
     {
         try {
-            $context = ['id' => $id, 'model' => TextModel::class, 'table' => $table];
-            
             if (!$this->isUserCan('system_localization_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -105,22 +104,27 @@ class TextController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
-            $context['record'] = $record;
             $this->twigTemplate(
                 \dirname(__FILE__) . '/text-retrieve-modal.html',
                 ['table' => $table, 'record' => $record]
             )->render();
-
-            $level = LogLevel::NOTICE;
-            $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг нээж үзэж байна";
         } catch (\Throwable $e) {
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
-            
-            $level = LogLevel::ERROR;
-            $message = "$table хүснэгтээс текст мэдээллийг нээж үзэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
+            $context = [
+                'action' => 'text-view',
+                'table' => $table,
+                'id' => $id
+            ];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{table} хүснэгтийн {id} дугаартай текст мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{table} хүснэгтээс [{record.keyword}] текст мэдээллийг нээж үзэж байна';
+                $context += ['record' => $record];
+            }
             $this->indolog('localization', $level, $message, $context);
         }
     }
@@ -129,39 +133,45 @@ class TextController extends \Raptor\Controller
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $context = ['id' => $id, 'model' => TextModel::class, 'table' => $table];
-
             if (!$this->isUserCan('system_localization_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
+            }            
             $tables = $this->getTextTableNames();
             if (!\in_array($table, $tables)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }
-            
+            }            
             $model = new TextModel($this->pdo);
             $model->setTable($table);
             $current = $model->getById($id);
             if (empty($current)) {
                 throw new \Exception($this->text('no-record-selected'));
-            }
-            
+            }            
             if ($is_submit) {
+                $payload = $this->getParsedBody();
+                if (empty($payload)) {
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
                 $record = [];
                 $content = [];
-                $payload = $this->getParsedBody();
+                $updates = [];
                 foreach ($payload as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
+                            if ($current['localized'][$index][$key] != $value) {
+                                $updates[] = "{$index}_{$key}";
+                            }
                         }
                     } else {
                         $record[$index] = $value;
+                        if ($current[$index] != $value) {
+                            $updates[] = $index;
+                        }
                     }
                 }
-                $context['payload'] = $payload;
-                
+                if (empty($updates)) {
+                    throw new \InvalidArgumentException('No update!');
+                }
                 if (empty($record['keyword'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
@@ -173,29 +183,22 @@ class TextController extends \Raptor\Controller
                         $this->text('keyword-existing-in') . ' -> ID = ' .
                         $found['id'] . ', Table = ' . $found['table']);
                 }
-                
+                $record['updated_at'] = \date('Y-m-d H:i:s');
+                $record['updated_by'] = $this->getUserId();
                 $updated = $model->updateById($id, $record, $content);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
-                }
-                
+                }                
                 $this->respondJSON([
                     'type' => 'primary',
                     'status' => 'success',
                     'message' => $this->text('record-update-success')
                 ]);
-                
-                $level = LogLevel::INFO;
-                $message = "$table хүснэгтийн [{$record['keyword']}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $this->twigTemplate(
                     \dirname(__FILE__) . '/text-update-modal.html',
                     ['record' => $current, 'table' => $table]
                 )->render();
-                
-                $level = LogLevel::NOTICE;
-                $context['record'] = $current;
-                $message = "$table хүснэгтээс [{$current['keyword']}] текст мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -203,11 +206,25 @@ class TextController extends \Raptor\Controller
             } else {
                 $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
-            
-            $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $message = "$table хүснэгтээс текст мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
+            $context = [
+                'action' => 'text-update',
+                'table' => $table,
+                'id' => $id
+            ];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{table} хүснэгтээс {id} дугаартай текст мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } elseif (!empty($updated)) {
+                $level = LogLevel::INFO;
+                $message = '{table} хүснэгтийн [{record.keyword}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['updates' => $updates, 'record' => $updated];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = '{table} хүснэгтээс [{record.keyword}] текст мэдээллийг шинэчлэхээр нээж байна';
+                $context += ['record' => $current];
+            }
             $this->indolog('localization', $level, $message, $context);
         }
     }
@@ -215,12 +232,9 @@ class TextController extends \Raptor\Controller
     public function delete()
     {
         try {
-            $context = ['model' => TextModel::class];
-            
             if (!$this->isUserCan('system_localization_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
-            
             $payload = $this->getParsedBody();
             $tables = $this->getTextTableNames();
             if (empty($payload['table'])
@@ -230,46 +244,52 @@ class TextController extends \Raptor\Controller
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $context['payload'] = $payload;
-            
             $model = new TextModel($this->pdo);
             $model->setTable($payload['table']);
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $deleted = $model->deleteById($id);
-            if (empty($deleted)) {
+            $deactivated = $model->deactivateById($id, [
+                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
+            ]);
+            if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-            
-            $level = LogLevel::ALERT;
-            $message = "{$model->getName()} хүснэгтээс [" . ($payload['keyword'] ?? $id) . '] текст мэдээллийг устгалаа';
         } catch (\Throwable $e) {
-            $this->respondJSON([ 
+            $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
             ], $e->getCode());
-            
-            $level = LogLevel::ERROR;
-            $message = 'Текст мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
+            $context = ['action' => 'text-deactivate'];
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Текст мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::ALERT;
+                $message = '{table} хүснэгтээс {id} дугаартай [{server_request.body.keyword}] текст мэдээллийг идэвхгүй болголоо';
+                $context += ['table' => $payload['table'], 'id' => $id];
+            }
             $this->indolog('localization', $level, $message, $context);
         }
     }
     
     private function getTextTableNames(): array
     {
-        $content_tables = $this->query(
-            'SHOW TABLES LIKE ' . $this->quote('localization_text_%_content')
-        )->fetchAll();
-        
+        if ($this->getDriverName() == 'pgsql') {
+            $query = 
+                'SELECT tablename FROM pg_catalog.pg_tables ' .
+                "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like 'localization_text_%_content'";
+        } else {
+            $query = 'SHOW TABLES LIKE ' . $this->quote('localization_text_%_content');
+        }
         $names = [];
+        $content_tables = $this->query($query)->fetchAll();
         foreach ($content_tables as $result) {
            $names[] = \substr(reset($result), \strlen('localization_text_'), -\strlen('_content'));
         }

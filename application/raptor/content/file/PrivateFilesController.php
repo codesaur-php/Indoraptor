@@ -151,7 +151,7 @@ class PrivateFilesController extends FilesController
                 $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
-                $message = '{id} дугаартай [{path}] файлын мэдээллийг амжилттай засварлалаа';
+                $message = '{id} дугаартай [{path}] файлын бичлэгийг амжилттай засварлалаа';
                 if (!empty($updated['record_id'])) {
                     $message = "{record_id}-р бичлэгт зориулсан $message";
                 }
@@ -170,7 +170,6 @@ class PrivateFilesController extends FilesController
             
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
-                || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -204,14 +203,14 @@ class PrivateFilesController extends FilesController
         } finally {
             if ($deactivated ?? false) {
                 $level = LogLevel::ALERT;
-                $message = '{id} дугаартай [{path}] файлыг идэвхгүй болголоо';
+                $message = '{id} дугаартай [{path}] файлын бичлэгийг идэвхгүй болголоо. Бодит файл [{file}] устаагүй болно.';
                 if (!empty($record['record_id'])) {
                     $message = "{record_id}-р бичлэгт зориулсан $message";
                 }
                 $context = $record;
             } else {
                 $level = LogLevel::ERROR;
-                $message = 'Файлыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Файлын бичлэгийг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             }
             $this->indolog($table, $level, $message, ['action' => 'deactivate-file']  + $context);

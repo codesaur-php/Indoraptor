@@ -21,7 +21,7 @@
                     <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">)
                 </label>
                 <div class="col-9">
-                    <textarea class="form-control" disabled name="text[{{ code }}]" required maxlength="255">{{ record['content']['text'][code] }}</textarea>
+                    <textarea class="form-control" disabled name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code] }}</textarea>
                 </div>
             </div>
             {% endfor %}
@@ -29,31 +29,6 @@
                 <label class="col-3 col-form-label text-end">{{ 'type'|text }}</label>
                 <div class="col-9">
                     <input class="form-control" readonly value="{{ record['type']|e }}" type="text">
-                </div>
-            </div>
-            <hr>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
-                </div>
-            </div>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ (record['rbac_users'][record['created_by']] ?? record['created_by'])|e }}" type="text">
-                </div>
-            </div>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
-                </div>
-            </div>
-            <div class="row">
-                <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ (record['rbac_users'][record['updated_by']] ?? record['updated_by'])|e }}" type="text">
                 </div>
             </div>
         </div>

@@ -279,7 +279,6 @@ class ReferencesController extends \Raptor\Controller
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || empty($payload['table'])
-                || !isset($payload['keyword'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -291,13 +290,12 @@ class ReferencesController extends \Raptor\Controller
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $deleted = $reference->deactivateById($id, [
+            $deactivated = $reference->deactivateById($id, [
                 'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
             ]);
-            if (empty($deleted)) {
+            if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
-            }
-            
+            }            
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -316,9 +314,9 @@ class ReferencesController extends \Raptor\Controller
                 $message = 'Лавлах мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             } else {
-                $level = LogLevel::NOTICE;
+                $level = LogLevel::ALERT;
                 $message = '{table} хүснэгтээс {id} дугаартай [{server_request.body.keyword}] түлхүүртэй лавлах мэдээллийг идэвхгүй болголоо';
-                $context += ['record_id' => $id];
+                $context += ['table' => $table, 'id' => $id];
             }
             $this->indolog('content', $level, $message, $context);
         }
