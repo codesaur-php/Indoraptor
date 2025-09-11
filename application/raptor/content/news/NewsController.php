@@ -6,6 +6,8 @@ use Psr\Log\LogLevel;
 
 class NewsController extends FileController
 {
+    use \Raptor\Template\DashboardTrait;
+    
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -89,8 +91,8 @@ class NewsController extends FileController
                 'list' => $news,
                 'files_counts' => $files_counts
             ]);
-        } catch (\Throwable $e) {
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         }
     }
     
@@ -178,18 +180,18 @@ class NewsController extends FileController
                 $dashboard->set('title', $this->text('add-record') . ' | News');
                 $dashboard->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+                $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = ['action' => 'create'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Шинэ мэдээ үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (isset($id)) {
                 $level = LogLevel::INFO;
                 $message = '{record_id} дугаартай шинэ мэдээ [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -303,18 +305,18 @@ class NewsController extends FileController
                 $dashboard->set('title', $this->text('edit-record') . ' | News');
                 $dashboard->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+                $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = ['action' => 'update', 'record_id' => $id];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{record_id} дугаартай мэдээг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($updated)) {
                 $level = LogLevel::INFO;
                 $message = '{record_id} дугаартай [{record.title}] мэдээг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -352,14 +354,14 @@ class NewsController extends FileController
             $template->render();
             
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
-        } catch (\Throwable $e) {
-            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             $context = ['action' => 'read', 'record_id' => $id];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{record_id} дугаартай мэдээг унших үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{record_id} дугаартай [{title}] мэдээг уншиж байна';
@@ -390,14 +392,14 @@ class NewsController extends FileController
             );
             $dashboard->set('title', $this->text('view-record') . ' | News');
             $dashboard->render();
-        } catch (\Throwable $e) {
-            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             $context = ['action' => 'view', 'record_id' => $id];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{record_id} дугаартай мэдээг нээж үзэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{record_id} дугаартай [{record.title}] мэдээг нээж үзэж байна';
@@ -435,18 +437,18 @@ class NewsController extends FileController
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $err->getMessage()
+            ], $err->getCode());
         } finally {
             $context = ['action' => 'deactivate'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
                 $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг идэвхгүй болголоо';

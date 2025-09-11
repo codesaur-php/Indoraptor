@@ -41,9 +41,9 @@ class PrivateFilesController extends FilesController
 
             \header("Content-Type: $mimeType");
             \readfile($filePath);
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-            $this->headerResponseCode($e->getCode());
+        } catch (\Throwable $err) {
+            $this->errorLog($err);
+            $this->headerResponseCode($err->getCode());
         }
     }
     
@@ -87,15 +87,15 @@ class PrivateFilesController extends FilesController
                 return \basename($path);
             }));
             $template->render();
-        } catch (\Throwable $e) {
-            $this->headerResponseCode($e->getCode());
+        } catch (\Throwable $err) {
+            $this->headerResponseCode($err->getCode());
             
             echo '<div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-body">
                             <div class="alert alert-danger shadow-sm fade mt-3 show" role="alert">
                                 <i class="bi bi-shield-fill-exclamation" style="margin-right:.3rem"></i>'
-                            . $e->getMessage() .
+                            . $err->getMessage() .
                             '</div>
                         </div>
                         <div class="modal-footer">
@@ -142,13 +142,13 @@ class PrivateFilesController extends FilesController
                 'message' => $this->text('record-update-success'),
                 'record' => $updated
             ]);
-        } catch (\Throwable $e) {
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
             if (empty($updated)) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context = ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = '{id} дугаартай [{path}] файлын бичлэгийг амжилттай засварлалаа';
@@ -194,12 +194,12 @@ class PrivateFilesController extends FilesController
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $err->getMessage()
+            ], $err->getCode());
         } finally {
             if ($deactivated ?? false) {
                 $level = LogLevel::ALERT;
@@ -211,7 +211,7 @@ class PrivateFilesController extends FilesController
             } else {
                 $level = LogLevel::ERROR;
                 $message = 'Файлын бичлэгийг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-                $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context = ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             }
             $this->indolog($table, $level, $message, ['action' => 'deactivate-file']  + $context);
         }

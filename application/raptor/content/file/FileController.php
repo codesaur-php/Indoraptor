@@ -6,8 +6,6 @@ use Psr\Http\Message\UploadedFileInterface;
 
 class FileController extends \Raptor\Controller
 {
-    use \Raptor\Template\DashboardTrait;
-    
     protected string $local;
     
     protected string $public;
@@ -146,11 +144,11 @@ class FileController extends \Raptor\Controller
                 'mime_content_type' => $mime_type,
                 'type' => \explode('/', $mime_type)[0] ?? 'unknown'
             ];
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $err) {
+            $this->errorLog($err);
             
-            if (\is_numeric($e->getCode())) {
-                $this->_upload_error = (int) $e->getCode();
+            if (\is_numeric($err->getCode())) {
+                $this->_upload_error = (int) $err->getCode();
             }
             
             // failed to move uploaded file!
@@ -197,8 +195,8 @@ class FileController extends \Raptor\Controller
                 throw new \Exception($this->text('no-record-selected'));
             }
             return $update;
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $err) {
+            $this->errorLog($err);
             return false;
         }
     }
@@ -212,8 +210,8 @@ class FileController extends \Raptor\Controller
             }
             
             return \unlink($filePath);
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $err) {
+            $this->errorLog($err);
             
             return false;
         }

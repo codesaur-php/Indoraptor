@@ -104,9 +104,9 @@ class Logger extends AbstractLogger
             while ($record = $stmt->fetch()) {
                 $rows[] = $this->normalizeLogRecord($record);
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
-                \error_log($e->getMessage());
+                \error_log($err->getMessage());
             }
         }
         return $rows;

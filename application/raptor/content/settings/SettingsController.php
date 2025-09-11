@@ -77,14 +77,14 @@ class SettingsController extends FileController
                 $notice = $this->text('record-insert-success');
             }
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
-       } catch (\Throwable $e) {
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+       } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
             $context = ['action' => 'settings-post'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Тохируулгыг шинэчлэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = 'Тохируулгыг амжилттай шинэчиллээ';
@@ -191,14 +191,14 @@ class SettingsController extends FileController
                 $notice = $this->text('record-insert-success');
             }            
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
-        } catch (\Throwable $e) {
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
             $context = ['action' => 'settings-files'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Тохируулга файлуудыг шинэчлэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = 'Тохируулга файлуудыг амжилттай шинэчиллээ';

@@ -62,18 +62,18 @@ class TextController extends \Raptor\Controller
                     ['table' => $table]
                 )->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = ['action' => 'text-create', 'table' => $table];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгт дээр шинэ текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($insert)) {
                 $level = LogLevel::INFO;
                 $message = '{table} хүснэгт дээр шинэ текст [{record.keyword}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -108,18 +108,18 @@ class TextController extends \Raptor\Controller
                 \dirname(__FILE__) . '/text-retrieve-modal.html',
                 ['table' => $table, 'record' => $record]
             )->render();
-        } catch (\Throwable $e) {
-            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             $context = [
                 'action' => 'text-view',
                 'table' => $table,
                 'id' => $id
             ];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгтийн {id} дугаартай текст мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{table} хүснэгтээс [{record.keyword}] текст мэдээллийг нээж үзэж байна';
@@ -200,11 +200,11 @@ class TextController extends \Raptor\Controller
                     ['record' => $current, 'table' => $table]
                 )->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = [
@@ -212,10 +212,10 @@ class TextController extends \Raptor\Controller
                 'table' => $table,
                 'id' => $id
             ];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгтээс {id} дугаартай текст мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($updated)) {
                 $level = LogLevel::INFO;
                 $message = '{table} хүснэгтийн [{record.keyword}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -258,18 +258,18 @@ class TextController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $err->getMessage()
+            ], $err->getCode());
         } finally {
             $context = ['action' => 'text-deactivate'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Текст мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
                 $message = '{table} хүснэгтээс {id} дугаартай [{server_request.body.keyword}] текст мэдээллийг идэвхгүй болголоо';

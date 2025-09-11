@@ -18,9 +18,9 @@ class LocalizationMiddleware implements MiddlewareInterface
                 throw new \Exception('Languages not found!');
             }
             return $rows;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
-                \error_log($e->getMessage());
+                \error_log($err->getMessage());
             }
             return ['en' => 'English'];
         }
@@ -40,9 +40,9 @@ class LocalizationMiddleware implements MiddlewareInterface
                     $texts += $text;
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
-                \error_log($e->getMessage());
+                \error_log($err->getMessage());
             }
         }
         return $texts;

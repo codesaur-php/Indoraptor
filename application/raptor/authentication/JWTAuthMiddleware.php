@@ -90,9 +90,9 @@ class JWTAuthMiddleware implements MiddlewareInterface
             return $handler->handle($request->withAttribute('user', new User(
                 $profile, $organization, (new RBAC($pdo, $profile['id']))->jsonSerialize())
             ));
-        } catch (\Throwable $e) {
-            if ($e->getCode() != 5000 && CODESAUR_DEVELOPMENT) {
-                \error_log($e->getMessage());
+        } catch (\Throwable $err) {
+            if ($err->getCode() != 5000 && CODESAUR_DEVELOPMENT) {
+                \error_log($err->getMessage());
             }
             
             if (isset($_SESSION['RAPTOR_JWT'])

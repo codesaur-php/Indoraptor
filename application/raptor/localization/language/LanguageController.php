@@ -59,18 +59,18 @@ class LanguageController extends \Raptor\Controller
             } else {
                 $this->twigTemplate(\dirname(__FILE__) . '/language-insert-modal.html')->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = ['action' => 'language-create'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Шинэ хэл үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($record)) {
                 $level = LogLevel::INFO;
                 $message = 'Шинэ хэл [{record.code} - {record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -99,14 +99,14 @@ class LanguageController extends \Raptor\Controller
                 \dirname(__FILE__) . '/language-retrieve-modal.html',
                 ['record' => $record]
             )->render();
-        } catch (\Throwable $e) {
-            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             $context = ['action' => 'language-view', 'id' => $id];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{record.title} хэлний мэдээллийг нээж үзэж байна';
@@ -182,18 +182,18 @@ class LanguageController extends \Raptor\Controller
                     ['record' => $record]
                 )->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = ['action' => 'language-update', 'id' => $id];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($updated)) {
                 $level = LogLevel::INFO;
                 $message = '[{record.title}] хэлний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -242,18 +242,18 @@ class LanguageController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $err->getMessage()
+            ], $err->getCode());
         } finally {
             $context = ['action' => 'language-deactivate'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
                 $message = '{record.title} хэлний мэдээллийг [{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
@@ -380,8 +380,8 @@ class LanguageController extends \Raptor\Controller
                 }
             }            
             return $copied;
-        } catch (\Exception $e) {
-            $this->errorLog($e);
+        } catch (\Exception $ex) {
+            $this->errorLog($ex);
             return false;
         }        
     }

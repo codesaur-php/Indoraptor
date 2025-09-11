@@ -109,21 +109,21 @@ class ReferencesController extends \Raptor\Controller
                 $dashboard->set('title', $this->text('add-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+                $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = [
                 'action' => 'reference-create',
                 'table' => $table
             ];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Шинэ лавлах мэдээллийг [{table}] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (isset($insert['id'])) {
                 $level = LogLevel::INFO;
                 $message = 'Шинээр [{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -157,18 +157,18 @@ class ReferencesController extends \Raptor\Controller
             );
             $dashboard->set('title', $this->text('view-record') . ' | ' . \ucfirst($table));
             $dashboard->render();
-        } catch (\Throwable $e) {
-            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             $context = [
                 'action' => 'reference-view',
                 'table' => $table,
                 'id' => $id
             ];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгтээс {id} дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{table} хүснэгтийн {id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна';
@@ -240,11 +240,11 @@ class ReferencesController extends \Raptor\Controller
                 $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+                $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
-                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+                $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
             $context = [
@@ -252,10 +252,10 @@ class ReferencesController extends \Raptor\Controller
                 'table' => $table,
                 'id' => $id
             ];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгтийн {id} дугаартай лавлах мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($updated)) {
                 $level = LogLevel::INFO;
                 $message = '{table} хүснэгтийн {id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
@@ -301,18 +301,18 @@ class ReferencesController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $err->getMessage()
+            ], $err->getCode());
         } finally {
             $context = ['action' => 'reference-deactivate'];
-            if (isset($e) && $e instanceof \Throwable) {
+            if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Лавлах мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
                 $message = '{table} хүснэгтээс {id} дугаартай [{server_request.body.keyword}] түлхүүртэй лавлах мэдээллийг идэвхгүй болголоо';

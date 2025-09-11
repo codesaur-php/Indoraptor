@@ -101,11 +101,11 @@ class LoginController extends \Raptor\Controller
             ) {
                 $_SESSION['RAPTOR_LANGUAGE_CODE'] = $user['code'];
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if (isset($_SESSION['RAPTOR_JWT'])) {
                 unset($_SESSION['RAPTOR_JWT']);
             }
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
             if (isset($_SESSION['RAPTOR_JWT'])) {
                 $level = LogLevel::INFO;
@@ -118,7 +118,7 @@ class LoginController extends \Raptor\Controller
                 $message = '{error.message}';
                 $context = [
                     'auth_user' => [],
-                    'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]
+                    'error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]
                 ];
             }
             $this->indolog('dashboard', $level, $message, ['action' => 'login'] + $context);

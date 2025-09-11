@@ -32,8 +32,8 @@ class LogsController extends \Raptor\Controller
             $dashboard =  $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html', ['log_tables' => $log_tables]);
             $dashboard->set('title', $this->text('log'));
             $dashboard->render();
-        } catch (\Throwable $e) {
-            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         }
     }
     
@@ -71,8 +71,8 @@ class LogsController extends \Raptor\Controller
             ))->render();
 
             return true;
-        } catch (\Throwable $e) {
-            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->modalProhibited($err->getMessage(), $err->getCode())->render();
 
             return false;
         }

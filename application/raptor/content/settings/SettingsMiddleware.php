@@ -29,9 +29,9 @@ class SettingsMiddleware implements MiddlewareInterface
                     $settings['config'] = \json_decode($settings['config'], true);
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
-                \error_log($e->getMessage());
+                \error_log($err->getMessage());
             }
         }
         

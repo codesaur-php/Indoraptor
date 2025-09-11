@@ -4,17 +4,15 @@ namespace Raptor\Organization;
 
 use Psr\Log\LogLevel;
 
-use Raptor\File\FileController;
+use Raptor\Content\FileController;
 
-class OrganizationController extends \Raptor\Controller
+class OrganizationController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
     
     public function index()
     {
         try {
-            $context = ['model' => OrganizationModel::class];
-            
             if (!$this->isUserCan('system_organization_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }

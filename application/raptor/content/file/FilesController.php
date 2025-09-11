@@ -6,6 +6,8 @@ use Psr\Log\LogLevel;
 
 class FilesController extends FileController
 {    
+    use \Raptor\Template\DashboardTrait;
+    
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -91,8 +93,8 @@ class FilesController extends FileController
                 $files = $this->query($select_files)->fetchAll();
             }
             $this->respondJSON(['status' => 'success', 'list' => $files]);
-        } catch (\Throwable $e) {
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         }
     }
 
@@ -119,9 +121,9 @@ class FilesController extends FileController
                 throw new \Exception($this->text('record-insert-error'));
             }
             $this->respondJSON($record);
-        } catch (\Throwable $e) {
-            $error = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
-            $this->respondJSON($error, $e->getCode());
+        } catch (\Throwable $err) {
+            $error = ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            $this->respondJSON($error, $err->getCode());
 
             if (!empty($uploaded['file'])) {
                 $this->unlinkByName(\basename($uploaded['file']));
