@@ -57,34 +57,22 @@ class Mailer extends \codesaur\Http\Client\Mail
     public function send(): bool
     {
         try {
-            $context = [];
-            
             if (empty($_ENV['INDO_MAIL_BREVO_APIKEY'] ?? '')) {
                 throw new \Exception('Mailer BREVO API KEY not found from environment variables!');
             }
 
-            $context['brevo-result'] = $this->sendBrevoTransactional($_ENV['INDO_MAIL_BREVO_APIKEY']);
-            if (empty($context['brevo-result'])) {
+            $result = $this->sendBrevoTransactional($_ENV['INDO_MAIL_BREVO_APIKEY']);
+            if (empty($result)) {
                 throw new \RuntimeException('Email sending failed!');
             }
-
-            $level = LogLevel::NOTICE;
-            $context['status'] = 'success';
-            $context['message'] = 'Email successfully sent to destination';
             return true;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
-                \error_log($e->getMessage());
+                \error_log($err->getMessage());
             }
-
-            $level = LogLevel::ERROR;
-            $context['status'] = 'error';
-            $context['code'] = $e->getCode();
-            $context['message'] = $e->getMessage();
             return false;
         } finally {
-            $logger = new Logger($this->pdo);
-            $logger->setTable('mailer');
+            $context = ['action' => 'mail-send'];
             $context['To'] = $this->getRecipients('To');
             $cc = $this->getRecipients('Cc');
             if (!empty($cc)) {
@@ -94,13 +82,22 @@ class Mailer extends \codesaur\Http\Client\Mail
             if (!empty($bcc)) {
                 $context['Bcc'] = $bcc;
             }
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $context['status'] = 'error';
+                $context['code'] = $err->getCode();
+                $context['message'] = $err->getMessage();
+            } else {
+                $level = LogLevel::NOTICE;
+                $context['status'] = 'success';
+                $context['message'] = 'Email successfully sent to destination';
+            }
+            $context['remote_addr'] = $_SERVER['REMOTE_ADDR'] ?? '';
+            $logger = new Logger($this->pdo);
+            $logger->setTable('mailer');
             $toEmail = \reset($context['To'])['email'] ?? '';            
             $mailSubject = $this->subject ?? '';
-            $logger->log(
-                $level,
-                "[$toEmail] - $mailSubject",
-                $context + ['remote_addr' => $_SERVER['REMOTE_ADDR']]
-            );
+            $logger->log($level, "[$toEmail] - $mailSubject", $context);
         }
     }
     
