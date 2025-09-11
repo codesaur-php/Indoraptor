@@ -101,12 +101,13 @@ class PagesController extends FileController
     public function insert()
     {
         try {
-            $model = new PagesModel($this->pdo);
-            $table = $model->getName();
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            } elseif ($is_submit) {
+            }
+            
+            $model = new PagesModel($this->pdo);
+            $table = $model->getName();
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])){
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -183,7 +184,7 @@ class PagesController extends FileController
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -192,15 +193,15 @@ class PagesController extends FileController
             $context = ['action' => 'create'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Шинэ хуудас үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = 'Хуудас үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (isset($id)) {
                 $level = LogLevel::INFO;
-                $message = '{record_id} дугаартай шинэ хуудас [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай хуудас [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += ['record_id' => $id, 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'Шинэ хуудас үүсгэх үйлдлийг эхлүүллээ';
+                $message = 'Хуудас үүсгэх үйлдлийг эхлүүллээ';
             }
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }
@@ -284,7 +285,7 @@ class PagesController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг нээж үзэж байна';
+                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг нээж үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
             $this->indolog($table ?? 'pages', $level, $message, $context);
@@ -294,21 +295,21 @@ class PagesController extends FileController
     public function update(int $id)
     {
         try {
-            $model = new PagesModel($this->pdo);
-            $table = $model->getName();
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            
+            $model = new PagesModel($this->pdo);
+            $table = $model->getName();
             $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -395,7 +396,7 @@ class PagesController extends FileController
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -408,7 +409,7 @@ class PagesController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($updated)) {
                 $level = LogLevel::INFO;
-                $message = '{record_id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;

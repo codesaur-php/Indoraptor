@@ -11,11 +11,10 @@ class TextController extends \Raptor\Controller
     public function insert(string $table)
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
             if (!$this->isUserCan('system_localization_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $record = [];
                 $content = [];
                 $payload = $this->getParsedBody();
@@ -63,7 +62,7 @@ class TextController extends \Raptor\Controller
                 )->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
@@ -72,15 +71,15 @@ class TextController extends \Raptor\Controller
             $context = ['action' => 'text-create', 'table' => $table];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{table} хүснэгт дээр шинэ текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{table} хүснэгт дээр текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($insert)) {
                 $level = LogLevel::INFO;
-                $message = '{table} хүснэгт дээр шинэ текст [{record.keyword}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{table} хүснэгт дээр текст [{record.keyword}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += ['id' => $insert['id'], 'record' => $insert];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгт дээр шинэ текст үүсгэх үйлдлийг эхлүүллээ';
+                $message = '{table} хүснэгт дээр текст үүсгэх үйлдлийг эхлүүллээ';
             }
             $this->indolog('localization', $level, $message, $context);
         }
@@ -132,7 +131,6 @@ class TextController extends \Raptor\Controller
     public function update(string $table, int $id)
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
             if (!$this->isUserCan('system_localization_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }            
@@ -146,7 +144,7 @@ class TextController extends \Raptor\Controller
             if (empty($current)) {
                 throw new \Exception($this->text('no-record-selected'));
             }            
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload)) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -201,7 +199,7 @@ class TextController extends \Raptor\Controller
                 )->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();

@@ -61,10 +61,9 @@ class ReferencesController extends \Raptor\Controller
     public function insert(string $table)
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            } elseif ($is_submit) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $record = [];
                 $content = [];
                 $payload = $this->getParsedBody();
@@ -110,7 +109,7 @@ class ReferencesController extends \Raptor\Controller
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -122,15 +121,15 @@ class ReferencesController extends \Raptor\Controller
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Шинэ лавлах мэдээллийг [{table}] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = 'Лавлах мэдээллийг [{table}] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (isset($insert['id'])) {
                 $level = LogLevel::INFO;
-                $message = 'Шинээр [{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '[{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += ['id' => $insert['id'], 'record' => $insert];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'Шинэ лавлах мэдээллийг {table} хүснэгт дээр үйлдлийг эхлүүллээ';
+                $message = 'Лавлах мэдээллийг {table} хүснэгт дээр үйлдлийг эхлүүллээ';
             }
             $this->indolog('content', $level, $message, $context);
         }
@@ -171,7 +170,7 @@ class ReferencesController extends \Raptor\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгтийн {id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна';
+                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна';
                 $context += ['record' => $record];
             }
             $this->indolog('content', $level, $message, $context);
@@ -187,14 +186,13 @@ class ReferencesController extends \Raptor\Controller
                 throw new \Exception("Table reference_$table not found", 404);
             }
             
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
             $current = $reference->getById($id);
             if (empty($current)) {
                 throw new \Exception($this->text('no-record-selected'), 400);
             }
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload)) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -241,7 +239,7 @@ class ReferencesController extends \Raptor\Controller
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -258,11 +256,11 @@ class ReferencesController extends \Raptor\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($updated)) {
                 $level = LogLevel::INFO;
-                $message = '{table} хүснэгтийн {id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгтийн {id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна';
+                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна';
                 $context += ['record' => $current];
             }
             $this->indolog('content', $level, $message, $context);

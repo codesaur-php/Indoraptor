@@ -11,12 +11,11 @@ class LanguageController extends \Raptor\Controller
     public function insert()
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
             if (!$this->isUserCan('system_localization_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['copy'])
                     || empty($payload['code'])
@@ -60,7 +59,7 @@ class LanguageController extends \Raptor\Controller
                 $this->twigTemplate(\dirname(__FILE__) . '/language-insert-modal.html')->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
@@ -69,18 +68,19 @@ class LanguageController extends \Raptor\Controller
             $context = ['action' => 'language-create'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Шинэ хэл үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = 'Хэлний бичлэг үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif (!empty($record)) {
                 $level = LogLevel::INFO;
-                $message = 'Шинэ хэл [{record.code} - {record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = 'Хэл [{record.code} - {record.title}] бичлэг үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
                 $context += [
+                    'id' => $record['id'],
                     'record' => $record,
                     "copied-localized-content-{$mother['code']}-to-{$record['code']}" => $copied
                 ];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'Шинэ хэл үүсгэх үйлдлийг эхлүүллээ';
+                $message = 'Хэлний бичлэг үүсгэх үйлдлийг эхлүүллээ';
             }
             $this->indolog('localization', $level, $message, $context);
         }
@@ -119,7 +119,6 @@ class LanguageController extends \Raptor\Controller
     public function update(int $id)
     {
         try {
-            $is_submit = $this->getRequest()->getMethod() == 'PUT';
             if (!$this->isUserCan('system_localization_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -129,7 +128,7 @@ class LanguageController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }        
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['code'])
                     || empty($payload['title'])
@@ -183,7 +182,7 @@ class LanguageController extends \Raptor\Controller
                 )->render();
             }
         } catch (\Throwable $err) {
-            if ($is_submit) {
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
@@ -220,9 +219,9 @@ class LanguageController extends \Raptor\Controller
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             
             $model = new LanguageModel($this->pdo);
-            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));

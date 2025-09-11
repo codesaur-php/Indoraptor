@@ -45,7 +45,7 @@ class OrganizationUserModel extends Model
     
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);        
+        $this->setForeignKeyChecks(false);
         $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $organizations = (new OrganizationModel($this->pdo))->getName();

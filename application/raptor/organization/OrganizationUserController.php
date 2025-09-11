@@ -30,16 +30,19 @@ class OrganizationUserController extends \Raptor\Controller
             );
             $dashboard->set('title', $this->text('organization'));
             $dashboard->render();
-            
-            $level = LogLevel::NOTICE;
-            $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
-        } catch (\Throwable $e) {
-            $level = LogLevel::ERROR;
-            $message = $e->getMessage();
-            
-            $this->dashboardProhibited($message, $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $this->indolog('dashboard', $level, $message);
+            $context = ['action' => 'organization-user-index'];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{error.message}';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
+            }
+            $this->indolog('dashboard', $level, $message, $context);
         }
     }
 }
