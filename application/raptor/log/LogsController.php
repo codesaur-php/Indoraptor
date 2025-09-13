@@ -69,12 +69,8 @@ class LogsController extends \Raptor\Controller
                     'close' => $this->text('close')
                 ]
             ))->render();
-
-            return true;
         } catch (\Throwable $err) {
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
-
-            return false;
         }
     }
     
@@ -111,7 +107,7 @@ class LogsController extends \Raptor\Controller
                 $keys = \explode('.', $field);
 
                 if ($this->getDriverName() == 'pgsql') {
-                    $expr = 'context';
+                    $expr = '(context::jsonb)';
                     $lastKey = \array_pop($keys);
                     foreach ($keys as $k) {
                         $expr .= "->'$k'";
@@ -133,12 +129,12 @@ class LogsController extends \Raptor\Controller
                     ? $clause
                     : $condition['WHERE'] . ' AND ' . $clause;
             }
-
+            
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $this->respondJSON($logger->getLogs($condition));
-        } catch (\Throwable $e) {
-            $this->respondJSON(['error' => $e->getMessage()], $e->getCode());
+        } catch (\Throwable $err) {
+            $this->respondJSON(['error' => $err->getMessage()], $err->getCode());
         }
     }
 }

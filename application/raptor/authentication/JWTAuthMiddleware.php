@@ -58,7 +58,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
     {
         try {
             if (empty($_SESSION['RAPTOR_JWT'])) {
-                throw new \Exception('There is no JWT on the session!', 5000);
+                throw new \Exception('There is no JWT on the session!');
             }
             $result = $this->validate($_SESSION['RAPTOR_JWT']);
             
@@ -91,14 +91,13 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 $profile, $organization, (new RBAC($pdo, $profile['id']))->jsonSerialize())
             ));
         } catch (\Throwable $err) {
-            if ($err->getCode() != 5000 && CODESAUR_DEVELOPMENT) {
-                \error_log($err->getMessage());
-            }
-            
-            if (isset($_SESSION['RAPTOR_JWT'])
-                && \session_status() == \PHP_SESSION_ACTIVE
-            ) {
-                unset($_SESSION['RAPTOR_JWT']);
+            if (isset($_SESSION['RAPTOR_JWT'])) {
+                if (\session_status() == \PHP_SESSION_ACTIVE) {
+                    unset($_SESSION['RAPTOR_JWT']);
+                }
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log($err->getMessage());
+                }
             }
             
             $path = \rawurldecode($request->getUri()->getPath());

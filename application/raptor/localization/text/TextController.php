@@ -15,27 +15,27 @@ class TextController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             if ($this->getRequest()->getMethod() == 'POST') {
-                $record = [];
+                $payload = [];
                 $content = [];
-                $payload = $this->getParsedBody();
-                foreach ($payload as $index => $value) {
+                $parsedBody = $this->getParsedBody();
+                foreach ($parsedBody as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
                     } else {
-                        $record[$index] = $value;
+                        $payload[$index] = $value;
                     }
                 }
                 
                 $tables = $this->getTextTableNames();
-                if (empty($record['keyword'])
+                if (empty($payload['keyword'])
                     || !\in_array($table, $tables)
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
-                $found = $this->findByKeyword($tables, $payload['keyword']);
+                $found = $this->findByKeyword($tables, $parsedBody['keyword']);
                 if (isset($found['id'])
                     && !empty($found['table'])
                 ) {
@@ -47,8 +47,10 @@ class TextController extends \Raptor\Controller
                 
                 $model = new TextModel($this->pdo);
                 $model->setTable($table);
-                $insert = $model->insert($record, $content);
-                if (empty($insert)) {
+                $record = $model->insert(
+                    $payload + ['created_by' => $this->getUserId()], $content
+                );
+                if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 $this->respondJSON([
@@ -73,10 +75,10 @@ class TextController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгт дээр текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($insert)) {
+            } elseif (!empty($record)) {
                 $level = LogLevel::INFO;
                 $message = '{table} хүснэгт дээр текст [{record.keyword}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
-                $context += ['id' => $insert['id'], 'record' => $insert];
+                $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{table} хүснэгт дээр текст үүсгэх үйлдлийг эхлүүллээ';
@@ -140,29 +142,29 @@ class TextController extends \Raptor\Controller
             }            
             $model = new TextModel($this->pdo);
             $model->setTable($table);
-            $current = $model->getById($id);
-            if (empty($current)) {
+            $record = $model->getById($id);
+            if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }            
             if ($this->getRequest()->getMethod() == 'PUT') {
-                $payload = $this->getParsedBody();
-                if (empty($payload)) {
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody)) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $record = [];
+                $payload = [];
                 $content = [];
                 $updates = [];
-                foreach ($payload as $index => $value) {
+                foreach ($parsedBody as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
-                            if ($current['localized'][$index][$key] != $value) {
+                            if ($record['localized'][$index][$key] != $value) {
                                 $updates[] = "{$index}_{$key}";
                             }
                         }
                     } else {
-                        $record[$index] = $value;
-                        if ($current[$index] != $value) {
+                        $payload[$index] = $value;
+                        if ($record[$index] != $value) {
                             $updates[] = $index;
                         }
                     }
@@ -170,10 +172,10 @@ class TextController extends \Raptor\Controller
                 if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
-                if (empty($record['keyword'])) {
+                if (empty($payload['keyword'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $found = $this->findByKeyword($tables, $payload['keyword']);
+                $found = $this->findByKeyword($tables, $parsedBody['keyword']);
                 if (isset($found['table']) && isset($found['id'])
                     && ($found['id'] != $id || $found['table'] != $table)
                 ) {
@@ -181,9 +183,9 @@ class TextController extends \Raptor\Controller
                         $this->text('keyword-existing-in') . ' -> ID = ' .
                         $found['id'] . ', Table = ' . $found['table']);
                 }
-                $record['updated_at'] = \date('Y-m-d H:i:s');
-                $record['updated_by'] = $this->getUserId();
-                $updated = $model->updateById($id, $record, $content);
+                $updated = $model->updateById(
+                    $id, $payload + ['updated_by' => $this->getUserId()], $content
+                );
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }                
@@ -195,7 +197,7 @@ class TextController extends \Raptor\Controller
             } else {
                 $this->twigTemplate(
                     \dirname(__FILE__) . '/text-update-modal.html',
-                    ['record' => $current, 'table' => $table]
+                    ['record' => $record, 'table' => $table]
                 )->render();
             }
         } catch (\Throwable $err) {
@@ -221,7 +223,7 @@ class TextController extends \Raptor\Controller
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{table} хүснэгтээс [{record.keyword}] текст мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $current];
+                $context += ['record' => $record];
             }
             $this->indolog('localization', $level, $message, $context);
         }

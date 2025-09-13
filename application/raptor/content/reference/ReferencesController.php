@@ -64,20 +64,20 @@ class ReferencesController extends \Raptor\Controller
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($this->getRequest()->getMethod() == 'POST') {
-                $record = [];
+                $payload = [];
                 $content = [];
-                $payload = $this->getParsedBody();
-                foreach ($payload as $index => $value) {
+                $parsedBody = $this->getParsedBody();
+                foreach ($parsedBody as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
                     } else {
-                        $record[$index] = $value;
+                        $payload[$index] = $value;
                     }
                 }                
-                if (empty($payload['keyword'])
-                    || empty($payload['category'])
+                if (empty($parsedBody['keyword'])
+                    || empty($parsedBody['category'])
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-values'), 400);
                 }
@@ -91,9 +91,10 @@ class ReferencesController extends \Raptor\Controller
                 
                 $reference = new ReferenceModel($this->pdo);
                 $reference->setTable($table);
-                $record['created_by'] = $this->getUserId();
-                $insert = $reference->insert($record, $content);
-                if (!isset($insert['id'])) {
+                $record = $reference->insert(
+                    $payload, $content + ['created_by' => $this->getUserId()]
+                );
+                if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }                
                 $this->respondJSON([
@@ -123,10 +124,10 @@ class ReferencesController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = 'Лавлах мэдээллийг [{table}] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (isset($insert['id'])) {
+            } elseif (isset($record['id'])) {
                 $level = LogLevel::INFO;
                 $message = '[{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
-                $context += ['id' => $insert['id'], 'record' => $insert];
+                $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Лавлах мэдээллийг {table} хүснэгт дээр үйлдлийг эхлүүллээ';
@@ -188,29 +189,29 @@ class ReferencesController extends \Raptor\Controller
             
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $current = $reference->getById($id);
-            if (empty($current)) {
+            $record = $reference->getById($id);
+            if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 400);
             }
             if ($this->getRequest()->getMethod() == 'PUT') {
-                $payload = $this->getParsedBody();
-                if (empty($payload)) {
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody)) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $record = [];
+                $payload = [];
                 $content = [];
                 $updates = [];
-                foreach ($payload as $index => $value) {
+                foreach ($parsedBody as $index => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
-                            if ($current['localized'][$index][$key] != $value) {
+                            if ($record['localized'][$index][$key] != $value) {
                                 $updates[] = "{$index}_{$key}";
                             }
                         }
                     } else {
-                        $record[$index] = $value;
-                        if ($current[$index] != $value) {
+                        $payload[$index] = $value;
+                        if ($record[$index] != $value) {
                             $updates[] = $index;
                         }
                     }
@@ -218,9 +219,9 @@ class ReferencesController extends \Raptor\Controller
                 if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
-                $record['updated_at'] = \date('Y-m-d H:i:s');
-                $record['updated_by'] = $this->getUserId();
-                $updated = $reference->updateById($id, $record, $content);
+                $updated = $reference->updateById(
+                    $id, $payload + ['updated_by' => $this->getUserId()], $content
+                );
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
@@ -233,7 +234,7 @@ class ReferencesController extends \Raptor\Controller
             } else {
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/reference-update.html',
-                    ['table' => $table, 'record' => $current]
+                    ['table' => $table, 'record' => $record]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
@@ -261,7 +262,7 @@ class ReferencesController extends \Raptor\Controller
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $current];
+                $context += ['record' => $record];
             }
             $this->indolog('content', $level, $message, $context);
         }

@@ -190,7 +190,7 @@ class FileController extends \Raptor\Controller
                 'path' => $this->getPath($file_name),
                 'record_id' => $record_id,
             ];
-            $updated = $model->updateById($file_id, $update);
+            $updated = $model->updateById($file_id, $update + ['updated_by' => $this->getUserId()]);
             if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));
             }

@@ -17,7 +17,7 @@ class RBAC implements \JsonSerializable
         if ($pdo_stmt->execute([':user_id' => $user_id])) {
             while ($row = $pdo_stmt->fetch()) {
                 $this->role["{$row['alias']}_{$row['name']}"] = (new Role())->fetchPermissions($pdo, $row['role_id']);
-            }    
+            }
         }
     }
 
@@ -53,7 +53,7 @@ class RBAC implements \JsonSerializable
     
     public function jsonSerialize(): mixed
     {
-        $role_permissions = [];        
+        $role_permissions = [];
         foreach ($this->role as $name => $role) {
             if (!$role instanceof Role) {
                 continue;

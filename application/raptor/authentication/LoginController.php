@@ -470,17 +470,9 @@ class LoginController extends \Raptor\Controller
     }
     
     public function selectOrganization(int $id)
-    {
-        $home = $this->generateRouteLink('home');
-        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
-            $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
-            $location = \str_contains($referer, $home) ? $referer : $home;
-        } else {
-            $location = $home;
-        }
-        
+    {        
         try {
-            if (!$this->isUserAuthorized() || $id == 0) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
             }
 
@@ -531,35 +523,34 @@ class LoginController extends \Raptor\Controller
             
             $jwt = $JWT_AUTH->generate($payload);
             $_SESSION['RAPTOR_JWT'] = $jwt;
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            \header("Location: $location", false, 302);
-            
-            if (isset($jwt)) {
-                $this->indolog(
-                    'dashboard',
-                    LogLevel::NOTICE,
-                    'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} нэвтэрсэн байгууллага сонгов',
-                    ['action' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id]
-                );
-            }
-            
-            exit;
+            $this->indolog(
+                'dashboard',
+                LogLevel::NOTICE,
+                'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} нэвтэрсэн байгууллага сонгов',
+                ['action' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id]
+            );
+        } catch (\Throwable $err) {
+            $this->indolog(
+                'dashboard',
+                LogLevel::ERROR,
+                'Хэрэглэгч нэвтэрсэн байгууллага [id:{id}] сонгох үед алдаа гарч зогслоо. {error.message}',
+                ['action' => 'login-to-organization', 'id' => $id, 'error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
+            );
         }
-    }
-    
-    public function language(string $code)
-    {
-        $script_path = $this->getScriptPath();
-        $home = (string) $this->getRequest()->getUri()->withPath($script_path);
+        
+        $home = $this->generateRouteLink('home');
         if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
             $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
             $location = \str_contains($referer, $home) ? $referer : $home;
         } else {
             $location = $home;
         }
-
+        \header("Location: $location", false, 302);
+        exit;
+    }
+    
+    public function language(string $code)
+    {
         $from = $this->getLanguageCode();
         $language = $this->getLanguages();
         if (isset($language[$code]) && $code != $from) {
@@ -577,6 +568,14 @@ class LoginController extends \Raptor\Controller
             }
         }
         
+        $script_path = $this->getScriptPath();
+        $home = (string) $this->getRequest()->getUri()->withPath($script_path);
+        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
+            $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
+            $location = \str_contains($referer, $home) ? $referer : $home;
+        } else {
+            $location = $home;
+        }
         \header("Location: $location", false, 302);
         exit;
     }

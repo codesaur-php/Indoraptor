@@ -48,10 +48,10 @@ class LocalizationController extends \Raptor\Controller
             );
             $dashboard->set('title', $this->text('localization'));
             $dashboard->render();
+            
+            $this->indolog('localization', LogLevel::NOTICE, 'Хэл ба Текстүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'localization-index']);
         } catch (\Throwable $err) {
              $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
-        } finally {
-            $this->indolog('localization', LogLevel::NOTICE, 'Хэл ба Текстүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'localization-index']);
         }
     }
 }

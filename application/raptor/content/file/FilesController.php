@@ -16,7 +16,14 @@ class FilesController extends FileController
             return;
         }
 
-        $tblNames = $this->query("SHOW TABLES LIKE '%_files'")->fetchAll();
+        if ($this->getDriverName() == 'pgsql') {
+            $query = 
+                'SELECT tablename FROM pg_catalog.pg_tables ' .
+                "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_files'";
+        } else {
+            $query = 'SHOW TABLES LIKE ' . $this->quote('%_files');
+        }
+        $tblNames = $this->query($query)->fetchAll();
         $tables = [];
         $total = ['tables' => 0, 'rows' => 0, 'sizes' => 0];
         foreach ($tblNames as $result) {
@@ -83,8 +90,15 @@ class FilesController extends FileController
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
-            $exists = $this->query( "SHOW TABLES LIKE '{$table}_files'")->fetchAll();
+         
+            if ($this->getDriverName() == 'pgsql') {
+                $query = 
+                    'SELECT tablename FROM pg_catalog.pg_tables ' .
+                    "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '{$table}_files'";
+            } else {
+                $query = 'SHOW TABLES LIKE ' . $this->quote("{$table}_files");
+            }
+            $exists = $this->query($query)->fetchAll();
             if (empty($exists)) {
                 $files = [];
             } else {
@@ -130,13 +144,19 @@ class FilesController extends FileController
                 $this->unlinkByName(\basename($uploaded['file']));
             }
         } finally {
-            if (!empty($record)) {
-                $context = ['action' => 'files-post'] + $record;
+            $context = ['action' => 'files-post'];
+            if (isset($record['id'])) {
+                $context += $record;
+                $level = LogLevel::INFO;
                 $message = '<a target="__blank" href="{path}">{path}</a> файлыг ';
                 $message .= empty($record['record_id']) ?
                     'байршууллаа' : 'байршуулан {record_id}-р бичлэгт зориулж холболоо';
-                $this->indolog($table, LogLevel::INFO, $message, $context);
+            } else {
+                $context += $error;
+                $level = LogLevel::ERROR;
+                $message = 'Файл байршуулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
             }
+            $this->indolog($table, $level, $message, $context);
         }
     }
     
@@ -206,25 +226,23 @@ class FilesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $payload = $this->getParsedBody();
-            if (empty($payload)) {
+            $parsedBoy = $this->getParsedBody();
+            if (empty($parsedBoy)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
-            $record = [];
-            foreach ($payload as $k => $v) {
+            $payload = [];
+            foreach ($parsedBoy as $k => $v) {
                 if (\str_starts_with($k, 'file_')) {
                     $k = \substr($k, 5);
                 }
-                $record[$k] = $v;
+                $payload[$k] = $v;
             }
 
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $record['updated_at'] = \date('Y-m-d H:i:s');
-            $record['updated_by'] = $this->getUserId();
-            $updated = $model->updateById($id, $record);
-            if (empty($updated)) {
+            $record = $model->updateById($id, $payload + ['updated_by' => $this->getUserId()]);
+            if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
 
@@ -233,22 +251,22 @@ class FilesController extends FileController
                 'status' => 'success',
                 'title' => $this->text('success'),
                 'message' => $this->text('record-update-success'),
-                'record' => $updated
+                'record' => $record
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
-            if (empty($updated)) {
+            if (empty($record)) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context = ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = '{id} дугаартай [{path}] файлын бичлэгийг амжилттай засварлалаа';
-                if (!empty($updated['record_id'])) {
+                if (!empty($record['record_id'])) {
                     $message = "{record_id}-р бичлэгт зориулсан $message";
                 }
-                $context = $updated;
+                $context = $record;
             }
             $this->indolog($table, $level, $message, ['action' => 'files-update', 'id' => $id]  + $context);
         }

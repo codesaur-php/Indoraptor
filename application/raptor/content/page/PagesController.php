@@ -128,11 +128,11 @@ class PagesController extends FileController
                     unset($payload['files']);
                 }
                 
-                $insert = $model->insert($payload);
-                if (!isset($insert['id'])) {
+                $record = $model->insert($payload);
+                if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                $id = $insert['id'];
+                $id = $record['id'];
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
@@ -478,8 +478,8 @@ class PagesController extends FileController
             foreach ($result as $record) {
                 $pages[$record['id']] = $record;
             }
-        } catch (\Throwable $e) {
-        }
+        } catch (\Throwable) {}
+        
         if (!empty($condition)) {
             $pages_specified = [];
             try {
@@ -545,8 +545,7 @@ class PagesController extends FileController
                 $counts[$count['id']] = $count['files'];
             }
             return $counts;
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable) {
             return [];
         }
     }

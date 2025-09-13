@@ -16,11 +16,8 @@ class RolePermission extends Model
            (new Column('role_id', 'bigint'))->notNull(),
            (new Column('permission_id', 'bigint'))->notNull(),
            (new Column('alias', 'varchar', 64))->notNull(),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint'),
-            new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint')
+            new Column('created_by', 'bigint')
         ]);
         
         $this->setTable('rbac_role_permission');

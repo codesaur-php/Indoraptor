@@ -17,11 +17,8 @@ class Permissions extends Model
            (new Column('module', 'varchar', 128))->default('general'),
             new Column('description', 'varchar', 255),
            (new Column('alias', 'varchar', 64))->notNull(),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint'),
-            new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint')
+            new Column('created_by', 'bigint')
         ]);
         
         $this->setTable('rbac_permissions');
@@ -59,7 +56,7 @@ class Permissions extends Model
             . "('$nowdate','system','localization','localization_insert',''),"
             . "('$nowdate','system','localization','localization_update',''),"
             . "('$nowdate','system','localization','localization_delete','')";
-        $this->exec($query);        
+        $this->exec($query);
     }
     
     public function insert(array $record): array|false

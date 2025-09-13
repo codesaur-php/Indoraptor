@@ -36,11 +36,11 @@ class SettingsController extends FileController
             
             $model = new SettingsModel($this->pdo);
             $current = $model->retrieve();
-            $payload = $this->getParsedBody();
-            $record = [];
+            $parsedBody = $this->getParsedBody();
+            $payload = [];
             $content = [];
             $updates = [];
-            foreach ($payload as $index => $value) {
+            foreach ($parsedBody as $index => $value) {
                 if (\is_array($value)) {
                     foreach ($value as $key => $value) {
                         $content[$key][$index] = $value;
@@ -49,7 +49,7 @@ class SettingsController extends FileController
                         }
                     }
                 } else {
-                    $record[$index] = $value;
+                    $payload[$index] = $value;
                     if (($current[$index] ?? '') != $value) {
                         $updates[] = $index;
                     }
@@ -58,19 +58,22 @@ class SettingsController extends FileController
             if (empty($updates)) {
                 throw new \InvalidArgumentException('No update!');
             }
-            if (!empty($record['config'])
-                && \json_decode($record['config']) == null
+            if (!empty($payload['config'])
+                && \json_decode($payload['config']) == null
             ) {
                 throw new \InvalidArgumentException('Extra config must be valid JSON!', 400);
             }
             if (isset($current['id'])) {
-                if (empty($model->updateById($current['id'], $record, $content))) {
+                if (empty($model->updateById(
+                        $current['id'], $payload + ['updated_by' => $this->getUserId()], $content)
+                    )
+                ) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
             } else {
-                if ($model->insert($record, $content) == false) {
+                if ($model->insert($payload + ['created_by' => $this->getUserId()], $content) == false) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 $notify = 'success';
@@ -101,20 +104,20 @@ class SettingsController extends FileController
             }
             
             $this->setFolder('/settings');
-            $payload = $this->getParsedBody();
+            $parsedBody = $this->getParsedBody();
             $model = new SettingsModel($this->pdo);
             $current = $model->retrieve();
             
             $updates = [];
-            $record = [];
+            $payload = [];
             $favico_name = \basename($current['favico'] ?? '');
             $this->allowExtensions(['ico']);
             $ico = $this->moveUploaded('favico');
             if (!empty($favico_name)
-                && $payload['favico_removed'] == 1
+                && $parsedBody['favico_removed'] == 1
             ) {
                 $this->unlinkByName($favico_name);
-                $record['favico'] = '';
+                $payload['favico'] = '';
                 $favico_name = null;
                 $updates[] = 'favico';
             }
@@ -124,7 +127,7 @@ class SettingsController extends FileController
                 ) {
                     $this->unlinkByName($favico_name);
                 }
-                $record['favico'] = $ico['path'];
+                $payload['favico'] = $ico['path'];
                 $updates[] = 'favico';
             }
             
@@ -132,10 +135,10 @@ class SettingsController extends FileController
             $apple_touch_icon_name = \basename($current['apple_touch_icon'] ?? '');
             $apple_touch_icon = $this->moveUploaded('apple_touch_icon');
             if (!empty($apple_touch_icon_name)
-                && $payload['apple_touch_icon_removed'] == 1
+                && $parsedBody['apple_touch_icon_removed'] == 1
             ) {
                 $this->unlinkByName($apple_touch_icon_name);
-                $record['apple_touch_icon'] = '';
+                $payload['apple_touch_icon'] = '';
                 $apple_touch_icon_name = null;
                 $updates[] = 'apple_touch_icon';
             }
@@ -145,7 +148,7 @@ class SettingsController extends FileController
                 ) {
                     $this->unlinkByName($apple_touch_icon_name);
                 }
-                $record['apple_touch_icon'] = $apple_touch_icon['path'];
+                $payload['apple_touch_icon'] = $apple_touch_icon['path'];
                 $updates[] = 'apple_touch_icon';
             }
             
@@ -155,7 +158,7 @@ class SettingsController extends FileController
                 $logo_name = \basename($current['localized']['logo'][$code] ?? '');
                 $logo = $this->moveUploaded($uploadedLogos[$code]);
                 if (!empty($logo_name)
-                    && $payload["logo_{$code}_removed"] == 1
+                    && $parsedBody["logo_{$code}_removed"] == 1
                 ) {
                     $this->unlinkByName($logo_name);
                     $content[$code]['logo'] = '';
@@ -178,13 +181,16 @@ class SettingsController extends FileController
             }
             
             if (isset($current['id'])) {
-                if (empty($model->updateById($current['id'], $record, $content))) {
+                if (empty($model->updateById(
+                        $current['id'], $payload + ['updated_by' => $this->getUserId()], $content
+                    )
+                )) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
             } else {
-                if ($model->insert($record, $content) == false) {
+                if ($model->insert($payload + ['created_by' => $this->getUserId()], $content) == false) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 $notify = 'success';

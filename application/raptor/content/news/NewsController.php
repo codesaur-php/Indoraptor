@@ -472,8 +472,7 @@ class NewsController extends FileController
                 $counts[$count['id']] = $count['files'];
             }
             return $counts;
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable) {
             return [];
         }
     }

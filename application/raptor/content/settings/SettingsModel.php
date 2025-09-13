@@ -55,6 +55,14 @@ class SettingsModel extends LocalizedModel
         }
         return parent::insert($record, $content);
     }
+    
+    public function updateById(int $id, array $record, array $content): array|false
+    {
+        if (!isset($record['updated_at'])) {
+            $record['updated_at'] = \date('Y-m-d H:i:s');
+        }
+        return parent::updateById($id, $record, $content);
+    }
 
     public function retrieve(): array
     {

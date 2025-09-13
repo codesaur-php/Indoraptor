@@ -153,11 +153,7 @@ class LanguageController extends \Raptor\Controller
                 }
                 
                 $updated = $model->updateById(
-                    $id,
-                    $payload + [
-                        'updated_by' => $this->getUserId(),
-                        'updated_at' => \date('Y-m-d H:i:s')
-                    ]
+                    $id, $payload + ['updated_by' => $this->getUserId()]
                 );
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));

@@ -11,17 +11,19 @@ class RBACController extends \Raptor\Controller
     public function alias()
     {
         try {
-            $queryParams = $this->getQueryParams();
-            $alias = $queryParams['alias'] ?? null;
-            $title = $queryParams['title'] ?? null;
-            $context = ['alias' => $alias];
-            
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $queryParams = $this->getQueryParams();
+            $alias = $queryParams['alias'] ?? null;
+            if (empty($alias)) {
+                throw new \Exception($this->text('invalid-request'), 400);
+            }
+            $title = $queryParams['title'] ?? null;
+            
             $roles_table = (new Roles($this->pdo))->getName();
-            $select_roles = $this->prepare("SELECT id,name,description FROM $roles_table WHERE alias=:alias AND is_active=1 AND !(name='coder' AND alias='system')");
+            $select_roles = $this->prepare("SELECT id,name,description FROM $roles_table WHERE alias=:alias AND is_active=1 AND not (name='coder' AND alias='system')");
             $select_roles->bindParam(':alias', $alias);
             if ($select_roles->execute()) {
                 $roles = $select_roles->fetchAll();
@@ -60,60 +62,77 @@ class RBACController extends \Raptor\Controller
             );
             $dashboard->set('title', "RBAC - $alias");
             $dashboard->render();
-            
-            $level = LogLevel::NOTICE;
-            $message = "RBAC [$alias] жагсаалтыг нээж үзэж байна";
-        } catch (\Throwable $e) {
-            $message = 'RBAC жагсаалтыг нээх үед алдаа гарлаа. ' . $e->getMessage();
-            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $this->indolog('rbac', $level, $message, $context);
+            $context = ['action' => 'rbac-alias'];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'RBAC жагсаалтыг нээж үзэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = 'RBAC [{alias}] жагсаалтыг нээж үзэж байна';
+                $context += ['alias' => $alias];
+            }
+            $this->indolog('dashboard', $level, $message, $context);
         }
     }
     
     public function insertRole(string $alias)
     {
         try {
-            $title = $this->getQueryParams()['title'] ?? '';
-            $context = ['action' => 'rbac-insert-role'];
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
-            
-            $context['payload'] = $payload = $this->getParsedBody();
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            if ($is_submit) {
-                $id = (new Roles($this->pdo))->insert($payload + ['alias' => $alias]);
-                if ($id == false) {
+            $payload = $this->getParsedBody();
+            $title = $this->getQueryParams()['title'] ?? '';
+            if ($this->getRequest()->getMethod() == 'POST') {
+                $record = (new Roles($this->pdo))->insert(
+                    $payload + ['alias' => $alias, 'created_by' => $this->getUserId()]
+                );
+                if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
-                }
-                $context['id'] = $id;
-                
+                }                
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
-                
-                $this->indolog('rbac', LogLevel::INFO, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
             } else {
-                $this->twigTemplate(\dirname(__FILE__) . '/rbac-insert-role-modal.html', ['alias' => $alias, 'title' => $title])->render();
-                
-                $this->indolog('rbac', LogLevel::NOTICE, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/rbac-insert-role-modal.html',
+                    ['alias' => $alias, 'title' => $title]
+                )->render();
             }
-        } catch (\Throwable $e) {
-            if ($is_submit) {
+        } catch (\Throwable $err) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status' => 'error',
                     'title' => $this->text('error'),
-                    'message' => $e->getMessage()
-                ], $e->getCode());
+                    'message' => $err->getMessage()
+                ], $err->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
-            
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $this->indolog('rbac', LogLevel::ERROR, 'RBAC дүр шинээр нэмэх үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо', $context);
+        } finally {
+            $context = [
+                'action' => 'rbac-create-role',
+                'alias' => $alias
+            ];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'RBAC дүр үүсгэх үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } elseif (!empty($record)) {
+                $level = LogLevel::INFO;
+                $message = 'RBAC дүр [{record.name}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['id' => $record['id'], 'record' => $record];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = 'RBAC дүр үүсгэх үйлдлийг амжилттай эхлүүллээ';
+            }
+            $this->indolog('dashboard', $level, $message, $context);
         }
     }
     
@@ -123,53 +142,60 @@ class RBACController extends \Raptor\Controller
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $values = ['role' => $this->getQueryParams()['role'] ?? ''];
             
+            $values = ['role' => $this->getQueryParams()['role'] ?? ''];
             $roles_table = (new Roles($this->pdo))->getName();
             $select_role = $this->prepare(
-                "SELECT id,description FROM $roles_table " .
+                "SELECT * FROM $roles_table " .
                 "WHERE CONCAT_WS('_',alias,name)=:role AND is_active=1 " .
                 "ORDER BY id desc LIMIT 1"
             );
             $select_role->bindParam(':role', $values['role']);
             if ($select_role->execute()) {
-                $role = $select_role->fetch();
+                $record = $select_role->fetch();
             }
-            if (empty($role)) {
+            if (empty($record)) {
                 throw new \Exception('Record not found', 404);
             }
-            $values += $role;
+            $values += $record;
             $this->twigTemplate(\dirname(__FILE__) . '/rbac-view-role-modal.html', $values)->render();
-        } catch (\Throwable $e) {
-            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $err) {
+            $this->modalProhibited($err->getMessage(), $err->getCode())->render();
+        } finally {
+            $context = ['action' => 'rbac-view-role'];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'RBAC дүр мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = 'RBAC дүр [{record.name}] мэдээллийг нээж үзэж байна';
+                $context += ['alias' => $record['alias'], 'id' => $record['id'], 'record' => $record];
+            }
+            $this->indolog('dashboard', $level, $message, $context);
         }
     }
     
     public function insertPermission(string $alias)
     {
         try {
-            $title = $this->getQueryParams()['title'] ?? '';
-            $context = ['action' => 'rbac-insert-permission'];
-            $is_submit = $this->getRequest()->getMethod() == 'POST';
-            
-            $context['payload'] = $payload = $this->getParsedBody();
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            if ($is_submit) {
-                $id = (new Permissions($this->pdo))->insert($payload + ['alias' => $alias]);
-                if ($id == false) {
+            $payload = $this->getParsedBody();
+            $title = $this->getQueryParams()['title'] ?? '';
+            if ($this->getRequest()->getMethod() == 'POST') {
+                $record = (new Permissions($this->pdo))->insert(
+                    $payload + ['alias' => $alias, 'created_by' => $this->getUserId()]
+                );
+                if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                $context['id'] = $id;
-                
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
-                
-                $this->indolog('rbac', LogLevel::INFO, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
             } else {
                 $permissions_table = (new Permissions($this->pdo))->getName();
                 $select_modules = $this->prepare(
@@ -186,57 +212,64 @@ class RBACController extends \Raptor\Controller
                     \dirname(__FILE__) . '/rbac-insert-permission-modal.html',
                     ['alias' => $alias, 'title' => $title, 'modules' => $modules]
                 )->render();
-                
-                $this->indolog('rbac', LogLevel::NOTICE, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
             }
-        } catch (\Throwable $e) {
-            if ($is_submit) {
+        } catch (\Throwable $err) {
+            if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status' => 'error',
                     'title' => $this->text('error'),
-                    'message' => $e->getMessage()
-                ], $e->getCode());
+                    'message' => $err->getMessage()
+                ], $err->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
-            
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $this->indolog('rbac', LogLevel::ERROR, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо', $context);
+        } finally {
+            $context = [
+                'action' => 'rbac-create-permission',
+                'alias' => $alias
+            ];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } elseif (!empty($record)) {
+                $level = LogLevel::INFO;
+                $message = 'RBAC зөвшөөрөл [{record.name}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $context += ['id' => $record['id'], 'record' => $record];
+            } else {
+                $level = LogLevel::NOTICE;
+                $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг амжилттай эхлүүллээ';
+            }
+            $this->indolog('dashboard', $level, $message, $context);
         }
     }
     
     public function setRolePermission(string $alias)
     {
         try {
-            $context = ['action' => 'set-role-permission'];
-                
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $payload = $this->getParsedBody();
+            $parsedBody = $this->getParsedBody();
             if (empty($alias)
-                || empty($payload['role_id'])
-                || empty($payload['permission_id'])
+                || empty($parsedBody['role_id'])
+                || empty($parsedBody['permission_id'])
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $record = [
+            $payload = [
                 'alias' => $alias,
-                'role_id' => $payload['role_id'],
-                'permission_id' => $payload['permission_id'],
-                'is_active' => 1
+                'role_id' => $parsedBody['role_id'],
+                'permission_id' => $parsedBody['permission_id']
             ];
             
-            $level = LogLevel::NOTICE;
-            $context['record'] = $record;
-            
             $model = new RolePermission($this->pdo);
-            $row = $model->getRowBy($record);
+            $row = $model->getRowBy($payload);
             $method = $this->getRequest()->getMethod();
             if ($method == 'POST') {
-                if (empty($row) && $model->insert($record)) {
-                    $message = 'Role -> Permission заагдлаа.';
+                if (empty($row) && $model->insert($payload)) {
+                    $message = 'Role -> Permission заагдлаа';
                     return $this->respondJSON([
                         'type' => 'success',
                         'message' => $this->text('record-insert-success')
@@ -244,7 +277,7 @@ class RBACController extends \Raptor\Controller
                 }
             } elseif ($method == 'DELETE') {
                 if (isset($row['id']) && $model->deleteById($row['id'])) {
-                    $message = 'Role -> Permission устгагдлаа.';
+                    $message = 'Role -> Permission устгагдлаа';
                     return $this->respondJSON([
                         'type' => 'primary',
                         'message' => $this->text('record-successfully-deleted')
@@ -252,18 +285,27 @@ class RBACController extends \Raptor\Controller
                 }
             }
             throw new \Exception($this->text('invalid-values'), 400);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'type' => 'error',
                 'title' => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
-            
-            $level = LogLevel::ERROR;
-            $message = 'Role -> Permission тохируулах үеп алдаа гарлаа.';
-            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-        } finally {
-            $this->indolog('rbac', $level, $message, $context);
+                'message' => $err->getMessage()
+            ], $err->getCode());
+        }  finally {
+            $context = [
+                'action' => 'rbac-set-role-permission',
+                'alias' => $alias
+            ];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Role -> Permission тохируулах үед алдаа гарлаа';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::INFO;
+                $context += $payload;
+                $message = 'Role -> Permission ' . ($method == 'DELETE' ? 'устгагдлаа' : 'заагдлаа');
+            }
+            $this->indolog('dashboard', $level, $message, $context);
         }
     }
 }

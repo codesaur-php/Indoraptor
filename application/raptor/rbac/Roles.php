@@ -16,11 +16,8 @@ class Roles extends Model
            (new Column('name', 'varchar', 128))->unique()->notNull(),
             new Column('description', 'varchar', 255),
            (new Column('alias', 'varchar', 64))->notNull(),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint'),
-            new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint')
+            new Column('created_by', 'bigint')
         ]);
         
         $this->setTable('rbac_roles');
