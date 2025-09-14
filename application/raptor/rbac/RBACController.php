@@ -130,7 +130,7 @@ class RBACController extends \Raptor\Controller
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'RBAC дүр үүсгэх үйлдлийг амжилттай эхлүүллээ';
+                $message = 'RBAC дүр үүсгэх үйлдлийг эхлүүллээ';
             }
             $this->indolog('dashboard', $level, $message, $context);
         }
@@ -238,7 +238,7 @@ class RBACController extends \Raptor\Controller
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг амжилттай эхлүүллээ';
+                $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг эхлүүллээ';
             }
             $this->indolog('dashboard', $level, $message, $context);
         }
