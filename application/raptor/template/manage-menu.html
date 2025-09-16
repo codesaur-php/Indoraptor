@@ -55,7 +55,7 @@
                 {% endif %}
             </th>
             {% for code in localization.language|keys %}
-                <td >{{ item['content']['title'][code] }}</td>
+                <td >{{ item['localized']['title'][code] }}</td>
             {% endfor %}
             <td>
                 {% if item['href'] is not empty %}
@@ -107,7 +107,7 @@
                                     <option value="0" selected>- Main menu -</option>
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
-                                            <option value="{{ item['id'] }}">{{ item['content']['title'][localization.code]|e }}</option>
+                                            <option value="{{ item['id'] }}">{{ item['localized']['title'][localization.code]|e }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
@@ -212,7 +212,7 @@
                                     <option value="0">- Main menu -</option>
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
-                                            <option value="{{ item['id'] }}">{{ item['content']['title'][localization.code]|e }}</option>
+                                            <option value="{{ item['id'] }}">{{ item['localized']['title'][localization.code]|e }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
@@ -334,7 +334,7 @@
                                     <option value="0">- Main menu -</option>
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
-                                            <option value="{{ item['id'] }}">{{ item['content']['title'][localization.code]|e }}</option>
+                                            <option value="{{ item['id'] }}">{{ item['localized']['title'][localization.code]|e }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
@@ -420,6 +420,19 @@
         </div>
     </div>
 </div>
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-dashboard" style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const menu = new motable('table#raptor_menu');
@@ -431,9 +444,9 @@
 
             let question;
             if (document.documentElement.lang === 'mn') {
-                question = '<p class="text-danger mb-3">Та ({0}) цэсийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
+                question = '<p class="text-danger mb-3">Та ({0}) цэсийг устгах/идэвхгүй болгохдоо итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
             } else {
-                question = '<p class="text-danger mb-3">Are you sure to delete the menu ({0})?</p><p>If so, please provide a reason</p>';
+                question = '<p class="text-danger mb-3">Are you sure to delete/deactivate the menu ({0})?</p><p>If so, please provide a reason</p>';
             }
 
             let thisRow = btn.closest('tr');
@@ -506,8 +519,8 @@
             updateModal.querySelector('input[name="href"]').value = record.href;
             updateModal.querySelector('select[name="alias"]').value = record.alias;
             updateModal.querySelector('select[name="permission"]').value = record.permission;
-            for (let code in record.content?.title) {
-                updateModal.querySelector(`input#title_${code}`).value = record.content.title[code];
+            for (let code in record.localized?.title) {
+                updateModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
             }
         }));
         
@@ -525,8 +538,8 @@
             viewModal.querySelector('input[name="href"]').value = record.href;
             viewModal.querySelector('select[name="alias"]').value = record.alias;
             viewModal.querySelector('select[name="permission"]').value = record.permission;
-            for (let code in record.content?.title) {
-                viewModal.querySelector(`input#title_${code}`).value = record.content.title[code];
+            for (let code in record.localized?.title) {
+                viewModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
             }
             viewModal.querySelector('input[name="created_at"]').value = record.created_at;
             viewModal.querySelector('input[name="created_by"]').value = record.created_by;
@@ -631,6 +644,88 @@
                     NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
                 });
+            });
+        }
+        
+        const logger = document.querySelector('ul.logger-protocol');
+        if (logger && logger.tagName === 'UL') {
+            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+            const logsViewLink = `{{ 'logs-view'|link }}`;
+            let logger_id = logger.id ?? '';
+            let table = logger_id.substring(logger_id.indexOf('-') + 1);
+            if (!table) return;
+
+            logger.style.display = 'none';
+            let spinner = logger.previousElementSibling;
+            spinner.style.display = 'block';
+            fetch(
+                `${logsRetrieveLink}?table=${table}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'ORDER BY': 'id Desc',
+                        'CONTEXT': {
+                            'action': 'template-menu-*'
+                        },
+                        'LIMIT':  10000
+                    })
+                }
+            ).then(res => {
+                return res.json();
+            }).then(response => {
+                if (response.error) {
+                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+                }
+
+                logger.innerHTML = '';
+
+                let logModalLink = `${logsViewLink}?table=${table}&id=`;
+                Object.values(response).forEach(log => {
+                    let log_li = document.createElement('li');
+                    log_li.classList.add('list-group-item', 'list-group-item-action');
+                    switch (log.level) {
+                        case 'notice': log_li.classList.add('list-group-item-light'); break;
+                        case 'info': log_li.classList.add('list-group-item-primary'); break;
+                        case 'error': log_li.classList.add('list-group-item-danger'); break;
+                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                        case 'alert': log_li.classList.add('list-group-item-info'); break;
+                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                        default: log_li.classList.add('list-group-item-dark'); break;
+                    }
+
+                    let a_link = document.createElement('a');
+                    a_link.textContent = `${log.created_at} [${log.id}]`;
+                    a_link.href = logModalLink + log.id;
+                    a_link.setAttribute('data-bs-target', '#static-modal');
+                    a_link.setAttribute('data-bs-toggle', 'modal');
+                    a_link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        ajaxModal(a_link);
+                    });
+                    log_li.appendChild(a_link);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    let span_msg = document.createElement('span');
+                    span_msg.innerHTML = log.message;
+                    log_li.appendChild(span_msg);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    let span_user_action = document.createElement('span');
+                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.classList.add('text-muted', 'small');
+                    log_li.appendChild(span_user_action);
+
+                    logger.appendChild(log_li);
+                });
+
+            }).catch(error => {
+                console.log(error.message);
+            }).finally(() => {
+                logger.style.display = '';
+                spinner.style.display = 'none';
             });
         }
     });

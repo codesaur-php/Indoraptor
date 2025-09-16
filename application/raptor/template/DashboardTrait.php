@@ -58,9 +58,7 @@ trait DashboardTrait
                     $users[$row['id']] = "{$row['username']} » {$row['first_name']} {$row['last_name']} ({$row['email']})";
                 }
             }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        }
+        } catch (\Throwable) {}
         return $users;
     }
     

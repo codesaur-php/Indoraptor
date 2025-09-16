@@ -155,7 +155,7 @@ class OrganizationController extends FileController
             $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
-            }            
+            }
             if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['alias'])
