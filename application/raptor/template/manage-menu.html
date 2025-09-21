@@ -80,7 +80,7 @@
                     <button class="btn btn-sm btn-primary mt-1 shadow-sm" value="{{ item['id'] }}" data-bs-target="#menu-update-modal" data-bs-toggle="modal" type="button">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="delete-item btn btn-sm btn-danger mt-1 shadow-sm" value="{{ item['id'] }}" type="button">
+                    <button class="deactivate-item btn btn-sm btn-danger mt-1 shadow-sm" value="{{ item['id'] }}" type="button">
                         <i class="bi bi-trash"></i>
                     </button>
                 {% endif %}
@@ -438,15 +438,15 @@
         const menu = new motable('table#raptor_menu');
         menu.setReady();
         
-        const deletes = menu.table.querySelectorAll('.delete-item');
-        deletes.forEach(btn => btn.addEventListener('click', function (e) {
+        const deactivates = menu.table.querySelectorAll('.deactivate-item');
+        deactivates.forEach(btn => btn.addEventListener('click', function (e) {
             e.preventDefault();
 
             let question;
             if (document.documentElement.lang === 'mn') {
-                question = '<p class="text-danger mb-3">Та ({0}) цэсийг устгах/идэвхгүй болгохдоо итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
+                question = '<p class="text-danger mb-3">Та ({0}) цэсийг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
             } else {
-                question = '<p class="text-danger mb-3">Are you sure to delete/deactivate the menu ({0})?</p><p>If so, please provide a reason</p>';
+                question = '<p class="text-danger mb-3">Are you sure to deactivate the menu ({0})?</p><p>If so, please provide a reason</p>';
             }
 
             let thisRow = btn.closest('tr');
@@ -471,7 +471,7 @@
                 backdrop: true,
                 preConfirm: (reason) => {
                     return fetch(
-                        `{{ 'manage-menu-delete'|link }}`,
+                        `{{ 'manage-menu-deactivate'|link }}`,
                         {
                             method: 'DELETE',
                             headers: {
@@ -497,7 +497,7 @@
                         
                         window.location.reload();
 
-                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Menu (${caption}) deleted`);
+                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Menu (${caption}) deactivated`);
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
                     });

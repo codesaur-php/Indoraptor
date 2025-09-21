@@ -75,9 +75,9 @@ class TextController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгт дээр текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($record)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '{table} хүснэгт дээр текст [{record.keyword}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{table} хүснэгт дээр [{record.keyword}] текст амжилттай үүслээ';
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -101,7 +101,10 @@ class TextController extends \Raptor\Controller
             
             $model = new TextModel($this->pdo);
             $model->setTable($table);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'p.id' => $id,
+                'p.is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -119,11 +122,11 @@ class TextController extends \Raptor\Controller
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{table} хүснэгтийн {id} дугаартай текст мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $message = '{table} хүснэгтийн {id} дугаартай текст мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгтээс [{record.keyword}] текст мэдээллийг нээж үзэж байна';
+                $message = '{table} хүснэгтээс [{record.keyword}] текст мэдээллийг үзэж байна';
                 $context += ['record' => $record];
             }
             $this->indolog('localization', $level, $message, $context);
@@ -142,7 +145,10 @@ class TextController extends \Raptor\Controller
             }            
             $model = new TextModel($this->pdo);
             $model->setTable($table);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'p.id' => $id,
+                'p.is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }            
@@ -216,9 +222,9 @@ class TextController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгтээс {id} дугаартай текст мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($updated)) {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{table} хүснэгтийн [{record.keyword}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{table} хүснэгтийн [{record.keyword}] текст мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
@@ -229,7 +235,7 @@ class TextController extends \Raptor\Controller
         }
     }
     
-    public function delete()
+    public function deactivate()
     {
         try {
             if (!$this->isUserCan('system_localization_delete')) {
@@ -247,9 +253,13 @@ class TextController extends \Raptor\Controller
             $model = new TextModel($this->pdo);
             $model->setTable($payload['table']);
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }

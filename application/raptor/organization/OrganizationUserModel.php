@@ -15,12 +15,8 @@ class OrganizationUserModel extends Model
            (new Column('id', 'bigint'))->primary(),
             new Column('user_id', 'bigint'),
             new Column('organization_id', 'bigint'),
-           (new Column('status', 'tinyint'))->default(0),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'timestamp'),
-            new Column('created_by', 'bigint'),
-            new Column('updated_at', 'timestamp'),
-            new Column('updated_by', 'bigint')
+            new Column('created_by', 'bigint')
         ]);
         
         $this->setTable('organizations_users');
@@ -32,7 +28,7 @@ class OrganizationUserModel extends Model
         $stmt = $this->prepare(
             'SELECT t1.* ' .
             "FROM {$this->getName()} t1 INNER JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
-            'WHERE t1.user_id=:user AND t1.organization_id=:org AND t1.is_active=1 AND t2.is_active=1 LIMIT 1'
+            'WHERE t1.user_id=:user AND t1.organization_id=:org AND t2.is_active=1 LIMIT 1'
         );
         $stmt->bindParam(':user', $user_id, \PDO::PARAM_INT);
         $stmt->bindParam(':org', $organization_id, \PDO::PARAM_INT);
@@ -63,13 +59,5 @@ class OrganizationUserModel extends Model
             $record['created_at'] = \date('Y-m-d H:i:s');
         }
         return parent::insert($record);
-    }
-    
-    public function updateById(int $id, array $record): array|false
-    {
-        if (!isset($record['updated_at'])) {
-            $record['updated_at'] = \date('Y-m-d H:i:s');
-        }
-        return parent::updateById($id, $record);
     }
 }

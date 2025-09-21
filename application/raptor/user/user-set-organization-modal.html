@@ -5,7 +5,7 @@
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form autocomplete="off" id="organization_user_set" role="form" action="{{ 'users-set-organization'|link ~ '?user_id=' ~ profile['id'] }}" method="POST" enctype="multipart/form-data">
+            <form autocomplete="off" id="organization_user_set" role="form" action="{{ 'user-set-organization'|link ~ '?user_id=' ~ profile['id'] }}" method="POST" enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
                         <label>{{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~ ' (' ~ profile['username'] ~ ' => ' ~ profile['email'] ~ ')' }} хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу!</label>
@@ -19,7 +19,7 @@
             </form>
         </div>
         <div class="modal-footer">
-            <button class="submit-users-set-organization btn btn-dark shadow-sm">
+            <button class="submit-set-organization btn btn-dark shadow-sm">
                 <i class="bi bi-check"></i> {{ 'save'|text }}
             </button>
             <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
@@ -38,7 +38,7 @@
     if (!formSet) {
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
-        const submitter = document.querySelector('button.submit-users-set-organization');
+        const submitter = document.querySelector('button.submit-set-organization');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
             formSet.requestSubmit();

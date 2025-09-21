@@ -43,16 +43,15 @@ class LanguageModel extends Model
 
     public function getByCode(string $code, int $is_active = 1)
     {
-        $codeCleaned = \preg_replace('/[^A-Za-z]/', '', $code);
-        return \reset($this->getRows([
-            'WHERE' => 'code=' . $this->quote($codeCleaned) . " AND is_active=$is_active",
-            'ORDER BY' => 'is_default DESC'
-        ])) ?: null;
+        return $this->getRowWhere([
+            'code' => $code,
+            'is_active' => $is_active
+        ]);
     }
 
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);        
+        $this->setForeignKeyChecks(false);
         $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");

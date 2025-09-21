@@ -13,7 +13,7 @@ class Role
         $sql =
             "SELECT t2.name, t2.alias FROM $role_perm_table t1 " .
             "INNER JOIN $permissions_table t2 ON t1.permission_id=t2.id " .
-            'WHERE t1.role_id=:role_id AND t1.is_active=1';
+            'WHERE t1.role_id=:role_id';
         $pdo_stmt = $pdo->prepare($sql);
         if ($pdo_stmt->execute([':role_id' => $role_id])) {
             while ($row = $pdo_stmt->fetch()) {

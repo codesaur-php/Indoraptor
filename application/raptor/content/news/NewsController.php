@@ -52,7 +52,7 @@ class NewsController extends FileController
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
         
-        $this->indolog($table, LogLevel::NOTICE, 'Мэдээний жагсаалтыг нээж байна', ['action' => 'index']);
+        $this->indolog($table, LogLevel::NOTICE, 'Мэдээний жагсаалтыг үзэж байна', ['action' => 'index']);
     }
     
     public function list()
@@ -193,9 +193,9 @@ class NewsController extends FileController
                 $level = LogLevel::ERROR;
                 $message = 'Мэдээ үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (isset($id)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай мэдээ [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай [{record.title}] мэдээг амжилттай үүсгэлээ';
                 $context += ['record_id' => $id, 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -216,7 +216,10 @@ class NewsController extends FileController
             $table = $model->getName();
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);            
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
@@ -284,8 +287,7 @@ class NewsController extends FileController
                 $updated = $model->updateById($id, $payload);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
-                }
-                
+                }                
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
@@ -317,9 +319,9 @@ class NewsController extends FileController
                 $level = LogLevel::ERROR;
                 $message = '{record_id} дугаартай мэдээг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($updated)) {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай [{record.title}] мэдээг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
@@ -338,7 +340,10 @@ class NewsController extends FileController
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -351,8 +356,7 @@ class NewsController extends FileController
             }
             $template->set('record', $record);
             $template->set('files', $files);
-            $template->render();
-            
+            $template->render();            
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -379,7 +383,10 @@ class NewsController extends FileController
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -398,18 +405,18 @@ class NewsController extends FileController
             $context = ['action' => 'view', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{record_id} дугаартай мэдээг нээж үзэх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай мэдээг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] мэдээг нээж үзэж байна';
+                $message = '{record.id} дугаартай [{record.title}] мэдээг үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
             $this->indolog($table ?? 'news', $level, $message, $context);
         }
     }
     
-    public function delete()
+    public function deactivate()
     {
         try {
             $model = new NewsModel($this->pdo);
@@ -426,9 +433,13 @@ class NewsController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }

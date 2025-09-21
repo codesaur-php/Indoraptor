@@ -63,7 +63,7 @@
                                 </a>
                             {% endif %}
                             {% if can_delete %}
-                                <button class="delete-language btn btn-sm btn-danger mt-1 shadow-sm" value="{{ language['id'] }}" type="button">
+                                <button class="deactivate-language btn btn-sm btn-danger mt-1 shadow-sm" value="{{ language['id'] }}" type="button">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             {% endif %}
@@ -109,7 +109,7 @@
                                     </a>
                                 {% endif %}
                                 {% if can_delete %}
-                                    <button class="delete-text btn btn-sm btn-danger mt-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                    <button class="deactivate-text btn btn-sm btn-danger mt-1 shadow-sm" value="{{ row['id'] }}" type="button">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 {% endif %}
@@ -158,8 +158,8 @@
         
         const languages = new motable('table#languages');
 
-        const deleteLanguages = languages.table.querySelectorAll('.delete-language');
-        deleteLanguages.forEach(btn => btn.addEventListener('click', function (e) {
+        const deactivateLanguages = languages.table.querySelectorAll('.deactivate-language');
+        deactivateLanguages.forEach(btn => btn.addEventListener('click', function (e) {
             e.preventDefault();
 
             let thisRow = btn.closest('tr');
@@ -169,9 +169,9 @@
 
             let questiondel;
             if (document.documentElement.lang === 'mn') {
-                questiondel = '<p class="text-danger mb-3">Та ({0}) хэлийг устгахдаа итгэлтэй байна уу?</p>';
+                questiondel = '<p class="text-danger mb-3">Та ({0}) хэлийг идэвхгүй болгоход итгэлтэй байна уу?</p>';
             } else {
-                questiondel = '<p class="text-danger mb-3">Are you sure to delete the language ({0})?</p>';
+                questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the language ({0})?</p>';
             }
             let title = thisRow.children[2].innerHTML;
             let ask = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
@@ -194,7 +194,7 @@
                 backdrop: true,
                 preConfirm: (reason) => {
                     return fetch(
-                        `{{ 'language-delete'|link }}`,
+                        `{{ 'language-deactivate'|link }}`,
                         {
                             method: 'DELETE',
                             headers: {
@@ -215,7 +215,7 @@
 
                         window.location.reload();
 
-                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Language (${title}) deleted`);
+                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Language (${title}) deactivated`);
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
                     });
@@ -231,8 +231,8 @@
             let name = text.table.getAttribute('data-table');
             if (!name) return;
             
-            const deleteText = text.table.querySelectorAll('.delete-text');
-            deleteText.forEach(btn => btn.addEventListener('click', function (e) {
+            const deactivateText = text.table.querySelectorAll('.deactivate-text');
+            deactivateText.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 let thisRow = btn.closest('tr');
@@ -242,9 +242,9 @@
                 
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та [{0}] текст бичлэгийг устгахдаа итгэлтэй байна уу?</p>';
+                    questiondel = '<p class="text-danger mb-3">Та [{0}] текст бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?</p>';
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the text with keyword [{0}]?</p>';
+                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the text with keyword [{0}]?</p>';
                 }
                 let keyword = thisRow.children[0].innerHTML;
                 let question = questiondel.format(keyword.replace(/<\/?[^>]+(>|$)/g, ''));
@@ -259,7 +259,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            `{{ 'text-delete'|link }}`,
+                            `{{ 'text-deactivate'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -283,7 +283,7 @@
                             thisRow.remove();
                             text.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Text ${keyword} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Text ${keyword} deactivated`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

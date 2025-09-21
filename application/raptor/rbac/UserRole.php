@@ -25,7 +25,7 @@ class UserRole extends Model
     public function fetchAllRolesByUser(int $user_id): array
     {
         return $this->query(
-            "SELECT id,role_id FROM {$this->getName()} WHERE user_id=$user_id AND is_active=1"
+            "SELECT id,role_id FROM {$this->getName()} WHERE user_id=$user_id "
         )->fetchAll();
     }
     

@@ -34,7 +34,6 @@ class SettingsMiddleware implements MiddlewareInterface
                 \error_log($err->getMessage());
             }
         }
-        
         return $handler->handle($request->withAttribute('settings', $settings ?? []));
     }
 }

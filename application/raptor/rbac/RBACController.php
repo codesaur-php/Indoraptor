@@ -23,7 +23,7 @@ class RBACController extends \Raptor\Controller
             $title = $queryParams['title'] ?? null;
             
             $roles_table = (new Roles($this->pdo))->getName();
-            $select_roles = $this->prepare("SELECT id,name,description FROM $roles_table WHERE alias=:alias AND is_active=1 AND not (name='coder' AND alias='system')");
+            $select_roles = $this->prepare("SELECT id,name,description FROM $roles_table WHERE alias=:alias AND not (name='coder' AND alias='system')");
             $select_roles->bindParam(':alias', $alias);
             if ($select_roles->execute()) {
                 $roles = $select_roles->fetchAll();
@@ -32,7 +32,7 @@ class RBACController extends \Raptor\Controller
             }
             
             $permissions_table = (new Permissions($this->pdo))->getName();
-            $select_perms = $this->prepare("SELECT id,name,description FROM $permissions_table WHERE alias=:alias AND is_active=1 ORDER BY module");
+            $select_perms = $this->prepare("SELECT id,name,description FROM $permissions_table WHERE alias=:alias ORDER BY module");
             $select_perms->bindParam(':alias', $alias);
             if ($select_perms->execute()) {
                 $permissions = $select_perms->fetchAll();
@@ -41,7 +41,7 @@ class RBACController extends \Raptor\Controller
             }
             
             $role_perm_table = (new RolePermission($this->pdo))->getName();
-            $select_rp = $this->prepare("SELECT role_id,permission_id FROM $role_perm_table WHERE alias=:alias AND is_active=1");
+            $select_rp = $this->prepare("SELECT role_id,permission_id FROM $role_perm_table WHERE alias=:alias");
             $select_rp->bindParam(':alias', $alias);
             $role_permission = [];
             if ($select_rp->execute()) {
@@ -68,11 +68,11 @@ class RBACController extends \Raptor\Controller
             $context = ['action' => 'rbac-alias'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'RBAC жагсаалтыг нээж үзэх үед алдаа гарч зогслоо';
+                $message = 'RBAC жагсаалтыг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'RBAC [{alias}] жагсаалтыг нээж үзэж байна';
+                $message = 'RBAC [{alias}] жагсаалтыг үзэж байна';
                 $context += ['alias' => $alias];
             }
             $this->indolog('dashboard', $level, $message, $context);
@@ -124,9 +124,9 @@ class RBACController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = 'RBAC дүр үүсгэх үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($record)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'RBAC дүр [{record.name}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = 'RBAC дүр [{record.name}] амжилттай үүсгэлээ';
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -147,7 +147,7 @@ class RBACController extends \Raptor\Controller
             $roles_table = (new Roles($this->pdo))->getName();
             $select_role = $this->prepare(
                 "SELECT * FROM $roles_table " .
-                "WHERE CONCAT_WS('_',alias,name)=:role AND is_active=1 " .
+                "WHERE CONCAT_WS('_',alias,name)=:role " .
                 "ORDER BY id desc LIMIT 1"
             );
             $select_role->bindParam(':role', $values['role']);
@@ -165,11 +165,11 @@ class RBACController extends \Raptor\Controller
             $context = ['action' => 'rbac-view-role'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'RBAC дүр мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $message = 'RBAC дүр мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'RBAC дүр [{record.name}] мэдээллийг нээж үзэж байна';
+                $message = 'RBAC дүр [{record.name}] мэдээллийг үзэж байна';
                 $context += ['alias' => $record['alias'], 'id' => $record['id'], 'record' => $record];
             }
             $this->indolog('dashboard', $level, $message, $context);
@@ -200,7 +200,7 @@ class RBACController extends \Raptor\Controller
                 $permissions_table = (new Permissions($this->pdo))->getName();
                 $select_modules = $this->prepare(
                     "SELECT DISTINCT(module) FROM $permissions_table " .
-                    "WHERE alias=:alias AND is_active=1 AND module<>''"
+                    "WHERE alias=:alias AND module<>''"
                 );
                 $select_modules->bindParam(':alias', $alias);
                 if ($select_modules->execute()) {
@@ -232,9 +232,9 @@ class RBACController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($record)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'RBAC зөвшөөрөл [{record.name}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = 'RBAC зөвшөөрөл [{record.name}] амжилттай үүсгэлээ';
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -265,7 +265,7 @@ class RBACController extends \Raptor\Controller
             ];
             
             $model = new RolePermission($this->pdo);
-            $row = $model->getRowBy($payload);
+            $row = $model->getRowWhere($payload);
             $method = $this->getRequest()->getMethod();
             if ($method == 'POST') {
                 if (empty($row) && $model->insert($payload)) {

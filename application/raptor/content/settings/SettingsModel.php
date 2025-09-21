@@ -66,6 +66,6 @@ class SettingsModel extends LocalizedModel
 
     public function retrieve(): array
     {
-        return $this->getRowBy(['p.is_active' => 1]) ?? [];
+        return \end($this->getRows(['WHERE' => 'p.is_active=1']) ?? []) ?: [];
     }
 }

@@ -52,7 +52,7 @@ class PagesController extends FileController
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
         
-        $this->indolog($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг нээж үзэж байна', ['action' => 'index']);
+        $this->indolog($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг үзэж байна', ['action' => 'index']);
     }
     
     public function list()
@@ -195,9 +195,9 @@ class PagesController extends FileController
                 $level = LogLevel::ERROR;
                 $message = 'Хуудас үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (isset($id)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай хуудас [{record.title}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай [{record.title}] хуудсыг амжилттай үүсгэлээ';
                 $context += ['record_id' => $id, 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -215,7 +215,10 @@ class PagesController extends FileController
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -228,8 +231,7 @@ class PagesController extends FileController
             }
             $template->set('record', $record);
             $template->set('files', $files);
-            $template->render();
-            
+            $template->render();            
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -256,7 +258,10 @@ class PagesController extends FileController
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -281,11 +286,11 @@ class PagesController extends FileController
             $context = ['action' => 'view', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{record_id} дугаартай хуудасны мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай хуудасны мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг нээж үзэж байна';
+                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
             $this->indolog($table ?? 'pages', $level, $message, $context);
@@ -301,7 +306,10 @@ class PagesController extends FileController
             
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
@@ -407,9 +415,9 @@ class PagesController extends FileController
                 $level = LogLevel::ERROR;
                 $message = '{record_id} дугаартай хуудасны мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($updated)) {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
@@ -420,7 +428,7 @@ class PagesController extends FileController
         }
     }
     
-    public function delete()
+    public function deactivate()
     {
         try {
             $model = new PagesModel($this->pdo);
@@ -435,9 +443,13 @@ class PagesController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }            
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }            
@@ -495,8 +507,7 @@ class PagesController extends FileController
             $id = $page['id'];
             $ancestry = $this->findAncestry($id, $pages);
             if (\array_key_exists($id, $ancestry)) {
-                unset($ancestry[$id]);
-                
+                unset($ancestry[$id]);                
                 \error_log(__CLASS__ . ": Page $id misconfigured with parenting path!");
             }
             if (empty($ancestry)) {

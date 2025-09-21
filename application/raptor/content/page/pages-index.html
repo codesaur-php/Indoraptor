@@ -179,7 +179,7 @@
                     buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}"><i class="bi bi-pencil-square"></i></a>`);
                 }
                 if (canDelete) {
-                    buttons.push(`<button class="delete-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);
+                    buttons.push(`<button class="deactivate-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);
                 }
                 let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -195,15 +195,15 @@
                 ajaxModal(a);
             }));
 
-            const deletes = pages.table.querySelectorAll('.delete-page');
-            deletes.forEach(btn => btn.addEventListener('click', function (e) {
+            const deactivates = pages.table.querySelectorAll('.deactivate-page');
+            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та ({0}) хуудсыг устгахдаа итгэлтэй байна уу?</p>';
+                    questiondel = '<p class="text-danger mb-3">Та ({0}) хуудсыг идэвхгүй болгоход итгэлтэй байна уу?</p>';
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the page ({0})?</p>';
+                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the page ({0})?</p>';
                 }
 
                 let thisRow = btn.closest('tr');
@@ -234,7 +234,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            `{{ 'page-delete'|link }}`,
+                            `{{ 'page-deactivate'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {

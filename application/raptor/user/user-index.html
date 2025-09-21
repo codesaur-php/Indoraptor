@@ -1,6 +1,6 @@
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="{{ index }}/assets/vendor/choices-11.0.2/styles/choices.min.css">
-<script defer src="{{ index }}/assets/vendor/choices-11.0.2/scripts/choices.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-people-fill"></i> {{ 'users'|text }}
@@ -10,7 +10,7 @@
             <a class="btn btn-sm btn-outline-info btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'forgot'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
                 {{ 'password-reset-request'|text }}
             </a>
-            <a class="btn btn-sm btn-outline-primary btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'newbie'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+            <a class="btn btn-sm btn-outline-primary btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'signup'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
                 {{ 'request-new-user'|text }}
             </a>
         {% endif %}
@@ -33,7 +33,7 @@
                     {title: `{{ 'user'|text|e }}`},
                     {title: `{{ 'organization'|text|e }}`},
                     {title: `{{ 'role2'|text|e }}`},
-                    {title: `{{ 'action'|text|e }}`, style: 'width:8rem'}
+                    {title: `{{ 'action'|text|e }}`, style: 'width:10rem'}
                 ]
             }
         );
@@ -54,12 +54,14 @@
             let rowsHTML = '';
             let indexLink = `{{ 'users'|link }}`;
             let orgIndexLink = `{{ 'organizations'|link }}`;
+            let isSystemCoder = `{{ user.is('system_coder') ? 'true' : '' }}`;
             let canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
             let canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
-            let orgUserLink = `{{ user.can('system_user_organization_set') ? 'users-set-organization'|link ~ '?user_id=' : '' }}`;
-            let userRoleLink = `{{ user.can('system_rbac') ? 'users-set-role'|link ~ '?id=' : '' }}`;
+            let orgUserLink = `{{ 'user-set-organization'|link ~ '?user_id=' }}`;
+            let setPasswordLink = `{{ 'user-set-password'|link ~ '?id=' }}`;
+            let setRoleLink = `{{ 'user-set-role'|link ~ '?id=' }}`;
             let rbacRoleViewLink = `{{ 'rbac-role-view'|link }}`;
-            let statuses = document.documentElement.lang === 'mn' ? ['идэвхгүй', 'идэвхтэй'] : ['inactive', 'active'];
+            let deactivated_title = document.documentElement.lang === 'mn' ? 'устгагдсан' : 'deactivated';
             data.list.forEach(profile => {
                 let photo;
                 if (profile.photo) {
@@ -69,8 +71,8 @@
                 }
 
                 let usernameInfo = `<strong>${profile.username}</strong>`;
-                if (!profile.status) {
-                    usernameInfo += `<span class="badge bg-danger-subtle ms-3">${ statuses[profile.status] ?? profile.status}</span>`;
+                if (profile.is_active === 0) {
+                    usernameInfo += `<span class="badge bg-danger ms-3">${deactivated_title}</span>`;
                 }
                 let fullName = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`;
                 if (fullName.length > 1) {
@@ -92,8 +94,8 @@
                     orgUserHtml += ` <a class="ajax-modal badge text-bg-light text-decoration-none ${org.alias === 'system' ? '' : 'fw-normal '}shadow-sm" href="${orgIndexLink}/view/${org.id}" data-bs-target="#static-modal" data-bs-toggle="modal">${org.name}</a>`;
                 });
 
-                let rolesHtml = !userRoleLink ? ''
-                    : `<a class="ajax-modal btn btn-sm btn-dark shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${userRoleLink}${profile.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i></a>`;
+                let rolesHtml = !setRoleLink ? ''
+                    : `<a class="ajax-modal btn btn-sm btn-dark shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${setRoleLink}${profile.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i></a>`;
                 if (isCoder) {
                     rolesHtml += ' <span class="badge bg-secondary fw-normal shadow-sm">system_coder can do all the actions</span><br/>';
                 }
@@ -102,11 +104,16 @@
                 }
 
                 let buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${profile.id}"><i class="bi bi-eye"></i></a>`];
-                if (canUpdate) {
-                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/update/${profile.id}"><i class="bi bi-pencil-square"></i></a>`);
-                }
-                if (canDelete) {
-                    buttons.push(`<button class="delete-user btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${profile.id}"><i class="bi bi-trash"></i></button>`);
+                if (profile.is_active > 0) {
+                    if (canUpdate) {
+                        buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/update/${profile.id}"><i class="bi bi-pencil-square"></i></a>`);
+                    }
+                    if (isSystemCoder) {
+                        buttons.push(`<a class="ajax-modal btn btn-sm btn-dark mt-1 shadow-sm" href="${setPasswordLink}${profile.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-key-fill"></i></a>`);
+                    }
+                    if (canDelete) {
+                        buttons.push(`<button class="deactivate-user btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${profile.id}"><i class="bi bi-trash"></i></button>`);
+                    }
                 }
                 let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -125,15 +132,15 @@
                 ajaxModal(a);
             }));
 
-            const deletes = users.table.querySelectorAll('.delete-user');
-            deletes.forEach(btn => btn.addEventListener('click', function (e) {
+            const deactivates = users.table.querySelectorAll('.deactivate-user');
+            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та ({0}) хэрэглэгчийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
+                    questiondel = '<p class="text-danger mb-3">Та ({0}) хэрэглэгчийг устгахдаа (deactivate) итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete this user ({0})?</p><p>If so, please provide a reason</p>';
+                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate this user ({0})?</p><p>If so, please provide a reason</p>';
                 }
 
                 let thisRow = btn.closest('tr');
@@ -164,7 +171,7 @@
                     backdrop: true,
                     preConfirm: (reason) => {
                         return fetch(
-                            `{{ 'user-delete'|link }}`,
+                            `{{ 'user-deactivate'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -188,7 +195,7 @@
                             thisRow.remove();
                             users.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deactivated`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

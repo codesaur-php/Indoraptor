@@ -110,7 +110,7 @@
                 fileAction += ` <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${filesModalLink}?modal=files-update&id=${file['id']}"><i class="bi bi-pencil-square"></i></a>`;
             }
             if (userCanDelete) {
-                fileAction += ` <button class="delete-file btn btn-sm btn-danger shadow-sm" value="${file['id']}" type="button"><i class="bi bi-trash"></i></button>`;
+                fileAction += ` <button class="deactivate-file btn btn-sm btn-danger shadow-sm" value="${file['id']}" type="button"><i class="bi bi-trash"></i></button>`;
             }
             
             let fileFigure = `<a href="${file['path']}" ${fileLinkAttr}>${fileIcon}`;
@@ -160,18 +160,18 @@
             }));
             
             let thisTable = this;
-            const deleteFile = row.querySelector('.delete-file');
-            deleteFile.addEventListener('click', function (e) {
+            const deactivateFile = row.querySelector('.deactivate-file');
+            deactivateFile.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та {0} файлын бичлэгийг устгахдаа итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>';
+                    questiondel = '<p class="text-danger mb-3">Та {0} файлын бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>';
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the file {0}?</p>';
+                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the file record {0}?</p>';
                 }
 
-                const id = deleteFile.value;
+                const id = deactivateFile.value;
                 const title = row.children[0].textContent;
                 let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
 
@@ -195,7 +195,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            `{{ 'files-delete'|link({'table':table}) }}`,
+                            `{{ 'files-deactivate'|link({'table':table}) }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -212,7 +212,7 @@
 
                             Swal.close();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deactivated`);
 
                             row.remove();
                             thisTable.setReady();

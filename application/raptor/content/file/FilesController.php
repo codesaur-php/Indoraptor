@@ -52,10 +52,10 @@ class FilesController extends FileController
             return;
         }
         
-        if (\file_exists(\dirname(__FILE__) . "/files-index-$table.html")) {
-            $template = \dirname(__FILE__) . "/files-index-$table.html";
+        if (\file_exists(\dirname(__FILE__) . "/index-$table.html")) {
+            $template = \dirname(__FILE__) . "/index-$table.html";
         } else {
-            $template = \dirname(__FILE__) . '/files-index.html';
+            $template = \dirname(__FILE__) . '/index.html';
         }
         
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
@@ -74,7 +74,7 @@ class FilesController extends FileController
         $this->indolog(
             $table,
             LogLevel::NOTICE,
-            '[{table}] файлын жагсаалтыг нээж үзэж байна',
+            '[{table}] файлын жагсаалтыг үзэж байна',
             [
                 'action' => 'files-index',
                 'tables' => $tables,
@@ -175,7 +175,10 @@ class FilesController extends FileController
             
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -272,7 +275,7 @@ class FilesController extends FileController
         }
     }
     
-    public function delete(string $table)
+    public function deactivate(string $table)
     {
         try {
             if (!$this->isUserCan('system_content_delete')) {
@@ -289,13 +292,20 @@ class FilesController extends FileController
             
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -324,7 +334,7 @@ class FilesController extends FileController
                 $message = 'Файлын бичлэгийг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context = ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             }
-            $this->indolog($table, $level, $message, ['action' => 'deactivate-file']  + $context);
+            $this->indolog($table, $level, $message, ['action' => 'files-deactivate']  + $context);
         }
     }
 }

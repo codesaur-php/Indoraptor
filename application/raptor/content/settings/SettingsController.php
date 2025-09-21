@@ -24,7 +24,7 @@ class SettingsController extends FileController
         $dashboard->set('title', $this->text('settings'));
         $dashboard->render();
 
-        $this->indolog('content', LogLevel::NOTICE, 'Тохируулгыг нээж үзэж байна', ['action' => 'settings-index']);
+        $this->indolog('content', LogLevel::NOTICE, 'Тохируулгыг нээж байна', ['action' => 'settings-index']);
     }
     
     public function post()

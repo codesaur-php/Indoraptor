@@ -13,7 +13,7 @@ class OrganizationRouter extends Router
         $this->GET_POST('/dashboard/organizations/insert', [OrganizationController::class, 'insert'])->name('organization-insert');
         $this->GET_PUT('/dashboard/organizations/update/{uint:id}', [OrganizationController::class, 'update'])->name('organization-update');
         $this->GET('/dashboard/organizations/view/{uint:id}', [OrganizationController::class, 'view'])->name('organization-view');
-        $this->DELETE('/dashboard/organizations/delete', [OrganizationController::class, 'delete'])->name('organization-delete');
+        $this->DELETE('/dashboard/organizations/deactivate', [OrganizationController::class, 'deactivate'])->name('organization-deactivate');
 
         $this->GET('/dashboard/organization/user/list', [OrganizationUserController::class, 'index'])->name('organization-user');
     }

@@ -47,7 +47,7 @@ class TemplateController extends \Raptor\Controller
             $permissions = [];
             $permissions_table = (new Permissions($this->pdo))->getName();
             $permission_results = $this->query(
-                "SELECT CONCAT(alias, '_', name) as permission FROM $permissions_table WHERE is_active=1"
+                "SELECT CONCAT(alias, '_', name) as permission FROM $permissions_table"
             )->fetchAll();
             foreach ($permission_results as $row) {
                $permissions[] = $row['permission'];
@@ -64,11 +64,11 @@ class TemplateController extends \Raptor\Controller
             $context = ['action' => 'template-menu-manage'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Цэсний жагсаалтыг нээж үзэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = 'Цэсний жагсаалтыг нээх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'Цэсний жагсаалтыг нээж үзэж байна';
+                $message = 'Цэсний жагсаалтыг үзэж байна';
                 $context += ['aliases' => $aliases, 'permissions' => $permissions, 'menu' => $menu];
             }
             $this->indolog('dashboard', $level, $message, $context);
@@ -146,7 +146,10 @@ class TemplateController extends \Raptor\Controller
             $parsedBody['is_visible'] = ($parsedBody['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
             
             $model = new MenuModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'p.id' => $id,
+                'p.is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -194,14 +197,14 @@ class TemplateController extends \Raptor\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай цэсний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай цэсний мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             }
             $this->indolog('dashboard', $level, $message, $context);
         }
     }
     
-    public function manageMenuDelete()
+    public function manageMenuDeactivate()
     {
         try {
             if (!$this->isUserCan('system_manage_menu')) {
@@ -217,13 +220,20 @@ class TemplateController extends \Raptor\Controller
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             $model = new MenuModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'p.id' => $id,
+                'p.is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }            
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -232,14 +242,14 @@ class TemplateController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);            
-        } catch (\Throwable $e) {
+        } catch (\Throwable $err ){
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ], $e->getCode());
+                'message' => $err->getMessage()
+            ], $err->getCode());
         } finally {
-            $context = ['action' => 'template-menu-delete'];
+            $context = ['action' => 'template-menu-deactivate'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Цэс устгах/идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';

@@ -7,7 +7,7 @@
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <table class="table table-hover table-striped-columns table-bordered" id="new_user_requests">
+            <table class="table table-hover table-striped-columns table-bordered" id="signup">
                 <thead>
                     <tr>
                         <th class="text-primary" scope="col">{{ 'username'|text }}</th>
@@ -29,10 +29,10 @@
                             </td>
                             <td>{{ row['created_at'] }}</td>
                             <td>
-                                {% if row['status'] == 2 %}
+                                {% if row['is_active'] == 2 %}
                                     <span class="badge bg-info">approved</span>
                                 {% elseif row['is_active'] == 0 %}
-                                    <span class="badge bg-danger">deleted</span>
+                                    <span class="badge bg-danger">deactivated</span>
                                 {% else %}
                                     <span class="badge bg-warning">waiting</span>
                                 {% endif %}    
@@ -45,7 +45,7 @@
                                         </button>
                                     {% endif %}
                                     {% if user.can('system_user_delete') %}
-                                        <button class="delete-user-request btn btn-sm btn-danger mb-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                        <button class="deactivate-user-request btn btn-sm btn-danger mb-1 shadow-sm" value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-trash"></i> {{ 'delete'|text }}
                                         </button>
                                     {% endif %}
@@ -65,12 +65,12 @@
     let acceptQuestion, questionDeletion;
     if (document.documentElement.lang === 'mn') {
         acceptQuestion = '<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>';
-        questionDeletion = '<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг устгахдаа итгэлтэй байна уу?</p>';
+        questionDeletion = '<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг идэвхгүй болгохдоо итгэлтэй байна уу?</p>';
     } else {
         acceptQuestion = '<p class="text-primary">Are you sure to accept this user request ({0})?</p>';
-        questionDeletion = '<p class="text-danger">Are you sure to delete this user request ({0})?</p>';
+        questionDeletion = '<p class="text-danger">Are you sure to deactivate this user request ({0})?</p>';
     }
-    const newbies = new motable('table#new_user_requests');
+    const newbies = new motable('table#signup');
     const requestWaits = newbies.table.querySelectorAll('.approve-user-request');
     requestWaits.forEach(btn => btn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -95,7 +95,7 @@
                 }
                 
                 return fetch(
-                    `{{ 'user-request-approve'|link }}`,
+                    `{{ 'user-signup-approve'|link }}`,
                     {
                         method: 'POST',
                         headers: {
@@ -127,10 +127,9 @@
                     let orgIndexLink = `{{ 'organizations'|link }}`;
                     let canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
                     let canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
-                    let orgUserLink = `{{ user.can('system_user_organization_set') ? 'users-set-organization'|link ~ '?user_id=' : '' }}`;
-                    let userRoleLink = `{{ user.can('system_rbac') ? 'users-set-role'|link ~ '?id=' : '' }}`;
+                    let orgUserLink = `{{ user.can('system_user_organization_set') ? 'user-set-organization'|link ~ '?user_id=' : '' }}`;
+                    let userRoleLink = `{{ user.can('system_rbac') ? 'user-set-role'|link ~ '?id=' : '' }}`;
                     let rbacRoleViewLink = `{{ 'rbac-role-view'|link }}`;
-                    let statuses = document.documentElement.lang === 'mn' ? ['идэвхгүй', 'идэвхтэй'] : ['inactive', 'active'];
                     let photo;
                     if (user.photo) {
                         photo = `<img class="img-fluid img-thumbnail" src="${user.photo}" style="max-width:60px;max-height:60px">`;
@@ -139,8 +138,8 @@
                     }
 
                     let userProfile = `<strong>${user.username}</strong>`;
-                    if (!user.status) {
-                        userProfile += `<span class="badge bg-danger-subtle ms-3">${ statuses[user.status] ?? user.status}</span>`;
+                    if (user.is_active === 0) {
+                        userProfile += `<span class="badge bg-danger ms-3">${document.documentElement.lang === 'mn' ? 'устгагдсан' : 'deactivated'}</span>`;
                     }
                     let fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`;
                     if (fullName.length > 1) {
@@ -195,8 +194,8 @@
         });
     }));
     
-    const requestDeletes = newbies.table.querySelectorAll('.delete-user-request');
-    requestDeletes.forEach(btn => btn.addEventListener('click', function (e) {
+    const requestDeactivates = newbies.table.querySelectorAll('.deactivate-user-request');
+    requestDeactivates.forEach(btn => btn.addEventListener('click', function (e) {
         e.preventDefault();
 
         let thisRow = btn.closest('tr');
@@ -219,7 +218,7 @@
                 }
                 
                 return fetch(
-                    `{{ 'user-request-delete'|link }}`,
+                    `{{ 'user-signup-deactivate'|link }}`,
                     {
                         method: 'DELETE',
                         headers: {
@@ -236,9 +235,11 @@
                     
                     Swal.close();
 
-                    NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) request deleted`);
+                    NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) request deactivated`);
 
-                    thisRow.remove();
+                    thisRow.children[4].innerHTML = '<span class="badge bg-danger">deactivated</span>';
+                    thisRow.children[5].innerHTML = '';
+                    
                     newbies.setReady();
                 }).catch(error => {
                     Swal.showValidationMessage(error.message);

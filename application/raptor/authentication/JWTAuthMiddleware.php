@@ -61,15 +61,14 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 throw new \Exception('There is no JWT on the session!');
             }
             $result = $this->validate($_SESSION['RAPTOR_JWT']);
-            
             $pdo = $request->getAttribute('pdo');
             $users = new UsersModel($pdo);
-            $profile = $users->getById($result['user_id']);
+            $profile = $users->getRowWhere([
+                'id' => $result['user_id'],
+                'is_active' => 1
+            ]);
             if (!isset($profile['id'])) {
                 throw new \Exception('User not found', 404);
-            }
-            if ($profile['status'] != 1) {
-                throw new \Exception('Inactive user', 406);
             }
             unset($profile['password']);
 
@@ -78,7 +77,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $stmt = $orgUserModel->prepare(
                 'SELECT t2.* ' .
                 "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
-                'WHERE t1.user_id=:user AND t1.organization_id=:org AND t1.is_active=1 AND t2.is_active=1 LIMIT 1'
+                'WHERE t1.user_id=:user AND t1.organization_id=:org AND t2.is_active=1 LIMIT 1'
             );
             $stmt->bindParam(':user', $result['user_id'], \PDO::PARAM_INT);
             $stmt->bindParam(':org', $result['organization_id'], \PDO::PARAM_INT);

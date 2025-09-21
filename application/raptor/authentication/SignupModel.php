@@ -5,7 +5,7 @@ namespace Raptor\Authentication;
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
-class UserRequestModel extends Model
+class SignupModel extends Model
 {
     public function __construct(\PDO $pdo)
     {
@@ -18,14 +18,13 @@ class UserRequestModel extends Model
            (new Column('password', 'varchar', 255))->default(''),
             new Column('email', 'varchar', 143),
             new Column('code', 'varchar', 6),
-           (new Column('status', 'tinyint'))->default(1),
            (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint')
         ]);
         
-        $this->setTable('users_requests');
+        $this->setTable('signup');
     }
 
     protected function __initial()

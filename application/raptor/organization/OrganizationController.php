@@ -21,7 +21,7 @@ class OrganizationController extends FileController
         $dashboard->set('title', $this->text('organizations'));
         $dashboard->render();
         
-        $this->indolog('organizations', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж байна', ['action' => 'index']);
+        $this->indolog('organizations', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг үзэж байна', ['action' => 'index']);
     }
     
     public function list()
@@ -34,7 +34,7 @@ class OrganizationController extends FileController
             $table = (new OrganizationModel($this->pdo))->getName();
             $this->respondJSON([
                 'status' => 'success',
-                'list' => $this->query("SELECT id,name,alias,logo FROM $table WHERE is_active=1")->fetchAll()
+                'list' => $this->query("SELECT id,name,alias,logo FROM $table WHERE is_active=1 ORDER BY id")->fetchAll()
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
@@ -89,9 +89,9 @@ class OrganizationController extends FileController
                 $level = LogLevel::ERROR;
                 $message = 'Байгууллага үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($record)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'Байгууллага [{record.name}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = 'Байгууллага [{record.name}] амжилттай үүслээ';
                 $context += ['id' => $id, 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -109,7 +109,10 @@ class OrganizationController extends FileController
             }
             
             $model = new OrganizationModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -117,7 +120,10 @@ class OrganizationController extends FileController
                 $record['created_by'], $record['updated_by']
             );
             if (!empty($record['parent_id'])) {
-                $parent = $model->getById($record['parent_id']);
+                $parent = $model->getRowWhere([
+                    'id' => $record['parent_id'],
+                    'is_active' => 1
+                ]);
                 if (empty($parent)) {
                     $parent['name'] = "- no parent or it's parent deleted -";
                 }
@@ -133,11 +139,11 @@ class OrganizationController extends FileController
             $context = ['action' => 'view', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай байгууллагын мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $message = '{id} дугаартай байгууллагын мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг нээж үзэж байна';
+                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг үзэж байна';
                 $context += ['record' => $record];
             }
             $this->indolog('organizations', $level, $message, $context);
@@ -152,7 +158,10 @@ class OrganizationController extends FileController
             }
             
             $model = new OrganizationModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -222,9 +231,9 @@ class OrganizationController extends FileController
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($updated)) {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
@@ -235,7 +244,7 @@ class OrganizationController extends FileController
         }
     }
     
-    public function delete()
+    public function deactivate()
     {
         try {
             if (!$this->isUserCan('system_organization_delete')) {
@@ -256,13 +265,13 @@ class OrganizationController extends FileController
             }
             
             $model = new OrganizationModel($this->pdo);
-            $record = $model->getById($id);
-            if (empty($record)) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -286,8 +295,7 @@ class OrganizationController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record.name} байгууллагыг [{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
-                $context += ['record' => $record];
+                $message = '{server_request.body.id} дугаартай [{server_request.body.name}] байгууллагыг [{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
             }
             $this->indolog('organizations', $level, $message, $context);
         }

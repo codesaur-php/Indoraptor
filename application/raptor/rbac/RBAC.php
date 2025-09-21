@@ -12,7 +12,7 @@ class RBAC implements \JsonSerializable
         $user_role_table = (new UserRole($pdo))->getName();
         $sql = 'SELECT t1.role_id, t2.name, t2.alias'
             . " FROM $user_role_table t1 INNER JOIN $roles_table t2 ON t1.role_id=t2.id"
-            . ' WHERE t1.user_id=:user_id AND t1.is_active=1';
+            . ' WHERE t1.user_id=:user_id';
         $pdo_stmt = $pdo->prepare($sql);
         if ($pdo_stmt->execute([':user_id' => $user_id])) {
             while ($row = $pdo_stmt->fetch()) {

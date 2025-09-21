@@ -78,15 +78,15 @@
         </div>
     </div>
 </div>
+{% if record['is_active'] == 0 %}
 <div class="row mb-2 mt-3">
     <label class="col-3 col-form-label text-end text-end">{{ 'status'|text }}</label>
     <div class="col-9">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
-            <div class="form-text" id="activeHelpBlock">{{ 'active-user-can-login'|text }}</div>
-        </div>
+        <span class="badge bg-danger" aria-describedby="activeHelpBlock">{{ localization.code == 'mn' ? 'устгагдсан' : 'deactivated' }}</span>
+        <div class="form-text" id="activeHelpBlock">{{ 'active-user-can-login'|text }}</div>
     </div>
 </div>
+{% endif %}
 <div class="row mb-2">
     <label class="col-3 col-form-label text-end text-end">{{ 'date-created'|text }}</label>
     <div class="col-9">

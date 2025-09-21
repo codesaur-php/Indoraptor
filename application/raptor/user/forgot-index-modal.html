@@ -28,15 +28,11 @@
                         </td>
                         <td>
                             {% if row['is_active'] == 0 %}
-                            <span class="badge bg-secondary">deleted</span>
-                            {% elseif row['status'] == 1 %}
-                                {% if isExpired(row['created_at']) %}
+                                <span class="badge bg-secondary">used</span>
+                            {% elseif isExpired(row['created_at']) %}
                                 <span class="badge bg-danger">expired</span>
-                                {% else %}
-                                <span class="badge bg-primary">ready</span>
-                                {% endif %}
                             {% else %}
-                                <span class="badge bg-success">used</span>
+                                <span class="badge bg-primary">ready</span>
                             {% endif %}
                         </td>
                         <td>{{ row['created_at'] }}</td>

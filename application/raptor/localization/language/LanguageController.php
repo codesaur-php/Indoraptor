@@ -25,7 +25,10 @@ class LanguageController extends \Raptor\Controller
                 }
                 
                 $model = new LanguageModel($this->pdo);
-                $mother = $model->getRowBy(['code' => $payload['copy'], 'is_active' => 1]);
+                $mother = $model->getRowWhere([
+                    'code' => $payload['copy'],
+                    'is_active' => 1
+                ]);
                 if (!isset($mother['code'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
@@ -70,9 +73,9 @@ class LanguageController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний бичлэг үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($record)) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'Хэл [{record.code} - {record.title}] бичлэг үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = 'Хэл [{record.code} - {record.title}] амжилттай үүслээ';
                 $context += [
                     'id' => $record['id'],
                     'record' => $record,
@@ -94,7 +97,10 @@ class LanguageController extends \Raptor\Controller
             }
             
             $model = new LanguageModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             $this->twigTemplate(
                 \dirname(__FILE__) . '/language-retrieve-modal.html',
                 ['record' => $record]
@@ -105,11 +111,11 @@ class LanguageController extends \Raptor\Controller
             $context = ['action' => 'language-view', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $message = '{id} дугаартай хэлний мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.title} хэлний мэдээллийг нээж үзэж байна';
+                $message = '{record.title} хэлний мэдээллийг үзэж байна';
                 $context += ['record' => $record];
             }
             $this->indolog('localization', $level, $message, $context);
@@ -124,7 +130,10 @@ class LanguageController extends \Raptor\Controller
             }
             
             $model = new LanguageModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }        
@@ -189,9 +198,9 @@ class LanguageController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($updated)) {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '[{record.title}] хэлний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '[{record.title}] хэлний мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
@@ -202,7 +211,7 @@ class LanguageController extends \Raptor\Controller
         }
     }
     
-    public function delete()
+    public function deactivate()
     {
         try {
             if (!$this->isUserCan('system_localization_delete')) {
@@ -218,16 +227,23 @@ class LanguageController extends \Raptor\Controller
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             
             $model = new LanguageModel($this->pdo);
-            $record = $model->getById($id);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
             if ($record['is_default'] == 1) {
                 throw new \Exception('Cannot remove default language!', 403);
             }
-            $deactivated = $model->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $model->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }

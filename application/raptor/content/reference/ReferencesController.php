@@ -49,13 +49,13 @@ class ReferencesController extends \Raptor\Controller
         foreach (\array_keys($tables) as $table) {
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $tables[$table] = $reference->getRows();
+            $tables[$table] = $reference->getRows(['WHERE' => 'p.is_active=1']);
         }
         $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables]);
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
-        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'reference-index']);
+        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг үзэж байна', ['action' => 'reference-index']);
     }
     
     public function insert(string $table)
@@ -92,7 +92,7 @@ class ReferencesController extends \Raptor\Controller
                 $reference = new ReferenceModel($this->pdo);
                 $reference->setTable($table);
                 $record = $reference->insert(
-                    $payload, $content + ['created_by' => $this->getUserId()]
+                    $payload + ['created_by' => $this->getUserId()], $content
                 );
                 if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
@@ -124,9 +124,9 @@ class ReferencesController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = 'Лавлах мэдээллийг [{table}] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (isset($record['id'])) {
+            } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '[{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '[{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр амжилттай үүсгэлээ';
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
@@ -147,7 +147,10 @@ class ReferencesController extends \Raptor\Controller
 
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $record = $reference->getById($id);
+            $record = $reference->getRowWhere([
+                'p.id' => $id,
+                'p.is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -167,11 +170,11 @@ class ReferencesController extends \Raptor\Controller
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{table} хүснэгтээс {id} дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+                $message = '{table} хүснэгтээс {id} дугаартай лавлах мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна';
+                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг үзэж байна';
                 $context += ['record' => $record];
             }
             $this->indolog('content', $level, $message, $context);
@@ -189,7 +192,10 @@ class ReferencesController extends \Raptor\Controller
             
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $record = $reference->getById($id);
+            $record = $reference->getRowWhere([
+                'p.id' => $id,
+                'p.is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 400);
             }
@@ -255,9 +261,9 @@ class ReferencesController extends \Raptor\Controller
                 $level = LogLevel::ERROR;
                 $message = '{table} хүснэгтийн {id} дугаартай лавлах мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } elseif (!empty($updated)) {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ';
+                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
                 $level = LogLevel::NOTICE;
@@ -268,7 +274,7 @@ class ReferencesController extends \Raptor\Controller
         }
     }
     
-    public function delete()
+    public function deactivate()
     {
         try {
             if (!$this->isUserCan('system_content_delete')) {
@@ -289,9 +295,13 @@ class ReferencesController extends \Raptor\Controller
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $deactivated = $reference->deactivateById($id, [
-                'updated_by' => $this->getUserId(), 'updated_at' => \date('Y-m-d H:i:s')
-            ]);
+            $deactivated = $reference->deactivateById(
+                $id,
+                [
+                    'updated_by' => $this->getUserId(),
+                    'updated_at' => \date('Y-m-d H:i:s')
+                ]
+            );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }            

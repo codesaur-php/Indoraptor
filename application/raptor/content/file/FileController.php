@@ -145,8 +145,6 @@ class FileController extends \Raptor\Controller
                 'type' => \explode('/', $mime_type)[0] ?? 'unknown'
             ];
         } catch (\Throwable $err) {
-            $this->errorLog($err);
-            
             if (\is_numeric($err->getCode())) {
                 $this->_upload_error = (int) $err->getCode();
             }
@@ -165,7 +163,10 @@ class FileController extends \Raptor\Controller
             
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $record = $model->getById($file_id);
+            $record = $model->getRowWhere([
+                'id' => $file_id,
+                'is_active' => 1
+            ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }

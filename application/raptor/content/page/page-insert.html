@@ -523,7 +523,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                                `{{ 'files-delete'|link({'table':table}) }}`,
+                                `{{ 'files-deactivate'|link({'table':table}) }}`,
                                 {
                                     method: 'DELETE',
                                     headers: {

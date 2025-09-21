@@ -13,6 +13,6 @@ class TemplateRouter extends Router
         $this->GET('/dashboard/manage/menu', [TemplateController::class, 'manageMenu'])->name('manage-menu');
         $this->POST('/dashboard/manage/menu/insert', [TemplateController::class, 'manageMenuInsert'])->name('manage-menu-insert');
         $this->PUT('/dashboard/manage/menu/update', [TemplateController::class, 'manageMenuUpdate'])->name('manage-menu-update');
-        $this->DELETE('/dashboard/manage/menu/delete', [TemplateController::class, 'manageMenuDelete'])->name('manage-menu-delete');
+        $this->DELETE('/dashboard/manage/menu/deactivate', [TemplateController::class, 'manageMenuDeactivate'])->name('manage-menu-deactivate');
     }
 }

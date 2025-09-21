@@ -92,7 +92,10 @@ class HomeController extends TemplateController
     public function page(int $id)
     {
         $model = new PagesModel($this->pdo);
-        $record = $model->getById($id);
+        $record = $model->getRowWhere([
+            'id' => $id,
+            'is_active' => 1
+        ]);
         if (empty($record)) {
             throw new \Error('Хуудас олдсонгүй', 404);
         }
@@ -121,20 +124,27 @@ class HomeController extends TemplateController
     private function getPageBreadCrumbs(int $id): array
     {
         $pages = new PagesModel($this->pdo);
-        $page = $pages->getById($id);
+        $page = $pages->getRowWhere([
+            'id' => $id,
+            'is_active' => 1
+        ]);
         $breadcrumbs = [];
         while (!empty($page['parent_id'])) {
-            $page = $pages->getById($page['parent_id']);
+            $page = $pages->getRowWhere([
+                'id' => $page['parent_id']
+            ]);
             $breadcrumbs[] = $page;
-        }
-        
+        }        
         return \array_reverse($breadcrumbs);
     }
     
     public function news(int $id)
     {
         $model = new NewsModel($this->pdo);
-        $record = $model->getById($id);
+        $record = $model->getRowWhere([
+            'id' => $id,
+            'is_active' => 1
+        ]);
         if (empty($record)) {
             throw new \Error('Мэдээ олдсонгүй', 404);
         }

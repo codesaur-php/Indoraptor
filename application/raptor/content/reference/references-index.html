@@ -52,8 +52,8 @@
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
                                 {% endif %}
-                                {% if can_delete %}
-                                    <button class="delete-reference btn btn-sm btn-danger mt-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                {% if can_delete and row['is_active'] !=0 %}
+                                    <button class="deactivate-reference btn btn-sm btn-danger mt-1 shadow-sm" value="{{ row['id'] }}" type="button">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 {% endif %}
@@ -96,8 +96,8 @@
             let name = reference.table.getAttribute('data-table');
             if (!name) return;
             
-            const deleteRef = reference.table.querySelectorAll('.delete-reference');
-            deleteRef.forEach(btn => btn.addEventListener('click', function (e) {
+            const deactivateRef = reference.table.querySelectorAll('.deactivate-reference');
+            deactivateRef.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 let thisRow = btn.closest('tr');
@@ -107,9 +107,9 @@
                 
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та [{0}] түлхүүртэй бичлэгийг устгахдаа итгэлтэй байна уу?</p>';
+                    questiondel = '<p class="text-danger mb-3">Та [{0}] түлхүүртэй бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?</p>';
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the reference with keyword [{0}]?</p>';
+                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the reference with keyword [{0}]?</p>';
                 }
                 let keyword = thisRow.children[1].innerHTML;
                 let question = questiondel.format(keyword.replace(/<\/?[^>]+(>|$)/g, ''));
@@ -124,7 +124,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            `{{ 'reference-delete'|link }}`,
+                            `{{ 'reference-deactivate'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -148,7 +148,7 @@
                             thisRow.remove();
                             reference.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Reference ${keyword} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Reference ${keyword} deactivated`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

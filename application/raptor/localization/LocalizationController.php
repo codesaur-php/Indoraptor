@@ -41,7 +41,7 @@ class LocalizationController extends \Raptor\Controller
                 $model->setTable($table);
                 $texts[$table] = $model->getRows(['WHERE' => 'p.is_active=1', 'ORDER BY' => 'p.keyword']);
             }
-            $languages = (new LanguageModel($this->pdo))->getRows();
+            $languages = (new LanguageModel($this->pdo))->getRows(['WHERE' => 'is_active=1']);
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/localization-index.html',
                 ['languages' => $languages, 'texts' => $texts]
@@ -49,7 +49,7 @@ class LocalizationController extends \Raptor\Controller
             $dashboard->set('title', $this->text('localization'));
             $dashboard->render();
             
-            $this->indolog('localization', LogLevel::NOTICE, 'Хэл ба Текстүүдийн жагсаалтыг нээж үзэж байна', ['action' => 'localization-index']);
+            $this->indolog('localization', LogLevel::NOTICE, 'Хэл ба Текстүүдийн жагсаалтыг үзэж байна', ['action' => 'localization-index']);
         } catch (\Throwable $err) {
              $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         }
