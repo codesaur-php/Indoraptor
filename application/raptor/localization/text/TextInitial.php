@@ -101,6 +101,8 @@ class TextInitial
         $model->insert(['keyword' => 'organizations', 'type' => 'sys-defined'], ['mn' => ['text' => 'Байгууллагууд'], 'en' => ['text' => 'Organizations']]);
         $model->insert(['keyword' => 'properties', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шинж чанарууд'], 'en' => ['text' => 'Properties']]);
         $model->insert(['keyword' => 'group', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүлэг'], 'en' => ['text' => 'Group']]);
+        $model->insert(['keyword' => 'contact-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бидэнтэй холбогдох'], 'en' => ['text' => 'Contact Us']]);
+        $model->insert(['keyword' => 'usefull-links', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэгтэй холбоосууд'], 'en' => ['text' => 'Usefull Links']]);
     }
     
     public static function localization_text_dashboard(TextModel $model)

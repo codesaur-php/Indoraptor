@@ -8,10 +8,10 @@ class Application extends \codesaur\Http\Application\Application
     {
         parent::__construct();
         
-        $this->use(new \Raptor\Exception\ErrorHandler());
-   //     $this->use(new Template\ExceptionHandler());
+        $this->use(new Template\ExceptionHandler());
         
-        $this->use(new \Raptor\MySQLConnectMiddleware());
+        $this->use(new \Raptor\MySQLConnectMiddleware()); // Or you can use PostgresConnectMiddleware
+        
         $this->use(new SessionMiddleware());
         $this->use(new LocalizationMiddleware());
         $this->use(new \Raptor\Content\SettingsMiddleware());

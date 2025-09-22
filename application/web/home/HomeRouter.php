@@ -13,7 +13,6 @@ class HomeRouter extends Router
         $this->GET('/language/{code}', [HomeController::class, 'language'])->name('language');
         $this->GET('/page/{uint:id}', [HomeController::class, 'page'])->name('page');
         $this->GET('/news/{uint:id}', [HomeController::class, 'news'])->name('news');
-        $this->GET('/news/type/{type}', [HomeController::class, 'newsType'])->name('news-type');
         $this->GET('/contact', [HomeController::class, 'contact'])->name('contact');
     }
 }

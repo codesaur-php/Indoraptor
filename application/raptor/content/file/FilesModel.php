@@ -53,7 +53,9 @@ class FilesModel extends Model
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE CASCADE ON UPDATE CASCADE");
+        if ($this->hasTable($record_name)) {
+            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE CASCADE ON UPDATE CASCADE");            
+        }
         $this->setForeignKeyChecks(true);
     }
     
