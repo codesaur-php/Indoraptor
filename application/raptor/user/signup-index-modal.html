@@ -127,9 +127,10 @@
                     let orgIndexLink = `{{ 'organizations'|link }}`;
                     let canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
                     let canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
-                    let orgUserLink = `{{ user.can('system_user_organization_set') ? 'user-set-organization'|link ~ '?user_id=' : '' }}`;
-                    let userRoleLink = `{{ user.can('system_rbac') ? 'user-set-role'|link ~ '?id=' : '' }}`;
-                    let rbacRoleViewLink = `{{ 'rbac-role-view'|link }}`;
+                    let canSetOrg = `{{ user.can('system_user_organization_set') ? 'true' : '' }}`;
+                    let authSystemCoder = `{{ user.is('system_coder') ? 'true' : '' }}`;
+                    let authUserId = {{ user.profile.id }};
+                    
                     let photo;
                     if (user.photo) {
                         photo = `<img class="img-fluid img-thumbnail" src="${user.photo}" style="max-width:60px;max-height:60px">`;
@@ -151,36 +152,30 @@
                         userProfile += `<div style="font-size:.8rem;"><a class="text-decoration-none" href="tel:${user.phone}"><i class="bi bi-telephone"></i></a> ${user.phone}</div>`;
                     }
 
-                    let isCoder = Object.values(user.roles ?? []).includes('system_coder');
-                    let orgUserHtml = !orgUserLink ? ''
-                        : `<a class="ajax-modal-${user.id} btn btn-dark btn-sm shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${orgUserLink}${user.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i></a>`;
-                    if (isCoder) {
+                    let hasSystemCoder = Object.values(user.roles ?? []).includes('system_coder');
+                    
+                    let orgUserHtml = '';
+                    if (canSetOrg) {
+                        orgUserHtml += `<a class="ajax-modal-${user.id} btn btn-dark btn-sm shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${indexLink}/set/organization/${user.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i></a>`;
+                    }
+                    if (hasSystemCoder) {
                         orgUserHtml += ' <span class="badge bg-secondary fw-normal shadow-sm">system_coder can enter any organization</span><br/>';
                     }
                     user.organizations?.forEach(org => {
                         orgUserHtml += ` <a class="ajax-modal-${user.id} badge text-bg-light text-decoration-none ${org.alias === 'system' ? '' : 'fw-normal '}shadow-sm" href="${orgIndexLink}/view/${org.id}" data-bs-target="#static-modal" data-bs-toggle="modal">${org.name}</a>`;
                     });
 
-                    let rolesHtml = !userRoleLink ? ''
-                        : `<a class="ajax-modal-${user.id} btn btn-sm btn-dark shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${userRoleLink}${user.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i></a>`;
-                    if (isCoder) {
-                        rolesHtml += ' <span class="badge bg-secondary fw-normal shadow-sm">system_coder can do all the actions</span><br/>';
-                    }
-                    for (let role_id in user.roles ?? []) {
-                        rolesHtml += ` <a class="ajax-modal-${user.id} badge text-bg-light text-decoration-none ${user.roles[role_id] === 'system_coder' ? '' : 'fw-normal '}shadow-sm" href="${rbacRoleViewLink}?role=${user.roles[role_id]}" data-bs-target="#static-modal" data-bs-toggle="modal">${user.roles[role_id]}</a>`;
-                    }
-
                     let buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${user.id}"><i class="bi bi-eye"></i></a>`];
                     if (canUpdate) {
                         buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/update/${user.id}"><i class="bi bi-pencil-square"></i></a>`);
                     }
-                    if (canDelete) {
-                        buttons.push(`<button class="delete-user btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${user.id}"><i class="bi bi-trash"></i></button>`);
+                    if (user.id === authUserId || authSystemCoder) {
+                        buttons.push(`<a class="ajax-modal-${user.id} btn btn-sm btn-dark mt-1 shadow-sm" href="${indexLink}/set/password/${user.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-key-fill"></i></a>`);
                     }
                     let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
                 
                     let usersBody = window.usersTbl.table.querySelector('tbody');
-                    usersBody.innerHTML = `<tr><th scope="row">${user.id}</th><td>${photo}</td><td>${userProfile}</td><td>${orgUserHtml}</td><td>${rolesHtml}</td><td>${actions}</td></tr>` + usersBody.innerHTML;
+                    usersBody.innerHTML = `<tr><th scope="row">${user.id}</th><td>${photo}</td><td>${userProfile}</td><td>${orgUserHtml}</td><td></td><td>${actions}</td></tr>` + usersBody.innerHTML;
                     window.usersTbl.setReady();
                     const modals = usersBody.querySelectorAll(`.ajax-modal-${user.id}`);
                     modals.forEach(a => a.addEventListener('click', function (e) {

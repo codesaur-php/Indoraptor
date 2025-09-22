@@ -47,7 +47,7 @@
                         <th scope="row">{{ language['code'] }}</th>
                         <td>
                             {% set flag = language['code'] == 'en' ? 'us' : language['code'] %}
-                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['full']|e }}">
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['title']|e }}">
                             {{ language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '' }}
                         </td>
                         <td>{{ language['title'] }}</td>

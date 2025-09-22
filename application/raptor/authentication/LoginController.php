@@ -143,7 +143,7 @@ class LoginController extends \Raptor\Controller
             $password = $payload['password'] ?? '';
             $passwordRe = $payload['password_re'] ??'';            
             if (empty($password) || $password != $passwordRe) {
-                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-values'), 400);
             } else {
                 unset($payload['password_re']);
             }
@@ -439,8 +439,8 @@ class LoginController extends \Raptor\Controller
             );
             if (empty($result)) {
                 throw new \Exception("Can't reset user [{$user['username']}] password", 500);
-            }            
-            $model->deactivateById($forgot['id'], ['updated_at' => \date('Y-m-d H:i:s')]);            
+            }
+            $model->deactivateById($forgot['id'], ['updated_at' => \date('Y-m-d H:i:s')]);
             $vars = [
                 'title' => $this->text('success'),
                 'message' => $this->text('set-new-password-success')

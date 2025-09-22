@@ -82,7 +82,7 @@ class UsersController extends FileController
                     if (!isset($users[$value['user_id']]['roles'])) {
                         $users[$value['user_id']]['roles'] = [];
                     }
-                    $users[$value['user_id']]['roles'][$value['role_id']] = "{$value['alias']}_{$value['name']}";
+                    $users[$value['user_id']]['roles'][] = "{$value['alias']}_{$value['name']}";
                 }
             });
             
@@ -231,9 +231,9 @@ class UsersController extends FileController
                 if (!empty($payload['password'])) {
                     $payload['password'] = \password_hash($payload['password'], \PASSWORD_BCRYPT);
                 }
-                $post_organizations = \filter_var($payload['organizations'], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
+                $post_organizations = \filter_var($payload['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
                 unset($payload['organizations']);
-                $post_roles = \filter_var($payload['roles'], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
+                $post_roles = \filter_var($payload['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
                 unset($payload['roles']);
 
                 $existing_username = $model->getRowWhere(['username' => $payload['username']]);
@@ -304,11 +304,11 @@ class UsersController extends FileController
                     "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
                     "WHERE ou.user_id=$id AND o.is_active=1";
                 $org_ids = $this->query($select_org_ids)->fetchAll();
-                $ids = [];
+                $current_organizations = [];
                 foreach ($org_ids as $org) {
-                    $ids[] = $org['id'];
+                    $current_organizations[] = $org['id'];
                 }
-                $vars['current_organizations'] = $ids;
+                $vars['current_organizations'] = $current_organizations;
                 
                 $rbacs = ['common' => 'Common'];
                 $alias_names = $this->query(
@@ -344,9 +344,9 @@ class UsersController extends FileController
                 $select_user_roles =
                     "SELECT rur.role_id FROM {$userRoleModel->getName()} as rur INNER JOIN {$rolesModel->getName()} as rr ON rur.role_id=rr.id " .
                     "WHERE rur.user_id=$id";
-                $current_roles = $this->query($select_user_roles)->fetchAll();
+                $current_roles_rows = $this->query($select_user_roles)->fetchAll();
                 $current_role = [];
-                foreach ($current_roles as $row) {
+                foreach ($current_roles_rows as $row) {
                     $current_role[] = $row['role_id'];
                 }
                 $vars['current_roles'] = $current_role;                
@@ -373,7 +373,7 @@ class UsersController extends FileController
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ';
-                $context += ['record' => $record, 'current_roles' => $current_roles, 'current_organizations' => $current_organizations];
+                $context += ['record' => $record, 'current_roles' => $current_role, 'current_organizations' => $current_organizations];
             }
             $this->indolog('users', $level, $message, $context);
         }
@@ -700,43 +700,52 @@ class UsersController extends FileController
         }
     }
     
-    public function setPassword()
+    public function setPassword(int $id)
     {
         try {
-            if (!$this->isUser('system_coder')) {
+            if (!$this->isUser('system_coder')
+                && $this->getUser()->profile['id'] != $id
+            ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $params = $this->getQueryParams();
-            if (empty($params['id'])
-                || \filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
-            ) {
-                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }
-
-            $user_id = (int) $params['id'];
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
-                'id' => $user_id,
+                'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            if ($user_id == 1 && $record['id'] != $user_id) {
-                throw new \Exception('Only root user can reset password of this account', 403);
-            }
 
             if ($this->getRequest()->getMethod() == 'POST') {
-                throw new \Exception('No updates');
-                
+                $parsedBody = $this->getParsedBody();
+                $password = $parsedBody['password'] ?? null;            
+                $password_retype = $parsedBody['password_retype'] ?? null;
+                if (empty($password) || $password != $password_retype) {
+                    throw new \Exception($this->text('password-must-match'), 400);
+                }                
+                $updated = $model->updateById(
+                    $id,
+                    [
+                        'updated_by' => $this->getUserId(),
+                        'updated_at' => \date('Y-m-d H:i:s'),
+                        'password' => \password_hash($password, \PASSWORD_BCRYPT)
+                    ]
+                );
+                if (empty($updated)) {
+                    throw new \Exception("Can't reset user [{$record['username']}] password", 500);
+                }
                 return $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
-                    'message' => $this->text('record-update-success')
+                    'message' => $this->text('set-new-password-success')
                 ]);
             } else {
-                $this->twigTemplate(\dirname(__FILE__) . '/user-set-password-modal.html', ['profile' => $record])->render();
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/user-set-password-modal.html',
+                    ['profile' => $record]
+                )->render();
             }
         } catch (\Throwable $err) {            
             if ($this->getRequest()->getMethod() == 'POST') {
@@ -749,14 +758,14 @@ class UsersController extends FileController
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {            
-            $context = ['action' => 'set-password'];
+            $context = ['action' => 'set-password', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Хэрэглэгчийн нууц үг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{id} дугаартай хэрэглэгчийн нууц үг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $context += ['record' => $record];
-                $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн нууц ';
+                $message = '{id} дугаартай [{record.username}] хэрэглэгчийн нууц ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'үгийг амжилттай шинэчлэв';
@@ -769,24 +778,156 @@ class UsersController extends FileController
         }
     }
     
-    public function setRole()
+    public function setOrganization(int $id)
+    {
+        try {            
+            if (!$this->isUserCan('system_user_organization_set')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+                   
+            $model = new UsersModel($this->pdo);
+            $record = $model->getRowWhere([
+                'id' => $id,
+                'is_active' => 1
+            ]);
+            if (empty($record)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
+            
+            if ($this->getRequest()->getMethod() == 'POST') {
+                $post_organizations = \filter_var($this->getParsedBody()['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
+                if ($id == 1
+                    && (empty($post_organizations) || !\in_array(1, $post_organizations))
+                ) {
+                    throw new \Exception('Root user must belong to a system organization', 503);
+                }
+                if (!$this->configureOrgs($id, $post_organizations)) {
+                    throw new \Exception('No updates');
+                }
+                return $this->respondJSON([
+                    'status'  => 'success',
+                    'title'   => $this->text('success'),
+                    'message' => $this->text('record-update-success')
+                ]);
+            } else {
+                $orgModel = new OrganizationModel($this->pdo);
+                $orgUserModel = new OrganizationUserModel($this->pdo);
+                $response = $this->query(
+                    'SELECT ou.organization_id as id ' .
+                    "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
+                    "WHERE ou.user_id=$id AND o.is_active=1"
+                );
+                $current_organizations = [];
+                foreach ($response as $org) {
+                    $current_organizations[] = $org['id'];
+                }
+                $vars = [
+                    'profile' => $record,
+                    'current_organizations' => $current_organizations,
+                    'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
+                ];
+                $this->twigTemplate(\dirname(__FILE__) . '/user-set-organization-modal.html', $vars)->render();
+            }
+        } catch (\Throwable $err) {
+            if ($this->getRequest()->getMethod() == 'POST') {
+                $this->respondJSON([
+                    'status'  => 'error',
+                    'title'   => $this->text('error'),
+                    'message' => $err->getMessage()
+                ], $err->getCode());
+            } else {
+                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
+            }
+        } finally {
+            $context = ['action' => 'set-organization', 'id' => $id];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = '{id} дугаартай хэрэглэгчийн байгууллага тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $context += ['record' => $record];
+                $message = '{id} дугаартай [{record.username}] хэрэглэгчийн байгууллага ';
+                if ($this->getRequest()->getMethod() == 'POST') {
+                    $level = LogLevel::INFO;
+                    $message .= 'амжилттай тохируулав';
+                } else {
+                    $level = LogLevel::NOTICE;
+                    $message .= 'тохируулах үйлдлийг эхлүүллээ';
+                    $context += ['current_organizations' => $current_organizations];
+                }
+            }
+            $this->indolog('users', $level, $message, $context);
+        }
+    }
+    
+    private function configureOrgs(int $id, array $orgSets): bool
+    {
+        $configured = false;
+        try {            
+            if (!$this->isUserCan('system_user_organization_set')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $logger = new Logger($this->pdo);
+            $logger->setTable('users');
+            $auth_user = [
+                'id' => $this->getUser()->profile['id'],
+                'username' => $this->getUser()->profile['username'],
+                'first_name' => $this->getUser()->profile['first_name'],
+                'last_name' => $this->getUser()->profile['last_name'],
+                'phone' => $this->getUser()->profile['phone'],
+                'email' => $this->getUser()->profile['email']
+            ];
+            
+            $model = new UsersModel($this->pdo);
+            $orgModel = new OrganizationModel($this->pdo);
+            $orgUserModel = new OrganizationUserModel($this->pdo);
+            $sql =
+                'SELECT t1.id, t1.user_id, t1.organization_id, t2.name as organization_name, t3.username ' .
+                "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id LEFT JOIN {$model->getName()} t3 ON t1.user_id=t3.id " .
+                "WHERE t1.user_id=$id AND t2.is_active=1 AND t3.is_active=1";
+            $userOrgs = $this->query($sql)->fetchAll();
+            $organizationIds = \array_flip($orgSets);
+            foreach ($userOrgs as $row) {
+                if (isset($organizationIds[$row['organization_id']])) {
+                    unset($organizationIds[$row['organization_id']]);
+                } elseif ($row['organization_id'] == 1 && $id == 1) {
+                    // can't strip root user from system organization!
+                } elseif ($orgUserModel->deleteById($row['id'])) {
+                    $configured = true;
+                    $logger->log(
+                        LogLevel::ALERT,
+                        '[{organization_name}:{organization_id}] байгууллагаас [{username}:{user_id}] хэрэглэгчийг хаслаа',
+                        ['action' => 'strip-organization'] + $row + ['auth_user' => $auth_user]
+                    );
+                }
+            }
+            foreach (\array_keys($organizationIds) as $org_id) {
+                if (!empty($orgUserModel->insert(
+                    ['user_id' => $id, 'organization_id' => $org_id, 'created_by' => $this->getUserId()]))
+                ) {
+                    $configured = true;
+                    $logger->log(
+                        LogLevel::ALERT,
+                        '{organization_id}-р байгууллагад {user_id}-р хэрэглэгчийг нэмлээ',
+                        ['action' => 'set-organization', 'user_id' => $id, 'organization_id' => $org_id, 'auth_user' => $auth_user]
+                    );
+                }
+            }
+        } catch (\Throwable) {}
+        return $configured;
+    }
+    
+    public function setRole(int $id)
     {
         try {
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $params = $this->getQueryParams();
-            if (empty($params['id'])
-                || \filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
-            ) {
-                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }
-
-            $user_id = (int) $params['id'];
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
-                'id' => $user_id,
+                'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
@@ -795,10 +936,10 @@ class UsersController extends FileController
 
             if ($this->getRequest()->getMethod() == 'POST') {
                 $post_roles = \filter_var($this->getParsedBody()['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
-                if ((empty($post_roles) || !\in_array(1, $post_roles)) && $user_id == 1) {
+                if ((empty($post_roles) || !\in_array(1, $post_roles)) && $id == 1) {
                     throw new \Exception('Default user must have a system role', 403);
                 }
-                if (!$this->configureRoles($user_id, $post_roles)) {
+                if (!$this->configureRoles($id, $post_roles)) {
                     throw new \Exception('No updates');
                 }
                 return $this->respondJSON([
@@ -841,7 +982,7 @@ class UsersController extends FileController
                 $current_role = [];
                 $select_current_roles =
                     "SELECT rur.role_id FROM {$userRoleModel->getName()} as rur INNER JOIN $roles_table as rr ON rur.role_id=rr.id " .
-                    "WHERE rur.user_id=$user_id AND rur.is_active=1";
+                    "WHERE rur.user_id=$id";
                 $current_roles = $this->query($select_current_roles)->fetchAll();
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
@@ -861,19 +1002,20 @@ class UsersController extends FileController
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {            
-            $context = ['action' => 'set-role'];
+            $context = ['action' => 'set-role', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{id} дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $context += ['record' => $record];
+                $message = '{id} дугаартай [{record.username}] хэрэглэгчийн дүрийг ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
-                    $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн дүрийг амжилттай тохируулав';
+                    $message .= 'амжилттай тохируулав';
                 } else {
                     $level = LogLevel::NOTICE;
-                    $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг эхлүүллээ';
+                    $message .= 'тохируулах үйлдлийг эхлүүллээ';
                     $context += ['current_role' => $current_role];
                 }
             }
@@ -881,154 +1023,7 @@ class UsersController extends FileController
         }
     }
     
-    public function setOrganization()
-    {
-        try {            
-            if (!$this->isUserCan('system_user_organization_set')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $params = $this->getQueryParams();
-            if (empty($params['user_id'])
-                || \filter_var($params['user_id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
-            ) {
-                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }
-            
-            $user_id = (int) $params['user_id'];            
-            $model = new UsersModel($this->pdo);
-            $record = $model->getRowWhere([
-                'id' => $user_id,
-                'is_active' => 1
-            ]);
-            if (empty($record)) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
-            
-            if ($this->getRequest()->getMethod() == 'POST') {
-                $post_organizations = \filter_var($this->getParsedBody()['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
-                if ($user_id == 1
-                    && (empty($post_organizations) || !\in_array(1, $post_organizations))
-                ) {
-                    throw new \Exception('Root user must belong to a system organization', 503);
-                }
-                if (!$this->configureOrgs($user_id, $post_organizations)) {
-                    throw new \Exception('No updates');
-                }
-                return $this->respondJSON([
-                    'status'  => 'success',
-                    'title'   => $this->text('success'),
-                    'message' => $this->text('record-update-success')
-                ]);
-            } else {
-                $orgModel = new OrganizationModel($this->pdo);
-                $orgUserModel = new OrganizationUserModel($this->pdo);
-                $response = $this->query(
-                    'SELECT ou.organization_id as id ' .
-                    "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
-                    "WHERE ou.user_id=$user_id AND ou.is_active=1 AND o.is_active=1"
-                );
-                $current_organizations = [];
-                foreach ($response as $org) {
-                    $current_organizations[] = $org['id'];
-                }
-                $vars = [
-                    'profile' => $record,
-                    'current_organizations' => $current_organizations,
-                    'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
-                ];
-                $this->twigTemplate(\dirname(__FILE__) . '/user-set-organization-modal.html', $vars)->render();
-            }
-        } catch (\Throwable $err) {
-            if ($this->getRequest()->getMethod() == 'POST') {
-                $this->respondJSON([
-                    'status'  => 'error',
-                    'title'   => $this->text('error'),
-                    'message' => $err->getMessage()
-                ], $err->getCode());
-            } else {
-                $this->modalProhibited($err->getMessage(), $err->getCode())->render();
-            }
-        } finally {
-            $context = ['action' => 'set-organization'];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = 'Хэрэглэгчийн байгууллага тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } else {
-                $context += ['record' => $record];
-                if ($this->getRequest()->getMethod() == 'POST') {
-                    $level = LogLevel::INFO;
-                    $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн байгууллага амжилттай тохируулав';
-                } else {
-                    $level = LogLevel::NOTICE;
-                    $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн байгууллага тохируулах үйлдлийг эхлүүллээ';
-                    $context += ['current_organizations' => $current_organizations];
-                }
-            }
-            $this->indolog('users', $level, $message, $context);
-        }
-    }
-    
-    private function configureOrgs(int $userId, array $orgSets): bool
-    {
-        $configured = false;
-        try {            
-            if (!$this->isUserCan('system_user_organization_set')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $logger = new Logger($this->pdo);
-            $logger->setTable('users');
-            $auth_user = [
-                'id' => $this->getUser()->profile['id'],
-                'username' => $this->getUser()->profile['username'],
-                'first_name' => $this->getUser()->profile['first_name'],
-                'last_name' => $this->getUser()->profile['last_name'],
-                'phone' => $this->getUser()->profile['phone'],
-                'email' => $this->getUser()->profile['email']
-            ];
-            
-            $model = new UsersModel($this->pdo);
-            $orgModel = new OrganizationModel($this->pdo);
-            $orgUserModel = new OrganizationUserModel($this->pdo);
-            $sql =
-                'SELECT t1.id, t1.user_id, t1.organization_id, t2.name as organization_name, t3.username ' .
-                "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id LEFT JOIN {$model->getName()} t3 ON t1.user_id=t3.id " .
-                "WHERE t1.user_id=$userId AND t2.is_active=1 AND t3.is_active=1";
-            $userOrgs = $this->query($sql)->fetchAll();
-            $organizationIds = \array_flip($orgSets);
-            foreach ($userOrgs as $row) {
-                if (isset($organizationIds[$row['organization_id']])) {
-                    unset($organizationIds[$row['organization_id']]);
-                } elseif ($row['organization_id'] == 1 && $userId == 1) {
-                    // can't strip root user from system organization!
-                } elseif ($orgUserModel->deleteById($row['id'])) {
-                    $configured = true;
-                    $logger->log(
-                        LogLevel::ALERT,
-                        '[{organization_name}:{organization_id}] байгууллагаас [{username}:{user_id}] хэрэглэгчийг хаслаа',
-                        ['action' => 'strip-organization'] + $row + ['auth_user' => $auth_user]
-                    );
-                }
-            }
-            foreach (\array_keys($organizationIds) as $org_id) {
-                if (!empty($orgUserModel->insert(
-                    ['user_id' => $userId, 'organization_id' => $org_id, 'created_by' => $this->getUserId()]))
-                ) {
-                    $configured = true;
-                    $logger->log(
-                        LogLevel::ALERT,
-                        '{organization_id}-р байгууллагад {user_id}-р хэрэглэгчийг нэмлээ',
-                        ['action' => 'set-organization', 'user_id' => $userId, 'organization_id' => $org_id, 'auth_user' => $auth_user]
-                    );
-                }
-            }
-        } catch (\Throwable) {}
-        return $configured;
-    }
-    
-    private function configureRoles(int $userId, array $roleSets): bool
+    private function configureRoles(int $id, array $roleSets): bool
     {
         $configured = false;
         try {            
@@ -1049,11 +1044,11 @@ class UsersController extends FileController
             
             $roles = \array_flip($roleSets);
             $userRoleModel = new UserRole($this->pdo);
-            $user_role = $userRoleModel->fetchAllRolesByUser($userId);
+            $user_role = $userRoleModel->fetchAllRolesByUser($id);
             foreach ($user_role as $row) {
                 if (isset($roles[$row['role_id']])) {
                     unset($roles[$row['role_id']]);
-                } elseif ($row['role_id'] == 1 && $userId == 1) {
+                } elseif ($row['role_id'] == 1 && $id == 1) {
                     // can't delete root user's coder role!
                 } elseif ($row['role_id'] == 1 && !$this->isUser('system_coder')) {
                     // only coder can strip another coder role
@@ -1062,7 +1057,7 @@ class UsersController extends FileController
                     $logger->log(
                         LogLevel::ALERT,
                         '{user_id}-р хэрэглэгчээс {role_id} дугаар бүхий дүрийг хаслаа',
-                        ['action' => 'strip-role', 'user_id' => $userId, 'role_id' => $row['role_id'], 'auth_user' => $auth_user]
+                        ['action' => 'strip-role', 'user_id' => $id, 'role_id' => $row['role_id'], 'auth_user' => $auth_user]
                     );
                 }
             }
@@ -1073,12 +1068,12 @@ class UsersController extends FileController
                     // only root coder can add another coder role
                     continue;
                 }
-                if (!empty($userRoleModel->insert(['user_id' => $userId, 'role_id' => $role_id]))) {
+                if (!empty($userRoleModel->insert(['user_id' => $id, 'role_id' => $role_id]))) {
                     $configured = true;
                     $logger->log(
                         LogLevel::ALERT,
                         '{user_id}-р хэрэглэгч дээр {role_id} дугаар бүхий дүр нэмлээ',
-                        ['action' => 'set-role', 'user_id' => $userId, 'role_id' => $role_id, 'auth_user' => $auth_user]
+                        ['action' => 'set-role', 'user_id' => $id, 'role_id' => $role_id, 'auth_user' => $auth_user]
                     );
                 }
             }

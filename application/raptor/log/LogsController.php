@@ -65,8 +65,8 @@ class LogsController extends \Raptor\Controller
                     'id' => $id,
                     'table' => $table,
                     'logdata' => $log,
-                    'detailed' => $this->text('detailed'),
-                    'close' => $this->text('close')
+                    'close' => $this->text('close'),
+                    'log_caption' => $this->text('log')
                 ]
             ))->render();
         } catch (\Throwable $err) {

@@ -2,12 +2,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title fs-6">
-                <i class="bi bi-shield-lock-fill"></i> {{ 'role2'|text }}
+                <i class="bi bi-shield-lock-fill"></i> {{ 'role'|text }}
             </h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form autocomplete="off" id="set_user_role" role="form" action="{{ 'user-set-role'|link ~ '?id=' ~ profile['id'] }}" method="POST" enctype="multipart/form-data">
+            <form autocomplete="off" id="set_user_role" role="form" action="{{ 'user-set-role'|link({'id':profile['id']}) }}" method="POST" enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
                         <label>{{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~ ' (' ~ profile['username'] ~ ' => ' ~ profile['email'] ~ ')' }} хэрэглэгчийн дүрийг сонгон тохируулна уу!</label>
@@ -40,17 +40,17 @@
         new Choices(userRoles, {removeItemButton: true});
     }
     
-    const forUserRole = document.querySelector('form#set_user_role');
-    if (!forUserRole) {
+    const userRolesForm = document.querySelector('form#set_user_role');
+    if (!userRolesForm) {
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         const submitter = document.querySelector('button.submit-user-role');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
-            forUserRole.requestSubmit();
+            userRolesForm.requestSubmit();
         });
 
-        forUserRole.addEventListener('submit', function (event) {
+        userRolesForm.addEventListener('submit', function (event) {
             event.preventDefault();
 
             const _valid = this.checkValidity();

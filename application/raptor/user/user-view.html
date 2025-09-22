@@ -3,9 +3,11 @@
         <i class="bi bi-person-circle"></i> {{ record['first_name'] ~ ' ' ~ record['last_name'] }}
     </h3>
     <div class="ms-auto">
+        {% if user.can('system_user_index') %}
         <a class="btn btn-sm btn-info shadow-sm" href="{{ 'users'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
         </a>
+        {% endif %}
     </div>
 </div>
 <div class="row mb-2">
@@ -67,7 +69,7 @@
     </div>
 </div>
 <div class="row mb-2">
-    <label class="col-3 col-form-label text-end text-end">{{ 'role2'|text }}</label>
+    <label class="col-3 col-form-label text-end text-end">{{ 'role'|text }}</label>
     <div class="col-9">
         <div class="form-control">
             {% for role in roles %}
