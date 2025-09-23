@@ -52,7 +52,7 @@ if (($lngth = \strlen(\dirname($request->getServerParams()['SCRIPT_NAME']))) > 1
     $path = \substr($path, $lngth);
     $path = '/' . \ltrim($path, '/');
 }
-if (\explode('/', $path)[1] == 'dashboard') {
+if ((\explode('/', $path)[1] ?? '') == 'dashboard') {
     $application = new \Dashboard\Application();
 } else {
     $application = new \Web\Application();
