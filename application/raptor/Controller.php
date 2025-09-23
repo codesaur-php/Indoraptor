@@ -154,22 +154,24 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                 throw new \InvalidArgumentException("Log table info can't be empty!");
             }
             
-            $server_request = [
-                'code' => $this->getLanguageCode(),
-                'method' => $this->getRequest()->getMethod(),
-                'target' => $this->getRequest()->getRequestTarget()
-            ];
-            if (isset($this->getRequest()->getServerParams()['REMOTE_ADDR'])) {
-                $server_request['remote_addr'] = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
+            if (!isset($context['server_request'])) {
+                $server_request = [
+                    'code' => $this->getLanguageCode(),
+                    'method' => $this->getRequest()->getMethod(),
+                    'target' => $this->getRequest()->getRequestTarget()
+                ];
+                if (isset($this->getRequest()->getServerParams()['REMOTE_ADDR'])) {
+                    $server_request['remote_addr'] = $this->getRequest()->getServerParams()['REMOTE_ADDR'];
+                }
+                if (!empty($this->getRequest()->getParsedBody())) {
+                    $server_request['body'] = $this->getRequest()->getParsedBody();
+                }
+                if (!empty($this->getRequest()->getUploadedFiles())) {
+                    $server_request['files'] = $this->getRequest()->getUploadedFiles();
+                }
+                $context['server_request'] = $server_request;
             }
-            if (!empty($this->getRequest()->getParsedBody())) {
-                $server_request['body'] = $this->getRequest()->getParsedBody();
-            }
-            if (!empty($this->getRequest()->getUploadedFiles())) {
-                $server_request['files'] = $this->getRequest()->getUploadedFiles();
-            }
-            $context['server_request'] = $server_request;
-                    
+            
             $auth_user = $this->getUser()?->profile ?? [];
             if (isset($auth_user['id'])
                 && !isset($context['auth_user']))

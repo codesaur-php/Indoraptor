@@ -361,7 +361,7 @@ class LoginController extends \Raptor\Controller
         } finally {
             $login_reset = $this->twigTemplate(
                 \dirname(__FILE__) . '/login-reset-password.html',
-                $forgot ?? $error
+                $error ?? $forgot
             );
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $login_reset->set($key, $value);
@@ -370,14 +370,13 @@ class LoginController extends \Raptor\Controller
             
             $this->indolog(
                 'dashboard',
-                empty($forgot) ? LogLevel::ERROR : LogLevel::ALERT,
-                empty($error['message']) ? 
-                    'Нууц үгээ шинээр тааруулж эхэллээ.'
-                    : 'Нууц үгээ шинээр тааруулж эхлэх үед алдаа гарч зогслоо. {message}',
+                empty($error) ? LogLevel::ALERT : LogLevel::ERROR,
+                empty($error) ? 'Нууц үгээ шинээр тааруулж эхэллээ.' : 'Нууц үгээ шинээр тааруулж эхлэх үед алдаа гарч зогслоо. {message}',
                 [
                     'action' => 'forgot-password',
+                    'forgot_password' => $forgot_password,
                     'auth_user' => [],
-                    'forgot_password' => $forgot_password
+                    'server_request' => ['remote_add' => $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? '']
                 ] + ($error ?? []) + ($forgot ?? [])
             );
         }
@@ -458,11 +457,13 @@ class LoginController extends \Raptor\Controller
 
             $this->indolog(
                 'dashboard',
-                empty($user) ? LogLevel::ERROR : LogLevel::INFO,
-                isset($vars['error']) ?
-                    'Шинээр нууц үг тааруулах үед алдаа гарлаа. {error}'
-                    : 'Нууц үгээ шинээр тохируулав',
-                ['action' => 'set-password', 'auth_user' => $user ?? []] + $vars
+                isset($vars['error']) ? LogLevel::ERROR : LogLevel::INFO,
+                isset($vars['error']) ? 'Шинээр нууц үг тааруулах үед алдаа гарлаа. {error}' : 'Нууц үгээ шинээр тохируулав',
+                [
+                    'action' => 'set-password',
+                    'auth_user' => $user ?? [],
+                    'server_request' => ['remote_addr' => $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? '']
+                ] + $vars
             );
         }
     }

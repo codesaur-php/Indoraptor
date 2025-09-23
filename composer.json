@@ -3,7 +3,7 @@
     "type": "project",
     "description": "An elegant object-oriented application development framework for PHP 8.2.1 or newer",
     "keywords": [
-        "velociraptor", "indoraptor", "raptor", "framework", "ерөнхий бүтэц", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "logs", "лог", "лог бичлэг", "протокол", "mongol", "mongolia", "mongolian", "монгол", "codesaur", "кодзавр", "narankhuu", "наранхүү", "ololt", "ололт", "мөнхийн ололт", "munkhiin ololt"
+        "indoraptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "mongolia", "монгол", "codesaur", "кодзавр", "narankhuu", "наранхүү"
     ],
     "homepage": "https://github.com/codesaur-php",
     "authors": [
