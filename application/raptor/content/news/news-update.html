@@ -38,8 +38,8 @@
         <div class="col-4">
             <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
             <select class="form-select" name="code">
-                {% for code,title in localization.language %}
-                    <option value="{{ code }}"{{ record['code'] == code ? ' selected' : '' }}>{{ title|e }}</option>
+                {% for code,language in localization.language %}
+                    <option value="{{ code }}"{{ record['code'] == code ? ' selected' : '' }}>{{ language['title']|e }}</option>
                 {% endfor %}
             </select>
         </div>

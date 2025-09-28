@@ -11,13 +11,17 @@
                 <div class="row mb-2">
                     <div class="col">
                         <label class="form-label">{{ 'code'|text }}</label>
-                        <input class="form-control" name="code" required value="{{ record['code']|e }}" maxlength="6" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="code" required value="{{ record['code']|e }}" maxlength="2" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                     <div class="col">
                         <label class="form-label">{{ 'name'|text }}</label>
                         <input class="form-control" name="title" required value="{{ record['title']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">{{ 'description'|text }}</label>
+                        <input class="form-control" name="description" value="{{ record['description']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
                     </div>
                 </div>
                 <div class="row mb-2">
@@ -29,15 +33,16 @@
                         </p>
                     </div>
                     <div class="col">
+                        <label class="form-label">locale</label>
+                        <input class="form-control" name="locale" required value="{{ record['locale']|e }}" maxlength="11" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <div class="col">
                         <label class="form-label">is_default?</label>
                         <div class="form-check form-switch">
                             <input class="form-check-input" name="is_default" type="checkbox" role="switch"{{ record['is_default'] == 1 ? ' checked' : '' }}>
                         </div>
                     </div>
-                </div>
-                <div>
-                    <label class="form-label">{{ 'description'|text }}</label>
-                    <input class="form-control" name="description" value="{{ record['description']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
                 </div>
             </form>
         </div>

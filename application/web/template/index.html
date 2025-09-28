@@ -25,13 +25,13 @@
             <header id="header" class="border-bottom pb-3 mb-3">
                 <a class="nav-link" href="javascript:;" role="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {% set flag = lang == 'en' ? 'us' : lang %}
-                    <img src="https://flagcdn.com/w20/{{ flag }}.png" srcset="https://flagcdn.com/w40/{{ flag }}.png 2x" width="20" alt="Language" style="vertical-align:top;padding-top:.5rem;margin-right:.15rem"> {{ localization.language[lang] }}
+                    <img src="https://flagcdn.com/w20/{{ flag }}.png" srcset="https://flagcdn.com/w40/{{ flag }}.png 2x" width="20" alt="Language" style="vertical-align:top;padding-top:.5rem;margin-right:.15rem"> {{ localization.language[lang]['title'] }}
                 </a>
                 <div class="dropdown-menu" aria-labelledby="dropdownLanguage">
-                    {% for code, country in localization.language %}
+                    {% for code,language in localization.language %}
                         {% set flag = code == 'en' ? 'us' : code %}
                         <a class="dropdown-item{{ code == lang ? ' active' : '' }}" href="{{ 'language'|link({'code': code}) }}">
-                            <img src="https://flagcdn.com/16x12/{{ flag }}.png" srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x, https://flagcdn.com/48x36/{{ flag }}.png 3x" width="16" height="12" alt="{{ country }}" style="vertical-align:top;margin-top:.35rem"> {{ country }}
+                            <img src="https://flagcdn.com/16x12/{{ flag }}.png" srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x, https://flagcdn.com/48x36/{{ flag }}.png 3x" width="16" height="12" alt="{{ language['title'] }}" style="vertical-align:top;margin-top:.35rem"> {{ language['title'] }}
                         </a>
                     {% endfor %}
                 </div>

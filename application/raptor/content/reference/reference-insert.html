@@ -45,7 +45,7 @@
                 </div>
             </div>
             <ul class="nav nav-tabs nav-tabs-content mt-3">
-                {% for code,title in localization.language %}
+                {% for code in localization.language|keys %}
                     <li class="nav-item">
                         <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
                             {{ 'version'|text }}
@@ -56,7 +56,7 @@
                 {% endfor %}
             </ul>
             <div class="tab-content">
-                {% for code,title in localization.language %}
+                {% for code in localization.language|keys %}
                 <div class="tab-pane{% if loop.first %} active show{% endif %} mt-2" id="tab-{{ code }}">
                     <div class="form-group">
                         <label class="form-label">{{ 'title'|text }} ({{ code }})</label>

@@ -77,7 +77,11 @@
                     <h5>{{ 'enter-language-details'|text }}</h5>
                     <div class="mt-2">
                         <label>{{ 'code'|text }}</label>
-                        <input class="form-control lang_code" autocomplete="off" maxlength="6" placeholder="" value="" type="text">
+                        <input class="form-control lang_code" autocomplete="off" maxlength="2" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>Locale</label>
+                        <input class="form-control lang_locale" autocomplete="off" maxlength="11" placeholder="" value="" type="text">
                     </div>
                     <div class="mt-4">
                         <label>{{ 'flag'|text }}</label>
@@ -98,14 +102,14 @@
                         <label>{{ 'copy-text-from'|text }}</label>
                         <select class="form-control available_languages">
                             <option value=""></option>
-                            {% for code,name in localization.language %}
-                                <option value="{{ code }}">{{ name }}</option>
+                            {% for code,language in localization.language %}
+                                <option value="{{ code }}">{{ language['title'] }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mt-2">
                         <label>{{ 'code'|text }}</label>
-                        <input class="form-control copy_code" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
+                        <input class="form-control copy_code" autocomplete="off" maxlength="2" placeholder="" readonly value="" type="text">
                     </div>
                     <div class="mt-2">
                         <label>{{ 'flag'|text }}</label>
@@ -116,7 +120,11 @@
                     <h5>{{ 'please-confirm-info'|text }}</h5>
                     <div class="mt-2">
                         <label>{{ 'code'|text }}</label>
-                        <input class="form-control lang_code" readonly autocomplete="off" maxlength="6" name="code" placeholder="" value="" type="text">
+                        <input class="form-control lang_code" readonly autocomplete="off" maxlength="2" name="code" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>Locale</label>
+                        <input class="form-control lang_locale" readonly autocomplete="off" maxlength="11" name="locale" placeholder="" value="" type="text">
                     </div>
                     <div class="mt-2">
                         <label>{{ 'flag'|text }}</label>
@@ -132,7 +140,7 @@
                     </div>
                     <div class="mt-2">
                         <label>{{ 'copy-text-from'|text }}</label>
-                        <input class="form-control" readonly autocomplete="off" maxlength="6" name="copy" placeholder="" value="" type="text">
+                        <input class="form-control" readonly autocomplete="off" maxlength="2" name="copy" placeholder="" value="" type="text">
                     </div>
                 </div>
             </div>
@@ -159,6 +167,7 @@
     let headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
     let headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
     let codeInput = document.querySelector('#generalPanel input.lang_code');
+    let localeInput = document.querySelector('#generalPanel input.lang_locale');
     let flagInput = document.querySelector('#generalPanel p.lang_flag');
     let nameInput = document.querySelector('#generalPanel input.lang_title');
     let descriprionInput = document.querySelector('#generalPanel input.lang_description');
@@ -180,7 +189,11 @@
             confirmCode.value = '';
         }
     }, false);
-
+    
+    localeInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="locale"]').value = this.value;
+    }, false);
+    
     nameInput.addEventListener('input', function () {
         document.querySelector('#confirmPanel input[name="title"]').value = this.value;
     }, false);

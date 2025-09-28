@@ -19,6 +19,12 @@
                 </div>
             </div>
             <div class="row mb-2">
+                <label class="col-3 col-form-label text-end">Locale</label>
+                <div class="col-9">
+                    <input class="form-control" readonly value="{{ record['locale']|e }}" type="text">
+                </div>
+            </div>
+            <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'name'|text }}</label>
                 <div class="col-9">
                     <input class="form-control" readonly value="{{ record['title']|e }}" type="text">

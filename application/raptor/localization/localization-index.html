@@ -35,6 +35,7 @@
                 <tr>
                     <th scope="col">{{ 'code'|text }}</th>
                     <th scope="col">{{ 'flag'|text }}</th>
+                    <th scope="col">Locale</th>
                     <th scope="col">{{ 'name'|text }}</th>
                     <th scope="col">{{ 'description'|text }}</th>
                     <th scope="col">{{ 'date-created'|text }}</th>
@@ -50,6 +51,7 @@
                             <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['title']|e }}">
                             {{ language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '' }}
                         </td>
+                        <td>{{ language['locale'] }}</td>
                         <td>{{ language['title'] }}</td>
                         <td>{{ language['description'] }}</td>
                         <td>{{ language['created_at'] }}</td>
@@ -84,8 +86,8 @@
                 <thead>
                     <tr>
                         <th scope="col">{{ 'keyword'|text }}</th>
-                        {% for lang in localization.language %}
-                            <th scope="col">{{ 'title'|text }} ({{ lang }})</th>
+                        {% for language in localization.language %}
+                            <th scope="col">{{ 'title'|text }} ({{ language['title'] }})</th>
                         {% endfor %}
                         <th scope="col">{{ 'type'|text }}</th>
                         <th scope="col" style="width:8rem">{{ 'action'|text }}</th>

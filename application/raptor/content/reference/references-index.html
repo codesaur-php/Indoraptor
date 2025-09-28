@@ -27,8 +27,8 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">{{ 'keyword'|text }}</th>
-                        {% for lang in localization.language %}
-                            <th scope="col">{{ 'title'|text }} ({{ lang }})</th>
+                        {% for language in localization.language %}
+                            <th scope="col">{{ 'title'|text }} ({{ language['title'] }})</th>
                         {% endfor %}
                         <th scope="col">{{ 'category'|text }}</span></th>
                         <th scope="col" style="width:8rem">{{ 'action'|text }}</th>

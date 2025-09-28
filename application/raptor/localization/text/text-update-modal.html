@@ -15,12 +15,12 @@
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
-                {% for code,lang in localization.language %}
+                {% for code,language in localization.language %}
                 <div class="row{{ loop.last ? '' : ' mb-2' }}">
                     <label class="col-3 col-form-label text-end">
-                        {{ 'title'|text }} ({{ lang }}
+                        {{ 'title'|text }} ({{ language['title'] }}
                         {% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">)
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">)
                     </label>
                     <div class="col-9">
                         <textarea class="form-control" name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code] }}</textarea>

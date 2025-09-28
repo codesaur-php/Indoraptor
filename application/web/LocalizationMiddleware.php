@@ -25,7 +25,7 @@ class LocalizationMiddleware implements MiddlewareInterface
             if (CODESAUR_DEVELOPMENT) {
                 \error_log($e->getMessage());
             }
-            return ['en' => 'English'];
+            return ['en' => ['locale' => 'en-US', 'title' => 'English']];
         }
     }
     

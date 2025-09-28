@@ -26,12 +26,12 @@
                 <label class="col-3 col-form-label text-end">Language:</label>
                 <div class="col-9">
                     {% set current = localization.code ?? 'en' %}
-                    {% for code,lang in localization.language %}
+                    {% for code,language in localization.language %}
                         <div class="form-check form-check-inline mt-2">
                             <input class="form-check-input" type="radio" name="language" id="lang_{{ code }}" value="{{ code }}" style="cursor:pointer"{% if code == current %} checked{% endif %}>
                             <label class="form-check-label" for="lang_{{ code }}" style="cursor:pointer">
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15"> {{ lang }}
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15"> {{ language['title'] }}
                             </label>
                         </div>
                     {% endfor %}
@@ -68,7 +68,7 @@
 
         const language = document.querySelector('input[type="radio"][name="language"]:checked');
         if (language?.value !== `{{ current }}`) {
-            let xhr = new XMLHttpRequest();
+            let xhr = new XMLHttpRequest();1
             xhr.open('GET', `{{ 'login'|link }}/language/${language.value}`, false);
             xhr.send();
         }

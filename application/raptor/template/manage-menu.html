@@ -35,8 +35,8 @@
     <thead>
         <tr>
             <th scope="col">Icon</th>
-            {% for lang in localization.language %}
-                <th scope="col">Caption ({{ lang }})</th>
+            {% for language in localization.language %}
+                <th scope="col">Caption ({{ language['title'] }})</th>
             {% endfor %}
             <th scope="col">Link</th>
             <th scope="col">RBAC</th>
@@ -128,13 +128,13 @@
                             </div>
                         </div>
                     </div>
-                    {% for code,lang in localization.language %}
+                    {% for code,language in localization.language %}
                         <div class="form-floating mt-2">
                             <input class="form-control" required name="title[{{ code }}]" value="" id="title_{{ code }}" maxlength="128" autocomplete="off">
                             <label for="title_{{ code }}">
-                                Caption ({{ lang }}) 
+                                Caption ({{ language['title'] }}) 
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                             </label>
                             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                         </div>
@@ -232,13 +232,13 @@
                             </div>
                         </div>
                     </div>
-                    {% for code,lang in localization.language %}
+                    {% for code,language in localization.language %}
                         <div class="form-floating mt-2">
                             <input class="form-control" name="title[{{ code }}]" disabled value="" id="title_{{ code }}">
                             <label for="title_{{ code }}">
-                                Caption ({{ lang }}) 
+                                Caption ({{ language['title'] }}) 
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                             </label>
                         </div>
                     {% endfor %}
@@ -355,13 +355,13 @@
                             </div>
                         </div>
                     </div>
-                    {% for code,lang in localization.language %}
+                    {% for code,language in localization.language %}
                         <div class="form-floating mt-2">
                             <input class="form-control" required name="title[{{ code }}]" value="" id="title_{{ code }}" maxlength="128" autocomplete="off">
                             <label for="title_{{ code }}">
-                                Caption ({{ lang }}) 
+                                Caption ({{ language['title'] }}) 
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                             </label>
                             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                         </div>

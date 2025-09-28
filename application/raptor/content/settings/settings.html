@@ -29,35 +29,35 @@
 <div class="settings-tabs tab-content mt-2">
     <div class="tab-pane active show" id="tab-meta" role="tabpanel">
         <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
-            {% for code,lang in localization.language %}
+            {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <input class="form-control" name="title[{{ code }}]" value="{{ record['localized']['title'][code]|e }}" maxlength="70" id="title_{{ code }}" autocomplete="off">
                     <label for="title_{{ code }}">
                         {{ 'title'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                     </label>
                 </div>
             {% endfor %}
             <hr>
-            {% for code,lang in localization.language %}
+            {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <input class="form-control" name="description[{{ code }}]" value="{{ record['localized']['description'][code]|e }}" maxlength="255" id="description_{{ code }}" autocomplete="off">
                     <label for="description_{{ code }}">
                         {{ 'description'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                     </label>
                 </div>
             {% endfor %}
             <hr>
-            {% for code,lang in localization.language %}
+            {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:200px">{{ record['localized']['urgent'][code] }}</textarea>
                     <label for="urgent_{{ code }}">
                         {{ 'urgent'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                     </label>
                 </div>
             {% endfor %}
@@ -71,32 +71,32 @@
                 <label for="phone">{{ 'phone'|text }}</label>
             </div>
             <hr>
-            {% for code,lang in localization.language %}
+            {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:200px">{{ record['localized']['contact'][code] }}</textarea>
                     <label for="contact_{{ code }}">
                         {{ 'contact'|text }}{% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                     </label>
                 </div>
             {% endfor %}
             <hr>
-            {% for code,lang in localization.language %}
+            {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <textarea class="form-control" name="address[{{ code }}]" id="address_{{ code }}" style="height:120px">{{ record['localized']['address'][code] }}</textarea>
                     <label for="address_{{ code }}">
                         {{ 'address'|text }}{% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                     </label>
                 </div>
             {% endfor %}
             <hr>
-            {% for code,lang in localization.language %}
+            {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <input class="form-control" name="copyright[{{ code }}]" value="{{ record['localized']['copyright'][code]|e }}" maxlength="255" id="copyright_{{ code }}" autocomplete="off">
                     <label for="copyright_{{ code }}">
                         Copyright{% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang|e }}">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
                     </label>
                 </div>
             {% endfor %}
@@ -111,11 +111,11 @@
         <form class="needs-validation" novalidate action="{{ 'settings-files'|link }}" method="POST" enctype="multipart/form-data">
             <div class="row mb-3 mt-2">
                 <div class="col">
-                    {% for code,lang in localization.language %}
+                    {% for code,language in localization.language %}
                         {% if not loop.first %}<hr>{% endif %}
                         <label class="form-label">
                             {{ 'logo'|text }}{% set flag = code == 'en' ? 'us' : code %}
-                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ lang|e }}">
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['title']|e }}">
                         </label>
                         <div class="input-group">
                             <input class="form-control" type="text" id="logo_{{ code }}_name" disabled value="{{ record['localized']['logo'][code]|e }}" placeholder="{{ 'select-an-image'|text|e }}">

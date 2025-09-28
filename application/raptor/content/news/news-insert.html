@@ -38,8 +38,8 @@
         <div class="col-4">
             <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
             <select class="form-select" name="code">
-                {% for code,title in localization.language %}
-                    <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
+                {% for code,language in localization.language %}
+                    <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ language['title']|e }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -71,7 +71,10 @@
     <div class="row mt-3">
         <div class="form-group">
             <label class="form-label">{{ 'title'|text }}</label>
-            <input class="form-control" name="title" required value="" maxlength="255" placeholder="" type="text" autocomplete="off">
+            <div class="input-group">
+                <input class="form-control" name="title" required value="" maxlength="255" placeholder="" type="text" autocomplete="off">
+                <button class="input-group-text text-primary mic-speech-btn" type="button"><i class="bi bi-mic-fill"></i></button>
+            </div>
             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
         </div>
         <div class="form-group mt-3">
@@ -261,6 +264,48 @@
     });
     
     document.addEventListener('DOMContentLoaded', function () {
+        const micBtn = document.querySelector('button.mic-speech-btn');
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SR && micBtn) {
+            const recognition = new SR();
+            recognition.lang = '{{ localization.language[localization.code]["locale"] ?? "en-US" }}';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            const setBtnState = (active) => {
+                micBtn.classList.toggle('text-danger', active);
+                micBtn.classList.toggle('text-primary', !active);
+            };
+
+            recognition.onstart = () => setBtnState(true);
+            recognition.onend = () => setBtnState(false);
+            recognition.onerror = (e) => {
+                if (e.error === "no-speech") {
+                    console.warn('No speech detected. Please try again and speak clearly.');
+                }
+                setBtnState(false);
+            };
+            recognition.onresult = (e) => {
+                setBtnState(false);
+                let spokenText = e.results[0][0].transcript;
+                let titleInput = document.querySelector('input[name="title"]');
+                if (titleInput) titleInput.value = spokenText;
+            };
+
+            micBtn.addEventListener('click', () => {
+                try {
+                    recognition.start();
+                } catch (err) {
+                    console.warn('Recognition already started, restarting...');
+                    recognition.stop();
+                    setTimeout(() => recognition.start(), 300);
+                }
+            });
+        } else {
+            console.warn('Speech recognition not supported in this browser.');
+        }
+
+    
         sceditor.create(content, {
             format: 'xhtml',
             emoticonsEnabled: false,

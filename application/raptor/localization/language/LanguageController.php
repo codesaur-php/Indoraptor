@@ -19,6 +19,7 @@ class LanguageController extends \Raptor\Controller
                 $payload = $this->getParsedBody();
                 if (empty($payload['copy'])
                     || empty($payload['code'])
+                    || empty($payload['locale'])
                     || empty($payload['title'])
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-values'), 400);
@@ -36,13 +37,18 @@ class LanguageController extends \Raptor\Controller
                 
                 $languages = $model->retrieve();
                 foreach ($languages as $key => $value) {
-                    if ($payload['code'] == $key && $payload['title'] == $value) {
+                    if ($payload['code'] == $key
+                        && $payload['locale'] == $value['locale']
+                        && $payload['title'] == $value['title']
+                    ) {
                         throw new \Exception($this->text('error-lang-existing'), 403);
                    }
-                   if ($payload['code'] == $key) {
+                   if ($payload['code'] == $key
+                       || $payload['locale'] == $value['locale']
+                   ) {
                         throw new \Exception($this->text('error-existing-lang-code'), 403);
                    }
-                   if ($payload['title'] == $value) {
+                   if ($payload['title'] == $value['title']) {
                         throw new \Exception($this->text('error-lang-name-existing'), 403);
                    }
                 }

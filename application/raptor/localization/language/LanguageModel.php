@@ -13,8 +13,9 @@ class LanguageModel extends Model
 
         $this->setColumns([
            (new Column('id', 'bigint'))->primary(),
-            new Column('code', 'varchar', 6),
-            new Column('title', 'varchar', 128),
+           (new Column('code', 'varchar', 2))->unique(),
+           (new Column('locale', 'varchar', 11))->unique(),
+           (new Column('title', 'varchar', 128))->unique(),
             new Column('description', 'varchar', 255),
            (new Column('is_default', 'tinyint'))->default(0),
            (new Column('is_active', 'tinyint'))->default(1),
@@ -36,7 +37,7 @@ class LanguageModel extends Model
         ];
         $stmt = $this->selectStatement($this->getName(), '*', $condition);
         while ($row = $stmt->fetch()) {
-            $languages[$row['code']] = $row['title'];
+            $languages[$row['code']] = ['locale' => $row['locale'], 'title' => $row['title']];
         }
         return $languages;
     }
@@ -60,8 +61,8 @@ class LanguageModel extends Model
         
         $nowdate = \date('Y-m-d H:i:s');
         $query =
-            "INSERT INTO $table(created_at,code,title,is_default) " .
-            "VALUES('$nowdate','mn','Монгол',1),('$nowdate','en','English',0)";
+            "INSERT INTO $table(created_at,code,locale,title,is_default) " .
+            "VALUES('$nowdate','mn','mn-MN','Монгол',1),('$nowdate','en','en-US','English',0)";
         $this->exec($query);
     }
     

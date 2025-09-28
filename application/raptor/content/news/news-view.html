@@ -31,9 +31,9 @@
         <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
         <span class="form-control">
             {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
-            {% set lang = (localization.language[record['code']] ?? record['code'])|e %}
-            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ lang }}">
-            {{ lang }}
+            {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
+            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
+            {{ title }}
         </span>
     </div>
     <div class="col-4">
