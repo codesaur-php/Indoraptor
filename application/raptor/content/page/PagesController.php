@@ -23,7 +23,7 @@ class PagesController extends FileController
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
         foreach ($codes_result as $row) {
-            $filters['code']['values'][$row['code']] = "{$languages[$row['code']]} [{$row['code']}]";
+            $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
         $types_result = $this->query(
             "SELECT DISTINCT (type) FROM $table WHERE is_active=1"
