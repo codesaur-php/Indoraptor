@@ -47,6 +47,7 @@ class OrganizationUserModel extends Model
         $organizations = (new OrganizationModel($this->pdo))->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_user_id FOREIGN KEY (user_id) REFERENCES $users(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_organization_id FOREIGN KEY (organization_id) REFERENCES $organizations(id) ON DELETE CASCADE ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
         
         $nowdate = \date('Y-m-d H:i:s');
