@@ -18,7 +18,7 @@ class PagesModel extends Model
             new Column('description', 'text'),
             new Column('content', 'mediumtext'),
             new Column('photo', 'varchar', 255),
-            new Column('code', 'varchar', 6),
+            new Column('code', 'varchar', 2),
            (new Column('type', 'varchar', 32))->default('menu'),
            (new Column('category', 'varchar', 32))->default('general'),
            (new Column('position', 'smallint'))->default(100),

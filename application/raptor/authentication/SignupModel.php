@@ -17,7 +17,7 @@ class SignupModel extends Model
             new Column('username', 'varchar', 143),
            (new Column('password', 'varchar', 255))->default(''),
             new Column('email', 'varchar', 143),
-            new Column('code', 'varchar', 6),
+            new Column('code', 'varchar', 2),
            (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('updated_at', 'datetime'),

@@ -20,7 +20,7 @@ class UsersModel extends Model
             new Column('phone', 'varchar', 128),
            (new Column('email', 'varchar', 143))->unique(),
             new Column('photo', 'varchar', 255),
-            new Column('code', 'varchar', 6),
+            new Column('code', 'varchar', 2),
            (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
