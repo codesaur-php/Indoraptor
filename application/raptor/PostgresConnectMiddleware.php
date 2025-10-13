@@ -21,10 +21,7 @@ class PostgresConnectMiddleware implements MiddlewareInterface
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             \PDO::ATTR_PERSISTENT =>  $_ENV['INDO_DB_PERSISTENT'] ?? false
         ];
-        $pdo = new \PDO("pgsql:host=$host;dbname=$database", $username, $password, $options);
-        if (!empty($_ENV['INDO_TIME_ZONE_UTC'])) {
-            $pdo->exec('SET TIME ZONE ' . $pdo->quote($_ENV['INDO_TIME_ZONE_UTC']));
-        }
+        $pdo = new \PDO("pgsql:host=$host;dbname=$database;client_encoding=UTF8", $username, $password, $options);
         
         return $handler->handle($request->withAttribute('pdo', $pdo));
     }

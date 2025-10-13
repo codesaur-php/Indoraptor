@@ -19,8 +19,8 @@
         "phpmailer/phpmailer": ">=6.8.0",
         "getbrevo/brevo-php": ">=1.0.2",
         "firebase/php-jwt": ">=6.7.0",
-        "codesaur/http-application": ">=5.7.1",
-        "codesaur/dataobject": ">=7.1.1",
+        "codesaur/http-application": ">=5.7.2",
+        "codesaur/dataobject": ">=7.2.1",
         "codesaur/http-client": ">=1.5.0",
         "codesaur/template": ">=1.6.0"
     },
@@ -33,7 +33,7 @@
             "Dashboard\\": "application/dashboard/",
             "Dashboard\\Home\\": "application/dashboard/home",
             
-            "Raptor\\": "application/raptor/",
+            "Raptor\\": "application/raptor/",7
             "Raptor\\Exception\\": "application/raptor/exception/",
             "Raptor\\Template\\": "application/raptor/template/",
             "Raptor\\Authentication\\": "application/raptor/authentication/",

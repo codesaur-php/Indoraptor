@@ -42,8 +42,8 @@ try {
     return true;
 });
 
-if (!empty($_ENV['CODESAUR_TIME_ZONE'])) {
-    \date_default_timezone_set($_ENV['CODESAUR_TIME_ZONE']);
+if (!empty($_ENV['CODESAUR_APP_TIME_ZONE'])) {
+    \date_default_timezone_set($_ENV['CODESAUR_APP_TIME_ZONE']);
 }
 
 $request = (new ServerRequest())->initFromGlobal();

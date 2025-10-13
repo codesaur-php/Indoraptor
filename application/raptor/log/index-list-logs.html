@@ -8,6 +8,7 @@
         </a>
     </div>
 </div>
+
 <ul class="nav nav-tabs" role="tablist">
 {% for table in log_tables %}
     <li class="nav-item">
@@ -15,54 +16,91 @@
     </li>
 {% endfor %}
 </ul>
+
 <div class="tab-content mt-3">
 {% for table in log_tables %}
     <div class="tab-pane{% if table == 'dashboard' %} active{% endif %}" id="log_{{ table }}" style="width:100%;height:80.5vh;min-height:400px;overflow-y:auto;overflow-x:hidden;">
         <div class="spinner-grow" role="status" style="display:none">
             <span class="visually-hidden">Loading logs...</span>
         </div>
-        <ul class="list-group logger-protocol" id="logger-{{ table }}">
-        </ul>
+        <ul class="list-group logger-protocol" id="logger-{{ table }}"></ul>
+        <button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-2 fetch-more-btn" style="display:none;">
+            <i class="bi bi-arrow-down-circle"></i> Fetch next 100 rows
+        </button>
     </div>
 {% endfor %}
 </div>
+
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
     const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
     const logsViewLink = `{{ 'logs-view'|link }}`;
+
     document.querySelectorAll('ul.logger-protocol').forEach(function (logger) {
-        let logger_id = logger.id ?? '';
-        let table = logger_id.substring(logger_id.indexOf('-') + 1);
+        const logger_id = logger.id ?? '';
+        const table = logger_id.substring(logger_id.indexOf('-') + 1);
         if (!table) return;
+
+        const spinner = logger.previousElementSibling;
+        const loadMoreBtn = logger.nextElementSibling;
+        const limit = 10;
+        let offset = 0;
+
+        loadMoreBtn.innerHTML = `<i class="bi bi-arrow-down-circle"></i> Fetch next ${limit} rows`;
         
-        logger.style.display = 'none';
-        let spinner = logger.previousElementSibling;
-        spinner.style.display = 'block';
-        fetch(
-            `${logsRetrieveLink}?table=${table}`,
-            {
+        // Load first batch
+        loadLogs(table, offset);
+
+        loadMoreBtn.addEventListener('click', function () {
+            offset += limit;
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading...';
+            loadLogs(table, offset, function () {
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = `<i class="bi bi-arrow-down-circle"></i> Fetch next ${limit} rows`;
+            });
+        });
+
+        function loadLogs(table, offset, onComplete = null) {
+            logger.style.display = 'none';
+            spinner.style.display = 'block';
+
+            fetch(`${logsRetrieveLink}?table=${table}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     'ORDER BY': 'id Desc',
-                    'LIMIT':  1000
+                    'LIMIT': limit,
+                    'OFFSET': offset
                 })
-            }
-        ).then(res => {
-            return res.json();
-        }).then(response => {
-            if (response.error) {
-                throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
-            }
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.error) throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
 
-            logger.innerHTML = '';
+                const logModalLink = `${logsViewLink}?table=${table}&id=`;
+                appendLogs(logger, response, logModalLink);
 
-            let logModalLink = `${logsViewLink}?table=${table}&id=`;
+                // Show or hide the "Fetch next" button
+                if (Object.keys(response).length < limit) {
+                    loadMoreBtn.style.display = 'none';
+                } else {
+                    loadMoreBtn.style.display = 'block';
+                }
+            })
+            .catch(error => console.error(error.message))
+            .finally(() => {
+                logger.style.display = '';
+                spinner.style.display = 'none';
+                if (onComplete) onComplete();
+            });
+        }
+
+        function appendLogs(logger, response, logModalLink) {
             Object.values(response).forEach(log => {
-                let log_li = document.createElement('li');
+                const log_li = document.createElement('li');
                 log_li.classList.add('list-group-item', 'list-group-item-action');
+
                 switch (log.level) {
                     case 'notice': log_li.classList.add('list-group-item-light'); break;
                     case 'info': log_li.classList.add('list-group-item-primary'); break;
@@ -73,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     default: log_li.classList.add('list-group-item-dark'); break;
                 }
 
-                let a_link = document.createElement('a');
+                const a_link = document.createElement('a');
                 a_link.textContent = `${log.created_at} [${log.id}]`;
                 a_link.href = logModalLink + log.id;
                 a_link.setAttribute('data-bs-target', '#static-modal');
@@ -85,25 +123,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 log_li.appendChild(a_link);
                 log_li.appendChild(document.createTextNode(' '));
 
-                let span_msg = document.createElement('span');
+                const span_msg = document.createElement('span');
                 span_msg.innerHTML = log.message;
                 log_li.appendChild(span_msg);
                 log_li.appendChild(document.createTextNode(' '));
 
-                let span_user_action = document.createElement('span');
+                const span_user_action = document.createElement('span');
                 span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                 span_user_action.classList.add('text-muted', 'small');
                 log_li.appendChild(span_user_action);
 
                 logger.appendChild(log_li);
             });
-
-        }).catch(error => {
-            console.log(error.message);
-        }).finally(() => {
-            logger.style.display = '';
-            spinner.style.display = 'none';
-        });
+        }
     });
 });
 </script>
