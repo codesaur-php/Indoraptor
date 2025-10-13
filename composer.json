@@ -33,7 +33,7 @@
             "Dashboard\\": "application/dashboard/",
             "Dashboard\\Home\\": "application/dashboard/home",
             
-            "Raptor\\": "application/raptor/",7
+            "Raptor\\": "application/raptor/",
             "Raptor\\Exception\\": "application/raptor/exception/",
             "Raptor\\Template\\": "application/raptor/template/",
             "Raptor\\Authentication\\": "application/raptor/authentication/",
