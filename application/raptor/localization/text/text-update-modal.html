@@ -23,7 +23,7 @@
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">)
                     </label>
                     <div class="col-9">
-                        <textarea class="form-control" name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code] }}</textarea>
+                        <textarea class="form-control" name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code]|e }}</textarea>
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
@@ -71,8 +71,8 @@
                     method: this.getAttribute('method') ?? 'PUT'
                 }
             ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
+                let contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
                     return res.json();
                 }
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

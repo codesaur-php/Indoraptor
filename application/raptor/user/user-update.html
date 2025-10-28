@@ -63,7 +63,7 @@
                         <input type="file" name="photo" id="photo" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
                         <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
                         <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['photo'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
-                        <input type="hidden" name="photo_removed" value="0" type="number">
+                        <input type="hidden" name="photo_removed" value="0">
                     </div>
                 </div>
             </div>
@@ -212,8 +212,8 @@
                         method: this.getAttribute('method') ?? 'PUT'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
+                    let contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
                         return res.json();
                     }
                     throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

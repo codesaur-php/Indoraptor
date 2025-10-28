@@ -44,10 +44,10 @@
     <thead>
         <tr class="text-uppercase">
             <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>
-            <th scope="col"><i class="bi-translate"></i> </th>
+            <th scope="col"><i class="bi bi-translate"></i> </th>
             <th scope="col">{{ 'photo'|text }}</th>
             <th scope="col">{{ 'title'|text }}</th>
-            <th scope="col"><i class="bi-paperclip"></i> </th>
+            <th scope="col"><i class="bi bi-paperclip"></i> </th>
             <th scope="col">{{ 'type'|text }}</th>
             <th scope="col">{{ 'publish'|text }}</th>
             <th scope="col" style="width:10rem">{{ 'action'|text }}</th>
@@ -129,8 +129,8 @@
         fetch(
             `{{ 'news-list'|link }}` + window.location.search
         ).then(res => {
-            let contentType = res.headers.get('content-type');
-            if (contentType.indexOf('application/json') !== -1) {
+            let contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
                 return res.json();
             }
             throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

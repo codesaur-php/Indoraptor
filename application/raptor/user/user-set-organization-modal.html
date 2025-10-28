@@ -64,8 +64,8 @@
                     method: this.getAttribute('method') ?? 'POST'
                 }
             ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
+                let contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
                     return res.json();
                 }
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

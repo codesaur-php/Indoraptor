@@ -88,15 +88,15 @@
         </div>
     </div>
 </div>
-<script type="text/javascript">
-    const category = document.querySelector('input[name="category"]');
-    document.getElementById('category_list').addEventListener('click', function (e) {
-        if (e.target && e.target.nodeName === 'LI') {
-            category.value = e.target.getAttribute('value');
-        }
-    });
-    
+<script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function () {
+        const category = document.querySelector('input[name="category"]');
+        document.getElementById('category_list').addEventListener('click', function (e) {
+            if (e.target && e.target.nodeName === 'LI') {
+                category.value = e.target.getAttribute('value');
+            }
+        });
+        
         const formInsert = document.querySelector('form#reference_insert');
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -129,8 +129,8 @@
                         method: this.getAttribute('method') ?? 'POST'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
+                    let contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
                         return res.json();
                     }
                     throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

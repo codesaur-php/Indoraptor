@@ -21,7 +21,7 @@
                     <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">)
                 </label>
                 <div class="col-9">
-                    <textarea class="form-control" disabled name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code] }}</textarea>
+                    <textarea class="form-control" disabled name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code]|e }}</textarea>
                 </div>
             </div>
             {% endfor %}

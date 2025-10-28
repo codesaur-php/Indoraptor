@@ -65,7 +65,7 @@
                     </div>
                 </div>
             </div>
-            <img class="img-thumbnail img-fluid" id="photo_preview" src="" style=display:none;">
+            <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
         </div>
         <div class="tab-pane" id="tab-organization" role="tabpanel">
             <label class="form-label">{{ 'organization'|text }}</label>
@@ -168,8 +168,8 @@
                         method: this.getAttribute('method') ?? 'POST'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
+                    let contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
                         return res.json();
                     }
                     throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

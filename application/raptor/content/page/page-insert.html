@@ -2,7 +2,8 @@
   'menu': { 'mn': 'Цэс' },
   'important-menu': { 'mn': 'Чухал цэс' },
   'mega-menu': { 'mn': 'Мега цэс' },
-  'special-page': { 'mn': 'Тусгай хуудас' }
+  'special-page': { 'mn': 'Тусгай хуудас' },
+  'embed': { 'mn': 'Шигтгэсэн' }
 } %}
 {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
@@ -31,7 +32,7 @@
         </a>
     </div>
 </div>
-<form class="needs-validation" id="page_insert" action="{{ 'page-insert'|link }}" met.hod="POST" enctype="multipart/form-data" novalidate>
+<form class="needs-validation" id="page_insert" action="{{ 'page-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
     <div class="row mt-3">
         <div class="col-4">
             <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
@@ -49,7 +50,7 @@
                 <ul class="dropdown-menu dropdown-menu-end" id="type_list">
                     {% for value,name in types %}
                         <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                        {% endfor %}
+                    {% endfor %}
                 </ul>
             </div>
         </div>
@@ -61,7 +62,7 @@
                 <ul class="dropdown-menu dropdown-menu-end" id="category_list">
                     {% for value,name in categories %}
                         <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                        {% endfor %}
+                    {% endfor %}
                 </ul>
             </div>
         </div>
@@ -104,7 +105,7 @@
                         </div>
                     </div>
                 </div>
-                <img class="img-thumbnail img-fluid" id="photo_preview" src="" style=display:none;">
+                <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
             </div>
         </div>
         <div class="form-group mt-3">
@@ -206,10 +207,21 @@
         return s.replace(/[&"'<>]/g, c => lookup[c]);
     }
 
+    const content = document.getElementById('content');
     const type = document.querySelector('input[name="type"]');
     document.getElementById('type_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             type.value = e.target.getAttribute('value');
+            
+            let sceditorInstance = sceditor.instance(content);
+            let isInSourceMode = sceditorInstance.sourceMode();
+            if (type.value === 'embed') {
+                if (!isInSourceMode) {
+                    sceditorInstance.sourceMode(true);
+                }
+            } else if (isInSourceMode) {
+                sceditorInstance.sourceMode(false);
+            }
         }
     });
 
@@ -267,7 +279,6 @@
         reader.readAsDataURL(photo.files[0]);
     });
 
-    const content = document.getElementById('content');
     document.addEventListener('DOMContentLoaded', function () {
         sceditor.create(content, {
             format: 'xhtml',
@@ -276,6 +287,7 @@
             icons: 'monocons',
             width: '100%',
             height: '360px',
+            startInSourceMode: type.value === 'embed',
             style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
         });
 
@@ -322,7 +334,7 @@
                     }
                 },
                 UploadProgress: function (up, file) {
-                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"> sending ${file.percent}'%`;
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"></i> sending ${file.percent}%`;
                     uploadFilesBtn.setAttribute('disabled', '');
                 },
                 FileUploaded: function (up, file, response) {
@@ -357,7 +369,7 @@
 
                         let currentFile = document.getElementById(file.id);
                         if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> error';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err;
                             currentFile.classList.add('text-danger');
                         }
@@ -384,7 +396,7 @@
                     if (err.file.id !== null) {
                         let currentFile = document.getElementById(err.file.id);
                         if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> failed';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
                             currentFile.classList.add('text-danger');
                         }
@@ -397,7 +409,7 @@
         uploader.init();
 
         const pageFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
-        const userCanUpdate = {{ user.can('system_content_update') ? 'false' : 'false' }};
+        const userCanUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
         const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
         motable.prototype.append = function (record) {
             let fileIcon;
@@ -593,8 +605,8 @@
                             method: this.getAttribute('method') ?? 'POST'
                         }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
+                    let contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
                         return res.json();
                     }
                     throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

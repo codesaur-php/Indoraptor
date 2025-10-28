@@ -87,7 +87,7 @@
                         <input type="file" name="photo" id="photo" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
                         <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
                         <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['photo'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
-                        <input type="hidden" name="photo_removed" value="0" type="number">
+                        <input type="hidden" name="photo_removed" value="0">
                     </div>
                 </div>
             </div>
@@ -296,13 +296,9 @@
             icons: 'monocons',
             width: '100%',
             height: '360px',
+            startInSourceMode: type.value === 'embed',
             style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
         });
-        
-        if (type.value === 'embed') {
-            let sceditorInstance = sceditor.instance(content);
-            sceditorInstance.sourceMode(true);
-        }
             
         let files = new motable('table#news_files');
         files.setReady();
@@ -347,7 +343,7 @@
                     }
                 },
                 UploadProgress: function (up, file) {
-                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"> sending ${file.percent}%`;
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"></i> sending ${file.percent}%`;
                     uploadFilesBtn.setAttribute('disabled', '');
                 },
                 FileUploaded: function (up, file, response) {
@@ -382,7 +378,7 @@
 
                         let currentFile = document.getElementById(file.id);
                         if (currentFile) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> error';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err;
                             currentFile.classList.add('text-danger');
                         }
@@ -409,7 +405,7 @@
                     if (err.file.id !== null) {
                         let currentFile = document.getElementById(err.file.id);
                         if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> failed';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
                             currentFile.classList.add('text-danger');
                         }
@@ -609,8 +605,8 @@
                         method: this.getAttribute('method') ?? 'PUT'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
+                    let contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
                         return res.json();
                     }
                     throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

@@ -53,7 +53,7 @@
             <hr>
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:200px">{{ record['localized']['urgent'][code] }}</textarea>
+                    <textarea class="form-control" name="urgent[{{ code }}]" id="urgent_{{ code }}" style="height:200px">{{ record['localized']['urgent'][code]|e }}</textarea>
                     <label for="urgent_{{ code }}">
                         {{ 'urgent'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -73,7 +73,7 @@
             <hr>
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:200px">{{ record['localized']['contact'][code] }}</textarea>
+                    <textarea class="form-control" name="contact[{{ code }}]" id="contact_{{ code }}" style="height:200px">{{ record['localized']['contact'][code]|e }}</textarea>
                     <label for="contact_{{ code }}">
                         {{ 'contact'|text }}{% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
@@ -83,7 +83,7 @@
             <hr>
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-                    <textarea class="form-control" name="address[{{ code }}]" id="address_{{ code }}" style="height:120px">{{ record['localized']['address'][code] }}</textarea>
+                    <textarea class="form-control" name="address[{{ code }}]" id="address_{{ code }}" style="height:120px">{{ record['localized']['address'][code]|e }}</textarea>
                     <label for="address_{{ code }}">
                         {{ 'address'|text }}{% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
@@ -173,7 +173,7 @@
         <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
             <label class="form-label text-muted small"><i>must be valid JSON</i></label>
             <a class="badge bg-info mb-2" href="javascript:;" onclick="prettyPrint();">pretty print</a>
-            <textarea class="form-control" name="config" id="config_editor" rows="25" style="height:450px">{{ record['config'] }}</textarea>
+            <textarea class="form-control" name="config" id="config_editor" rows="25" style="height:450px">{{ record['config']|e }}</textarea>
             {% if user_can %}
                 <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
                     <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
@@ -311,8 +311,8 @@
                     method: this.getAttribute('method') ?? 'POST'
                 }
             ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
+                let contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
                     return res.json();
                 }
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

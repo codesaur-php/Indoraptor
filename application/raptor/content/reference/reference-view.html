@@ -15,11 +15,11 @@
         <div class="row form-group">
             <div class="col-6">
                 <label class="form-label">{{ 'keyword'|text }}</label>
-                <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" readonly disabled type="text" autocomplete="off">
+                <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" readonly type="text" autocomplete="off">
             </div>
             <div class="col-6">
                 <label class="form-label">{{ 'type'|text }}</label>
-                <input class="form-control" name="category" readonly disabled type="text" value="{{ record['category']|e }}" maxlength="32">
+                <input class="form-control" name="category" readonly type="text" value="{{ record['category']|e }}" maxlength="32">
             </div>
         </div>
         <ul class="nav nav-tabs nav-tabs-content mt-3">
@@ -38,11 +38,11 @@
             <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
                 <div class="form-group mt-3">
                     <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                    <input class="form-control" name="title[{{ code }}]" readonly disabled value="{{ record['localized']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                    <input class="form-control" name="title[{{ code }}]" readonly value="{{ record['localized']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
                 </div>
                 <div class="form-group mt-3">
                     <label class="form-label">{{ 'content'|text }} ({{ code }})</label>
-                    <textarea class="form-control" name="full[{{ code }}]" readonly disabled rows="10">{{ record['localized']['content'][code] }}</textarea>
+                    <textarea class="form-control" name="full[{{ code }}]" readonly rows="10">{{ record['localized']['content'][code]|e }}</textarea>
                 </div>
             </div>
             {% endfor %}

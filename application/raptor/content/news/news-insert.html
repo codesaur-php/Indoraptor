@@ -93,7 +93,7 @@
                         </div>
                     </div>
                 </div>
-                <img class="img-thumbnail img-fluid" id="photo_preview" src="" style=display:none;">
+                <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
             </div>
         </div>
         <div class="form-group mt-3">
@@ -279,12 +279,8 @@
 
             recognition.onstart = () => setBtnState(true);
             recognition.onend = () => setBtnState(false);
-            recognition.onerror = (e) => {
-                if (e.error === "no-speech") {
-                    console.warn('No speech detected. Please try again and speak clearly.');
-                }
-                setBtnState(false);
-            };
+            recognition.onerror = () => setBtnState(false);
+            
             recognition.onresult = (e) => {
                 setBtnState(false);
                 let spokenText = e.results[0][0].transcript;
@@ -305,7 +301,6 @@
             console.warn('Speech recognition not supported in this browser.');
         }
 
-    
         sceditor.create(content, {
             format: 'xhtml',
             emoticonsEnabled: false,
@@ -313,6 +308,7 @@
             icons: 'monocons',
             width: '100%',
             height: '360px',
+            startInSourceMode: type.value === 'embed',
             style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
         });
         
@@ -359,7 +355,7 @@
                     }
                 },
                 UploadProgress: function (up, file) {
-                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"> sending ${file.percent}'%`;
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"></i> sending ${file.percent}%`;
                     uploadFilesBtn.setAttribute('disabled', '');
                 },
                 FileUploaded: function (up, file, response) {
@@ -394,7 +390,7 @@
 
                         let currentFile = document.getElementById(file.id);
                         if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> error';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err;
                             currentFile.classList.add('text-danger');
                         }
@@ -421,7 +417,7 @@
                     if (err.file.id !== null) {
                         let currentFile = document.getElementById(err.file.id);
                         if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> failed';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
                             currentFile.classList.add('text-danger');
                         }
@@ -623,8 +619,8 @@
                         method: this.getAttribute('method') ?? 'POST'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
+                    let contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
                         return res.json();
                     }
                     throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));

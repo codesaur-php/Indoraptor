@@ -38,7 +38,7 @@
                 <div class="row">
                     <label class="col-3 col-form-label text-end">{{ 'description'|text }}</label>
                     <div class="col-9">
-                        <textarea class="form-control" name="file_description" maxlength="255">{{ record['description'] }}</textarea>
+                        <textarea class="form-control" name="file_description" maxlength="255">{{ record['description']|e }}</textarea>
                     </div>
                 </div>
             </form>
@@ -91,8 +91,8 @@
                     method: this.getAttribute('method') ?? 'PUT'
                 }
             ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
+                let contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
                     return res.json();
                 }
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
