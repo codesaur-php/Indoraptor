@@ -17,7 +17,7 @@
     <div class="card-body tab-content" id="referenceContent">
         {% for table,rows in tables %}
         <div class="tab-pane fade{{ loop.first ? ' show active' : '' }}" id="{{ table }}-tab-pane" role="tabpanel" aria-labelledby="{{ table }}-tab">
-            {% if user.can('system_content_insert') %}
+            {% if can_insert %}
                 <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm" href="{{ 'reference-insert'|link({'table':table}) }}">
                     <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
                 </a>
