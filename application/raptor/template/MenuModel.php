@@ -55,7 +55,7 @@ class MenuModel extends LocalizedModel
                 [
                     'parent_id' => $contents['id'], 'position' => '201',
                     'alias' => 'system',
-                    'icon' => 'bi bi-rocket-takeoff', 'href' => "$path/\" target=\"__blank"
+                    'icon' => 'bi bi-rocket-takeoff', 'href' => "$path/home\" target=\"__blank"
                 ],
                 ['mn' => ['title' => 'Веблүү очих'], 'en' => ['title' => 'Visit Website']]
             );
