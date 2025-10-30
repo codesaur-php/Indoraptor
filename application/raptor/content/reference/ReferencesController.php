@@ -130,7 +130,7 @@ class ReferencesController extends \Raptor\Controller
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'Лавлах мэдээллийг {table} хүснэгт дээр үйлдлийг эхлүүллээ';
+                $message = 'Лавлах мэдээллийг {table} хүснэгт дээр үүсгэх үйлдлийг эхлүүллээ';
             }
             $this->indolog('content', $level, $message, $context);
         }
