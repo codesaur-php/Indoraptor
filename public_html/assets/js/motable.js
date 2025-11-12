@@ -1,33 +1,66 @@
 const mostyle = document.createElement('style');
-mostyle.innerHTML = `@keyframes l1{to{clip-path:inset(0 -34% 0 0)}}.threedots{display:inline-block;width:.5rem;aspect-ratio:4;background:radial-gradient(circle closest-side,currentcolor 90%,#0000) 0/calc(100%/3) 100% space;clip-path:inset(0 100% 0 0);animation:l1 1s steps(4) infinite}`;
-mostyle.innerHTML += `.motable thead th:after{content:'';float:right;margin-top:.2rem;margin-right:.5rem;border-width:0 .275rem .275rem;border-style:solid;border-color:#404040 transparent;visibility:hidden;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.motable thead th:hover:after{visibility:visible}.motable thead th[data-sort]:after{visibility:visible}.motable thead th[data-sort=desc]::after{border-bottom:none;border-width:.275rem .275rem 0}.motable thead th{cursor:pointer}`;
+mostyle.innerHTML += `
+.mowrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  position: relative;
+  border-radius: .25rem;
+}
+.mowrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.mowrapper::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 4px;
+}
+.mowrapper::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 24px;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mowrapper.scrollable::after {
+  opacity: 1;
+}
+.motable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 100%;
+}
+.motable thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+}
+@media (max-width: 768px) {
+  .motable {
+    min-width: 720px; /* бага зэрэг өргөдөг, scroll багасдаг */
+  }
+  .motable th, .motable td {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.4rem;
+    white-space: nowrap;
+  }
+}
+`;
 document.head.appendChild(mostyle);
 
 function motable(
     ele,
     opts = {
-        //columns: [
-            //{
-            //    title: 'name',
-            //    style: 'width:8rem'
-            //},
-        //],
-        label: {
-            loading: '',
-            empty: '',
-            total: '',
-            filtered: '',
-            search: '',
-            notfound: ''
-        },
-        style: {
-            wrapper: '',
-            tools: '',
-            info: '',
-            search: '',
-            table: '',
-            tbody: ''
-        }
+        label: {},
+        style: {}
     }
 ) {
     let table = typeof ele === 'string' ? document.querySelector(ele) : ele;
@@ -79,19 +112,16 @@ function motable(
             let th = document.createElement('th');
             th.innerHTML = column.title ?? '';
             th.scope = 'col';
-            if (column.style) {
-                th.style = column.style;
-            }
-            if (column.sort) {
-                th.dataset.sort = column.sort;
-            }
+            if (column.style) th.style = column.style;
+            if (column.sort) th.dataset.sort = column.sort;
             row.appendChild(th);
         });
     }
 
     let wrapper = document.createElement('div');
     wrapper.classList.add('mowrapper');
-    if (options.style.wrapper) wrapper.style.cssText = options.style.wrapper;
+    wrapper.style.cssText = 'width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;';
+    if (options.style.wrapper) wrapper.style.cssText += options.style.wrapper;
 
     this.info = infoSpan;
     this.search = searchInput;
@@ -104,7 +134,6 @@ function motable(
 
     wrapper.appendChild(tools);
     wrapper.appendChild(container);
-
     tools.appendChild(this.info);
     tools.appendChild(this.search);
     container.appendChild(this.table);
@@ -119,11 +148,8 @@ function motable(
                 let rows = Array.from(tBody.querySelectorAll('tr'));
                 if (!rows.length) return;
 
-                if (!this.dataset.sort) {
-                    this.dataset.sort = 'asc';
-                } else {
-                    this.dataset.sort = this.dataset.sort === 'asc' ? 'desc' : 'asc';
-                }
+                if (!this.dataset.sort) this.dataset.sort = 'asc';
+                else this.dataset.sort = this.dataset.sort === 'asc' ? 'desc' : 'asc';
                 let ascending = this.dataset.sort === 'asc';
 
                 let sorting = false;
@@ -131,17 +157,15 @@ function motable(
                     let atext = a.cells[i].textContent ?? '';
                     let btext = b.cells[i].textContent ?? '';
                     if (atext === btext) return 0;
-
                     sorting = true;
 
                     if (isNumeric(atext) && isNumeric(btext))
                         return ascending ? parseFloat(atext) - parseFloat(btext) : parseFloat(btext) - parseFloat(atext);
 
-                    return atext > btext ? ascending ? 1 : -1 : ascending ? -1 : 1;
+                    return atext > btext ? (ascending ? 1 : -1) : (ascending ? -1 : 1);
                 });
                 tBody.innerHTML = '';
                 tBody.append(...sorted);
-
                 for (let j = 0; j < table.tHead.rows[0].cells.length; j++) {
                     if (i !== j || !sorting) delete table.tHead.rows[0].cells[j].dataset.sort;
                 }
@@ -171,10 +195,7 @@ motable.prototype.setReady = function () {
         (total === 0 ? this.options.label.empty : this.options.label.total)
         : (filtered === 0 ? this.options.label.notfound : this.options.label.filtered);
     this.info.innerHTML = infostr.replace('{total}', total).replace('{filtered}', filtered);
-
-    if (this.search.disabled && total > 0) {
-        this.search.disabled = false;
-    }
+    if (this.search.disabled && total > 0) this.search.disabled = false;
 };
 
 motable.prototype.error = function (message) {
@@ -203,7 +224,7 @@ motable.prototype.getDefaults = function (options) {
     if (!options.style.tools) options.style.tools = 'display:flex;flex-wrap:wrap;margin:0 0 .375rem;';
     if (!options.style.info) options.style.info = 'flex-basis:65%;margin:auto 0;padding-right:1rem;';
     if (!options.style.search) options.style.search = 'flex-basis:35%;margin:auto 0;display:block;width:100%;padding:.275rem;border:1px solid;border-radius:.2rem;';
-    if (!options.style.container) options.style.container = 'overflow-x:auto;-webkit-overflow-scrolling:touch';
+    if (!options.style.container) options.style.container = 'overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;';
     if (!options.style.table) options.style.table = 'margin-bottom:0;';
     if (!options.style.tbody) options.style.tbody = 'border-top:0.1rem solid currentcolor';
 
