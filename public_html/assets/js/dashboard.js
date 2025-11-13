@@ -30,8 +30,22 @@ function ajaxModal(link)
             modalDiv.innerHTML = this.responseText;
             let parser = new DOMParser();
             let responseDoc = parser.parseFromString(this.responseText, 'text/html');
-            responseDoc.querySelectorAll('script[type="text/javascript"]').forEach(function (script) {
-                eval(script.innerHTML);
+            responseDoc.querySelectorAll('script').forEach(function (script) {
+                // <script src="..."> → external JS
+                if (script.src) {
+                    let newScript = document.createElement('script');
+                    newScript.src = script.src;
+                    document.body.appendChild(newScript);
+                }
+
+                // inline JS
+                else if (script.innerHTML.trim() !== '') {
+                    try {
+                        eval(script.innerHTML);
+                    } catch (e) {
+                        console.error('Modal script error:', e);
+                    }
+                }
             });
             if (this.status !== 200) {
                 let isModal = responseDoc.querySelector('div.modal-dialog');
