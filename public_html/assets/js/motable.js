@@ -1,56 +1,133 @@
+// motable v2.3 — sticky header, horizontal scroll, freeze ANY columns
+
 const mostyle = document.createElement('style');
-mostyle.innerHTML += `
-.mowrapper {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  position: relative;
-  border-radius: .25rem;
+mostyle.innerHTML = `
+@keyframes l1{to{clip-path:inset(0 -34% 0 0)}}
+.threedots{
+  display:inline-block;
+  width:.5rem;
+  aspect-ratio:4;
+  background:radial-gradient(circle closest-side,currentcolor 90%,#0000) 0/calc(100%/3) 100% space;
+  clip-path:inset(0 100% 0 0);
+  animation:l1 1s steps(4) infinite
 }
-.mowrapper::-webkit-scrollbar {
-  height: 6px;
+
+/* Sort arrows */
+.motable thead th{
+  position:sticky;
+  top:0;
+  cursor:pointer;
+    background-color: var(--bs-table-bg, var(--bs-tertiary-bg, #f8f9fa)) !important;
 }
-.mowrapper::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.15);
-  border-radius: 4px;
+
+.motable thead th::after{
+  content:'';
+  float:right;
+  margin-top:.2rem;
+  margin-right:.5rem;
+  border-width:0 .275rem .275rem;
+  border-style:solid;
+  border-color:#404040 transparent;
+  visibility:hidden;
+  -ms-user-select:none;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  user-select:none
 }
-.mowrapper::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 24px;
-  height: 100%;
-  pointer-events: none;
-  background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.motable thead th:hover::after{visibility:visible}
+.motable thead th[data-sort]::after{visibility:visible}
+.motable thead th[data-sort=desc]::after{
+  border-bottom:none;
+  border-width:.275rem .275rem 0
 }
-.mowrapper.scrollable::after {
-  opacity: 1;
+
+/* Wrapper: horizontal scroll + fade on right edge */
+.mowrapper{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:visible;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  position:relative;
+  border-radius:.25rem;
 }
-.motable {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 100%;
+.mowrapper::-webkit-scrollbar{
+  height:6px;
 }
-.motable thead th {
-  position: sticky;
-  top: 0;
-  background: #fff;
-  z-index: 2;
+.mowrapper::-webkit-scrollbar-thumb{
+  background:rgba(0,0,0,0.15);
+  border-radius:4px;
 }
-@media (max-width: 768px) {
-  .motable {
-    min-width: 720px; /* бага зэрэг өргөдөг, scroll багасдаг */
+.mowrapper::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  width:24px;
+  height:100%;
+  pointer-events:none;
+  background:linear-gradient(to left,rgba(255,255,255,0.9),transparent);
+  opacity:0;
+  transition:opacity .3s ease;
+}
+.mowrapper.scrollable::after{
+  opacity:1;
+}
+
+/* Base table */
+.motable{
+  width:100%;
+  border-collapse:collapse;
+  min-width:100%;
+}
+
+/* Base freeze for both th and td */
+.motable .freeze-col {
+    position: sticky;
+    left: 0;
+
+    /* Background — auto detect */
+    background-color: var(--bs-table-bg, var(--bs-body-bg, #fff)) !important;
+
+    /* Text color */
+    color: var(--bs-body-color, #212529) !important;
+
+    /* Border color */
+    border-color: var(--bs-border-color, #dee2e6) !important;
+}
+
+/* --------------------------
+   THEAD special background
+-------------------------- */
+.motable thead .freeze-col {
+    z-index: 10;
+    background-color: var(--bs-table-bg, var(--bs-tertiary-bg, #f8f9fa)) !important;
+
+    /* match original header border */
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6) !important;
+}
+
+
+/* DARK MODE shadow */
+[data-bs-theme="dark"] .motable .freeze-col-shadow::after {
+    background: linear-gradient(
+        to right,
+        rgba(255,255,255,0.28),
+        rgba(255,255,255,0)
+    );
+}
+
+/* Mobile tuning */
+@media (max-width:768px){
+  .motable{
+    min-width:720px;
   }
-  .motable th, .motable td {
-    font-size: 0.85rem;
-    padding: 0.3rem 0.4rem;
-    white-space: nowrap;
+  .motable th,
+  .motable td{
+    font-size:.85rem;
+    padding:.3rem .4rem;
+    white-space:nowrap;
   }
 }
 `;
@@ -60,7 +137,8 @@ function motable(
     ele,
     opts = {
         label: {},
-        style: {}
+        style: {},
+        // freezeColumns: [0, 1, 2]  // 0-based index, optional
     }
 ) {
     let table = typeof ele === 'string' ? document.querySelector(ele) : ele;
@@ -80,7 +158,7 @@ function motable(
     searchInput.type = 'search';
     searchInput.disabled = true;
     searchInput.placeholder = options.label.search;
-    if (options.style.search) searchInput.style.cssText = options.style.search;            
+    if (options.style.search) searchInput.style.cssText = options.style.search;
     searchInput.addEventListener('input', function () {
         let rows = table.querySelector('tbody')?.getElementsByTagName('tr');
         let filtered = 0;
@@ -120,13 +198,13 @@ function motable(
 
     let wrapper = document.createElement('div');
     wrapper.classList.add('mowrapper');
-    wrapper.style.cssText = 'width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;';
     if (options.style.wrapper) wrapper.style.cssText += options.style.wrapper;
 
     this.info = infoSpan;
     this.search = searchInput;
     this.table = table;
     this.options = options;
+    this.wrapper = wrapper;
 
     table.classList.add('motable');
     table.parentNode.insertBefore(wrapper, table);
@@ -138,7 +216,8 @@ function motable(
     tools.appendChild(this.search);
     container.appendChild(this.table);
 
-    if (table.tHead || table.tHead.rows[0]) {
+    // Sort click handler
+    if (table.tHead && table.tHead.rows[0]) {
         const isNumeric = (string) => /^[+-]?\d+(\.\d+)?$/.test(string);
         for (let i = 0; i < table.tHead.rows[0].cells.length; i++) {
             let column = table.tHead.rows[0].cells[i];
@@ -173,6 +252,16 @@ function motable(
         }
     }
 
+    // Scroll gradient
+    this.updateScrollable();
+    wrapper.addEventListener('scroll', () => this.updateScrollable());
+    window.addEventListener('resize', () => {
+        this.updateScrollable();
+        if (this.options.freezeColumns && this.options.freezeColumns.length) {
+            this.applyFreezeColumns();
+        }
+    });
+
     this.setBody();
 }
 
@@ -196,14 +285,86 @@ motable.prototype.setReady = function () {
         : (filtered === 0 ? this.options.label.notfound : this.options.label.filtered);
     this.info.innerHTML = infostr.replace('{total}', total).replace('{filtered}', filtered);
     if (this.search.disabled && total > 0) this.search.disabled = false;
+
+    // Freeze columns after layout is ready
+    if (this.options.freezeColumns && this.options.freezeColumns.length) {
+        requestAnimationFrame(() => this.applyFreezeColumns());
+    }
 };
 
 motable.prototype.error = function (message) {
     this.info.innerHTML = `<span style="color:red">${message}<span>`;
 };
 
+motable.prototype.updateScrollable = function () {
+    if (!this.wrapper) return;
+    const el = this.wrapper;
+    const hasOverflow = el.scrollWidth > el.clientWidth + 1;
+    const atEnd = el.scrollLeft >= (el.scrollWidth - el.clientWidth - 1);
+    el.classList.toggle('scrollable', hasOverflow && !atEnd);
+};
+
+motable.prototype.applyFreezeColumns = function () {
+    let freeze = this.options.freezeColumns;
+    if (!freeze || !freeze.length) return;
+
+    let table = this.table;
+    let headRow = table.tHead && table.tHead.rows[0];
+    let body = table.tBodies[0];
+
+    if (!headRow || !body) return;
+
+    // RESET old freeze states
+    table.querySelectorAll('.freeze-col').forEach(cell => {
+        cell.classList.remove('freeze-col', 'freeze-col-shadow');
+        cell.style.left = '';
+    });
+
+    // VALID + SORTED indexes
+    let cols = [...new Set(freeze)]
+        .filter(i => Number.isInteger(i) && i >= 0 && i < headRow.cells.length)
+        .sort((a, b) => a - b);
+
+    // CALCULATE column widths FROM TBODY (not THEAD)
+    let colWidths = [];
+    let firstRow = body.rows[0];
+    if (!firstRow) return;
+
+    for (let i = 0; i < headRow.cells.length; i++) {
+        let cell = firstRow.cells[i] || headRow.cells[i];
+        colWidths[i] = cell.getBoundingClientRect().width;
+    }
+
+    // APPLY FREEZE
+    let leftOffset = 0;
+
+    cols.forEach((colIndex, idx) => {
+        let th = headRow.cells[colIndex];
+        if (!th) return;
+
+        // HEAD
+        th.classList.add('freeze-col');
+        if (idx === cols.length - 1) th.classList.add('freeze-col-shadow');
+        th.style.left = leftOffset + 'px';
+
+        // BODY
+        Array.from(body.rows).forEach(row => {
+            let td = row.cells[colIndex];
+            if (td) {
+                td.classList.add('freeze-col');
+                if (idx === cols.length - 1) td.classList.add('freeze-col-shadow');
+                td.style.left = leftOffset + 'px';
+            }
+        });
+
+        leftOffset += colWidths[colIndex];
+    });
+};
+
 motable.prototype.getDefaults = function (options) {
-    if (!options.label) options.label = {};            
+    if (!options) options = {};
+    if (!options.label) options.label = {};
+
     if (document.documentElement.lang === 'mn') {
         if (!options.label.loading) options.label.loading = 'Хүснэгтийг ачаалж байна <span class="threedots"></span>';
         if (!options.label.empty) options.label.empty = 'Хүснэгтэд мэдээлэл байхгүй';
@@ -224,9 +385,12 @@ motable.prototype.getDefaults = function (options) {
     if (!options.style.tools) options.style.tools = 'display:flex;flex-wrap:wrap;margin:0 0 .375rem;';
     if (!options.style.info) options.style.info = 'flex-basis:65%;margin:auto 0;padding-right:1rem;';
     if (!options.style.search) options.style.search = 'flex-basis:35%;margin:auto 0;display:block;width:100%;padding:.275rem;border:1px solid;border-radius:.2rem;';
-    if (!options.style.container) options.style.container = 'overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;';
+    if (!options.style.container)
+        options.style.container = 'overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;';
     if (!options.style.table) options.style.table = 'margin-bottom:0;';
     if (!options.style.tbody) options.style.tbody = 'border-top:0.1rem solid currentcolor';
+
+    if (!options.freezeColumns) options.freezeColumns = [];
 
     return options;
 };
