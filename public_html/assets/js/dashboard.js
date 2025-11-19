@@ -30,16 +30,12 @@ function ajaxModal(link)
             modalDiv.innerHTML = this.responseText;
             let parser = new DOMParser();
             let responseDoc = parser.parseFromString(this.responseText, 'text/html');
-            responseDoc.querySelectorAll('script').forEach(function (script) {
-                // <script src="..."> → external JS
-                if (script.src) {
+            responseDoc.querySelectorAll('script').forEach(function (script) {                
+                if (script.src) { // <script src="..."> → external JS
                     let newScript = document.createElement('script');
                     newScript.src = script.src;
                     document.body.appendChild(newScript);
-                }
-
-                // inline JS
-                else if (script.innerHTML.trim() !== '') {
+                } else if (script.innerHTML.trim() !== '') { // inline JS
                     try {
                         eval(script.innerHTML);
                     } catch (e) {
