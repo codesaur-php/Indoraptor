@@ -43,6 +43,7 @@
                             <input type="file" name="logo" accept="image/*" maxlength="256" style="display:none;">
                             <button class="logo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
                             {% if record['logo'] is not empty %}<button class="logo-remove btn btn-danger" type="button">{{ 'remove'|text }}</button>{% endif %}
+                            <input type="hidden" name="logo_removed" value="0">
                         </div>
                     </div>
                 </div>
@@ -66,6 +67,7 @@
     const logoName = document.getElementById('logo_name');
     const logoBrowse = document.querySelector('button.logo-browse');
     const logoPreview = document.getElementById('logo_preview');
+    const logoRemoved = document.querySelector('input[name="logo_removed"]');
     
     const fileClear = function (button) {
         logoPreview.removeAttribute('src');
@@ -76,6 +78,8 @@
 
         logo.value = '';
         logo.removeAttribute('name');
+        
+        logoRemoved.value = 1;
 
         button.remove();
     };
@@ -90,6 +94,8 @@
 
     logo.addEventListener('change', function (e) {
         e.preventDefault();
+        
+        logoRemoved.value = 0;
 
         logo.name = 'logo';
         logoName.value = logo.files[0].name;

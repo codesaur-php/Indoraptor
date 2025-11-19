@@ -63,7 +63,7 @@ class UsersController extends FileController
             
             $table = (new UsersModel($this->pdo))->getName();
             $users_infos = $this->query(
-                "SELECT id,photo,last_name,first_name,username,phone,email,is_active FROM $table ORDER BY id"
+                "SELECT id,photo,photo_size,last_name,first_name,username,phone,email,is_active FROM $table ORDER BY id"
             )->fetchAll();
             
             $users = [];
@@ -163,8 +163,15 @@ class UsersController extends FileController
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
-                    $record = $model->updateById($record['id'], ['photo' => $photo['path']]);
-                }                
+                    $record = $model->updateById(
+                        $record['id'],
+                        [
+                            'photo' => $photo['path'],
+                            'photo_file' => $photo['file'],
+                            'photo_size' => $photo['size']
+                        ]
+                    );
+                }
             } else {
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/user-insert.html',
@@ -244,26 +251,30 @@ class UsersController extends FileController
                     throw new \Exception($this->text('user-exists') . " email => [{$payload['email']}], id => {$existing_email['id']}", 403);
                 }
                 
+                if ($payload['photo_removed'] == 1) {
+                    if (\file_exists($record['photo_file'])) {
+                        \unlink($record['photo_file']);
+                        $record['photo_file'] = '';
+                    }
+                    $payload['photo'] = '';
+                    $payload['photo_file'] = '';
+                    $payload['photo_size'] = 0;
+                }
+                unset($payload['photo_removed']);
+                
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
-                $current_photo_name = empty($record['photo']) ? '' : \basename($record['photo']);
-                if (!empty($current_photo_name)
-                    && $payload['photo_removed'] == 1
-                ) {
-                    $this->unlinkByName($current_photo_name);
-                    $current_photo_name = null;
-                    $payload['photo'] = '';
-                }
                 if ($photo) {
-                    if (!empty($current_photo_name)
-                        && \basename($photo['path']) != $current_photo_name
+                    if (!empty($record['photo_file'])
+                        && \file_exists($record['photo_file'])
                     ) {
-                        $this->unlinkByName($current_photo_name);
+                        \unlink($record['photo_file']);
                     }
                     $payload['photo'] = $photo['path'];
+                    $payload['photo_file'] = $photo['file'];
+                    $payload['photo_size'] = $photo['size'];
                 }
-                unset($payload['photo_removed']);
                 
                 $updates = [];
                 foreach ($payload as $field => $value) {

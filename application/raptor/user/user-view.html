@@ -38,7 +38,16 @@
     <label class="col-3 col-form-label text-end text-end">{{ 'photo'|text }}</label>
     <div class="col-9">
         {% if record['photo'] is not empty %}
-            <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}" style="max-height:480px;">
+            <div class="text-start">
+                <img class="img-fluid img-thumbnail mb-1" 
+                     src="{{ record['photo']|e }}" 
+                     style="max-height:480px;">
+                {% if record['photo_size'] is not empty %}
+                    <div class="text-muted small">
+                        {{ (record['photo_size'] / 1024)|number_format(1, '.', ',') }} KB
+                    </div>
+                {% endif %}
+            </div>
         {% else %}
             <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
         {% endif %}

@@ -68,6 +68,13 @@
                 </div>
             </div>
             <img class="img-thumbnail img-fluid" id="photo_preview" src="{{ record['photo']|e }}" style="{% if record['photo'] is empty %}display:none;{% endif %}">
+            <div id="photo_info"
+                 class="form-text text-muted"
+                 style="{% if record['photo'] is empty %}display:none;{% endif %}font-size:0.7rem;">
+                {% if record['photo_size'] %}
+                    {{ (record['photo_size'] / 1024)|number_format(1, '.', ',') }} KB
+                {% endif %}
+            </div>
         </div>
         <div class="tab-pane" id="tab-options" role="tabpanel">
             {% if user.can('system_user_organization_set') %}
@@ -114,9 +121,11 @@
             return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
         }
         
+        let file = fileInput.files[0];
+        
         let nameInput = document.getElementById(id + '_name');
         if (nameInput) {
-            nameInput.value = fileInput.files[0].name;
+            nameInput.value = file.name;
         }
 
         let browseBtn = fileInput.nextElementSibling;
@@ -130,6 +139,13 @@
         }
         let fileDeletedInput = removeBtn.nextElementSibling;
         if (fileDeletedInput) fileDeletedInput.value = 0;
+        
+        let info = document.getElementById(id.replace(/$/, '_info')); // photo -> photo_info
+        if (info) {
+            let sizeKB = (file.size / 1024).toFixed(1) + ' KB';
+            info.textContent = sizeKB;
+            info.style.display = 'block';
+        }
 
         let reader = new FileReader();
         reader.onload = function (e) {

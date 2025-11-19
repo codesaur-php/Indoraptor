@@ -46,9 +46,19 @@
             data.list.forEach(org => {
                 let logo;
                 if (org.logo) {
-                    logo = `<img class="img-fluid img-thumbnail" src="${org.logo}" style="max-width:150px;max-height:60px">`;
+                    let size = org.logo_size ? (Math.round(org.logo_size / 1024) + ' KB') : '0 KB';
+                    logo = `<img class="img-fluid img-thumbnail"
+                                 src="${org.logo}"
+                                 title="Size: ${size}"
+                                 style="max-width:150px;max-height:60px">
+                            <div style="font-size:0.7rem;"class="small text-muted">${size}</div>
+                        `;
                 } else {
-                    logo = '<i class="bi bi-building text-secondary" style="font-size:1.5rem"></i>';
+                    logo = `
+                        <span>
+                            <i class="bi bi-building text-secondary" style="font-size:1.5rem" 
+                               title="No logo"></i>
+                        </span>`;
                 }
                 
                 let aliasLink = !rbacLink ? org.alias

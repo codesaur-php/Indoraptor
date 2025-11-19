@@ -65,9 +65,21 @@
             data.list.forEach(profile => {
                 let photo;
                 if (profile.photo) {
-                    photo = `<img class="img-fluid img-thumbnail" src="${profile.photo}" style="max-width:60px;max-height:60px">`;
+                    let sizeKB = profile.photo_size ? (profile.photo_size / 1024).toFixed(1) + ' KB' : '';
+                    photo = `
+                        <div class="text-center">
+                            <img class="img-fluid img-thumbnail mb-1" 
+                                 src="${profile.photo}" 
+                                 style="max-width:60px;max-height:60px">
+                            <div style="font-size:0.7rem;" class="text-muted">${sizeKB}</div>
+                        </div>
+                    `;
                 } else {
-                    photo = '<i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>';
+                    photo = `
+                        <div class="text-center">
+                            <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
+                        </div>
+                    `;
                 }
 
                 let usernameInfo = `<strong>${profile.username}</strong>`;

@@ -34,7 +34,7 @@ class OrganizationController extends FileController
             $table = (new OrganizationModel($this->pdo))->getName();
             $this->respondJSON([
                 'status' => 'success',
-                'list' => $this->query("SELECT id,name,alias,logo FROM $table WHERE is_active=1 ORDER BY id")->fetchAll()
+                'list' => $this->query("SELECT id,name,alias,logo,logo_size FROM $table WHERE is_active=1 ORDER BY id")->fetchAll()
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
@@ -65,8 +65,12 @@ class OrganizationController extends FileController
                 $this->allowImageOnly();
                 $logo = $this->moveUploaded('logo');
                 if (!empty($logo['path'])) {
-                    $record = $model->updateById($id, ['logo' => $logo['path']]);
-                }                
+                    $model->updateById($id, [
+                        'logo'      => $logo['path'],
+                        'logo_file' => $logo['file'],
+                        'logo_size' => $logo['size']
+                    ]);
+                }
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
@@ -173,23 +177,32 @@ class OrganizationController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 $payload['alias'] = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['alias']);
+                
+                if ($payload['logo_removed'] == 1) {
+                    if (\file_exists($record['logo_file'])) {
+                        \unlink($record['logo_file']);
+                        $record['logo_file'] = '';
+                    }
+                    $payload['logo'] = '';
+                    $payload['logo_file'] = '';
+                    $payload['logo_size'] = 0;
+                }
+                unset($payload['logo_removed']);
+                
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
                 $logo = $this->moveUploaded('logo');
                 if ($logo) {
-                    $payload['logo'] = $logo['path'];
-                }
-                $current_logo_name = empty($record['logo']) ? '' : \basename($record['logo']);
-                if (!empty($current_logo_name)) {
-                    if ($this->getLastUploadError() == -1) {
-                        $this->unlinkByName($current_logo_name);
-                        $payload['logo'] = '';
-                    } elseif (isset($payload['logo'])
-                        && \basename($payload['logo']) != $current_logo_name
+                    if (!empty($record['logo_file'])
+                        && \file_exists($record['logo_file'])
                     ) {
-                        $this->unlinkByName($current_logo_name);
+                        \unlink($record['logo_file']);
                     }
+                    $payload['logo'] = $logo['path'];
+                    $payload['logo_file'] = $logo['file'];
+                    $payload['logo_size'] = $logo['size'];
                 }
+                
                 $updates = [];
                 foreach ($payload as $field => $value) {
                     if ($record[$field] != $value) {

@@ -20,11 +20,15 @@
             <div class="row mt-2">
                 <label class="col-3 col-form-label text-end">{{ 'logo'|text }}</label>
                 <div class="col-9">
-                    <div class="input-group col-5">
-                    {% if record['logo'] is defined and record['logo'] is not empty %}
-                        <img class="img-fluid img-thumbnail" src="{{ record['logo']|e }}" style="max-height:240px">
+                    {% if record.logo %}
+                        <img class="img-fluid img-thumbnail"
+                             src="{{ record['logo'] }}" style="max-height:240px">
+                        {% if record['logo_size'] is not empty %}
+                            <div class="text-muted small">
+                                {{ (record['logo_size'] / 1024)|number_format(1, '.', ',') }} KB
+                            </div>
+                        {% endif %}
                     {% endif %}
-                    </div>
                 </div>
             </div>
             <div class="row mt-2">
