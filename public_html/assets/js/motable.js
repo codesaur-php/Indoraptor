@@ -12,7 +12,6 @@ mostyle.innerHTML = `
   animation:l1 1s steps(4) infinite
 }
 
-/* Sort arrows */
 .motable thead th{
   position:sticky;
   top:0;
@@ -41,7 +40,6 @@ mostyle.innerHTML = `
   border-width:.275rem .275rem 0
 }
 
-/* Wrapper: horizontal scroll + fade on right edge */
 .mowrapper{
   width:100%;
   max-width:100%;
@@ -75,41 +73,26 @@ mostyle.innerHTML = `
   opacity:1;
 }
 
-/* Base table */
 .motable{
   width:100%;
   border-collapse:collapse;
   min-width:100%;
 }
 
-/* Base freeze for both th and td */
 .motable .freeze-col {
     position: sticky;
     left: 0;
-
-    /* Background — auto detect */
     background-color: var(--bs-table-bg, var(--bs-body-bg, #fff)) !important;
-
-    /* Text color */
     color: var(--bs-body-color, #212529) !important;
-
-    /* Border color */
     border-color: var(--bs-border-color, #dee2e6) !important;
 }
 
-/* --------------------------
-   THEAD special background
--------------------------- */
 .motable thead .freeze-col {
     z-index: 10;
     background-color: var(--bs-table-bg, var(--bs-tertiary-bg, #f8f9fa)) !important;
-
-    /* match original header border */
     border-bottom: 1px solid var(--bs-border-color, #dee2e6) !important;
 }
 
-
-/* DARK MODE shadow */
 [data-bs-theme="dark"] .motable .freeze-col-shadow::after {
     background: linear-gradient(
         to right,
@@ -118,7 +101,6 @@ mostyle.innerHTML = `
     );
 }
 
-/* Mobile tuning */
 @media (max-width:768px){
   .motable{
     min-width:720px;
@@ -157,6 +139,7 @@ function motable(
     let searchInput = document.createElement('input');
     searchInput.type = 'search';
     searchInput.disabled = true;
+    searchInput.classList.add('mosearch');
     searchInput.placeholder = options.label.search;
     if (options.style.search) searchInput.style.cssText = options.style.search;
     searchInput.addEventListener('input', function () {
@@ -216,7 +199,6 @@ function motable(
     tools.appendChild(this.search);
     container.appendChild(this.table);
 
-    // Sort click handler
     if (table.tHead && table.tHead.rows[0]) {
         const isNumeric = (string) => /^[+-]?\d+(\.\d+)?$/.test(string);
         for (let i = 0; i < table.tHead.rows[0].cells.length; i++) {
@@ -252,7 +234,6 @@ function motable(
         }
     }
 
-    // Scroll gradient
     this.updateScrollable();
     wrapper.addEventListener('scroll', () => this.updateScrollable());
     window.addEventListener('resize', () => {
@@ -286,7 +267,6 @@ motable.prototype.setReady = function () {
     this.info.innerHTML = infostr.replace('{total}', total).replace('{filtered}', filtered);
     if (this.search.disabled && total > 0) this.search.disabled = false;
 
-    // Freeze columns after layout is ready
     if (this.options.freezeColumns && this.options.freezeColumns.length) {
         requestAnimationFrame(() => this.applyFreezeColumns());
     }
@@ -314,18 +294,15 @@ motable.prototype.applyFreezeColumns = function () {
 
     if (!headRow || !body) return;
 
-    // RESET old freeze states
     table.querySelectorAll('.freeze-col').forEach(cell => {
         cell.classList.remove('freeze-col', 'freeze-col-shadow');
         cell.style.left = '';
     });
 
-    // VALID + SORTED indexes
     let cols = [...new Set(freeze)]
         .filter(i => Number.isInteger(i) && i >= 0 && i < headRow.cells.length)
         .sort((a, b) => a - b);
 
-    // CALCULATE column widths FROM TBODY (not THEAD)
     let colWidths = [];
     let firstRow = body.rows[0];
     if (!firstRow) return;
@@ -335,19 +312,16 @@ motable.prototype.applyFreezeColumns = function () {
         colWidths[i] = cell.getBoundingClientRect().width;
     }
 
-    // APPLY FREEZE
     let leftOffset = 0;
 
     cols.forEach((colIndex, idx) => {
         let th = headRow.cells[colIndex];
         if (!th) return;
 
-        // HEAD
         th.classList.add('freeze-col');
         if (idx === cols.length - 1) th.classList.add('freeze-col-shadow');
         th.style.left = leftOffset + 'px';
-
-        // BODY
+        
         Array.from(body.rows).forEach(row => {
             let td = row.cells[colIndex];
             if (td) {
