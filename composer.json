@@ -1,15 +1,16 @@
 {
     "name": "codesaur/indoraptor",
     "type": "project",
-    "description": "An elegant object-oriented application development framework for PHP 8.2.1 or newer",
+    "description": "PHP 8.2+ дээр ажиллах, цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк",
     "keywords": [
-        "indoraptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "mongolia", "монгол", "codesaur", "кодзавр", "narankhuu", "наранхүү"
+        "indoraptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "mongol", "mongolia", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден"
     ],
     "homepage": "https://github.com/codesaur-php",
     "authors": [
         {
-            "name": "Narankhuu",
-            "email": "codesaur@gmail.com"
+            "name": "Narankhuu (+976 99000287)",
+            "email": "codesaur@gmail.com",
+            "homepage": "https://github.com/codesaur"
         }
     ],
     "require": {
@@ -19,10 +20,10 @@
         "phpmailer/phpmailer": ">=6.8.0",
         "getbrevo/brevo-php": ">=1.0.2",
         "firebase/php-jwt": ">=6.7.0",
-        "codesaur/http-application": ">=5.7.2",
-        "codesaur/dataobject": ">=7.2.1",
-        "codesaur/http-client": ">=1.5.0",
-        "codesaur/template": ">=1.6.0"
+        "codesaur/http-application": ">=5.8.1",
+        "codesaur/dataobject": ">=7.3.0",
+        "codesaur/http-client": ">=1.6.0",
+        "codesaur/template": ">=2.0.1"
     },
     "autoload": {
         "psr-4": {

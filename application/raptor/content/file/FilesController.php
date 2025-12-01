@@ -52,10 +52,10 @@ class FilesController extends FileController
             return;
         }
         
-        if (\file_exists(\dirname(__FILE__) . "/index-$table.html")) {
-            $template = \dirname(__FILE__) . "/index-$table.html";
+        if (\file_exists(__DIR__ . "/index-$table.html")) {
+            $template = __DIR__ . "/index-$table.html";
         } else {
-            $template = \dirname(__FILE__) . '/index.html';
+            $template = __DIR__ . '/index.html';
         }
         
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
@@ -195,7 +195,7 @@ class FilesController extends FileController
             }
             $modal = \preg_replace('/[^A-Za-z0-9_-]/', '', $queryParams['modal'] ?? 'null');
             $template = $this->twigTemplate(
-                \dirname(__FILE__) . "/$modal-modal.html",
+                __DIR__ . "/$modal-modal.html",
                 ['table' => $table, 'record' => $record, 'host' => $host]
             );
             $template->addFilter(new TwigFilter('basename', function (string $path): string

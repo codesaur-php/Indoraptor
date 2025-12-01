@@ -16,7 +16,7 @@ class SettingsController extends FileController
         }
         
         $dashboard = $this->twigDashboard(
-            \dirname(__FILE__) . '/settings.html',
+            __DIR__ . '/settings.html',
             [
                 'record' => (new SettingsModel($this->pdo))->retrieve()
             ]

@@ -29,7 +29,7 @@ class LogsController extends \Raptor\Controller
                     $log_tables[] = \substr(\current($row), 0, -\strlen('_log'));
                 }
             }
-            $dashboard =  $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html', ['log_tables' => $log_tables]);
+            $dashboard =  $this->twigDashboard(__DIR__ . '/index-list-logs.html', ['log_tables' => $log_tables]);
             $dashboard->set('title', $this->text('log'));
             $dashboard->render();
         } catch (\Throwable $err) {
@@ -60,7 +60,7 @@ class LogsController extends \Raptor\Controller
             $logger->setTable($table);
             $log = $logger->getLogById($id);
             (new TwigTemplate(
-                \dirname(__FILE__) . '/retrieve-log-modal.html',
+                __DIR__ . '/retrieve-log-modal.html',
                 [
                     'id' => $id,
                     'table' => $table,

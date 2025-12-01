@@ -598,6 +598,16 @@
                 submitters.forEach(function (btn) { btn.growNstop(); });
 
                 const data = new FormData(this);
+
+                // Ensure switches are always sent as 1/0, even when unchecked
+                const publishedSwitch = formUpdate.querySelector('input[name="published"]');
+                if (publishedSwitch) {
+                    data.set('published', publishedSwitch.checked ? 1 : 0);
+                }
+                const commentSwitch = formUpdate.querySelector('input[name="comment"]');
+                if (commentSwitch) {
+                    data.set('comment', commentSwitch.checked ? 1 : 0);
+                }
                 fetch(
                     this.action,
                     {

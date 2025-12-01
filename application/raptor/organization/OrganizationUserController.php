@@ -25,7 +25,7 @@ class OrganizationUserController extends \Raptor\Controller
                     'WHERE t2.is_active=1 AND t1.user_id=' . $this->getUserId();
             }
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/organization-user.html',
+                __DIR__ . '/organization-user.html',
                 ['organizations' => $this->query($select_org)->fetchAll()]
             );
             $dashboard->set('title', $this->text('organization'));

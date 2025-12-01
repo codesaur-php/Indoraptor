@@ -31,7 +31,7 @@ class UsersController extends FileController
             }
             
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/user-index.html'
+                __DIR__ . '/user-index.html'
             );
             $dashboard->set('title', $this->text('users'));
             $dashboard->render();
@@ -174,7 +174,7 @@ class UsersController extends FileController
                 }
             } else {
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/user-insert.html',
+                    __DIR__ . '/user-insert.html',
                     ['organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])]
                 );
                 $dashboard->set('title', $this->text('create-new-user'));
@@ -361,7 +361,7 @@ class UsersController extends FileController
                     $current_role[] = $row['role_id'];
                 }
                 $vars['current_roles'] = $current_role;                
-                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/user-update.html', $vars);
+                $dashboard = $this->twigDashboard(__DIR__ . '/user-update.html', $vars);
                 $dashboard->set('title', $this->text('edit-user'));
                 $dashboard->render();
             }
@@ -426,7 +426,7 @@ class UsersController extends FileController
             $roles = $this->query($select_user_roles)->fetchAll();
             
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/user-view.html',
+                __DIR__ . '/user-view.html',
                 ['record' => $record, 'roles' => $roles, 'organizations' => $organizations]
             );
             $dashboard->set('title', $this->text('user'));
@@ -519,7 +519,7 @@ class UsersController extends FileController
             
             $model = $table == 'forgot' ? new ForgotModel($this->pdo) : new SignupModel($this->pdo);
             $rows = $model->getRows(['WHERE' => 'is_active!=999', 'ORDER BY' => 'created_at Desc']);
-            $template = $this->twigTemplate(\dirname(__FILE__) . "/$table-index-modal.html", ['rows' => $rows]);
+            $template = $this->twigTemplate(__DIR__ . "/$table-index-modal.html", ['rows' => $rows]);
             $template->addFunction(new TwigFunction('isExpired', function (string $date, int $minutes = 5): bool
             {
                 $now_date = new \DateTime();
@@ -754,7 +754,7 @@ class UsersController extends FileController
                 ]);
             } else {
                 $this->twigTemplate(
-                    \dirname(__FILE__) . '/user-set-password-modal.html',
+                    __DIR__ . '/user-set-password-modal.html',
                     ['profile' => $record]
                 )->render();
             }
@@ -837,7 +837,7 @@ class UsersController extends FileController
                     'current_organizations' => $current_organizations,
                     'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
                 ];
-                $this->twigTemplate(\dirname(__FILE__) . '/user-set-organization-modal.html', $vars)->render();
+                $this->twigTemplate(__DIR__ . '/user-set-organization-modal.html', $vars)->render();
             }
         } catch (\Throwable $err) {
             if ($this->getRequest()->getMethod() == 'POST') {
@@ -1000,7 +1000,7 @@ class UsersController extends FileController
                 }
                 $vars['current_role'] = $current_role;
                 
-                $this->twigTemplate(\dirname(__FILE__) . '/user-set-role-modal.html', $vars)->render();
+                $this->twigTemplate(__DIR__ . '/user-set-role-modal.html', $vars)->render();
             }
         } catch (\Throwable $err) {            
             if ($this->getRequest()->getMethod() == 'POST') {

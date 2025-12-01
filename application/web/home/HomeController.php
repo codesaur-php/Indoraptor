@@ -23,7 +23,7 @@ class HomeController extends TemplateController
         );
         $recent = $stmt_recent->execute([':code' => $language_code]) ? $stmt_recent->fetchAll() : [];        
         $vars = ['recent' => $recent];
-        $home = $this->template(\dirname(__FILE__) . '/home.html', $vars);
+        $home = $this->template(__DIR__ . '/home.html', $vars);
         $home->render();
         
         $this->indolog('web', LogLevel::NOTICE, '[{server_request.code}] Нүүр хуудсыг уншиж байна', ['action' => 'home']);
@@ -59,7 +59,7 @@ class HomeController extends TemplateController
                 'WHERE' => "record_id=$id AND is_active=1"
             ]
         );
-        $this->template(\dirname(__FILE__) . '/page.html', $record)->render();
+        $this->template(__DIR__ . '/page.html', $record)->render();
         
         $read_count = ($record['read_count'] ?? 0) + 1;
         $this->exec("UPDATE $table SET read_count=$read_count WHERE id=$id");
@@ -90,7 +90,7 @@ class HomeController extends TemplateController
                 'WHERE' => "record_id=$id AND is_active=1"
             ]
         );
-        $this->template(\dirname(__FILE__) . '/news.html', $record)->render();
+        $this->template(__DIR__ . '/news.html', $record)->render();
         
         $read_count = ($record['read_count'] ?? 0) + 1;
         $this->exec("UPDATE $table SET read_count=$read_count WHERE id=$id");

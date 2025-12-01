@@ -59,7 +59,7 @@ class TextController extends \Raptor\Controller
                 ]);
             } else {
                 $this->twigTemplate(
-                    \dirname(__FILE__) . '/text-insert-modal.html',
+                    __DIR__ . '/text-insert-modal.html',
                     ['table' => $table]
                 )->render();
             }
@@ -109,7 +109,7 @@ class TextController extends \Raptor\Controller
                 throw new \Exception($this->text('no-record-selected'));
             }
             $this->twigTemplate(
-                \dirname(__FILE__) . '/text-retrieve-modal.html',
+                __DIR__ . '/text-retrieve-modal.html',
                 ['table' => $table, 'record' => $record]
             )->render();
         } catch (\Throwable $err) {
@@ -202,7 +202,7 @@ class TextController extends \Raptor\Controller
                 ]);
             } else {
                 $this->twigTemplate(
-                    \dirname(__FILE__) . '/text-update-modal.html',
+                    __DIR__ . '/text-update-modal.html',
                     ['record' => $record, 'table' => $table]
                 )->render();
             }

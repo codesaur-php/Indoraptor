@@ -17,7 +17,7 @@ class OrganizationController extends FileController
             return;
         }
         
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/organization-index.html');
+        $dashboard = $this->twigDashboard(__DIR__ . '/organization-index.html');
         $dashboard->set('title', $this->text('organizations'));
         $dashboard->render();
         
@@ -77,7 +77,7 @@ class OrganizationController extends FileController
                 ]);
             } else {
                 $this->twigTemplate(
-                    \dirname(__FILE__) . '/organization-insert-modal.html',
+                    __DIR__ . '/organization-insert-modal.html',
                     ['parents' => $model->fetchAllPotentialParents()]
                 )->render();
             }
@@ -134,7 +134,7 @@ class OrganizationController extends FileController
                 $record['parent_name'] = $parent['name'];
             }
             $this->twigTemplate(
-                \dirname(__FILE__) . '/organization-retrieve-modal.html',
+                __DIR__ . '/organization-retrieve-modal.html',
                 ['record' => $record]
             )->render();
         } catch (\Throwable $err) {
@@ -225,7 +225,7 @@ class OrganizationController extends FileController
                 ]);
             } else {
                 $this->twigTemplate(
-                    \dirname(__FILE__) . '/organization-update-modal.html',
+                    __DIR__ . '/organization-update-modal.html',
                     [
                         'record' => $record,
                         'parents' => $model->fetchAllPotentialParents()

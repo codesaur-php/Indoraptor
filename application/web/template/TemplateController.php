@@ -10,7 +10,7 @@ class TemplateController extends \Raptor\Controller
 {
     public function template(string $template, array $vars = []): TwigTemplate
     {
-        $index = $this->twigTemplate(\dirname(__FILE__) . '/index.html');
+        $index = $this->twigTemplate(__DIR__ . '/index.html');
         $index->set('content', $this->twigTemplate($template, $vars));
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $index->set($key, $value);

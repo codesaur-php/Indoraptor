@@ -48,7 +48,7 @@ class PagesController extends FileController
                 ]
             ]
         ];
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html', ['filters' => $filters]);
+        $dashboard = $this->twigDashboard(__DIR__ . '/pages-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
         
@@ -173,7 +173,7 @@ class PagesController extends FileController
                 }
             } else {
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/page-insert.html',
+                    __DIR__ . '/page-insert.html',
                     [
                         'table' => $table,
                         'infos' => $this->getInfos($table),
@@ -225,7 +225,7 @@ class PagesController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-            $template = $this->twigTemplate(\dirname(__FILE__) . '/page-read.html');
+            $template = $this->twigTemplate(__DIR__ . '/page-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
             }
@@ -270,7 +270,7 @@ class PagesController extends FileController
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             $infos = $this->getInfos($table, "(id=$id OR id={$record['parent_id']})");
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/page-view.html',
+                __DIR__ . '/page-view.html',
                 [
                     'table' => $table,
                     'record' => $record,
@@ -391,7 +391,7 @@ class PagesController extends FileController
                 $infos = $this->getInfos($table, "id!=$id AND parent_id!=$id");
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/page-update.html',
+                    __DIR__ . '/page-update.html',
                     [
                         'table' => $table,
                         'record' => $record,

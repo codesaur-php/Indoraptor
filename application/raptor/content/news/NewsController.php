@@ -48,7 +48,7 @@ class NewsController extends FileController
                 ]
             ]
         ];        
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-index.html', ['filters' => $filters]);
+        $dashboard = $this->twigDashboard(__DIR__ . '/news-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
         
@@ -110,7 +110,7 @@ class NewsController extends FileController
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                $payload['published'] = \filter_var($payload['published'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
                 if ($payload['published'] == 1) {
                     if (!$this->isUserCan('system_content_publish')
                     ) {
@@ -119,7 +119,7 @@ class NewsController extends FileController
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
                 }
-                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
+                $payload['comment'] = \filter_var($payload['comment'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
                 if ($payload['comment'] == 1
                     && !$this->isUserCan('system_content_publish')
                 ) {
@@ -175,7 +175,7 @@ class NewsController extends FileController
                 }
             } else {
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/news-insert.html',
+                    __DIR__ . '/news-insert.html',
                     ['table' => $table, 'max_file_size' => $this->getMaximumFileUploadSize()]
                 );
                 $dashboard->set('title', $this->text('add-record') . ' | News');
@@ -228,8 +228,9 @@ class NewsController extends FileController
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }                
-                $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                }
+                $payload['photo_removed'] = $payload['photo_removed'] ?? 0;
+                $payload['published'] = \filter_var($payload['published'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
                 if ($payload['published'] != $record['published']) {
                     if (!$this->isUserCan('system_content_publish')) {
                         throw new \Exception($this->text('system-no-permission'), 401);
@@ -239,7 +240,7 @@ class NewsController extends FileController
                         $payload['published_by'] = $this->getUserId();
                     }
                 }
-                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
+                $payload['comment'] = \filter_var($payload['comment'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
                 
                 $this->setFolder("/$table/$id");
                 $this->allowImageOnly();
@@ -296,7 +297,7 @@ class NewsController extends FileController
             } else {
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/news-update.html',
+                    __DIR__ . '/news-update.html',
                     [
                         'table' => $table,
                         'record' => $record,
@@ -350,7 +351,7 @@ class NewsController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);            
-            $template = $this->twigTemplate(\dirname(__FILE__) . '/news-read.html');
+            $template = $this->twigTemplate(__DIR__ . '/news-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
             }
@@ -394,7 +395,7 @@ class NewsController extends FileController
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/news-view.html',
+                __DIR__ . '/news-view.html',
                 ['table' => $table, 'record' => $record, 'files' => $files]
             );
             $dashboard->set('title', $this->text('view-record') . ' | News');

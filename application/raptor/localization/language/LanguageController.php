@@ -65,7 +65,7 @@ class LanguageController extends \Raptor\Controller
                 ]);
                 $copied = $this->copyLocalizedContent($mother['code'], $payload['code']);         
             } else {
-                $this->twigTemplate(\dirname(__FILE__) . '/language-insert-modal.html')->render();
+                $this->twigTemplate(__DIR__ . '/language-insert-modal.html')->render();
             }
         } catch (\Throwable $err) {
             if ($this->getRequest()->getMethod() == 'POST') {
@@ -108,7 +108,7 @@ class LanguageController extends \Raptor\Controller
                 'is_active' => 1
             ]);
             $this->twigTemplate(
-                \dirname(__FILE__) . '/language-retrieve-modal.html',
+                __DIR__ . '/language-retrieve-modal.html',
                 ['record' => $record]
             )->render();
         } catch (\Throwable $err) {
@@ -188,7 +188,7 @@ class LanguageController extends \Raptor\Controller
                 }
             } else {
                 $this->twigTemplate(
-                    \dirname(__FILE__) . '/language-update-modal.html',
+                    __DIR__ . '/language-update-modal.html',
                     ['record' => $record]
                 )->render();
             }

@@ -11,7 +11,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
 {
     public function exception(\Throwable $throwable)
     {
-        $errorTemplate = \dirname(__FILE__) . '/page-404.html';
+        $errorTemplate = __DIR__ . '/page-404.html';
         if (!\class_exists(FileTemplate::class)
             || !\file_exists($errorTemplate)
         ) {

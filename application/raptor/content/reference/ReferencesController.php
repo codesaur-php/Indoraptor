@@ -51,7 +51,7 @@ class ReferencesController extends \Raptor\Controller
             $reference->setTable($table);
             $tables[$table] = $reference->getRows(['WHERE' => 'p.is_active=1']);
         }
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables]);
+        $dashboard = $this->twigDashboard(__DIR__ . '/references-index.html', ['tables' => $tables]);
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
@@ -103,7 +103,7 @@ class ReferencesController extends \Raptor\Controller
                 ]);
             } else {
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/reference-insert.html',
+                    __DIR__ . '/reference-insert.html',
                     ['table' => $table]
                 );
                 $dashboard->set('title', $this->text('add-record') . ' | ' . \ucfirst($table));
@@ -155,7 +155,7 @@ class ReferencesController extends \Raptor\Controller
                 throw new \Exception($this->text('no-record-selected'));
             }
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/reference-view.html',
+                __DIR__ . '/reference-view.html',
                 ['table' => $table, 'record' => $record]
             );
             $dashboard->set('title', $this->text('view-record') . ' | ' . \ucfirst($table));
@@ -239,7 +239,7 @@ class ReferencesController extends \Raptor\Controller
                 ]);
             } else {
                 $dashboard = $this->twigDashboard(
-                    \dirname(__FILE__) . '/reference-update.html',
+                    __DIR__ . '/reference-update.html',
                     ['table' => $table, 'record' => $record]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));

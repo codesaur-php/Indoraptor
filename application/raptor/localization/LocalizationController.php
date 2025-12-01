@@ -43,7 +43,7 @@ class LocalizationController extends \Raptor\Controller
             }
             $languages = (new LanguageModel($this->pdo))->getRows(['WHERE' => 'is_active=1']);
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/localization-index.html',
+                __DIR__ . '/localization-index.html',
                 ['languages' => $languages, 'texts' => $texts]
             );
             $dashboard->set('title', $this->text('localization'));

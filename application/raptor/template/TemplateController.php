@@ -13,7 +13,7 @@ class TemplateController extends \Raptor\Controller
     
     public function userOption()
     {
-        $this->twigTemplate(\dirname(__FILE__) . '/user-option-modal.html')->render();
+        $this->twigTemplate(__DIR__ . '/user-option-modal.html')->render();
     }
     
     public function manageMenu()
@@ -54,7 +54,7 @@ class TemplateController extends \Raptor\Controller
             }
             
             $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/manage-menu.html',
+                __DIR__ . '/manage-menu.html',
                 ['menu' => $menu, 'aliases' => $aliases, 'permissions' => $permissions]
             );
             $dashboard->render();            

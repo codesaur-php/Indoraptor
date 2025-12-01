@@ -1,30 +1,72 @@
 <IfModule mod_rewrite.c>
-RewriteEngine On
+    RewriteEngine On
+    # ↑ Apache-ийн rewrite модуль идэвхтэй бол URL rewrite-ийг асаана.
 
-#RewriteBase /
+    # ---------------------------------------------------------------
+    # 1. Base URL (шаардлагатай тохиолдолд ашиглана)
+    # ---------------------------------------------------------------
+    #RewriteBase /
+    # ↑ Site root директорт байрласан үед rewrite суурийг заана.
+    #   Хэрэв subfolder-д байрлавал: RewriteBase /subfolder/
 
-# rewrite on subfolder
-#RewriteCond %{HTTP_HOST} ^(www.)?example\.com$ [NC]
-#RewriteRule ^(.*)$ subfolder/$1 [R=302,L]
+    # ---------------------------------------------------------------
+    # 2. Вебсайтыг subfolder руу албадан чиглүүлэх (жишээ код)
+    # ---------------------------------------------------------------
+    #RewriteCond %{HTTP_HOST} ^(www.)?example\.com$ [NC]
+    #RewriteRule ^(.*)$ subfolder/$1 [R=302,L]
+    # ↑ example.com → example.com/subfolder руу бүх хаягыг чиглүүлнэ.
+    #   NC = case-insensitive, 302 = түр чиглүүлэлт
 
-# strip www from url
-#RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
-#RewriteRule ^(.*)$ http://%1%{REQUEST_URI} [R=301,QSA,NC,L]
+    # ---------------------------------------------------------------
+    # 3. URL-ээс www-г зайлуулах
+    # ---------------------------------------------------------------
+    RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+    RewriteRule ^(.*)$ http://%1%{REQUEST_URI} [R=301,QSA,NC,L]
+    # ↑ https://www.domain.com → https://domain.com
+    #   301 = байнгын redirect
+    #   QSA = Query string алдагдуулахгүй
 
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # ---------------------------------------------------------------
+    # 4. HTTPS албадан ашиглах
+    # ---------------------------------------------------------------
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # ↑ "https://" биш бол автоматаар HTTPS руу чиглүүлнэ.
 
-# set time zone
-#SetEnv TZ Asia/Ulaanbaatar
+    # ---------------------------------------------------------------
+    # 5. Server-ийн цагийн бүс тохируулах (шаардлагатай бол)
+    # ---------------------------------------------------------------
+    #SetEnv TZ Asia/Ulaanbaatar
+    # ↑ PHP болон Apache процессын цагийг Asia/Ulaanbaatar болгоно.
 
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+    # ---------------------------------------------------------------
+    # 6. Authorization header-г зөв дамжуулах
+    # ---------------------------------------------------------------
+    RewriteCond %{HTTP:Authorization} ^(.*)
+    RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+    # ↑ JWT, Bearer token, Basic Auth гэх мэт Authorization header
+    #   Apache-аар дамжихдаа алдагдах асуудлыг засна.
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+    # ---------------------------------------------------------------
+    # 7. Файлыг rewrite хийх - actual файл/директори биш бол
+    # ---------------------------------------------------------------
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # ↑ Хэрэглэгчийн хүссэн path файл/фолдер биш бол route-руу чиглүүлнэ.
 
-RewriteRule ^(.*)$ index.php/$1 [L]
+    # ---------------------------------------------------------------
+    # 8. Бүх хүсэлтийг index.php руу дамжуулах
+    # ---------------------------------------------------------------
+    RewriteRule ^(.*)$ index.php/$1 [L]
+    # ↑ Indoraptor-ийн routing системийг идэвхжүүлэх үндсэн rewrite.
+    #   Жишээ: /news/article → index.php/news/article
 </IfModule>
+
+# ---------------------------------------------------------------
+# mod_rewrite байхгүй үед: Директори listing Disable
+# ---------------------------------------------------------------
 <IfModule !mod_rewrite.c>
-Options -Indexes
+    Options -Indexes
+    # ↑ mod_rewrite байхгүй бол хавтасын файл жагсаалтыг (directory listing)
+    #   зогсооно. Аюулгүй байдлын хамгаалалт.
 </IfModule>
