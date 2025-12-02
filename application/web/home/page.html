@@ -1,5 +1,35 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<!-- ==================================================================
+     📄 PAGE VIEW TEMPLATE — Ерөнхий контент үзүүлэх загвар
+     ------------------------------------------------------------------
+     Энэ template нь “Ердийн хуудас (Page)” контентыг вэб дээр 
+     харуулахад ашиглагдана.
+
+     Контент нь PagesModel → HomeController::page() функцээр 
+     дамжиж ирдэг. Дараах өгөгдлүүдийг хүлээн авна:
+
+       • title     — Хуудасны гарчиг
+       • content   — Эцсийн HTML контент (TinyMCE / SCEditor үүсгэсэн)
+       • photo     — Хэвлэлийн гол зураг (нэг ширхэг)
+       • files[]   — Хавсаргасан файлууд 
+       • гэх мэтчилэн agesModel-ийн өгөглүүд
+
+     Онцлог:
+       ✔ Fancybox 5.0 ашиглан зураг томруулж үзэх боломжтой
+       ✔ Бүх p, ul, ol, dl элементүүдийг зөв typography-той харуулна
+       ✔ Хуудасны үндсэн өргөн responsive загвартай
+
+     Анхаарах:
+       • photo утга хоосон бол IMG render хийхгүй
+       • content дотор HTML markup аль хэдийн аюулгүй болгоод ирсэн
+================================================================== -->
+
+<!-- Fancybox 5.0 – UI & Viewer -->
+<link rel="stylesheet"href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+
+<!-- ---------------------------------------------------------------
+     🏷 Хуудасны гарчиг
+---------------------------------------------------------------- -->
 <div class="container">
     <div class="row">
         <div class="align-self-center p-static text-center mt-4">
@@ -7,26 +37,49 @@
         </div>
     </div>
 </div>
+
+<!-- ---------------------------------------------------------------
+     🎨 Хуудасны үндсэн typography засварууд
+---------------------------------------------------------------- -->
 <style>
     .page-article > p {
-        text-align:justify;
-        margin:0;
+        text-align: justify;
+        margin: 0;
+        color: black;
     }
-    .page-article > p {
-        color:black;
-    }
-    .page-article > dl, .page-article > ol, .page-article > ul {
-        margin-bottom:0;
+
+    .page-article > dl,
+    .page-article > ol,
+    .page-article > ul {
+        margin-bottom: 0;
     }
 </style>
+
+<!-- ---------------------------------------------------------------
+     📘 Хуудасны контент (зураг + контент)
+---------------------------------------------------------------- -->
 <div class="container page-article">
+
+    {# 🖼 Гол зураг (байгаа үед) #}
     {% if photo is not null and photo is not empty %}
-        <img class="img-fluid mb-3" file-data-fancybox src="{{ photo }}" alt="{{ title|e }}">
+        <img class="img-fluid mb-3"
+             file-data-fancybox
+             src="{{ photo }}"
+             alt="{{ title|e }}">
     {% endif %}
+
+    {# 📄 Хуудасны HTML контент #}
     {{ content }}
 </div>
+
+<!-- ---------------------------------------------------------------
+     🔍 Fancybox binding – Зураг томруулж харах
+---------------------------------------------------------------- -->
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+        Fancybox.bind('[file-data-fancybox]', {
+            groupAll: true  // Нэгээс олон зураг байвал slideshow болно
+        });
     });
 </script>
+1

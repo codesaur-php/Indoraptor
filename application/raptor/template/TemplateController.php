@@ -7,24 +7,60 @@ use Psr\Log\LogLevel;
 use Raptor\Organization\OrganizationModel;
 use Raptor\RBAC\Permissions;
 
+/**
+ * Class TemplateController
+ *
+ * Indoraptor Framework-ийн Template (UI/UX) модульд зориулсан Controller.
+ * Dashboard-ийн меню, хэрэглэгчийн UI тохиргоо, олон хэл дээрх localized menu
+ * зэрэг контентыг удирдах үндсэн үйлдлүүдийг хариуцна.
+ *
+ * Үндсэн боломжууд:
+ *   - Хэрэглэгчийн UI тохиргооны modal харуулах
+ *   - Dashboard менюг харах, үүсгэх, засах, идэвхгүй болгох
+ *   - LocalizedModel-ын бүтэцтэй меню дээр олон хэлтэй контент удирдах
+ *   - RBAC эрх дээр тулгуурлан зөвшөөрөл шалгах
+ *   - Бүх үйлдлийг Logger (indolog) ашиглан протоколд бүртгэх
+ *
+ * @package Raptor\Template
+ */
 class TemplateController extends \Raptor\Controller
 {
     use DashboardTrait;
-    
+
+    /**
+     * Хэрэглэгчийн DASHBOARD UI тохиргооны modal-ийг рендерлэнэ.
+     *
+     * @return void
+     */
     public function userOption()
     {
         $this->twigTemplate(__DIR__ . '/user-option-modal.html')->render();
     }
-    
+
+    /**
+     * Цэсний (menu) жагсаалтыг харах Dashboard хуудас.
+     *
+     * Шалгах зүйлс:
+     *   - Хэрэглэгч system_manage_menu permission-тэй эсэх
+     *   - raptor_menu хүснэгтээс бүх идэвхтэй menu-г авах
+     *   - created_by / updated_by → хэрэглэгчийн нэр, имэйл болгон хөрвүүлэх
+     *   - Байгууллагын alias-уудыг цуглуулах (common + active organizations)
+     *   - RBAC permissions жагсаалт үүсгэх (alias_name форматтай)
+     *
+     * @return void
+     */
     public function manageMenu()
     {
         try {
             if (!$this->isUserCan('system_manage_menu')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
+            // Меню жагсаалт
             $model = new MenuModel($this->pdo);
-            $menu = $model->getRows(['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']);            
+            $menu = $model->getRows(['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']);
+
+            // Хэрэглэгчдийн нэр, имэйл илүү ойлгомжтой болгох
             $users = $this->retrieveUsersDetail();
             foreach ($menu as &$item) {
                 if (isset($users[$item['created_by']])) {
@@ -34,57 +70,75 @@ class TemplateController extends \Raptor\Controller
                     $item['updated_by'] = $users[$item['updated_by']];
                 }
             }
-            
+
+            // Байгууллагын alias жагсаалт
             $aliases = ['common'];
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $alias_results = $this->query(
                 "SELECT alias FROM $org_table WHERE alias!='common' AND is_active=1 GROUP BY alias"
             )->fetchAll();
             foreach ($alias_results as $row) {
-               $aliases[] = $row['alias'];
+                $aliases[] = $row['alias'];
             }
-            
+
+            // Permission жагсаалт
             $permissions = [];
             $permissions_table = (new Permissions($this->pdo))->getName();
             $permission_results = $this->query(
                 "SELECT CONCAT(alias, '_', name) as permission FROM $permissions_table"
             )->fetchAll();
             foreach ($permission_results as $row) {
-               $permissions[] = $row['permission'];
+                $permissions[] = $row['permission'];
             }
-            
-            $dashboard = $this->twigDashboard(
+
+            // Dashboard руу дамжуулах
+            $this->twigDashboard(
                 __DIR__ . '/manage-menu.html',
                 ['menu' => $menu, 'aliases' => $aliases, 'permissions' => $permissions]
-            );
-            $dashboard->render();            
+            )->render();
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
+            // Logging
             $context = ['action' => 'template-menu-manage'];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = 'Цэсний жагсаалтыг нээх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            if (isset($err)) {
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::ERROR,
+                    'Цэсний жагсаалтыг нээх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо',
+                    $context + ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
+                );
             } else {
-                $level = LogLevel::NOTICE;
-                $message = 'Цэсний жагсаалтыг үзэж байна';
-                $context += ['aliases' => $aliases, 'permissions' => $permissions, 'menu' => $menu];
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::NOTICE,
+                    'Цэсний жагсаалтыг үзэж байна',
+                    $context + ['aliases' => $aliases, 'permissions' => $permissions, 'menu' => $menu]
+                );
             }
-            $this->indolog('dashboard', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Шинэ меню үүсгэх.
+     *
+     * Payload бүтэц:
+     *    - payload[field] = value       (Үндсэн menu баганууд)
+     *    - content[lang][title] = value (Localized багана)
+     *
+     * @return void
+     */
     public function manageMenuInsert()
     {
         try {
             if (!$this->isUserCan('system_manage_menu')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
             $payload = [];
             $content = [];
             $parsedBody = $this->getParsedBody();
+            // Payload болон Контентыг салгах
             foreach ($parsedBody as $index => $value) {
                 if (\is_array($value)) {
                     foreach ($value as $key => $value) {
@@ -94,16 +148,21 @@ class TemplateController extends \Raptor\Controller
                     $payload[$index] = $value;
                 }
             }
+
             if (empty($payload) || empty($content)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            
+
+            // Мэдээллийн сан руу бичих
             $model = new MenuModel($this->pdo);
-            $payload['is_visible'] = ($payload['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
-            $record = $model->insert($payload + ['created_by' => $this->getUserId()], $content);
+            $record = $model->insert(
+                $payload + ['created_by' => $this->getUserId()],
+                $content
+            );
             if (empty($record)) {
                 throw new \Exception($this->text('record-insert-error'));
-            }            
+            }
+
             $this->respondJSON([
                 'status' => 'success',
                 'message' => $this->text('record-insert-success')
@@ -112,26 +171,41 @@ class TemplateController extends \Raptor\Controller
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
             $context = ['action' => 'template-menu-create'];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = 'Цэс үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            if (isset($err)) {
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::ERROR,
+                    'Цэс үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо',
+                    $context + ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
+                );
             } else {
-                $level = LogLevel::INFO;
-                $message = 'Цэс үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
-                $context += ['record' => $record];
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::INFO,
+                    'Цэс үүсгэх үйлдлийг амжилттай гүйцэтгэлээ',
+                    $context + ['record' => $record]
+                );
             }
-            $this->indolog('dashboard', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Цэсний мэдээллийг шинэчлэх.
+     *
+     * Шалгалт:
+     *   - id заавал байх
+     *   - is_visible → checkbox → 1/0
+     *   - Localized контент өөрчлөгдсөн эсэхийг шалгана
+     *
+     * @return void
+     */
     public function manageMenuUpdate()
     {
         try {
             if (!$this->isUserCan('system_manage_menu')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
             $parsedBody = $this->getParsedBody();
             if (empty($parsedBody)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -141,10 +215,10 @@ class TemplateController extends \Raptor\Controller
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $id = \filter_var($parsedBody['id'], \FILTER_VALIDATE_INT);
+            $id = (int) $parsedBody['id'];
             unset($parsedBody['id']);
-            $parsedBody['is_visible'] = ($parsedBody['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
-            
+
+            // Record-н хуучин мэдээллийг авах
             $model = new MenuModel($this->pdo);
             $record = $model->getRowWhere([
                 'p.id' => $id,
@@ -153,7 +227,8 @@ class TemplateController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
+
+            // Шинэ data-г payload/content болгон салгах
             $payload = [];
             $content = [];
             $updates = [];
@@ -161,27 +236,33 @@ class TemplateController extends \Raptor\Controller
                 if (\is_array($value)) {
                     foreach ($value as $key => $value) {
                         $content[$key][$index] = $value;
+
                         if ($record['localized'][$index][$key] != $value) {
                             $updates[] = "{$index}_{$key}";
                         }
                     }
                 } else {
                     $payload[$index] = $value;
+
                     if ($record[$index] != $value) {
                         $updates[] = $index;
                     }
                 }
             }
+
             if (empty($updates)) {
                 throw new \InvalidArgumentException('No update!');
             }
-            
+
             $updated = $model->updateById(
-                $id, $payload + ['updated_by' => $this->getUserId()], $content
+                $id,
+                $payload + ['updated_by' => $this->getUserId()],
+                $content
             );
             if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
+
             $this->respondJSON([
                 'type' => 'primary',
                 'status' => 'success',
@@ -191,33 +272,50 @@ class TemplateController extends \Raptor\Controller
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
             $context = ['action' => 'template-menu-update'];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = 'Цэсний мэдээллийг шинэчлэх гүйцэтгэх үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            if (isset($err)) {
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::ERROR,
+                    'Цэсний мэдээллийг шинэчлэх үед алдаа гарлаа',
+                    $context + ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
+                );
             } else {
-                $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай цэсний мэдээллийг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::INFO,
+                    '{record.id} дугаартай цэсний мэдээллийг амжилттай шинэчлэлээ',
+                    $context + ['updates' => $updates, 'record' => $updated]
+                );
             }
-            $this->indolog('dashboard', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Цэсийг идэвхгүй болгох (soft delete).
+     *
+     * Анхаарах зүйл:
+     *   - “system_manage_menu” permission шаардлагатай
+     *   - Идэвхтэй цэс дээр л идэвхгүй болгох боломжтой
+     *
+     * @return void
+     */
     public function manageMenuDeactivate()
     {
         try {
             if (!$this->isUserCan('system_manage_menu')) {
-                throw new \Exception('No permission for an action [deactivate]!', 401);
+                throw new \Exception(
+                    'No permission for an action [deactivate]!',
+                    401
+                );
             }
-            
+
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $id = (int) $payload['id'];
 
             $model = new MenuModel($this->pdo);
             $record = $model->getRowWhere([
@@ -226,7 +324,9 @@ class TemplateController extends \Raptor\Controller
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
-            }            
+            }
+
+            // Идэвхгүй болгох
             $deactivated = $model->deactivateById(
                 $id,
                 [
@@ -237,12 +337,13 @@ class TemplateController extends \Raptor\Controller
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
             }
+
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
-            ]);            
-        } catch (\Throwable $err ){
+            ]);
+        } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
@@ -250,16 +351,21 @@ class TemplateController extends \Raptor\Controller
             ], $err->getCode());
         } finally {
             $context = ['action' => 'template-menu-deactivate'];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = 'Цэс устгах/идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            if (isset($err)) {
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::ERROR,
+                    'Цэс устгах/идэвхгүй болгох үед алдаа гарлаа',
+                    $context + ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
+                );
             } else {
-                $level = LogLevel::ALERT;
-                $message = '[{server_request.body.caption}] цэсийг [{server_request.body.reason}] шалтгаанаар устгаж/идэвхгүй болголоо';
-                $context += ['record' => $record];
+                $this->indolog(
+                    'dashboard',
+                    LogLevel::ALERT,
+                    '[{server_request.body.caption}] цэсийг [{server_request.body.reason}] шалтгаанаар устгаж/идэвхгүй болголоо',
+                    $context + ['record' => $record]
+                );
             }
-            $this->indolog('dashboard', $level, $message, $context);
         }
     }
 }

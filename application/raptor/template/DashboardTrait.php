@@ -37,28 +37,47 @@ use Raptor\User\UsersModel;
 trait DashboardTrait
 {
     /**
-     * Dashboard layout хэрэглэн контент рендерлэх.
+     * Dashboard Layout ашиглан контент рендерлэх гол метод.
+     *
+     * Энэхүү функц нь бүх Dashboard төрлийн хуудасны мастер layout юм.
+     * Хэрэглэгчийн харагдах UI бүтэц (sidebar, user info, content area)
+     * бүгдийг энд төвлөрүүлж, динамикаар бүрдүүлдэг.
      *
      * Процесс:
      * ───────────────────────────────────────────────────────────────
-     * 1) Dashboard layout (dashboard.html) ачаалах
-     * 2) Хэрэглэгчийн sidemenu-г тооцоолох → set('sidemenu')
-     * 3) Контент template-г twigTemplate ашиглан ачаах → set('content')
-     * 4) System settings (footer info, branding гэх мэт)-ийг set() хийх
+     * 1) `dashboard.html` мастер layout-ийг twigTemplate() ашиглан ачаална.
      *
-     * @param string $template Content template-ийн зам
-     * @param array  $vars     Контент template-д дамжуулах хувьсагчууд
+     * 2) Хэрэглэгчийн зөвшөөрөлд (RBAC) тулгуурлан харагдах ёстой
+     *    sidemenu-г getUserMenu() функцээр тооцож → `sidemenu` хувьсагчид онооно.
      *
-     * @return TwigTemplate
+     * 3) Контент хэсэгт харуулах тухайн хуудасны template-г
+     *    twigTemplate($template, $vars) дуудаж → `content` болгон оруулна.
+     *    (Жич: Контент template нь зөвхөн `<main>` хэсэг дотор байрлана.)
+     *
+     * 4) Системийн тохируулгууд (`settings` аттрибут) - тухайлбал:
+     *    footer мэдээлэл, брэндингийн өгөгдөл, favicon, logo зэрэг
+     *    layout түвшинд хэрэгтэй бүх өгөгдлийг `$dashboard->set()` ашиглан нэг нэгээр нь оруулна.
+     *
+     * Товчхондоо:
+     * ───────────────────────────────────────────────────────────────
+     *  ➤ Dashboard layout + Dynamic sidebar + Dynamic content + System settings 
+     *  → нэг TwigTemplate объект болж буцна.
+     *
+     * @param string $template  Контент template-ийн файл зам
+     * @param array  $vars      Контент template-д дамжуулах хувьсагчид
+     *
+     * @return TwigTemplate     Бүрэн бэлтгэгдсэн Dashboard-ийн view объект
      */
     public function twigDashboard(string $template, array $vars = []): TwigTemplate
     {
         $dashboard = $this->twigTemplate(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
         $dashboard->set('content', $this->twigTemplate($template, $vars));
+        
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
         }
+
         return $dashboard;
     }
 
@@ -133,25 +152,19 @@ trait DashboardTrait
         try {
             $had_condition = !empty($ids);
             $table = (new UsersModel($this->pdo))->getName();
-
             $select_users =
                 "SELECT id, username, first_name, last_name, email FROM $table";
-
             // WHERE нөхцөл боловсруулах
             if ($had_condition) {
                 $ids = \array_filter($ids, fn($v) => $v !== null);
-
                 if (empty($ids)) {
                     throw new \InvalidArgumentException(__FUNCTION__ . ': invalid arguments!');
                 }
-
                 \array_walk($ids, fn(&$v) => $v = "id=$v");
-
                 $select_users .= ' WHERE ' . \implode(' OR ', $ids);
             }
 
             $pdo_stmt = $this->prepare($select_users);
-
             if ($pdo_stmt->execute()) {
                 while ($row = $pdo_stmt->fetch()) {
                     $users[$row['id']] =
@@ -208,7 +221,6 @@ trait DashboardTrait
                 'WHERE'    => 'p.is_active=1 AND p.is_visible=1'
             ]);
             foreach ($rows as $row) {
-
                 // Localization title шалгах
                 $title = $row['localized']['title'][$code] ?? null;
                 if (!isset($title)) {

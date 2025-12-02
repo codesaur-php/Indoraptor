@@ -1,14 +1,49 @@
+<!--
+    RBAC — View Role Modal
+
+    Зорилго:
+      • Дүр (Role)–ийн товч мэдээллийг харах
+      • Нэр + Тайлбар л харуулна
+      • Хэрэглэгч зөвхөн уншихад зориулсан modal
+
+    Оролтууд:
+      - role:     RBAC роль (system_admin, news_editor гэх мэт)
+      - description: Дүрийн дэлгэрэнгүй тайлбар
+-->
+
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
+
+        <!-- Modal Header (Дүрийн нэр) -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-info">{{ role }}</h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <button
+                class="btn-close"
+                type="button"
+                data-bs-dismiss="modal"
+                aria-label="{{ 'close'|text|e }}"
+            ></button>
         </div>
+
+        <!-- Modal Body (Дүрийн тайлбар) -->
         <div class="modal-body">
+            <!--
+                Дүрийн тайлбар:
+                Тухайн RBAC Role яг юу хийх эрхтэйг админд ойлгуулах зорилготой.
+                Тэмдэгт мөр байх ба HTML-тэй холилддоггүй.
+            -->
             <p>{{ description }}</p>
         </div>
+
+        <!-- Modal Footer -->
         <div class="modal-footer">
-            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+            <button
+                class="btn btn-secondary shadow-sm"
+                data-bs-dismiss="modal"
+                type="button"
+            >
+                {{ 'close'|text }}
+            </button>
         </div>
     </div>
 </div>

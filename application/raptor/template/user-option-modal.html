@@ -1,47 +1,114 @@
+<!-- ====================================================================== -->
+<!--  USER OPTION MODAL                                                     -->
+<!--  Хэрэглэгч Dashboard-ийн Theme болон Language сонголтуудыг             -->
+<!--  түргэн өөрчлөх зориулалттай тохиргооны modal.                        -->
+<!-- ====================================================================== -->
+<style>
+    /* --------------------------------------------------------------- */
+    /*  ИЛҮҮЦ CSS байхгүй. Хэрэв custom style нэмэх бол энд байрлуулна. */
+    /* --------------------------------------------------------------- */
+</style>
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
+        <!-- ========================================================== -->
+        <!--  Modal Header                                               -->
+        <!-- ========================================================== -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
                 <i class="bi bi-sliders"></i> Options
             </h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <!-- Close button (Bootstrap стандарт) -->
+            <button
+                class="btn-close"
+                type="button"
+                data-bs-dismiss="modal"
+                aria-label="{{ 'close'|text|e }}">
+            </button>
         </div>
+        <!-- ========================================================== -->
+        <!--  Modal Body - Theme / Language сонгох хэсэг               -->
+        <!-- ========================================================== -->
         <div class="modal-body">
+            <!-- ====================== THEME SELECT ===================== -->
+            <!-- Dashboard UI-г Light/Dark хэлбэрээр харагдуулах           -->
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Theme:</label>
                 <div class="col-9">
                     <div class="mt-2">
+                        <!-- Light Theme -->
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="theme" id="themeLight" value="light" style="cursor:pointer">
-                            <label class="form-check-label" for="themeLight" style="cursor:pointer">Light</label>
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="theme"
+                                   id="themeLight"
+                                   value="light"
+                                   style="cursor:pointer">
+                            <label class="form-check-label"
+                                   for="themeLight"
+                                   style="cursor:pointer">
+                                Light
+                            </label>
                         </div>
+                        <!-- Dark Theme -->
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="theme" id="themeDark" value="dark" style="cursor:pointer">
-                            <label class="form-check-label" for="themeDark" style="cursor:pointer">Dark</label>
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="theme"
+                                   id="themeDark"
+                                   value="dark"
+                                   style="cursor:pointer">
+                            <label class="form-check-label"
+                                   for="themeDark"
+                                   style="cursor:pointer">
+                                Dark
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- ===================== LANGUAGE SELECT ==================== -->
+            <!-- LocalizationMiddleware-аас ирсэн бүх хэлний жагсаалт       -->
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Language:</label>
                 <div class="col-9">
                     {% set current = localization.code ?? 'en' %}
                     {% for code,language in localization.language %}
                         <div class="form-check form-check-inline mt-2">
-                            <input class="form-check-input" type="radio" name="language" id="lang_{{ code }}" value="{{ code }}" style="cursor:pointer"{% if code == current %} checked{% endif %}>
-                            <label class="form-check-label" for="lang_{{ code }}" style="cursor:pointer">
+                            <!-- Хэл сонгох радио input -->
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="language"
+                                   id="lang_{{ code }}"
+                                   value="{{ code }}"
+                                   style="cursor:pointer"
+                                   {% if code == current %} checked{% endif %}>
+                            <!-- Дарах үед тухайн хэл сонгогдоно -->
+                            <label class="form-check-label"
+                                   for="lang_{{ code }}"
+                                   style="cursor:pointer">
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15"> {{ language['title'] }}
+                                <!-- Улсын жижиг icon -->
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="20" height="15">
+                                {{ language['title'] }}
                             </label>
                         </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
+        <!-- ========================================================== -->
+        <!-- Modal Footer - Confirm / Cancel                           -->
+        <!-- ========================================================== -->
         <div class="modal-footer">
+            <!-- Шинэ theme / language тохиргоог баталгаажуулах -->
             <button class="btn btn-primary" id="optConfirmBtn">
                 <i class="bi bi-check-all"></i> Confirm
             </button>
+
+            <!-- Модалыг хаах -->
             <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">
                 Cancel
             </button>
@@ -49,6 +116,12 @@
     </div>
 </div>
 <script type="text/javascript">
+    // ======================================================================
+    //  JavaScript - Theme болон Language сонголтуудыг хэрэгжүүлэх
+    // ======================================================================
+
+    // ------------------------------ Theme ------------------------------
+    // Хэрэглэгч Dashboard-д Light/Dark theme ашиглаж буй эсэхийг уншина.
     const light = document.querySelector('input#themeLight');
     const dark = document.querySelector('input#themeDark');
     if (document.body.getAttribute('data-bs-theme') === 'dark') {
@@ -57,21 +130,31 @@
         light.checked = true;
     }
 
+    // ------------------------------ Confirm Button ---------------------
     const optionConfirm = document.querySelector('button#optConfirmBtn');
     optionConfirm?.addEventListener('click', function (e) {
         e.preventDefault();
 
+        // GrowNStop → Дүрсийг түр томорч хөдөлгөөнтэй харагдуулна
         this.growNstop();
 
+        // ---- Save Theme to localStorage ----
         const theme = document.querySelector('input[type="radio"][name="theme"]:checked');
         localStorage.setItem('data-bs-theme', theme?.value);
 
+        // ---- Save Language (server-side update) ----
         const language = document.querySelector('input[type="radio"][name="language"]:checked');
+
+        // Хэрэв хэл өөрчлөгдвөл шинэ хэлний тохиргоог серверт дамжуулна.
         if (language?.value !== `{{ current }}`) {
-            let xhr = new XMLHttpRequest();1
+            // Synchronous AJAX (intentional)
+            // Хэл солих үед redirect хийх тул sync OK.
+            let xhr = new XMLHttpRequest();
             xhr.open('GET', `{{ 'login'|link }}/language/${language.value}`, false);
             xhr.send();
         }
+
+        // Theme & Language өөрчлөгдсөний дараа Dashboard-г дахин ачаалж харуулна.
         window.location.reload();
     });
 </script>

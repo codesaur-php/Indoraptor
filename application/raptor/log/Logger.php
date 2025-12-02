@@ -84,7 +84,6 @@ class Logger extends AbstractLogger
     }
 
     /**
-     * @inheritdoc
      * 
      * Лог хүснэгтийн анхны тохиргоо.
      *
@@ -113,7 +112,26 @@ class Logger extends AbstractLogger
     /**
      * Column-уудыг өөрчлөхийг хориглоно.
      *
-     * @throws \RuntimeException
+     * PSR-3 стандартын дагуу лог бичигчийн хүснэгтийн бүтэц
+     * (id, level, message, context, created_at) нь
+     * Logger-ийн constructor дээр аль хэдийн тогтмол
+     * (predefined) байдлаар тодорхойлогдсон байдаг.
+     *
+     * Лог бүр нь audit trail үүрэгтэй тул:
+     *   • баганы нэрийг өөрчлөх
+     *   • шинээр багана нэмэх
+     *   • багана устгах
+     *
+     * зэрэг динамик өөрчлөлт хийхийг хатуу хориглоно.
+     *
+     * Учир нь ийм өөрчлөлт нь:
+     *   - Логийн бүрэн бүтэн байдал (audit integrity)-г алдагдуулна
+     *   - PSR-3-ын нэгэн төрлийн (consistent) log format-ийг эвдэнэ
+     *   - Framework-ийн бусад хэсгийн log-холбоотой кодыг эвдэнэ
+     *
+     * Иймээс Logger хүснэгтийн бүтэц immutable байх ёстой.
+     *
+     * @throws \RuntimeException  Хэрвээ column өөрчлөх оролдлого хийвэл
      */
     public function setColumns(array $columns)
     {

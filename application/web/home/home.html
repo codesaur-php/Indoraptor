@@ -1,3 +1,27 @@
+<!-- ================================================================
+     📰 RECENT NEWS BLOCK - Сүүлийн мэдээнүүдийн жагсаалт
+     ---------------------------------------------------------------
+     Энэ хэсэг нь нүүр хуудас дээр харуулах сүүлийн 20 мэдээг
+     HomeController::index() функцээс дамжуулсан `recent` array-гаар
+     generate хийдэг.
+
+     Структур:
+       • <ul> - мэдээнүүдийн жагсаалт
+       • <li> - нэг мэдээний блок
+       • Зураг байгаа бол thumbnail хэлбэрээр
+       • Огноо
+       • Гарчиг (title) → news/{id} линктэй
+
+     UX:
+       ✓ loop.index0 ашиглан odd/even background сүүдэрлэнэ
+       ✓ Зураг байгаа үед responsive thumbnail
+       ✓ Link бүхэн Twig routing ашиглана → 'news'|link({id:...})
+
+     Анхаарах:
+       • Photo field хоосон бол IMG блок render хийхгүй
+       • Published_at (datetime) утгыг шууд текстээр харуулна (хэрэглэгчдэд ойлгомжтой формат горимд өөрчлөх боломжтой)
+================================================================ -->
+
 <div class="container">
     <div class="row">
         <h5 class="text-light bg-danger text-uppercase">
@@ -5,18 +29,22 @@
         </h5>
         <ul>
             {% for news in recent %}
-                {% set href = 'news'|link({id:news['id']}) %}
+                {% set href = 'news'|link({ id: news['id'] }) %}
                 <li class="mt-2 mb-4 {{ loop.index0 is odd ? '' : 'bg-light' }}">
                     {% if news['photo'] is not empty and news['photo'] is not null %}
-                    <div class="img-fluid img-thumbnail d-block">
-                        <a href="{{ href }}">
-                            <img src="{{ news['photo'] }}" height="100">
-                        </a>
-                    </div>
+                        <div class="img-fluid img-thumbnail d-block">
+                            <a href="{{ href }}">
+                                <img src="{{ news['photo'] }}" height="100">
+                            </a>
+                        </div>
                     {% endif %}
-                    <span class="text-secondary d-block">{{ news['published_at'] }}</span>
+                    <span class="text-secondary d-block">
+                        {{ news['published_at'] }}
+                    </span>
                     <h6 class="d-block">
-                        <a href="{{ href }}" class="text-decoration-none">{{ news['title'] }}</a>
+                        <a href="{{ href }}" class="text-decoration-none">
+                            {{ news['title'] }}
+                        </a>
                     </h6>
                 </li>
             {% endfor %}

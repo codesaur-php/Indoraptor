@@ -1,32 +1,104 @@
+<!-- ==================================================================
+     📰 NEWS VIEW TEMPLATE - Мэдээний дэлгэрэнгүй хуудас
+     ------------------------------------------------------------------
+     Controller → HomeController::news()
+
+     Хүлээн авах өгөгдлүүд:
+       • title          - Гарчиг
+       • content        - HTML контент
+       • photo          - Нүүр зураг
+       • published_at   - Нийтлэгдсэн огноо
+       • files[]        - Хавсаргасан файлууд 
+       • гэх мэтчилэн NewsModel-ийн өгөглүүд
+
+     Онцлог:
+       ✔ Fancybox томруулдаг зураг
+       ✔ Мэдээний огноо, нийтлэгч харагдана
+       ✔ Хавсралт файлууд жагсаана
+       ✔ Typographic tuning
+================================================================== -->
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+
 <div class="container">
-    <div class="row">
-        <div class="align-self-center p-static text-center mt-4">
+    <div class="row mt-4">
+        <div class="text-center">
             <h2>{{ title }}</h2>
+            <p class="text-muted mb-1">
+                <i class="bi bi-calendar-event"></i>
+                {{ published_at }}
+            </p>
+
+            {% if author is defined and author is not empty %}
+            <p class="text-muted small mb-2">
+                <i class="bi bi-person"></i>
+                {{ author }}
+            </p>
+            {% endif %}
         </div>
     </div>
 </div>
+
 <style>
-    .page-article > p {
-        text-align:justify;
-        margin:0;
+    .news-article > p {
+        text-align: justify;
+        margin: 0;
+        color: black;
     }
-    .page-article > p {
-        color:black;
+    .news-article > dl,
+    .news-article > ul,
+    .news-article > ol {
+        margin-bottom: 0;
     }
-    .page-article > dl, .page-article > ol, .page-article > ul {
-        margin-bottom:0;
+    .news-photo-main {
+        border-radius: 4px;
+        overflow: hidden;
+        max-height: 480px;
     }
 </style>
-<div class="container page-article">
-    {% if photo is not null and photo is not empty %}
-        <img class="img-fluid mb-3" file-data-fancybox src="{{ photo }}" alt="{{ title|e }}">
+
+<div class="container news-article mt-3">
+    <!-- 🖼 Мэдээний үндсэн зураг -->
+    {% if photo is not empty %}
+        <div class="mb-4 text-center">
+            <img class="img-fluid news-photo-main"
+                 file-data-fancybox
+                 src="{{ photo }}"
+                 alt="{{ title|e }}">
+        </div>
     {% endif %}
-    {{ content }}
+    
+    <!-- 📄 Мэдээ контент -->
+    <div class="mt-3">
+        {{ content }}
+    </div>
+
+    <!-- 📎 Хавсралт файлууд (байгаа үед) -->
+    {% if files is defined and files is not empty %}
+    <div class="mt-4">
+        <h5 class="text-primary">
+            <i class="bi bi-paperclip"></i>
+        </h5>
+        <ul class="list-group mt-2">
+            {% for file in files %}
+                <li class="list-group-item">
+                    <a href="{{ file['url'] ?? file['path'] }}" target="_blank">
+                        <i class="bi bi-file-earmark"></i>
+                        {{ file['title'] ?? file['name'] }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
 </div>
+
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+        Fancybox.bind('[file-data-fancybox]', {
+            groupAll: true
+        });
     });
 </script>

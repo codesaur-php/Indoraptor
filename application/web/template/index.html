@@ -2,6 +2,27 @@
 <!DOCTYPE html>
 <html lang="{{ lang }}">
     <head>
+        <!--
+        =======================================================================
+        🌐 WEB LAYER MAIN TEMPLATE (index.html)
+        - Indoraptor Framework
+        =======================================================================
+
+        Энэ template нь Web хэсгийн бүх Page-ийг бүрхэж буй үндсэн layout юм.
+        Dashboard layout-аас ялгаатай нь:
+            ✔ Public-facing (зочдод харагдана)
+            ✔ RBAC / Permission шалгах шаардлагагүй
+            ✔ Хэрэглэгчийн UI биш - Веб нүүр хуудасны UI
+            ✔ Content нь content slot-оор dynamic inject хийгддэг
+
+        Template нь бүрэн customizable бөгөөд:
+            • Header (logo, language menu, urgent message)
+            • Main menu (category-нээр гүнзгий submenu-тэй)
+            • Content area
+            • Footer (contact info + important links + social links)
+
+        =======================================================================
+        -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no">
         <title>{{ title }}</title>        
@@ -21,8 +42,19 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     </head>
     <body>
+        <!--
+        =======================================================================
+        MAIN PAGE WRAPPER
+        - Дизайны үндсэн өргөн: 50rem
+        =======================================================================
+        -->
         <main class="container" style="width:50rem;margin-top:.75rem;margin-bottom:0;">
+            <!-- ================================================================
+                 HEADER SECTION - Logo + Language + Urgent message + Main menu
+                 ================================================================ -->
             <header id="header" class="border-bottom pb-3 mb-3">
+                
+                <!-- 🌐 LANGUAGE DROPDOWN -->
                 <a class="nav-link" href="javascript:;" role="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {% set flag = lang == 'en' ? 'us' : lang %}
                     <img src="https://flagcdn.com/w20/{{ flag }}.png" srcset="https://flagcdn.com/w40/{{ flag }}.png 2x" width="20" alt="Language" style="vertical-align:top;padding-top:.5rem;margin-right:.15rem"> {{ localization.language[lang]['title'] }}
@@ -35,16 +67,25 @@
                         </a>
                     {% endfor %}
                 </div>
+                
+                <!-- 🚨 URGENT SCROLLING TEXT -->
                 {% if urgent is not null and urgent is not empty %}
                     <marquee onmouseover="this.stop();" onmouseout="this.start();">
                         {{ urgent }}
                     </marquee>
                 {% endif %}
+                
+                <!-- LOGO -->
                 <div class="header-logo mt-2 mb-3">
                     <a href="{{ 'home'|link }}">
                         <img alt="{{ title }}" height="200" src="{{ logo }}" style="-webkit-filter:drop-shadow(1px 1px 2px #222);filter:drop-shadow(1px 1px 2px #222)">
                     </a>
                 </div>
+                    
+                <!-- ============================================================
+                     MAIN MENU (multi-level)
+                     - Admin Dashboard → Content -> Pages модулиас гардаг
+                     ============================================================ -->
                 {% macro dropdownMenu(submenu) %}
                     {% import _self as self %}
                     {% for item in submenu %}                                                                        
@@ -87,14 +128,21 @@
                     {% endif %}
                 {% endfor %}
             </header>
-
+            
+            <!-- ================================================================
+                 CONTENT AREA - dynamic HTML injected here
+                 ================================================================ -->
             <div id="content">
                 {{ content }}
             </div>
 
+            <!-- ================================================================
+                 FOOTER - contact info + important links + social icons
+                 ================================================================ -->
             <footer id="footer" class="border-top bg-secondary mt-4">
                 <div class="container text-light mt-4">
-                    <div class="row">
+                    <div class="row">                        
+                        <!-- Contact -->
                         <div class="col-6">
                             <h5>{{ 'contact-us'|text }}</h5>
                             <p class="mb-1">
@@ -107,6 +155,8 @@
                                 <a class="text-light" href="mailto:{{ email|e }}"><i class="bi bi-envelope"></i> {{ email }}</a>
                             </p>
                         </div>
+                        
+                        <!-- Important links -->
                         <div class="col-6">
                             <h5>{{ 'usefull-links'|text }}</h5>
                             <ul class="list-unstyled mb-0">
@@ -136,6 +186,8 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Bottom copyright -->
                 <div class="footer-copyright bg-dark">
                     <div class="container">
                         <div class="row py-1">

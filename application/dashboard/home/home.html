@@ -1,18 +1,50 @@
+<!-- 
+    Dashboard Home - Dynamic Greeting Block
+    ---------------------------------------------------------
+    Энэ хэсэг нь хэрэглэгчийн системд нэвтэрсэн цагийн байдлаас
+    хамааран "Good morning / Good afternoon / Good evening"
+    зэрэг мэндчилгээ динамикаар үүсгэнэ.
+
+    • getGreeting() → Одоогийн цагийг шалгаад мэндчилгээг буцаана
+    • user.profile['first_name'] → Twig-ээр хэрэглэгчийн нэр авах
+    • #hello div дээр greeting текст бичиж байршуулна
+
+    Хөгжүүлэгчдэд:
+    ---------------------------------------------------------
+    Энэ хэсгийг Dashboard-ийн home widget болгон өргөтгөж болох бүс юм.
+    Та дараах боломжуудыг нэмэхэд тохиромжтой:
+        - Өдөр / оройн theme солилт
+        - Хэрэглэгчийн статистикаас хамаарсан мэндчилгээ
+        - Animation (Fade in, slide)
+        - Хэрэглэгчийн role-д суурилсан нэмэлт мэдээлэл
+-->
+
 <div id="hello"></div>
+
 <script type="text/javascript">
-function getGreeting() {
-    let dd = new Date();
-    let hh = dd.getHours();
-    if (hh > 17) {
-        return 'Good evening';
-    } else if (hh > 11) {
-        return 'Good afternoon';
-    } else {
-        return 'Good morning';
+    // Жижиг туслах функц - цагийн дагуу мэндчилгээ сонгоно
+    function getGreeting() {
+        let dd = new Date();
+        let hh = dd.getHours();
+
+        if (hh > 17) {
+            return 'Good evening';
+        } else if (hh > 11) {
+            return 'Good afternoon';
+        } else {
+            return 'Good morning';
+        }
     }
-}
-document.getElementById('hello').innerHTML = `${getGreeting()} <strong>{{ user.profile['first_name'] }}</strong>.<br/>Welcome to codesaur framework!`;
+
+    // Мэндчилгээг HTML дээр харуулах
+    document.getElementById('hello').innerHTML =
+        `${getGreeting()} <strong>{{ user.profile['first_name'] }}</strong>.<br/>Welcome to codesaur framework!`;
 </script>
+<!-- 
+    Dashboard content-ийн үндсэн хэсэг
+    ---------------------------------------------------------
+    Контроллероос дамжиж ирсэн динамик контент энд байрлана.
+-->
 <div>
     {{ content }}
 </div>

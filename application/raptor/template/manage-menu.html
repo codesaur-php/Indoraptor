@@ -1,5 +1,9 @@
+<!-- Template Menu Management UI (Dashboard цэс удирдах) -->
+
 {% set user_can = user.can('system_manage_menu') %}
+
 <style>
+    /* Menu list table styles */
     .menu-table > tbody > tr > th,
     .menu-table > tbody > tr > td {
         vertical-align: middle;
@@ -18,19 +22,29 @@
         color: dimgray;
     }
 </style>
+
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+
+<!-- 🔹 Цэсний жагсаалтын толгой хэсэг (toolbar) -->
 <div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-warning text-uppercase">
         <i class="bi bi-menu-button-wide-fill"></i> {{ 'menu'|text }}
     </h3>
     <div class="ms-auto">
         {% if user_can %}
-            <button class="btn btn-sm btn-outline-warning text-uppercase shadow-sm" data-bs-target="#menu-insert-modal" data-bs-toggle="modal" type="button">
+            <button
+                class="btn btn-sm btn-outline-warning text-uppercase shadow-sm"
+                data-bs-target="#menu-insert-modal"
+                data-bs-toggle="modal"
+                type="button"
+            >
                 <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
             </button>
         {% endif %}
     </div>
 </div>
+
+<!-- Indoraptor Admin – Sidebar/Topbar-ийн цэсний мастер жагсаалт -->
 <table class="table table-sm table-hover table-bordered menu-table" id="raptor_menu">
     <thead>
         <tr>
@@ -48,6 +62,7 @@
     </thead>
     <tbody>
     {% for item in menu %}
+        <!-- data-record дээр тухайн мөрийн бүх мэдээллийг JSON хэлбэрээр хадгална (view/update modal-д ашиглана) -->
         <tr{% if item['parent_id'] == 0 %} class="parent"{% endif %} data-record="{{ item|json_encode|e }}">
             <th scope="row">
                 {% if item['icon'] is not empty %}
@@ -55,7 +70,7 @@
                 {% endif %}
             </th>
             {% for code in localization.language|keys %}
-                <td >{{ item['localized']['title'][code] }}</td>
+                <td>{{ item['localized']['title'][code] }}</td>
             {% endfor %}
             <td>
                 {% if item['href'] is not empty %}
@@ -74,13 +89,33 @@
             </td>
             <td>
                 {% if user_can %}
-                    <button class="btn btn-sm btn-info mt-1 shadow-sm" data-bs-target="#menu-view-modal" data-bs-toggle="modal" type="button">
+                    <!-- Жагсаалтын мөрийг харах товч -->
+                    <button
+                        class="btn btn-sm btn-info mt-1 shadow-sm"
+                        data-bs-target="#menu-view-modal"
+                        data-bs-toggle="modal"
+                        type="button"
+                    >
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-primary mt-1 shadow-sm" value="{{ item['id'] }}" data-bs-target="#menu-update-modal" data-bs-toggle="modal" type="button">
+
+                    <!-- Жагсаалтын мөрийг засварлах товч -->
+                    <button
+                        class="btn btn-sm btn-primary mt-1 shadow-sm"
+                        value="{{ item['id'] }}"
+                        data-bs-target="#menu-update-modal"
+                        data-bs-toggle="modal"
+                        type="button"
+                    >
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="deactivate-item btn btn-sm btn-danger mt-1 shadow-sm" value="{{ item['id'] }}" type="button">
+
+                    <!-- Жагсаалтын мөрийг идэвхгүй болгох / устгах товч -->
+                    <button
+                        class="deactivate-item btn btn-sm btn-danger mt-1 shadow-sm"
+                        value="{{ item['id'] }}"
+                        type="button"
+                    >
                         <i class="bi bi-trash"></i>
                     </button>
                 {% endif %}
@@ -89,6 +124,8 @@
     {% endfor %}
     </tbody>
 </table>
+
+<!-- 🔹 MENU INSERT MODAL – Шинэ цэс үүсгэх форм -->
 <div class="modal fade" id="menu-insert-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -96,63 +133,133 @@
                 <h3 class="modal-title fs-6 text-uppercase text-success">
                     <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}
                 </h3>
-                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                <button
+                    class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"
+                ></button>
             </div>
             <div class="modal-body">
-                <form class="needs-validation" novalidate id="menu_insert" action="{{ 'manage-menu-insert'|link }}" method="POST" enctype="multipart/form-data">
+                <!-- Шинэ цэс бүртгэх үндсэн форм -->
+                <form
+                    class="needs-validation"
+                    novalidate
+                    id="menu_insert"
+                    action="{{ 'manage-menu-insert'|link }}"
+                    method="POST"
+                    enctype="multipart/form-data"
+                >
                     <div class="row">
+                        <!-- Эцэг цэс сонгох (parent_id=0 бол үндсэн цэс) -->
                         <div class="col-6">
                             <div class="form-floating">
                                 <select class="form-select" name="parent_id">
                                     <option value="0" selected>- Main menu -</option>
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
-                                            <option value="{{ item['id'] }}">{{ item['localized']['title'][localization.code]|e }}</option>
+                                            <option value="{{ item['id'] }}">
+                                                {{ item['localized']['title'][localization.code]|e }}
+                                            </option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
                                 <label>Parent</label>
                             </div>
                         </div>
+
+                        <!-- Дэс дугаар / байрлал -->
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" required name="position" value="100" placeholder="Position" type="nunber" autocomplete="off">
+                                <input
+                                    class="form-control"
+                                    required
+                                    name="position"
+                                    value="100"
+                                    placeholder="Position"
+                                    type="number"
+                                    autocomplete="off"
+                                >
                                 <label>Position</label>
                                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             </div>
                         </div>
+
+                        <!-- Цэс харагдах эсэх (is_visible) -->
                         <div class="col">
                             <div class="form-check form-switch mt-3">
                                 <label>Visiblity</label>
-                                <input class="form-check-input" name="is_visible" checked type="checkbox" role="switch">
+                                <input
+                                    class="form-check-input"
+                                    name="is_visible"
+                                    checked
+                                    type="checkbox"
+                                    role="switch"
+                                >
                             </div>
                         </div>
                     </div>
+
+                    <!-- Олон хэл дээрх Caption талбарууд -->
                     {% for code,language in localization.language %}
                         <div class="form-floating mt-2">
-                            <input class="form-control" required name="title[{{ code }}]" value="" id="title_{{ code }}" maxlength="128" autocomplete="off">
+                            <input
+                                class="form-control"
+                                required
+                                name="title[{{ code }}]"
+                                value=""
+                                id="title_{{ code }}"
+                                maxlength="128"
+                                autocomplete="off"
+                            >
                             <label for="title_{{ code }}">
-                                Caption ({{ language['title'] }}) 
+                                Caption ({{ language['title'] }})
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="16"
+                                    height="12"
+                                    alt="{{ language['title']|e }}"
+                                >
                             </label>
                             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                         </div>
                     {% endfor %}
+
+                    <!-- Icon / Link тохиргоо -->
                     <div class="row mt-2">
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" name="icon" value="bi bi-dot" placeholder="icon class" type="text" maxlength="64" autocomplete="off">
+                                <input
+                                    class="form-control"
+                                    name="icon"
+                                    value="bi bi-dot"
+                                    placeholder="icon class"
+                                    type="text"
+                                    maxlength="64"
+                                    autocomplete="off"
+                                >
                                 <label>Icon</label>
                             </div>
                         </div>
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" name="href" value="" placeholder="Link" type="text" maxlength="255" autocomplete="off">
+                                <input
+                                    class="form-control"
+                                    name="href"
+                                    value=""
+                                    placeholder="Link"
+                                    type="text"
+                                    maxlength="255"
+                                    autocomplete="off"
+                                >
                                 <label>Link</label>
                             </div>
                         </div>
                     </div>
+
+                    <!-- RBAC alias / Permission сонгох -->
                     <div class="row mt-2">
                         <div class="col">
                             <div class="form-floating">
@@ -177,15 +284,16 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </form>
             </div>
             <div class="modal-footer">
-            {% if user_can %}
-                <button class="insert-menu btn btn-success shadow-sm">
-                    <i class="bi bi-check"></i> {{ 'submit'|text }}
-                </button>
-            {% endif %}
+                {% if user_can %}
+                    <button class="insert-menu btn btn-success shadow-sm">
+                        <i class="bi bi-check"></i> {{ 'submit'|text }}
+                    </button>
+                {% endif %}
                 <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
                     {{ 'cancel'|text }}
                 </button>
@@ -193,6 +301,8 @@
         </div>
     </div>
 </div>
+
+<!-- 🔹 MENU VIEW MODAL – Цэсний мэдээллийг зөвхөн унших горимоор харах -->
 <div class="modal fade" id="menu-view-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -200,11 +310,18 @@
                 <h3 class="modal-title fs-6 text-uppercase text-info">
                     <i class="bi bi-eye"></i> {{ 'view-record'|text }}
                 </h3>
-                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                <button
+                    class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"
+                ></button>
             </div>
             <div class="modal-body">
+                <!-- View form: бүх талбарууд disabled (зөвхөн харах) -->
                 <form id="menu_view">
                     <input name="id" value="" type="hidden">
+
                     <div class="row">
                         <div class="col-6">
                             <div class="form-floating">
@@ -212,7 +329,9 @@
                                     <option value="0">- Main menu -</option>
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
-                                            <option value="{{ item['id'] }}">{{ item['localized']['title'][localization.code]|e }}</option>
+                                            <option value="{{ item['id'] }}">
+                                                {{ item['localized']['title'][localization.code]|e }}
+                                            </option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
@@ -228,20 +347,43 @@
                         <div class="col">
                             <div class="form-check form-switch mt-3">
                                 <label>Visiblity</label>
-                                <input class="form-check-input" name="is_visible" disabled checked type="checkbox" role="switch">
+                                <input
+                                    class="form-check-input"
+                                    name="is_visible"
+                                    disabled
+                                    checked
+                                    type="checkbox"
+                                    role="switch"
+                                >
                             </div>
                         </div>
                     </div>
+
+                    <!-- Caption-ууд (унших-only) -->
                     {% for code,language in localization.language %}
                         <div class="form-floating mt-2">
-                            <input class="form-control" name="title[{{ code }}]" disabled value="" id="title_{{ code }}">
+                            <input
+                                class="form-control"
+                                name="title[{{ code }}]"
+                                disabled
+                                value=""
+                                id="title_{{ code }}"
+                            >
                             <label for="title_{{ code }}">
-                                Caption ({{ language['title'] }}) 
+                                Caption ({{ language['title'] }})
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="16"
+                                    height="12"
+                                    alt="{{ language['title']|e }}"
+                                >
                             </label>
                         </div>
                     {% endfor %}
+
+                    <!-- Icon / Link / RBAC / Permission унших хэсэг -->
                     <div class="row mt-2">
                         <div class="col">
                             <div class="form-floating">
@@ -256,6 +398,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="row mt-2">
                         <div class="col">
                             <div class="form-floating">
@@ -280,6 +423,8 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Created/Updated metadata -->
                     <hr>
                     <div class="row mt-2">
                         <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
@@ -315,6 +460,8 @@
         </div>
     </div>
 </div>
+
+<!-- 🔹 MENU UPDATE MODAL – Цэсийг засварлах форм -->
 <div class="modal fade" id="menu-update-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -322,11 +469,25 @@
                 <h3 class="modal-title fs-6 text-uppercase text-primary">
                     <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }}
                 </h3>
-                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                <button
+                    class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"
+                ></button>
             </div>
             <div class="modal-body">
-                <form class="needs-validation" novalidate id="menu_update" action="{{ 'manage-menu-update'|link }}" method="PUT" enctype="multipart/form-data">
+                <!-- Update form: PUT method ашиглана -->
+                <form
+                    class="needs-validation"
+                    novalidate
+                    id="menu_update"
+                    action="{{ 'manage-menu-update'|link }}"
+                    method="PUT"
+                    enctype="multipart/form-data"
+                >
                     <input name="id" value="" type="hidden">
+
                     <div class="row">
                         <div class="col-6">
                             <div class="form-floating">
@@ -334,7 +495,9 @@
                                     <option value="0">- Main menu -</option>
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
-                                            <option value="{{ item['id'] }}">{{ item['localized']['title'][localization.code]|e }}</option>
+                                            <option value="{{ item['id'] }}">
+                                                {{ item['localized']['title'][localization.code]|e }}
+                                            </option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
@@ -343,7 +506,15 @@
                         </div>
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" required name="position" value="" placeholder="Position" type="nunber" autocomplete="off">
+                                <input
+                                    class="form-control"
+                                    required
+                                    name="position"
+                                    value=""
+                                    placeholder="Position"
+                                    type="number"
+                                    autocomplete="off"
+                                >
                                 <label>Position</label>
                                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             </div>
@@ -351,35 +522,76 @@
                         <div class="col">
                             <div class="form-check form-switch mt-3">
                                 <label>Visiblity</label>
-                                <input class="form-check-input" name="is_visible" checked type="checkbox" role="switch">
+                                <input
+                                    class="form-check-input"
+                                    name="is_visible"
+                                    checked
+                                    type="checkbox"
+                                    role="switch"
+                                >
                             </div>
                         </div>
                     </div>
+
+                    <!-- Олон хэл дээрх Caption талбарууд (editable) -->
                     {% for code,language in localization.language %}
                         <div class="form-floating mt-2">
-                            <input class="form-control" required name="title[{{ code }}]" value="" id="title_{{ code }}" maxlength="128" autocomplete="off">
+                            <input
+                                class="form-control"
+                                required
+                                name="title[{{ code }}]"
+                                value=""
+                                id="title_{{ code }}"
+                                maxlength="128"
+                                autocomplete="off"
+                            >
                             <label for="title_{{ code }}">
-                                Caption ({{ language['title'] }}) 
+                                Caption ({{ language['title'] }})
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="16"
+                                    height="12"
+                                    alt="{{ language['title']|e }}"
+                                >
                             </label>
                             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                         </div>
                     {% endfor %}
+
+                    <!-- Icon / Link / RBAC / Permission (editable) -->
                     <div class="row mt-2">
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" name="icon" value="" placeholder="icon class" type="text" maxlength="64" autocomplete="off">
+                                <input
+                                    class="form-control"
+                                    name="icon"
+                                    value=""
+                                    placeholder="icon class"
+                                    type="text"
+                                    maxlength="64"
+                                    autocomplete="off"
+                                >
                                 <label>Icon</label>
                             </div>
                         </div>
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" name="href" value="" placeholder="Link" type="text" maxlength="255" autocomplete="off">
+                                <input
+                                    class="form-control"
+                                    name="href"
+                                    value=""
+                                    placeholder="Link"
+                                    type="text"
+                                    maxlength="255"
+                                    autocomplete="off"
+                                >
                                 <label>Link</label>
                             </div>
                         </div>
                     </div>
+
                     <div class="row mt-2">
                         <div class="col">
                             <div class="form-floating">
@@ -404,15 +616,16 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </form>
             </div>
             <div class="modal-footer">
-            {% if user_can %}
-                <button class="update-menu btn btn-primary shadow-sm">
-                    <i class="bi bi-check"></i> {{ 'submit'|text }}
-                </button>
-            {% endif %}
+                {% if user_can %}
+                    <button class="update-menu btn btn-primary shadow-sm">
+                        <i class="bi bi-check"></i> {{ 'submit'|text }}
+                    </button>
+                {% endif %}
                 <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
                     {{ 'cancel'|text }}
                 </button>
@@ -420,28 +633,34 @@
         </div>
     </div>
 </div>
+
 {% if user.can('system_logger') %}
-<div class="mt-5">
-    <hr>
-    <label class="form-label fw-bolder">
-        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
-    </label>
-    <div class="spinner-grow mt-3" role="status" style="display:none">
-        <span class="visually-hidden">Loading logs...</span>
+    <!-- 🔹 Access log – Template menu дээр хийсэн бүх өөрчлөлтийн протокол -->
+    <div class="mt-5">
+        <hr>
+        <label class="form-label fw-bolder">
+            {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+        </label>
+        <div class="spinner-grow mt-3" role="status" style="display:none">
+            <span class="visually-hidden">Loading logs...</span>
+        </div>
+        <ul class="list-group logger-protocol" id="logger-dashboard" style="max-height:240px; overflow-y:auto">
+        </ul>
     </div>
-    <ul class="list-group logger-protocol" id="logger-dashboard" style="max-height:240px; overflow-y:auto">
-    </ul>
-</div>
 {% endif %}
+
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
+        // 🔹 motable – Indoraptor Admin-ийн стандарт хүснэгт helper
         const menu = new motable('table#raptor_menu');
         menu.setReady();
-        
+
+        // 🔹 Цэс идэвхгүй болгох товч (trash icon) дээрх click event
         const deactivates = menu.table.querySelectorAll('.deactivate-item');
         deactivates.forEach(btn => btn.addEventListener('click', function (e) {
             e.preventDefault();
 
+            // Оролцогчийн хэлнээс хамаарч асуултыг локальчлана
             let question;
             if (document.documentElement.lang === 'mn') {
                 question = '<p class="text-danger mb-3">Та ({0}) цэсийг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
@@ -453,12 +672,16 @@
             if (!thisRow) {
                 return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
             }
+
+            // Мөрийн эхний caption-ийг plain text хэлбэрээр гаргаж авна
             let caption = thisRow.children[1].innerHTML;
             let ask = question.format(caption.replace(/<\/?[^>]+(>|$)/g, ''));
             let icon = thisRow.children[0].querySelector('i');
             if (icon) {
                 ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
             }
+
+            // SweetAlert2 – Идэвхгүй болгохыг баталгаажуулах dialog
             Swal.fire({
                 html: ask,
                 input: 'text',
@@ -492,24 +715,32 @@
 
                         Swal.close();
 
+                        // Тухайн мөрийг хүснэгтээс хасна
                         thisRow.remove();
                         menu.setReady();
-                        
+
+                        // UI-г шинэчлэх (refresh)
                         window.location.reload();
 
-                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Menu (${caption}) deactivated`);
+                        NotifyTop(
+                            'success',
+                            `{{ 'success'|text|e }}`,
+                            response.message ?? `Menu (${caption}) deactivated`
+                        );
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
                     });
                 }
             });
         }));
-        
+
+        // 🔹 UPDATE MODAL – Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ
         const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
         updates.forEach(btn => btn.addEventListener('click', function () {
             let thisRow = btn.closest('tr');
             let record = JSON.parse(thisRow.dataset.record ?? '{}');
             if (record.id === undefined) return;
+
             let updateModal = document.querySelector('div#menu-update-modal');
             updateModal.querySelector('input[name="id"]').value = record.id;
             updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
@@ -519,16 +750,19 @@
             updateModal.querySelector('input[name="href"]').value = record.href;
             updateModal.querySelector('select[name="alias"]').value = record.alias;
             updateModal.querySelector('select[name="permission"]').value = record.permission;
+
             for (let code in record.localized?.title) {
                 updateModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
             }
         }));
-        
+
+        // 🔹 VIEW MODAL – Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ
         const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
         views.forEach(btn => btn.addEventListener('click', function () {
             let thisRow = btn.closest('tr');
             let record = JSON.parse(thisRow.dataset.record ?? '{}');
             if (record.id === undefined) return;
+
             let viewModal = document.querySelector('div#menu-view-modal');
             viewModal.querySelector('input[name="id"]').value = record.id;
             viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
@@ -538,6 +772,7 @@
             viewModal.querySelector('input[name="href"]').value = record.href;
             viewModal.querySelector('select[name="alias"]').value = record.alias;
             viewModal.querySelector('select[name="permission"]').value = record.permission;
+
             for (let code in record.localized?.title) {
                 viewModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
             }
@@ -546,7 +781,8 @@
             viewModal.querySelector('input[name="updated_at"]').value = record.updated_at;
             viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
         }));
-        
+
+        // 🔹 MENU INSERT FORM – Шинэ цэс нэмэх submit логик
         const formInsert = document.querySelector('form#menu_insert');
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -564,12 +800,21 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                    return NotifyTop(
+                        'danger',
+                        `{{ 'error'|text|e }}`,
+                        `{{ 'u-have-some-form-errors'|text|e }}`
+                    );
                 }
 
                 submitter.growNstop();
 
-                const data = new FormData(this);
+                let data = new FormData(this);
+                // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
+                let visible = this.querySelector('input[name="is_visible"]');
+                if (visible) {
+                    data.set('is_visible', visible.checked ? '1' : '0');
+                }
                 fetch(
                     this.action,
                     {
@@ -587,9 +832,14 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
+                    // Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh
                     window.location.reload();
 
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Menu created');
+                    NotifyTop(
+                        response.type ?? 'success',
+                        response.title ?? `{{ 'success'|text|e }}`,
+                        response.message ?? 'Menu created'
+                    );
                 }).catch(error => {
                     NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
@@ -597,6 +847,7 @@
             });
         }
 
+        // 🔹 MENU UPDATE FORM – Цэс засварлах submit логик
         const formUpdate = document.querySelector('form#menu_update');
         if (!formUpdate) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -614,12 +865,21 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                    return NotifyTop(
+                        'danger',
+                        `{{ 'error'|text|e }}`,
+                        `{{ 'u-have-some-form-errors'|text|e }}`
+                    );
                 }
 
                 submitter.growNstop();
 
-                const data = new FormData(this);
+                let data = new FormData(this);
+                // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
+                let visible = this.querySelector('input[name="is_visible"]');
+                if (visible) {
+                    data.set('is_visible', visible.checked ? '1' : '0');
+                }
                 fetch(
                     this.action,
                     {
@@ -637,16 +897,22 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
+                    // Засварын дараа UI-г шинэчлэх
                     window.location.reload();
 
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Menu updated');
+                    NotifyTop(
+                        response.type ?? 'success',
+                        response.title ?? `{{ 'success'|text|e }}`,
+                        response.message ?? 'Menu updated'
+                    );
                 }).catch(error => {
                     NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
                 });
             });
         }
-        
+
+        // 🔹 LOGGER – Template Menu-тэй холбоотой бүх үйлдлийн протоколын жагсаалт
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
@@ -658,6 +924,7 @@
             logger.style.display = 'none';
             let spinner = logger.previousElementSibling;
             spinner.style.display = 'block';
+
             fetch(
                 `${logsRetrieveLink}?table=${table}`,
                 {
@@ -686,6 +953,8 @@
                 Object.values(response).forEach(log => {
                     let log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
+
+                    // Log level-с хамаарч Bootstrap өнгө тохируулах
                     switch (log.level) {
                         case 'notice': log_li.classList.add('list-group-item-light'); break;
                         case 'info': log_li.classList.add('list-group-item-primary'); break;
@@ -714,13 +983,13 @@
                     log_li.appendChild(document.createTextNode(' '));
 
                     let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.innerHTML =
+                        `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                     span_user_action.classList.add('text-muted', 'small');
                     log_li.appendChild(span_user_action);
 
                     logger.appendChild(log_li);
                 });
-
             }).catch(error => {
                 console.log(error.message);
             }).finally(() => {

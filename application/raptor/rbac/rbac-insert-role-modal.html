@@ -1,61 +1,131 @@
+<!--
+    RBAC - Add Role Modal
+
+    Зорилго:
+      • Шинэ RBAC Role үүсгэх (жишээ: editor, manager, accountant…)
+      • Role → зөвхөн тухайн alias (system, news, org…) дотор хүчинтэй
+      • POST хүсэлтээр сервер рүү илгээнэ
+
+    Гол хувьсагчид:
+      - alias : RBAC системийн хүрээ
+      - title : UI дээрх нэмэлт гарчиг
+-->
+
 <div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
+
+        <!-- Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-info">Add Role</h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
+
+        <!-- Modal Body -->
         <div class="modal-body">
-            <form class="needs-validation" novalidate autocomplete="off" id="rbac_role_insert" role="form" action="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}" method="POST" enctype="multipart/form-data">
+
+            <!-- FORM - Role insert -->
+            <form
+                class="needs-validation"
+                novalidate
+                autocomplete="off"
+                id="rbac_role_insert"
+                role="form"
+                action="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}"
+                method="POST"
+                enctype="multipart/form-data"
+            >
+                <!-- Scrollable content (хэт өндөр болохоос сэргийлнэ) -->
                 <div style="height:200px;overflow-y:auto;overflow-x:hidden;">
+
+                    <!-- Role Name -->
                     <div class="form-group row">
                         <label class="col-3 col-form-label text-right">{{ 'name'|text }}</label>
                         <div class="col-9">
-                            <input required autocomplete="off" maxlength="128" name="name" placeholder="" value="" type="text" class="form-control">
+                            <input
+                                required
+                                autocomplete="off"
+                                maxlength="128"
+                                name="name"
+                                placeholder=""
+                                value=""
+                                type="text"
+                                class="form-control"
+                            >
                         </div>
                     </div>
+
+                    <!-- Role Description -->
                     <div class="form-group row">
                         <label class="col-3 col-form-label text-right">{{ 'description'|text }}</label>
                         <div class="col-9">
                             <textarea class="form-control" name="description"></textarea>
                         </div>
                     </div>
-                </div>
+
+                </div> <!-- scroll area end -->
+
             </form>
         </div>
+
+        <!-- Modal Footer -->
         <div class="modal-footer">
-            <button class="submit-new-role btn btn-info shadow-sm text-light"">
+            <!-- Submit button -->
+            <button class="submit-new-role btn btn-info shadow-sm text-light">
                 <i class="bi bi-check"></i> <strong>{{ 'submit'|text }}</strong>
             </button>
-            <button class="btn btn-secondary shadow-sm" type="button" data-bs-dismiss="modal" type="button">
+
+            <!-- Back/Close button -->
+            <button class="btn btn-secondary shadow-sm" type="button" data-bs-dismiss="modal">
                 {{ 'back'|text }}
             </button>
         </div>
     </div>
 </div>
+
 <script type="text/javascript">
+    /* ---------------------------------------------
+       RBAC Role Insert Form Controller (JavaScript)
+       ---------------------------------------------
+       Гол үйлдлүүд:
+         • HTML5 validation
+         • Submit → fetch() ашиглан POST хийх
+         • Success → хуудсыг refresh
+         • Error → NotifyTop() ашиглан мэдэгдэл өгөх
+    */
+
     const formInsert = document.querySelector('form#rbac_role_insert');
     if (!formInsert) {
+        // Form олдохгүй бол хэрэглэгчид мэдэгдэнэ
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
+        // Submit товч → requestSubmit() ашиглана
         const submitter = document.querySelector('button.submit-new-role');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
             formInsert.requestSubmit();
         });
 
+        // Form submit event
         formInsert.addEventListener('submit', function (event) {
             event.preventDefault();
 
+            // HTML5 form validation
             const _valid = this.checkValidity();
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                return NotifyTop(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
             }
 
+            // Button animation (growNstop → custom function)
             submitter.growNstop();
 
             const data = new FormData(this);
+            // AJAX POST → сервер лүү илгээх
             fetch(
                 this.action,
                 {
@@ -63,20 +133,29 @@
                     method: this.getAttribute('method') ?? 'POST'
                 }
             ).then(res => {
+                // JSON хариуг шалгах
                 let contentType = res.headers.get('content-type') || '';
                 if (contentType.includes('application/json')) {
                     return res.json();
                 }
+
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
             }).then(response => {
+                // Алдааг шалгах
                 if (response.status !== 'success') {
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
+                // Role амжилттай бүртгэгдсэн → хуудсыг refresh
                 window.location.reload();
 
-                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Role created');
+                NotifyTop(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'Role created'
+                );
             }).catch(error => {
+                // Алдааны мэдэгдэл
                 NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });

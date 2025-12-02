@@ -11,10 +11,47 @@ use Psr\Log\LogLevel;
 
 use Raptor\Log\Logger;
 
+/**
+ * Class Mailer
+ * -------------------------------
+ * ✉️ Indoraptor Framework-ийн и-мэйл илгээх үндсэн сервис.
+ *
+ * Энэ класс нь хоёр төрлийн илгээх механизмыг дэмждэг:
+ *   1) Brevo (SendInBlue) Transactional Email API — илгээх өндөр найдвартай шийдэл
+ *   2) SMTP (PHPMailer) — шаардлагатай үед хэрэглэж болох уламжлалт арга
+ *
+ * Mailer нь дараах үүргийг гүйцэтгэнэ:
+ *   ● .env файлаас Mail тохиргоонуудыг автоматаар уншина
+ *   ● From / Reply-To хаягуудыг автомат тохируулна
+ *   ● HTML email форматтай мессеж илгээнэ
+ *   ● CC / BCC / Attachment дэмжинэ
+ *   ● Амжилттай эсвэл алдаатай илгээсэн бүр илгээх үйлдлийг `mailer_log` хүснэгтэд бүртгэнэ
+ *
+ * Ашиглагдах .env хувьсагчууд:
+ * -------------------------------------
+ *   INDO_MAIL_FROM               - Илгээгч и-мэйл хаяг (заавал)
+ *   INDO_MAIL_FROM_NAME          - Илгээгчийн нэр
+ *   INDO_MAIL_REPLY_TO           - Хариу авах и-мэйл
+ *   INDO_MAIL_REPLY_TO_NAME      - Хариу авах нэр
+ *   INDO_MAIL_BREVO_APIKEY       - Brevo API түлхүүр
+ *
+ * @package Raptor\Mail
+ */
 class Mailer extends \codesaur\Http\Client\Mail
 {
     use \codesaur\DataObject\PDOTrait;
     
+    /**
+     * Mailer constructor.
+     *
+     * @param \PDO      $pdo           Database connection — илгээх протокол лог бичихэд ашиглагдана.
+     * @param string|null $from        Илгээгчийн и-мэйл (хоосон бол .env → INDO_MAIL_FROM)
+     * @param string|null $fromName    Илгээгчийн нэр (.env → INDO_MAIL_FROM_NAME)
+     * @param string|null $replyTo     Хариу хүлээж авах хаяг (.env → INDO_MAIL_REPLY_TO)
+     * @param string|null $replyToName Хариу авах нэр (.env → INDO_MAIL_REPLY_TO_NAME)
+     *
+     * @throws Exception Илгээгчийн хаяг тодорхойгүй бол.
+     */
     public function __construct(
         \PDO $pdo,
         ?string $from = null, ?string $fromName = null,
@@ -22,10 +59,13 @@ class Mailer extends \codesaur\Http\Client\Mail
     ) {
         $this->setInstance($pdo);
         
+        // Илгээгчийг тохируулах
         $this->setFrom(
             $from ?? $_ENV['INDO_MAIL_FROM'] ?? '',
             $fromName ?? $_ENV['INDO_MAIL_FROM_NAME'] ?? ''
         );
+        
+        // Reply-To (хэрэв өгөгдсөн бол)
         if (!empty($replyTo ?? $_ENV['INDO_MAIL_REPLY_TO'] ?? '')) {
             $this->setReplyTo(
                 $replyTo ?? $_ENV['INDO_MAIL_REPLY_TO'],
@@ -34,6 +74,17 @@ class Mailer extends \codesaur\Http\Client\Mail
         }
     }
     
+    /**
+     * Email ачаалах тохиргоо (subject, message, recipients, attachments).
+     *
+     * @param string      $to          Хүлээн авагчийн и-мэйл
+     * @param string|null $toName      Хүлээн авагчийн нэр
+     * @param string      $subject     Гарчиг
+     * @param string      $message     HTML форматтай мессеж
+     * @param array|null  $attachments Attachment жагсаалт
+     *
+     * @return Mailer
+     */
     public function mail(
         string $to,
         ?string $toName,
@@ -54,6 +105,17 @@ class Mailer extends \codesaur\Http\Client\Mail
         return $this;
     }
     
+    /**
+     * И-мэйл илгээх үндсэн функц.
+     *
+     * Алхамууд:
+     * -------------------------
+     * 1) .env → INDO_MAIL_BREVO_APIKEY шалгана
+     * 2) Brevo API ашиглан transactional e-mail илгээнэ
+     * 3) Амжилттай эсвэл алдаа гарсан нөхцөл бүхэнд logger бичнэ
+     *
+     * @return bool Илгээсэн эсэх
+     */
     public function send(): bool
     {
         try {
@@ -101,12 +163,24 @@ class Mailer extends \codesaur\Http\Client\Mail
         }
     }
     
+    /**
+     * SMTP ашиглан илгээх (fallback method).
+     *
+     * 🔸 Энэ функц нь Brevo API боломжгүй үед хэрэглэгдэнэ.
+     *
+     * @param string $host         SMTP Host
+     * @param int    $port         Порт (25, 465, 587)
+     * @param string $username     SMTP хэрэглэгчийн нэр
+     * @param string $password     SMTP нууц үг
+     * @param string $smtp_secure  ssl|tls
+     * @param array  $smtp_options SSL тохиргоо
+     *
+     * @return bool
+     * @throws Exception Attachment URL ашигласан үед
+     */
     protected function sendSMTP(
-        $host, // yourhost
-        $port, // 465 or 587 or 25
-        $username, //username@yourhost.com
-        $password,
-        $smtp_secure = 'ssl',
+        $host, $port, $username, $password, 
+        $smtp_secure = 'ssl', 
         $smtp_options = [
             'ssl' => [
                 'verify_peer' => false,
@@ -161,6 +235,14 @@ class Mailer extends \codesaur\Http\Client\Mail
         return $phpMailer->send();
     }
     
+    /**
+     * Brevo Transactional Email API ашиглаж илгээх.
+     *
+     * @param string $apiKey Brevo API key (.env → INDO_MAIL_BREVO_APIKEY)
+     *
+     * @return array API response
+     * @throws Exception Brevo local file attachment дэмждэггүй
+     */
     protected function sendBrevoTransactional($apiKey): array
     {
         $this->assertValues();

@@ -1,4 +1,28 @@
+<!-- 
+    RBAC - Role / Permission Matrix UI
+
+    Энэ хуудас нь тухайн байгууллагын (alias) хүрээнд:
+      • Дүрүүдийн (roles) жагсаалт
+      • Зөвшөөрлүүд (permissions)
+      • Role -> Permission харьцааны матриц
+      • Тухайн матриц дээрх checkbox-ийг AJAX-оор хадгалах
+      • Холбогдох RBAC лог (dashboard_log) жагсаалтыг харуулах
+
+    Гол хувьсагчид:
+      - alias       : RBAC тохируулах тухайн модулийн alias (жишээ: system, news г.м.)
+      - title       : Нэмэлт гарчиг (жишээ: Organization name)
+      - roles       : RBAC-ийн дүрүүдийн массив
+      - permissions : Зөвшөөрлүүдийн массив
+      - role_permission[role_id][permission_id] : тухайн Role → Permission заалт байгаа эсэх
+      - user        : Нэвтэрсэн хэрэглэгчийн объект (Raptor\Authentication\User)
+-->
+
 <style>
+    /*
+        .requesting - AJAX хүсэлт явж байх үед бүх дэлгэц дээр
+        "Processing..." overlay гаргаж хэрэглэгчийг дахин дарах,
+        дахин хүсэлт шидэхээс сэргийлэх зориулалттай.
+    */
     .requesting {
         z-index: 2000;
         display: none;
@@ -12,12 +36,16 @@
         cursor: wait;
         border: none;
     }
+
+    /* Хар бараан бүдэг background */
     .requesting-bg {
         width: 100%;
         height: 100%;
         background-color: rgb(0, 0, 0);
         opacity: 0.6;
     }
+
+    /* Дээр нь гарч ирэх цонх (spinner + текст) */
     .requesting-content {
         position: absolute;
         padding: .7rem .5rem .2rem .5rem;
@@ -31,11 +59,17 @@
         border: 2px solid #0d6efd;
         background-color: rgb(255, 255, 255);
     }
+
     .requesting-content img {
         height: 42px;
         margin-bottom: .3rem;
     }
 </style>
+
+<!-- 
+    AJAX хүсэлт (RolePermission set / unset) явагдаж байх үед
+    энэ overlay-г харуулна.
+-->
 <div class="requesting">
     <div class="requesting-bg"></div>
     <div class="requesting-content">
@@ -43,73 +77,173 @@
         <h6>Processing request ...</h6>
     </div>
 </div>
+
+<!--
+    Дээд хэсгийн толгой мөр:
+      • Гарчиг: RBAC / alias / title
+      • Баруун талд: Role нэмэх / Permission нэмэх товчлуурууд
+      Эдгээр нь modal (static-modal) онгойлгож, RBACController дахь
+      insertRole() / insertPermission() action руу чиглэнэ.
+-->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-danger">
-        <i class="bi bi-shield-fill-check"></i> RBAC / {{ alias ~ (title is empty ? '' : ' / ' ~ title)}}
+        <i class="bi bi-shield-fill-check"></i>
+        RBAC / {{ alias ~ (title is empty ? '' : ' / ' ~ title) }}
     </h3>
+
     <div class="ms-auto">
-        <button class="btn btn-sm btn-info shadow-sm text-white" href="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}" data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
+        <!-- RBAC Role үүсгэх modal нээх товч -->
+        <button
+            class="btn btn-sm btn-info shadow-sm text-white"
+            href="{{ 'rbac-insert-role'|link({'alias': alias}) }}?title={{ title|e }}"
+            data-bs-target="#static-modal"
+            data-bs-toggle="modal"
+            type="button"
+        >
             <i class="bi bi-plus-circle"></i> Add Role
         </button>
-        <button class="btn btn-sm btn-success shadow-sm" href="{{ 'rbac-insert-permission'|link({'alias':alias}) }}?title={{ title|e }}" data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
+
+        <!-- RBAC Permission үүсгэх modal нээх товч -->
+        <button
+            class="btn btn-sm btn-success shadow-sm"
+            href="{{ 'rbac-insert-permission'|link({'alias': alias}) }}?title={{ title|e }}"
+            data-bs-target="#static-modal"
+            data-bs-toggle="modal"
+            type="button"
+        >
             <i class="bi bi-plus-circle"></i> Add Permission
         </button>
     </div>
 </div>
+
+<!-- 
+    Гол RBAC матриц хүснэгт:
+      - Эхний багана: ROLE нэрүүд
+      - Дараагийн баганууд: permissions[name]
+      - Мөр тус бүрт: ролийн permission бүр дээр checkbox
+-->
 <div class="table-responsive">
     <table class="table table-striped table-bordered mt-1" id="rbac_{{ alias }}">
         <thead>
             <tr>
                 <th class="text-danger" scope="col">ROLE</th>
-                    {% for permission in permissions %}
+
+                <!-- Тольцлогдсон permission бүрийг багана болгон гаргана -->
+                {% for permission in permissions %}
                     <th class="text-center">
-                        <span style="cursor:pointer" data-toggle="tooltip" title="{{ permission['description']|e }}">
+                        <span
+                            style="cursor:pointer"
+                            data-toggle="tooltip"
+                            title="{{ permission['description']|e }}"
+                        >
                             {{ permission['name'] }}
                         </span>
                     </th>
                 {% endfor %}
             </tr>
         </thead>
+
         <tbody style="border-top:0.1rem solid currentcolor">
+            <!-- ROLE мөр бүр -->
             {% for role in roles %}
                 <tr>
                     <th scope="col">
-                        <span class="text-danger" style="cursor:pointer" data-toggle="tooltip" data-placement="right" title="{{ role['description']|e }}">
+                        <span
+                            class="text-danger"
+                            style="cursor:pointer"
+                            data-toggle="tooltip"
+                            data-placement="right"
+                            title="{{ role['description']|e }}"
+                        >
                             {{ role['name'] }}
                         </span>
                     </th>
+
+                    <!-- Тухайн role-д харгалзах бүх permission-н checkbox-ууд -->
                     {% for permission in permissions %}
                         <td class="text-center">
-                            <input class="role_permission"{% if role_permission[role['id']][permission['id']] is defined %} checked{% endif %} role_id="{{ role['id'] }}" permission_id="{{ permission['id'] }}" type="checkbox">
+                            <!--
+                                role_permission[role_id][permission_id] is defined
+                                бол өөрөөр хэлбэл тухайн Role → Permission харьцаа
+                                өмнө нь бүртгэгдсэн бол checkbox CHECKED байна.
+                            -->
+                            <input
+                                class="role_permission"
+                                {% if role_permission[role['id']][permission['id']] is defined %}checked{% endif %}
+                                role_id="{{ role['id'] }}"
+                                permission_id="{{ permission['id'] }}"
+                                type="checkbox"
+                            >
                         </td>
                     {% endfor %}
                 </tr>
             {% endfor %}
         </tbody>
+
         <tfoot></tfoot>
     </table>
 </div>
+
+<!--
+    RBAC холбогдох логийг харах хэсэг.
+    Зөвхөн system_logger эрхтэй хэрэглэгч харах боломжтой.
+-->
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
     <label class="form-label fw-bolder">
         {{ 'log'|text }} <i class="bi bi-clock-history"></i>
     </label>
+
+    <!-- Лог ачаалж байх үед харагдах spinner -->
     <div class="spinner-grow mt-3" role="status" style="display:none">
         <span class="visually-hidden">Loading logs...</span>
     </div>
-    <ul class="list-group logger-protocol" id="logger-dashboard" style="max-height:240px; overflow-y:auto">
+
+    <!-- RBAC-тэй холбоотой logger протокол (dashboard_log хүснэгт) -->
+    <ul
+        class="list-group logger-protocol"
+        id="logger-dashboard"
+        style="max-height:240px; overflow-y:auto"
+    >
     </ul>
 </div>
 {% endif %}
+
 <script type="text/javascript">
+    /*
+        RBAC matrix UI controller (front-end логик)
+        --------------------------------------------------------------
+        Үндсэн 2 хэсэг:
+          1) RolePermission checkbox-ууд дээр click хийж, 
+             fetch() ашиглан RBACController::setRolePermission() руу
+             POST / DELETE хүсэлт явуулж хадгалах.
+
+          2) Хэрэв system_logger эрхтэй бол RBAC-тэй холбоотой 
+             dashboard_log хүснэгтээс протоколыг AJAX-аар татаж,
+             доод жагсаалтад үзүүлэх.
+
+        Хүмүүс customize хийхэд:
+          - setRolePermission() доторх fetch URL, method, body-г өөрчилж болно
+          - logger хэсгийн fetch параметрүүдийг өөрийн хүссэнээр
+            (LIMIT, CONTEXT filter, ORDER BY) тохируулж өргөтгөх боломжтой.
+    */
     document.addEventListener('DOMContentLoaded', function () {
+        /**
+         * RolePermission toggle handler
+         *
+         * Тухайн checkbox дарагдмагц:
+         *   • request overlay-г асаана
+         *   • role_id, permission_id-тай FormData үүсгэнэ
+         *   • checked бол POST, uncheck бол DELETE хүсэлт явуулна
+         *   • Амжилт/алдааны мэдээг NotifyTop() ашиглан харуулна
+         */
         const setRolePermission = function () {
             const requesting = document.querySelector('div.requesting');
             if (requesting) {
                 requesting.style.display = 'block';
             }
-            
+
             let formData = new FormData();
             formData.append('role_id', this.getAttribute('role_id'));
             formData.append('permission_id', this.getAttribute('permission_id'));
@@ -124,12 +258,14 @@
                 if (contentType.includes('application/json')) {
                     return res.json();
                 }
+                // JSON биш хүсэлт ирсэн бол алдааны object шиднэ
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
             }).then(response => {
                 let type = response.type ?? 'warning';
                 let title = response.title ?? `{{ 'notice'|text|e }}`;
                 NotifyTop(type, title, response.message ?? 'Role permission set');
             }).catch(error => {
+                // Алдаа гарвал дээрх NotifyTop-оор хэрэглэгчид харуулна
                 NotifyTop('danger', `{{ 'error'|text }}`, error.message);
             }).finally(() => {
                 if (requesting) {
@@ -138,15 +274,24 @@
             });
         };
 
+        // Бүх role_permission checkbox-д click event bind хийх
         var rolePermissionInputs = document.getElementsByClassName('role_permission');
         for (var i = 0; i < rolePermissionInputs.length; i++) {
             rolePermissionInputs[i].addEventListener('click', setRolePermission);
         }
-        
+
+        /**
+         * RBAC Logger хэсэг:
+         *   - Зөвхөн logger UL элемент байвал ажиллана
+         *   - logs-retrieve → RBAC холбоотой log жагсаалт татна
+         *   - logs-view → нэг log-ийг modal-оор дэлгэрэнгүй үзүүлэхэд ашиглана
+         */
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
+
+            // logger-dashboard → "dashboard" хэсгийг table parameter болгон ашиглана
             let logger_id = logger.id ?? '';
             let table = logger_id.substring(logger_id.indexOf('-') + 1);
             if (!table) return;
@@ -154,6 +299,7 @@
             logger.style.display = 'none';
             let spinner = logger.previousElementSibling;
             spinner.style.display = 'block';
+
             fetch(
                 `${logsRetrieveLink}?table=${table}`,
                 {
@@ -164,6 +310,7 @@
                     body: JSON.stringify({
                         'ORDER BY': 'id Desc',
                         'CONTEXT': {
+                            // RBAC холбоотой action-уудыг шүүнэ (rbac-* pattern)
                             'action': 'rbac-*',
                             'alias': `{{ alias }}`
                         },
@@ -179,20 +326,25 @@
 
                 logger.innerHTML = '';
 
+                // Нэг log дээр дарахад нээх modal-ийн URL загвар
                 let logModalLink = `${logsViewLink}?table=${table}&id=`;
+
                 Object.values(response).forEach(log => {
                     let log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
+
+                    // Log level-ээр өнгө ялгах (Bootstrap list-group-item-* classes)
                     switch (log.level) {
-                        case 'notice': log_li.classList.add('list-group-item-light'); break;
-                        case 'info': log_li.classList.add('list-group-item-primary'); break;
-                        case 'error': log_li.classList.add('list-group-item-danger'); break;
-                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
-                        case 'alert': log_li.classList.add('list-group-item-info'); break;
-                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
-                        default: log_li.classList.add('list-group-item-dark'); break;
+                        case 'notice':  log_li.classList.add('list-group-item-light');     break;
+                        case 'info':    log_li.classList.add('list-group-item-primary');   break;
+                        case 'error':   log_li.classList.add('list-group-item-danger');    break;
+                        case 'warning': log_li.classList.add('list-group-item-warning');   break;
+                        case 'alert':   log_li.classList.add('list-group-item-info');      break;
+                        case 'debug':   log_li.classList.add('list-group-item-secondary'); break;
+                        default:        log_li.classList.add('list-group-item-dark');      break;
                     }
 
+                    // [created_at] [id] дээр дарахад log modal нээнэ
                     let a_link = document.createElement('a');
                     a_link.textContent = `${log.created_at} [${log.id}]`;
                     a_link.href = logModalLink + log.id;
@@ -205,13 +357,16 @@
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
 
+                    // Логийн үндсэн мессеж (context-тэй интерполяцлагдсан)
                     let span_msg = document.createElement('span');
                     span_msg.innerHTML = log.message;
                     log_li.appendChild(span_msg);
                     log_li.appendChild(document.createTextNode(' '));
 
+                    // Хэн (auth_user.username) ямар action хийснийг жижиг текстээр үзүүлэх
                     let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.innerHTML =
+                        `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                     span_user_action.classList.add('text-muted', 'small');
                     log_li.appendChild(span_user_action);
 
@@ -219,6 +374,7 @@
                 });
 
             }).catch(error => {
+                // Лог ачаалах алдаа илэрсэн үед зөвхөн console-д бичнэ
                 console.log(error.message);
             }).finally(() => {
                 logger.style.display = '';

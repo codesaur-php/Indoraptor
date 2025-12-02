@@ -13,7 +13,7 @@ namespace Raptor;
  *
  * Middleware pipeline нь дараах дарааллаар ажиллана:
  *
- *   1) ErrorHandler -    Алдаа барих ба JSON/HTML error-г зохицуулна
+ *   1) ErrorHandler    - Алдаа барих ба JSON/HTML error-г зохицуулна
  *   2) MySQLConnectMiddleware / PostgresConnectMiddleware
  *                      → Controller болон бусад middleware-д PDO холболт inject хийнэ
  *   3) SessionMiddleware
@@ -31,7 +31,7 @@ namespace Raptor;
  *   - UsersRouter          → Хэрэглэгчийн CRUD
  *   - OrganizationRouter   → Байгууллага + хэрэглэгчийн холбоос
  *   - RBACRouter           → Permission / Role / RBAC удирдлага
- *   - LocalizationRouter   → Хэл болон орчуулгын интерфейс
+ *   - LocalizationRouter   → Хэл болон орчуулга
  *   - ContentsRouter       → File, News, Page, Reference, Settings модулиуд
  *   - LogsRouter           → Системийн логийн индекс, харах
  *   - TemplateRouter       → Dashboard UI-ийн template харгалзах маршрут

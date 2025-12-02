@@ -1,4 +1,5 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <!-- Header хэсэг – Логийн жагсаалтын гарчиг ба Нүүр хуудас руу буцах товч -->
     <h3 class="px-2 my-auto fs-6 text-secondary text-uppercase">
         <i class="bi bi-list"></i> {{ 'logs'|text }}
     </h3>
@@ -9,53 +10,99 @@
     </div>
 </div>
 
+<!-- Лог хадгалж буй хүснэгтүүдийг таб хэлбэрээр харуулах хэсэг -->
 <ul class="nav nav-tabs" role="tablist">
 {% for table in log_tables %}
     <li class="nav-item">
-        <a class="nav-link{% if table == 'dashboard' %} active{% endif %} text-uppercase" role="tab" data-bs-toggle="tab" href="#log_{{ table }}" data-table="{{ table }}">{{ table }}</a>
+        <!-- data-table атрибутаар тухайн таб ямар логийн хүснэгттэй холбогдохыг зааж байна -->
+        <a class="nav-link{% if table == 'dashboard' %} active{% endif %} text-uppercase"
+           role="tab"
+           data-bs-toggle="tab"
+           href="#log_{{ table }}"
+           data-table="{{ table }}">{{ table }}</a>
     </li>
 {% endfor %}
 </ul>
 
+<!-- Таб бүрийн контент – логийн жагсаалт, spinner, sentinel, төгсгөлийн мэдэгдэл -->
 <div class="tab-content mt-3">
 {% for table in log_tables %}
-    <div class="tab-pane{% if table == 'dashboard' %} active{% endif %}" id="log_{{ table }}" style="width:100%;height:80.5vh;min-height:400px;overflow-y:auto;overflow-x:hidden;position:relative;">
+    <!--
+        id="log_table"  → тухайн логийн хүснэгтийн таб pane
+        inline style → өндөр, scroll хийх боломжийг хянаж байна
+    -->
+    <div class="tab-pane{% if table == 'dashboard' %} active{% endif %}"
+         id="log_{{ table }}"
+         style="width:100%;height:80.5vh;min-height:400px;overflow-y:auto;overflow-x:hidden;position:relative;">
+        <!--
+            Spinner – тухайн хүснэгтийн логийг ачаалж байгааг харуулах жижиг loader
+            log-spinner классыг JS дээрээс ашиглаж display-ийг ON/OFF болгоно
+        -->
         <div class="spinner-grow log-spinner position-absolute" role="status" style="display:none;top:10px;right:10px">
             <span class="visually-hidden">Loading logs...</span>
         </div>
 
+        <!--
+            Жинхэнэ логийн мөрүүдийг `<li>` элемент болгон append хийх list-group
+            id="logger-table" → хүснэгт тус бүр өөр өөр UL-тэй байна
+        -->
         <ul class="list-group logger-protocol" id="logger-{{ table }}" style="padding-bottom:1rem;"></ul>
 
-        {# Infinite scroll хийхэд IntersectionObserver ажиглах зориулалттай sentinel элемент #}
+        <!--
+            Infinite scroll-ийн sentinel элемент
+            IntersectionObserver энэ div элемент рүү ойртоход дараагийн batch логийг татана.
+            height:1px; → харагдахгүй, зөвхөн scroll-ын доод хэсэгт байрлах тэмдэглэгээ.
+        -->
         <div class="log-sentinel" data-table="{{ table }}" style="height:1px;"></div>
 
-        <div class="text-center mt-2 mb-2 no-more-rows text-muted" style="display:none;">{{ localization.code == 'mn' ? 'Цааш лог байхгүй' : 'No more logs' }}</div>
+        <!--
+            Цааш лог байхгүй үед харуулах мессеж.
+            JS дээрээс .style.display = 'block' болгож идэвхжүүлнэ.
+        -->
+        <div class="text-center mt-2 mb-2 no-more-rows text-muted" style="display:none;">
+            {{ localization.code == 'mn' ? 'Цааш лог байхгүй' : 'No more logs' }}
+        </div>
     </div>
 {% endfor %}
 </div>
 
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
-    const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
-    const logsViewLink = `{{ 'logs-view'|link }}`;
-    const limit = 50; // Нэг удаад ачаалах мөрийн тоо
+    // ---------------------------------------------------------------------
+    // Тохиргоо: лог татах API-гийн endpoint-ууд
+    // ---------------------------------------------------------------------
+    const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`; // Логийн жагсаалт авах REST endpoint
+    const logsViewLink = `{{ 'logs-view'|link }}`;         // Логийн дэлгэрэнгүйг modal-аар нээх endpoint
+    const limit = 50; // Нэг request-аар авах логийн мөрийн тоо (pagination LIMIT)
 
-    // Тухайн лог хүснэгт бүрийн төлөв хадгалах объект
-    const logState = {}; // { tableName: { offset: 0, loading: false, done: false, initialized: false } }
+    // ---------------------------------------------------------------------
+    // Лог хүснэгт бүрийн төлөв хадгалах state объект
+    // logState[tableName] = { offset, loading, done, initialized }
+    // ---------------------------------------------------------------------
+    const logState = {}; // Хүснэгт тус бүрийн OFFSET, ачаалж байгаа эсэх, дууссан эсэх, эхэлсэн эсэх
 
-    // Бүх хүснэгтүүдийн төлөвийг анхны утгаар тохируулах
+    // Бүх log-sentinel элементүүдийг уншиж, table бүрийн анхны төлөвийг үүсгэх
     document.querySelectorAll('.log-sentinel').forEach(s => {
         const table = s.dataset.table;
-        logState[table] = { offset: 0, loading: false, done: false, initialized: false };
+        logState[table] = {
+            offset: 0,       // SQL OFFSET – эхний удаа 0-ээс эхэлнэ
+            loading: false,  // Одоогоор тухайн хүснэгтийн логийг татаж байна уу
+            done: false,     // Бүх логийг татаж дууссан уу (цааш байхгүй эсэх)
+            initialized: false // Эхний request хийгдсэн эсэх
+        };
     });
 
-    // ----------- Лог мөр нэмэх функц (анимацтай) -----------
+    // ---------------------------------------------------------------------
+    // appendLogs(logger, logs, logModalLink)
+    // Логийн массивыг <ul> элементэд мөрөөр нь нэмж, fade+slide анимацтай үзүүлнэ.
+    // ---------------------------------------------------------------------
     function appendLogs(logger, logs, logModalLink) {
         logs.forEach(log => {
+            // Нэг лог мөрийг илэрхийлэх <li> элемент үүсгэнэ
             const log_li = document.createElement('li');
             log_li.classList.add('list-group-item', 'list-group-item-action', 'log-row');
 
-            // Түвшингээр өнгө оноох
+            // Логийн level-ээс хамаарч list-group-item-ийн өнгө өөрчлөх
             switch (log.level) {
                 case 'notice': log_li.classList.add('list-group-item-light'); break;
                 case 'info': log_li.classList.add('list-group-item-primary'); break;
@@ -66,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 default: log_li.classList.add('list-group-item-dark'); break;
             }
 
-            // ID болон огноо холбоос
+            // ID болон огноог харуулах холбоос – дээр дарвал тухайн логийг modal-аар нээнэ
             const a_link = document.createElement('a');
             a_link.textContent = `${log.created_at} [${log.id}]`;
             a_link.href = logModalLink + log.id;
@@ -74,31 +121,33 @@ document.addEventListener('DOMContentLoaded', function () {
             a_link.setAttribute('data-bs-toggle', 'modal');
             a_link.addEventListener('click', function (e) {
                 e.preventDefault();
+                // ajaxModal() нь dashboard.js эсвэл өөр JS дээр тодорхойлогдсон байх ёстой
                 ajaxModal(a_link);
             });
             log_li.appendChild(a_link);
             log_li.appendChild(document.createTextNode(' '));
 
-            // Мессеж
+            // Логийн мессеж хэсэг (HTML хэлбэрээр ирдэг тул innerHTML ашиглаж байна)
             const span_msg = document.createElement('span');
             span_msg.innerHTML = log.message;
             log_li.appendChild(span_msg);
             log_li.appendChild(document.createTextNode(' '));
 
-            // Үйлдэл болон хэрэглэгчийн мэдээлэл
+            // Үйлдэл болон хэрэглэгчийн мэдээллийг харуулах жижиг текст
             const span_user_action = document.createElement('span');
-            span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context?.action ?? ''} by ${log.context?.auth_user?.username ?? ''}</u></span>`;
+            span_user_action.innerHTML =
+                `<span class="text-muted small"><u>${log.context?.action ?? ''} by ${log.context?.auth_user?.username ?? ''}</u></span>`;
             span_user_action.classList.add('text-muted', 'small');
             log_li.appendChild(span_user_action);
 
-            // Анимэйшний эхний төлөв (харагдахгүй, доош бага зэрэг хөдлөсөн)
+            // Эхлээд log мөрийг бага зэрэг доош, бүдэг байдалтай нэмнэ (анимацын эхлэл)
             log_li.style.opacity = '0';
             log_li.style.transform = 'translateY(10px)';
             log_li.style.transition = 'opacity 0.36s ease, transform 0.36s ease';
 
             logger.appendChild(log_li);
 
-            // Дараагийн frame-д fade + slide effect идэвхжүүлнэ
+            // Дараагийн frame дээр opacity/transform-ийг reset хийж fade+slide эффектийг идэвхжүүлнэ
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     log_li.style.opacity = '1';
@@ -108,103 +157,126 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ----------- Тухайн хүснэгтийн логийг татах функц -----------
+    // ---------------------------------------------------------------------
+    // fetchLogsForTable(table)
+    // Нэг логийн хүснэгтийн (table) дараагийн batch логийг серверээс татаж UL-д нэмнэ.
+    // ---------------------------------------------------------------------
     async function fetchLogsForTable(table) {
         const state = logState[table];
-        if (!state || state.loading || state.done) return;
+        if (!state || state.loading || state.done) return; // Ачаалж байгаа эсвэл дууссан бол дахин ажиллуулахгүй
 
-        const logger = document.getElementById('logger-' + table);
-        const container = document.getElementById('log_' + table);
-        const spinner = container.querySelector('.log-spinner');
-        const sentinel = container.querySelector('.log-sentinel');
-        const noMore = container.querySelector('.no-more-rows');
+        const logger = document.getElementById('logger-' + table); // Тухайн хүснэгтийн UL элемент
+        const container = document.getElementById('log_' + table); // Tab pane
+        const spinner = container.querySelector('.log-spinner');   // Loader
+        const sentinel = container.querySelector('.log-sentinel'); // IntersectionObserver-ийн sentinel
+        const noMore = container.querySelector('.no-more-rows');   // "Цааш лог байхгүй" гэсэн текст
 
         state.loading = true;
-        spinner.style.display = 'block';
+        spinner.style.display = 'block'; // Ачаалж байгааг харуулах
 
         try {
+            // logs-retrieve endpoint руу POST хүсэлт илгээх
             const res = await fetch(`${logsRetrieveLink}?table=${encodeURIComponent(table)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    'ORDER BY': 'id Desc',
-                    'LIMIT': limit,
-                    'OFFSET': state.offset
+                    'ORDER BY': 'id Desc',  // Шинэ логийг эхэлж харагдуулах
+                    'LIMIT': limit,         // Нэг удаад авах мөрийн тоо
+                    'OFFSET': state.offset  // Аль мөрөөс хойш үргэлжлүүлэх
                 })
             });
 
             const data = await res.json();
-            if (data.error) throw new Error(data.error || `{{ 'something-went-wrong'|text|e }}`);
+            if (data.error) {
+                // Бэкэндээс алдаа буцаасан тохиолдолд exception шидэж, catch дээр барина
+                throw new Error(data.error || `{{ 'something-went-wrong'|text|e }}`);
+            }
 
-            // JSON хариуг массив болгон хөрвүүлэх
+            // Тухайн хүснэгтийн логийг массив хэлбэрт хөрвүүлэх (backend JSON structure-оос үл хамаарах)
             const items = Array.isArray(data) ? data : Object.values(data);
 
-            // Хэрэв илүү лог байхгүй бол төгсгөсөн төлөвт оруулна
+            // Хэрэв буцаасан логийн бүртгэл байхгүй бол → done төлөв рүү оруулна
             if (items.length === 0) {
                 state.done = true;
-                noMore.style.display = 'block';
-                sentinel.style.display = 'none'; // дахин ажиглуулахгүй
+                noMore.style.display = 'block'; // "Цааш лог байхгүй" гэсэн мессежийг харуулна
+                sentinel.style.display = 'none'; // IntersectionObserver дахиж trigger хийхгүй
             } else {
                 const logModalLink = `${logsViewLink}?table=${encodeURIComponent(table)}&id=`;
-                appendLogs(logger, items, logModalLink);
+                appendLogs(logger, items, logModalLink); // Мөрүүдийг UI дээр нэмнэ
 
-                // OFFSET утгыг ахиулах
+                // OFFSET-ийг нэмэгдүүлж дараагийн request-аас шилжих мөрийг заана
                 state.offset += items.length;
 
-                // Хэрэв буцаасан мөрийн тоо LIMIT-ээс бага байвал — цааш лог байхгүй гэж үзнэ
+                // Хэрэв буцаасан мөрийн тоо LIMIT-ээс бага байвал → цааш лог байхгүй гэж үзнэ
                 if (items.length < limit) {
                     state.done = true;
                     noMore.style.display = 'block';
                     sentinel.style.display = 'none';
                 } else {
                     noMore.style.display = 'none';
-                    sentinel.style.display = '';
+                    sentinel.style.display = ''; // Дахин ажиглагдахаар үлдээнэ
                 }
             }
         } catch (err) {
+            // Лог татах явцад алдаа гарвал зөвхөн консол дээр харуулна (UI-г унагахгүй)
             console.error('fetchLogsForTable алдаа:', err);
         } finally {
+            // Эцэст нь тухайн хүснэгтийн loading төлөвийг буцааж, spinner-ийг нуух
             state.loading = false;
             spinner.style.display = 'none';
-            state.initialized = true;
+            state.initialized = true; // Анхны request хийсэн гэж тэмдэглэх
         }
     }
 
-    // ----------- IntersectionObserver — infinite scroll хянах ----------
+    // ---------------------------------------------------------------------
+    // IntersectionObserver – Infinite scroll хяналт
+    // Sentinel элементүүд scroll-ын доод хэсэгт орж ирэхэд fetchLogsForTable() дуудагдана.
+    // ---------------------------------------------------------------------
     const observerOptions = {
-        root: null,
+        root: null,          // window-г root болгон ашиглана
         rootMargin: '400px', // Доош 400px ойртоход урьдчилж ачаална
         threshold: 0
     };
+
     const sentinelObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
+            if (!entry.isIntersecting) return; // Sentinel харагдаагүй бол үйлдэл хийхгүй
+
             const table = entry.target.dataset.table;
             if (!table) return;
 
-            // Зөвхөн идэвхтэй (харж буй) таб дээр ажиллуулах
+            // Зөвхөн идэвхтэй (харагдаж байгаа) таб дээр ажиллуулах
             const container = document.getElementById('log_' + table);
             if (!container.classList.contains('active')) return;
 
+            // Хэрэв бүх нөхцөл OK бол тухайн хүснэгтийн дараагийн логийг татна
             fetchLogsForTable(table);
         });
     }, observerOptions);
 
-    // Бүх sentinel элементүүдийг ажиглах
+    // Бүх sentinel элементүүдийг ажиглалтад нэмэх
     document.querySelectorAll('.log-sentinel').forEach(s => sentinelObserver.observe(s));
 
-    // Таб солих үед тухайн хүснэгтийн эхний batch ачаалах
+    // ---------------------------------------------------------------------
+    // Bootstrap таб солигдох үед тухайн табын логийг эхний удаад ачаалах
+    // ---------------------------------------------------------------------
     document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tabLink => {
         tabLink.addEventListener('shown.bs.tab', function (e) {
-            const table = e.target.getAttribute('data-table') || (e.target.getAttribute('href') || '').replace('#log_', '');
+            // data-table атрибут байвал шууд; байхгүй бол href="#log_table" -оос table нэр гаргаж авах
+            const table = e.target.getAttribute('data-table') ||
+                          (e.target.getAttribute('href') || '').replace('#log_', '');
             if (!table) return;
+
+            // Хэрэв өмнө нь ачаалаагүй бөгөөд done болоогүй бол → анхны batch-ыг татна
             if (!logState[table].initialized && !logState[table].done) {
                 fetchLogsForTable(table);
             }
         });
     });
 
-    // Хуудсыг ачаалсны дараа анхны идэвхтэй табын логийг ачаалах
+    // ---------------------------------------------------------------------
+    // Хуудас ачаалахад "active" таб дээрх эхний логийг шууд татаж харуулах
+    // ---------------------------------------------------------------------
     document.querySelectorAll('.tab-pane.active').forEach(pane => {
         const table = pane.id.replace('log_', '');
         if (logState[table] && !logState[table].initialized && !logState[table].done) {
@@ -212,11 +284,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Сонгогдсон таб дээр “L” товч дарахад доош гүйлгэх богино зам
+    // ---------------------------------------------------------------------
+    // Тусгай shortcut: идэвхтэй таб дээр "L" товч дарахад логийн төгсгөл рүү шууд гүйлгэнэ.
+    // (Log = L гэж тогтоосон богино зам)
+    // ---------------------------------------------------------------------
     document.addEventListener('keydown', (e) => {
         if (e.key.toLowerCase() === 'l') {
             const activePane = document.querySelector('.tab-pane.active');
-            if (activePane) activePane.scrollTop = activePane.scrollHeight;
+            if (activePane) {
+                activePane.scrollTop = activePane.scrollHeight;
+            }
         }
     });
 });

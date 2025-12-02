@@ -1,7 +1,23 @@
+<!-- 
+    LOG VIEW MODAL (Дэлгэрэнгүй Log үзэх modal)
+    ───────────────────────────────────────────────────────────────
+    Энэ modal нь тухайн логийн бүх мэдээллийг key → value хэлбэрээр
+    хүснэгтийн мөр болгон харуулдаг.
+    
+    formGroupRow() macro:
+        - Хэрэв content нь array байвал → nested key/value-уудыг автоматаар жагсааж харуулна
+        - Хэрэв нэг утга бол → нэг мөрөнд label + content харуулна
+
+    Энэ файл нь зөвхөн UI харуулах log viewer тул:
+        - Backend-аас ирсэн logdata-г loop ашиглан мөрөөр харуулдаг
+        - Twig macro ашиглан UI-г стандарт хэлбэрт оруулдаг
+-->
+
 {% macro formGroupRow(label, content, class, col) %}
     {% if content is iterable %}
         <hr>
         <strong>{{ _self.formGroupRow(label|upper, '', 'col-6 text-warning text-right', 6) }}</strong>
+
         {% for key,value in content %}
             {{ _self.formGroupRow(key, value, 'col-3 text-primary text-right', 9) }}
         {% endfor %}
@@ -15,18 +31,35 @@
 {% endmacro %}
 
 {% from _self import formGroupRow %}
-<div class="modal-dialog modal-xl modal-dialog-scrollable"  role="document">
+
+<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
     <div class="modal-content">
+        <!-- Modal Header -->
         <div class="modal-header text-bg-secondary">
-            <h3 class="modal-title fs-6 text-uppercase">{{ log_caption }} ({{ table }}/{{ id }})</h3>
+            <!-- log_caption нь “Лог” эсвэл Localization-аас ирдэг -->
+            <!-- table/id → log-оос ямар id-г харуулж байгааг тодорхой харуулна -->
+            <h3 class="modal-title fs-6 text-uppercase">
+                {{ log_caption }} ({{ table }}/{{ id }})
+            </h3>
         </div>
+
+        <!-- Modal Body -->
         <div class="modal-body">
-            {% for key,value in logdata %}
+            <!--
+                logdata — Logger::getLogById() функцээс ирсэн массив.
+                Массивын key/value-уудыг автоматаар хэвлэнэ.
+            -->
+            {% for key, value in logdata %}
                 {{ formGroupRow(key, value, 'col-3 text-danger text-right', 9) }}
             {% endfor %}
         </div>
+
+        <!-- Modal Footer -->
         <div class="modal-footer text-bg-secondary">
-            <button class="btn btn-light shadow-sm" data-bs-dismiss="modal" type="button">{{ close }}</button>
+            <!-- Modal хаах -->
+            <button class="btn btn-light shadow-sm" data-bs-dismiss="modal" type="button">
+                {{ close }}
+            </button>
         </div>
     </div>
 </div>

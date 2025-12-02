@@ -36,70 +36,57 @@ class LoginRouter extends Router
          * 1. Login хуудас (GET)
          * ---------------------------------------------------------------
          * Хэрэглэгч нэвтрэх нүүр хуудас руу орно.
-         * Жишээ: GET /dashboard/login
          */
-        $this->GET('/dashboard/login', [LoginController::class, 'index'])
-             ->name('login');
+        $this->GET('/dashboard/login', [LoginController::class, 'index'])->name('login');
 
         /**
          * ---------------------------------------------------------------
          * 2. Нэвтрэх оролдлого (POST)
          * ---------------------------------------------------------------
          * Хэрэглэгч username/password илгээж нэвтрэхийг оролдоно.
-         * Жишээ: POST /dashboard/login/try
          */
-        $this->POST('/dashboard/login/try', [LoginController::class, 'entry'])
-             ->name('entry');
+        $this->POST('/dashboard/login/try', [LoginController::class, 'entry'])->name('entry');
 
         /**
          * ---------------------------------------------------------------
          * 3. Гарах (GET)
          * ---------------------------------------------------------------
          * Session болон JWT-г цэвэрлээд хэрэглэгчийг гарах.
-         * Жишээ: GET /dashboard/login/logout
          */
-        $this->GET('/dashboard/login/logout', [LoginController::class, 'logout'])
-             ->name('logout');
+        $this->GET('/dashboard/login/logout', [LoginController::class, 'logout'])->name('logout');
 
         /**
          * ---------------------------------------------------------------
          * 4. Нууц үг сэргээх (POST)
          * ---------------------------------------------------------------
          * Хэрэглэгч email/username оруулж “Forgot password” хүсэлт үүсгэнэ.
-         * Жишээ: POST /dashboard/login/forgot
          */
-        $this->POST('/dashboard/login/forgot', [LoginController::class, 'forgot'])
-             ->name('login-forgot');
+        $this->POST('/dashboard/login/forgot', [LoginController::class, 'forgot'])->name('login-forgot');
 
         /**
          * ---------------------------------------------------------------
          * 5. Бүртгүүлэх (POST)
          * ---------------------------------------------------------------
          * Шинэ хэрэглэгч нэр, имэйл, нууц үгийн мэдээлэл өгч signup хийх.
-         * Жишээ: POST /dashboard/login/signup
          */
-        $this->POST('/dashboard/login/signup', [LoginController::class, 'signup'])
-             ->name('signup');
+        $this->POST('/dashboard/login/signup', [LoginController::class, 'signup'])->name('signup');
 
         /**
          * ---------------------------------------------------------------
          * 6. Хэл солих (GET)
          * ---------------------------------------------------------------
          * Хэрэглэгч login хуудасны интерфейсийн хэлийг солих.
-         * Жишээ: GET /dashboard/login/language/mn
          * Dynamic parameter: {code}
+         * Жишээ: GET /dashboard/login/language/mn
          */
-        $this->GET('/dashboard/login/language/{code}', [LoginController::class, 'language'])
-             ->name('language');
+        $this->GET('/dashboard/login/language/{code}', [LoginController::class, 'language'])->name('language');
 
         /**
          * ---------------------------------------------------------------
          * 7. Сэргээх линк дээр дараад шинэ нууц үг тохируулах (POST)
          * ---------------------------------------------------------------
-         * Жишээ: POST /dashboard/login/set/password
          */
-        $this->POST('/dashboard/login/set/password', [LoginController::class, 'setPassword'])
-             ->name('login-set-password');
+        $this->POST('/dashboard/login/set/password', [LoginController::class, 'setPassword'])->name('login-set-password');
 
         /**
          * ---------------------------------------------------------------
@@ -113,7 +100,6 @@ class LoginRouter extends Router
          *
          * Жишээ: GET /dashboard/login/organization/12
          */
-        $this->GET('/dashboard/login/organization/{uint:id}', [LoginController::class, 'selectOrganization'])
-             ->name('login-select-organization');
+        $this->GET('/dashboard/login/organization/{uint:id}', [LoginController::class, 'selectOrganization'])->name('login-select-organization');
     }
 }

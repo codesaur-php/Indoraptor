@@ -1,12 +1,38 @@
+<!-- ====================================================================== -->
+<!--  MODAL - NO PERMISSION                                                 -->
+<!--  Хэрэглэгч зөвшөөрөлгүй үйлдэл хийх үед modal цонхонд анхааруулга     -->
+<!--  харуулах зориулалттай template.                                      -->
+<!-- ====================================================================== -->
 <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
+    <div class="modal-content"
+        <!-- ============================================================== -->
+        <!--  MODAL BODY                                                    -->
+        <!--  Alert-ийг modal-ийн дотор төвтэй, сүүдэртэйгээр харуулна.     -->
+        <!-- ============================================================== -->
         <div class="modal-body">
+
+            <!-- ---------------------------------------------------------- -->
+            <!--  Bootstrap alert-danger - улаан анхааруулга                -->
+            <!--  shadow-sm - бага зэрэг сүүдэр                            -->
+            <!--  fade show - fade-in эффект                               -->
+            <!-- ---------------------------------------------------------- -->
             <div class="alert alert-danger shadow-sm fade mt-3 show" role="alert">
-                <i class="bi bi-shield-fill-exclamation"></i> <span class="ps-1">{{ alert }}</span>
+                <i class="bi bi-shield-fill-exclamation"></i>
+                <span class="ps-1">{{ alert }}</span>
             </div>
         </div>
+
+        <!-- ============================================================== -->
+        <!--  MODAL FOOTER                                                  -->
+        <!--  Зөвхөн "Close" товчтой.                                       -->
+        <!-- ============================================================== -->
         <div class="modal-footer">
-            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">{{ close }}</button>
+            <button
+                class="btn btn-secondary shadow-sm"
+                data-bs-dismiss="modal"
+                type="button">
+                {{ close }}
+            </button>
         </div>
     </div>
 </div>

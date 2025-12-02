@@ -22,6 +22,7 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
         <style>
+            /* Login формын үндсэн өргөн */
             .form-signin {
                 width: 100%;
                 max-width: 420px;
@@ -31,12 +32,22 @@
        </style>
     </head>
     <body class="text-center">
+         <!-- ============================================================
+             LOGIN FORM MAIN WRAPPER
+             ============================================================ -->
         <main class="form-signin">
+            <!-- ------------------------
+                 Лого (хэрвээ дамжуулсан бол)
+                 ------------------------ -->
             {% if logo is not empty %}
             <div class="text-center mb-4" id="logo">
                 <img class="img-fluid" src="{{ logo }}">
             </div>
             {% endif %}
+            
+            <!-- ============================================================
+                 НЭВТРЭХ FORM (#login)
+                 ============================================================ -->
             <form id="login" action="{{ 'entry'|link }}" method="POST">
                 <div class="form-floating mb-3">
                     <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
@@ -49,19 +60,29 @@
                 <button class="w-100 btn btn-lg btn-{{ button|default('primary') }} text-uppercase mb-4" id="login_signin_submit">
                     <i class="bi-person-check"></i> {{ 'signin'|text }}
                 </button>
+                <!-- Forgot password link -->
                 <a id="forgot_password" href="javascript:;">
                     <span>{{ 'forgot-password'|text }}</span>
                 </a>
+                
                 {% if content is defined %}<hr>{{ content }}{% endif %}
+                
                 <hr>
+                
+                <!-- Signup -->
                 <div class="text-center">
                     <span>{{ 'ask-dont-have-user-yet'|text }}</span>
                     <a href="javascript:;" id="signup">{{ 'signup'|text }}</a>
                 </div>
+                
                 <hr>
+                
+                <!-- Footer © -->
                 <p class="mt-3 mb-3 text-muted text-center">
                     {% if copyright is not empty %}{{ copyright }}{% else %}{{ 'now'|date('Y') }} &copy; {{ 'dashboard'|text }}{% endif %}
                 </p>
+                
+                <!-- Language Switch -->
                 <div class="text-center">
                     <span id="language">
                     {%  if lang != 'en' and localization.language['en'] %}
@@ -73,6 +94,9 @@
                 </div>
             </form>
             
+            <!-- ============================================================
+                 FORGOT PASSWORD FORM (#forgot)
+                 ============================================================ -->
             <form class="d-none" id="forgot" action="{{ 'login-forgot'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'password-reset'|text }}</h3>
                 <span>{{ 'enter-email-below'|text }}</span>
@@ -87,6 +111,9 @@
                 </div>
             </form>
 
+            <!-- ============================================================
+                 SIGNUP FORM (#register)
+                 ============================================================ -->
             <form class="d-none" id="register" action="{{ 'signup'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
                 <span>{{ 'enter-personal-details'|text }}</span>
@@ -106,7 +133,10 @@
                     <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword" autocomplete="new-password-retype">
                     <label for="codeRePassword">{{ 'retype-password'|text }}</label>
                 </div>
+                
                 <hr>
+                
+                <!-- TOS + Privacy Policy -->
                 <div class="text-center mb-2">
                 {% if lang == 'mn' %}
                     Бүртгүүлэх товчыг дарснаар, та манай <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">системийг хэрэглэх ерөнхий нөхцөл</a>
@@ -123,11 +153,17 @@
                 </div>
             </form>
         </main>
+        
+        <!-- ============================================================
+             FRONT-END LOGIC - LOGIN / FORGOT / SIGNUP
+             ============================================================ -->
         <script type="text/javascript">
+            // Dark theme auto-apply
             if (localStorage.getItem('data-bs-theme') === 'dark') {
                 document.body.setAttribute('data-bs-theme', 'dark');
             }
             
+            // Spinner toggle function
             function spinNstop(ele)
             {
                 let isDisabled = ele.disabled,
@@ -147,17 +183,23 @@
                 ele.classList.add('disabled');
             }
             
+            // DOM Loaded - event logic binding
             document.addEventListener('DOMContentLoaded', function () {
+                // Form references
                 let formLogin = document.querySelector('form#login');
                 let formForgot = document.querySelector('form#forgot');
                 let formSignUp = document.querySelector('form#register');
                 
+                // Button references
                 let btnLoginSubmit = document.querySelector('button#login_signin_submit');
                 let btnForgotPassword = document.querySelector('a#forgot_password');
                 let btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
                 let btnSignup = document.querySelector('a#signup');
                 let btnSignupSubmit = document.querySelector('button#signup_submit');
 
+                // ============================================================
+                // Helper functions
+                // ============================================================
                 function showMessage(form, type, msg)
                 {
                     removeAlert(form);
@@ -203,6 +245,9 @@
                     removeAlert(formForgot);
                 }
 
+                // ============================================================
+                // URL query message support (?message=...&message_type=...)
+                // ============================================================
                 let queryString = window.location.search;
                 let urlParams = new URLSearchParams(queryString);
                 if (urlParams && urlParams.get('message')) {
@@ -210,6 +255,9 @@
                     window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
                 }
                 
+                // ============================================================
+                // Forgot Password Form
+                // ============================================================
                 btnForgotPassword.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -220,6 +268,9 @@
                     formForgot.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
+                // ============================================================
+                // Signup Form
+                // ============================================================
                 btnSignup.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -230,6 +281,7 @@
                     formSignUp.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
+                // Cancel buttons → Always return to Login form
                 document.querySelectorAll('.cancel').forEach(function(link) {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -238,6 +290,9 @@
                     });
                 });
 
+                // ============================================================
+                // Login Submit
+                // ============================================================
                 btnLoginSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -276,6 +331,9 @@
                     });
                 });
                 
+                // ============================================================
+                // Forgot Password Submit
+                // ============================================================                
                 btnForgotPasswordSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -314,6 +372,9 @@
                     });
                 });
                 
+                // ============================================================
+                // Signup Submit
+                // ============================================================
                 btnSignupSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -370,6 +431,10 @@
                 });
             });
         </script>
+        
+        <!-- ============================================================
+             TOS - Terms of Service Modal
+             ============================================================ -->
         <div class="modal fade" id="tos" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">
@@ -386,6 +451,10 @@
                 </div>
             </div>
         </div>
+                    
+        <!-- ============================================================
+             PP - Privacy Policy Modal
+             ============================================================ -->
         <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">
