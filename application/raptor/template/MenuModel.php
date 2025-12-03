@@ -237,9 +237,7 @@ class MenuModel extends LocalizedModel
      */
     public function insert(array $record, array $content): array|false
     {
-        if (!isset($record['created_at'])) {
-            $record['created_at'] = \date('Y-m-d H:i:s');
-        }
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record, $content);
     }
 
@@ -248,9 +246,7 @@ class MenuModel extends LocalizedModel
      */
     public function updateById(int $id, array $record, array $content): array|false
     {
-        if (!isset($record['updated_at'])) {
-            $record['updated_at'] = \date('Y-m-d H:i:s');
-        }
+        $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record, $content);
     }
 }

@@ -19,44 +19,221 @@ use Raptor\Content\ReferenceModel;
 use Raptor\Mail\Mailer;
 use Raptor\Log\Logger;
 
+/**
+ * Class UsersController
+ *
+ * Хэрэглэгчийн бүртгэл, мэдээлэл засварлалт, RBAC дүрийн удирдлага,
+ * байгууллагын хамаарал тохируулах, нууц үг солих зэрэг
+ * хэрэглэгчтэй холбоотой бүх server-side логикийг агуулсан
+ * Indoraptor Dashboard-ийн үндсэн Controller юм.
+ *
+ * --------------------------------------------------------------
+ * 🧩 Архитектур - PDO автоматаар хэрхэн ирдэг вэ?
+ * --------------------------------------------------------------
+ *  Raptor\Controller нь:
+ *
+ *      use \codesaur\DataObject\PDOTrait;
+ *
+ *  гэдэг trait-ийг ашигладаг. PDOTrait нь `$pdo` шинж чанарыг
+ *  controller-ийн объект дээр үүсгэж өгдөг.
+ *
+ *  Framework-ийн түвшинд DatabaseConnectMiddleware нь:
+ *
+ *      $request = $request->withAttribute('pdo', $pdo);
+ *
+ *  гэж PSR-7 ServerRequest дотор `pdo` attribute-ийг суулгадаг.
+ *
+ *  Controller нь BaseController::__construct() дотор:
+ *
+ *      $this->pdo = $request->getAttribute('pdo');
+ *
+ *  хэлбэрээр автоматаар авч `$this->pdo` болгон тохируулдаг.
+ *
+ * ✔ Энэ механизмаар бүх Model-классуудыг:
+ *      new UsersModel($this->pdo)
+ *      new Roles($this->pdo)
+ *      new OrganizationModel($this->pdo)
+ *  гэх мэтээр шууд хэрэглэнэ.
+ *
+ * --------------------------------------------------------------
+ * 🧩 Хамааралтай модулиуд
+ * --------------------------------------------------------------
+ *  • UsersModel - хэрэглэгчийн үндсэн өгөгдлийн хүснэгт
+ *  • RBAC => Roles / UserRole - RBAC дүрийн систем
+ *  • OrganizationModel / OrganizationUserModel - байгууллагын хамаарал
+ *  • SignupModel / ForgotModel - бүртгүүлэх болон нууц үг сэргээх хүсэлт
+ *  • FileController - зураг upload удирдлага (profile photo)
+ *  • Logger - үйлдлийн протокол
+ *  • DashboardTrait - Twig Dashboard integration
+ *
+ * --------------------------------------------------------------
+ * 🔐 Аюулгүй байдал ба Permission
+ * --------------------------------------------------------------
+ *  • `isUserCan()` функцээр бүх үйлдэл зөвшөөрөл шалгадаг
+ *  • Root хэрэглэгчийг хамгаална (id = 1)
+ *  • Хэрэглэгч өөрийгөө устгах боломжгүй
+ *  • RBAC aliases (common, org1, org2 ...) дагуу role binding
+ *
+ * --------------------------------------------------------------
+ * 📡 Response төрөл
+ * --------------------------------------------------------------
+ *  • Dashboard UI (twig template)
+ *  • JSON (AJAX хүсэлтүүдэд)
+ *  • Modal templates
+ *
+ * --------------------------------------------------------------
+ * 📝 Logging
+ * --------------------------------------------------------------
+ *  Бүх томоохон үйлдэл indolog() руу дараах бүтэцтэйгээр бичигдэнэ:
+ *
+ *      $this->indolog(
+ *          'users',
+ *          LogLevel::NOTICE | ERROR | ALERT,
+ *          'Мессеж',
+ *          ['action' => '...', 'id' => ..., 'record' => ...]
+ *      );
+ *
+ * --------------------------------------------------------------
+ * 📦 File upload
+ * --------------------------------------------------------------
+ *  FileController-с удамшдаг тул дараах боломжтой:
+ *      $this->setFolder("/users/{$id}");
+ *      $this->allowImageOnly();
+ *      $photo = $this->moveUploaded('photo');
+ *
+ * --------------------------------------------------------------
+ * ✔ Энэ класст багтах үндсэн үйлдлүүд:
+ * --------------------------------------------------------------
+ *  • index()               - хэрэглэгчийн Dashboard view
+ *  • list()                - хэрэглэгчдийн JSON жагсаалт
+ *  • insert()              - шинэ хэрэглэгч үүсгэх
+ *  • update($id)           - хэрэглэгчийн мэдээлэл засварлах
+ *  • view($id)             - хэрэглэгчийн дэлгэрэнгүй харах
+ *  • deactivate()          - хэрэглэгчийг идэвхгүй болгох
+ *  • requestsModal()       - signup / forgot хүсэлтүүдийг харах
+ *  • signupApprove()       - шинээр бүртгүүлэх хүсэлтийг зөвшөөрөх
+ *  • signupDeactivate()    - signup хүсэлтийг устгах
+ *  • setPassword($id)      - хэрэглэгчийн нууц үг тохируулах
+ *  • setOrganization($id)  - хэрэглэгчийн байгууллага тохируулах
+ *  • setRole($id)          - хэрэглэгчийн RBAC дүр тохируулах
+ *
+ * @package Raptor\User
+ */
 class UsersController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
     
+    /**
+     * Хэрэглэгчдийн жагсаалтын Dashboard хуудсыг нээх
+     *
+     * --------------------------------------------------------------
+     * 📌 Үндсэн үүрэг
+     * --------------------------------------------------------------
+     *  - system_user_index эрхтэй эсэхийг шалгана
+     *  - Twig dashboard layout ашиглан user-index.html темплейтийг
+     *    render хийнэ
+     *  - Хэрэв алдаа гарвал dashboardProhibited() ашиглан
+     *    хэрэглэгчдэд ойлгомжтой error UI үзүүлнэ
+     *
+     * --------------------------------------------------------------
+     * 🔐 Permission logic
+     * --------------------------------------------------------------
+     *  Энэ хуудсыг зөвхөн `system_user_index` эрхтэй хэрэглэгч 
+     *  нээх боломжтой. Хэрэв эрхгүй бол:
+     *
+     *      throw new \Exception($this->text('system-no-permission'), 401);
+     *
+     * --------------------------------------------------------------
+     * ⚙ Алдаа барих ба лог бичилт
+     * --------------------------------------------------------------
+     *  try/catch/finally блок:
+     *
+     *  ✔ try — UI-г хэвийн нээнэ  
+     *  ✔ catch — алдаа гарвал Dashboard UI дээр error box харуулна  
+     *  ✔ finally — indolog() руу протокол тэмдэглэнэ:
+     *      - Амжилттай нээсэн → LogLevel::NOTICE  
+     *      - Алдаатай → LogLevel::ERROR  
+     *
+     *  Логт дараах context орно:
+     *      ['action' => 'index', ...]  
+     *
+     * --------------------------------------------------------------
+     * 📡 Response
+     * --------------------------------------------------------------
+     *  - UI response (Twig Dashboard)
+     *  - JSON response буцаахгүй
+     *
+     * --------------------------------------------------------------
+     * 🧩 Ашиглагдах template:
+     * --------------------------------------------------------------
+     *  /application/raptor/user/user-index.html
+     *
+     * @return void
+     */
     public function index()
     {
         try {
+            // RBAC эрх шалгана – хэрэглэгчид хэрэглэгчийн жагсаалт үзэх эрх байх ёстой
             if (!$this->isUserCan('system_user_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Dashboard зориулалтын Twig wrapper дотор template-ээ ачаална
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/user-index.html'
             );
+             // Гарчгийг локальчилж, template-руу дамжуулна
             $dashboard->set('title', $this->text('users'));
             $dashboard->render();
         } catch (\Throwable $err) {
+            // Ямар нэгэн алдаа гарвал алдааны dashboard-г үзүүлнэ
             $this->dashboardProhibited(
                 "Хэрэглэгчдийн жагсаалтыг нээх үед алдаа гарлаа.<br/><br/>{$err->getMessage()}",
                 $err->getCode()
             )->render();
         } finally {
+            // Энэ action-ийн лог протокол – амжилттай эсэхээс үл хамааран бичнэ
             $context = ['action' => 'index'];
             if (isset($err) && $err instanceof \Throwable) {
+                // Алдаатай төгссөн тохиолдолд ERROR level
                 $level = LogLevel::ERROR;
                 $message = 'Хэрэглэгчдийн жагсаалтыг нээх үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
+                // Амжилттай үзсэн бол NOTICE level
                 $level = LogLevel::NOTICE;
                 $message = 'Хэрэглэгчдийн жагсаалтыг үзэж байна';
             }
+            // users logger-д бичих
             $this->indolog('users', $level, $message, $context);
         }
     }
     
+    /**
+     * Хэрэглэгчдийн жагсаалтыг JSON хэлбэрээр буцаах API.
+     *
+     * Гол үүрэг:
+     *  - RBAC эрх (`system_user_index`) шалгана
+     *  - users хүснэгтээс үндсэн мэдээлэл татна
+     *  - UserRole / Roles хүснэгтээр дамжуулж хэрэглэгч бүрийн ролуудыг нэгтгэнэ
+     *  - OrganizationUser / Organization хүснэгтээр дамжуулж байгууллагын мэдээлэл нэмж нэгтгэнэ
+     *  - Эцэст нь нэг массив болгон нэгтгээд JSON-р буцаана:
+     *      [
+     *          {
+     *              id, username, email, is_active, roles[], organizations[]
+     *          },
+     *          ...
+     *      ]
+     *
+     * Ашиглагдах үндсэн газар:
+     *  - Admin Dashboard-ийн Users list UI (AJAX-аар хүсэлт явуулж table-г populate хийхэд)
+     *
+     * @return void
+     */
     public function list()
     {
         try {
+            // RBAC эрх шалгах – хэрэглэгчийн жагсаалт авах эрхтэй эсэх
             if (!$this->isUserCan('system_user_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -71,12 +248,14 @@ class UsersController extends FileController
                 $users[$user['id']] = $user;
             }
             
+            // Хэрэглэгч бүрийн role-уудыг (alias_name) хэлбэрээр нэгтгэх
             $user_role_table = (new UserRole($this->pdo))->getName();
             $roles_table = (new Roles($this->pdo))->getName();
             $select_user_role =
                 'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
                 "FROM $user_role_table as t1 INNER JOIN $roles_table as t2 ON t1.role_id=t2.id";
             $user_role = $this->query($select_user_role)->fetchAll();
+            // user_id-гаар нь users[$id]['roles'][] массив руу цуглуулна
             \array_walk($user_role, function($value) use (&$users) {
                 if (isset($users[$value['user_id']])) {
                     if (!isset($users[$value['user_id']]['roles'])) {
@@ -86,6 +265,7 @@ class UsersController extends FileController
                 }
             });
             
+            // Байгууллагын мэдээллийг хэрэглэгч бүр дээр нэгтгэх
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_user_table = (new OrganizationUserModel($this->pdo))->getName();
             $select_orgs_users =
@@ -93,6 +273,7 @@ class UsersController extends FileController
                 "FROM $org_user_table as t1 INNER JOIN $org_table as t2 ON t1.organization_id=t2.id " .
                 'WHERE t2.is_active=1';
             $org_users = $this->query($select_orgs_users)->fetchAll();
+            // user_id-гаар нь users[$id]['organizations'][] массив руу байгууллагын мэдээллийг нэмнэ
             \array_walk($org_users, function($value) use (&$users) {
                 $user_id = $value['user_id'];
                 unset($value['user_id']);
@@ -104,15 +285,40 @@ class UsersController extends FileController
                 }
             });
             
+            // Амжилттай status=success, list = хэрэглэгчдийн массив (0-based index-ээр)
             $this->respondJSON([
                 'status' => 'success',
                 'list' => \array_values($users)
             ]);
         } catch (\Throwable $e) {
+            // Алдаа гарвал зөвхөн мессеж, HTTP кодыг JSON-оор буцаана
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
         }
     }
     
+    /**
+     * Шинэ хэрэглэгч үүсгэх action.
+     *
+     * Хоёр янзаар ажиллана:
+     *
+     *  1) GET /users/insert
+     *     - Хэрэглэгч үүсгэх form-тай Dashboard хуудсыг рендерлэнэ
+     *     - `user-insert.html` template-д идэвхтэй байгууллагуудыг (organizations.is_active=1) дамжуулна
+     *
+     *  2) POST /users/insert
+     *     - Request body-оос хэрэглэгчийн мэдээлэл уншина
+     *     - username, email, password-г шалгана
+     *       * password хоосон байвал санамсаргүй 10-byte (20 hex тэмдэгт) нууц үг үүсгэнэ
+     *     - UsersModel ашиглан users хүснэгтэд insert хийнэ
+     *     - Хэрэв organization_id ирсэн бол OrganizationUserModel-д харьяалал үүсгэнэ
+     *     - FileController::moveUploaded() ашиглан photo upload хийж, users.photo_* талбаруудыг шинэчилнэ
+     *     - Амжилттай бол JSON {status: success, message: ...} буцаана
+     *
+     * Лог:
+     *  - finally хэсэгт `indolog('users', ...)` ашиглан create үйлдлийн протокол үлдээнэ
+     *
+     * @return void
+     */
     public function insert()
     {
         try {
@@ -120,34 +326,49 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Ажиллах Model-ууд
             $model = new UsersModel($this->pdo);
             $orgModel = new OrganizationModel($this->pdo);
+            // HTTP method шалгаад POST үед л DB insert хийнэ, бусад үед form харуулна
             if ($this->getRequest()->getMethod() == 'POST') {
+                // -----------------------------
+                // POST – хэрэглэгч үүсгэх
+                // -----------------------------
                 $payload = $this->getParsedBody();
+                
+                // Заавал байх ёстой талбаруудыг шалгах (username / email)
                 if (empty($payload['username']) || empty($payload['email'])
                     || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
+                
+                // Нууц үг хоосон байвал санамсаргүй үүсгэнэ, байвал шууд ашиглана
                 if (empty($payload['password'])) {
                     $bytes = \random_bytes(10);
                     $password = \bin2hex($bytes);
                 } else {
                     $password = $payload['password'];
                 }
+                // Нууц үгийг bcrypt-аар hash хийж DB-д хадгалах бэлэн болно
                 $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
+                
+                // POST дээр ирсэн organization (optional) – дараа нь OrganizationUserModel-д ашиглана
                 $post_organization = $payload['organization'] ?? null;
                 unset($payload['organization']);
                 
+                // created_by-г одоогийн хэрэглэгчийн ID-аар тавьж insert хийнэ
                 $record = $model->insert($payload + ['created_by' => $this->getUserId()]);
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
+                // Client-д зориулсан JSON хариу – амжилттай үүссэн тухай
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
                 
+                // Хэрэв organization сонгосон бол хэрэглэгчийг тухайн байгууллагад холбох
                 if (!empty($post_organization)) {
                     $organization = \filter_var($post_organization, \FILTER_VALIDATE_INT);
                     if ($organization !== false
@@ -159,10 +380,13 @@ class UsersController extends FileController
                     }
                 }
                 
+                // Хэрэглэгчийн зураг upload хийх боломжийг нээх
+                // /users/{id} гэсэн хавтас руу байрлуулна -> {id} insert хийсэн шинэ бичлэгийн дугаар
                 $this->setFolder("/{$model->getName()}/{$record['id']}");
-                $this->allowImageOnly();
+                $this->allowImageOnly(); // зөвхөн зурган файл зөвшөөрнө
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
+                    // Хэрэв зураг амжилттай upload болсон бол тухайн хэрэглэгчийн photo_* талбаруудыг шинэчилнэ
                     $record = $model->updateById(
                         $record['id'],
                         [
@@ -173,33 +397,48 @@ class UsersController extends FileController
                     );
                 }
             } else {
+                // -----------------------------
+                // GET – хэрэглэгч үүсгэх form-тай Dashboard хуудсыг харуулах
+                // -----------------------------
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/user-insert.html',
-                    ['organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])]
+                    [
+                        // Зөвхөн идэвхтэй байгууллагуудыг сонгож form-д өгнө
+                        'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
+                    ]
                 );
                 $dashboard->set('title', $this->text('create-new-user'));
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
+            // Алдаа гарсан үед:
             if ($this->getRequest()->getMethod() == 'POST') {
+                // Хэрэв POST хүсэлт байсан бол JSON алдаа буцаах хэрэгтэй
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
+                // Харин form нээх явцад алдаа гарвал dashboard алдааны дэлгэц харуулна
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
+            // Энэ action-ийн лог протокол
             $context = ['action' => 'create'];
             if (isset($err) && $err instanceof \Throwable) {
+                // Алдаатай дууссан тохиолдолд ERROR level
                 $level = LogLevel::ERROR;
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
+                // Амжилттай шинэ хэрэглэгч үүсгэсэн үед INFO level
                 $level = LogLevel::INFO;
                 $message = 'Хэрэглэгч [{record.username}] {record.id} дугаартай амжилттай үүслээ';
+                // POST амжилттай тул $record–г лог дээр нь хадгална
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
+                // Зөвхөн create form-ийг нээсэн үед NOTICE level
                 $level = LogLevel::NOTICE;
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
             }
+            // users logger-д бичих
             $this->indolog('users', $level, $message, $context);
         }
     }

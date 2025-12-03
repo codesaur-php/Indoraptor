@@ -5,8 +5,58 @@ namespace Raptor\Content;
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
+/**
+ * Class FilesModel
+ *
+ * Хүснэгт бүр дээр хавсаргасан файлуудыг хадгалах зориулалттай
+ * “*_{table}_files*” дагалдах хүснэгтийн модел.
+ *
+ * --------------------------------------------------------------
+ * 📌 Үндсэн хэрэглээ
+ * --------------------------------------------------------------
+ *  Жишээ нь:
+ *      users → users_files
+ *      pages → pages_files
+ *
+ *  Нэг үндсэн бичлэг (record_id) олон файлтай холбогдох боломжтой.
+ *
+ * --------------------------------------------------------------
+ * 🧩 Онцлог боломжууд
+ * --------------------------------------------------------------
+ *  • Таблын нэр автоматаар `{table}_files` болгон хувиргана  
+ *  • created_by / updated_by → users.id талбарууд дээр FK автоматаар үүсгэнэ  
+ *  • record_id → тухайн гол хүснэгтийн FK (cascade delete)  
+ *  • insert/update үед created_at / updated_at автоматаар бөглөгдөнө  
+ *  • FileController зэрэг upload controller-тэй шууд нийцдэг  
+ *
+ * --------------------------------------------------------------
+ * 🔗 Middleware ба PDO injection
+ * --------------------------------------------------------------
+ *  Raptor\Controller нь PDOTrait ашигладаг тул
+ *  PDO-г middleware нь `$request->getAttribute('pdo')` хэлбэрээр inject хийдэг.
+ *  Иймээс FilesModel дотор `$this->setInstance($pdo)` гэж авна.
+ *
+ * @package Raptor\Content
+ */
 class FilesModel extends Model
 {
+    /**
+     * FilesModel constructor.
+     *
+     * @param \PDO $pdo
+     *      Middleware → ServerRequest → attribute('pdo') хэлбэрээр
+     *      автоматаар ирсэн PDO instance.
+     *
+     * Багана (column)–уудыг бүртгэнэ:
+     *   - record_id  : гол хүснэгтийн id FK
+     *   - file       : сервер дээрх локал абсолют path
+     *   - path       : public URL (client-д үзэгдэх)
+     *   - size       : файл байтын хэмжээ
+     *   - type       : image / audio / video / application …
+     *   - mime_content_type : MIME type
+     *   - category / keyword / description : тайлбар
+     *   - created/updated талбарууд
+     */
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
@@ -30,6 +80,15 @@ class FilesModel extends Model
         ]);
     }
     
+    /**
+     * Үндсэн хүснэгтийн нэрнээс "{table}_files" нэр гарган тохируулна.
+     *
+     * @param string $name  Гол хүснэгтийн нэр (жишээ: users, pages)
+     *
+     * @throws Exception Хэрэв хүснэгтийн нэр хоосон эсвэл буруу бол.
+     *
+     * setTable("users") → "users_files"
+     */
     public function setTable(string $name)
     {
         $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $name);
@@ -40,11 +99,32 @@ class FilesModel extends Model
         parent::setTable("{$table}_files");
     }
 
+    /**
+     * FilesModel-ийн үндсэн parent хүснэгтийн нэрийг буцаана.
+     *
+     * Жишээ:
+     *   files table → users_files  → parent = "users"
+     *
+     * @return string
+     */
     public function getRecordName(): string
     {
         return \substr($this->getName(), 0, -(\strlen('_files')));
     }
     
+     /**
+     * FilesModel үүсэх үед шаардлагатай FK constraint-уудыг автоматаар үүсгэнэ.
+     *
+     * 1) created_by → users(id)
+     * 2) updated_by → users(id)
+     * 3) record_id  → parent_table(id)
+     *
+     * Хэрэв parent хүснэгт байхгүй бол 3-р FK үүсгэхгүй.
+     *
+     * ON DELETE CASCADE → гол бичлэг уствал бүх файлууд автоматаар устна.
+     *
+     * @return void
+     */
     protected function __initial()
     {
         $this->setForeignKeyChecks(false);
@@ -59,19 +139,35 @@ class FilesModel extends Model
         $this->setForeignKeyChecks(true);
     }
     
+    /**
+     * insert()
+     * ---------------------------------------------------------
+     *  Бичлэг шинээр үүсгэх үед created_at утгыг автоматаар populate
+     *  хийдэг override функц (хэрвээ шинэ утгууд дотор агуулагдаагүй бол).
+     *
+     * @param array $record
+     * @return array|false
+     */
     public function insert(array $record): array|false
     {
-        if (!isset($record['created_at'])) {
-            $record['created_at'] = \date('Y-m-d H:i:s');
-        }
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
     }
     
+    /**
+     * updateById()
+     * ---------------------------------------------------------
+     * @param int $id         Засах бичлэгийн ID
+     * @param array $record   Шинэ утгууд
+     *
+     * @return array|false
+     *
+     *  Бичлэг шинэчилж буй үед updated_at-г автоматаар онооно
+     *  (хэрвээ шинэ утгууд дотор агуулагдаагүй бол).
+     */
     public function updateById(int $id, array $record): array|false
     {
-        if (!isset($record['updated_at'])) {
-            $record['updated_at'] = \date('Y-m-d H:i:s');
-        }
+        $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record);
     }
 }

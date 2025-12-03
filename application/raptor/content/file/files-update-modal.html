@@ -95,7 +95,7 @@
                 if (contentType.includes('application/json')) {
                     return res.json();
                 }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
             }).then(resp => {
                 if (resp.status !== 'success') {
                     throw new Error(resp.message ? resp.message : 'Invalid response!');

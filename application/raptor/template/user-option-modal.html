@@ -135,7 +135,6 @@
     optionConfirm?.addEventListener('click', function (e) {
         e.preventDefault();
 
-        // GrowNStop → Дүрсийг түр томорч хөдөлгөөнтэй харагдуулна
         this.growNstop();
 
         // ---- Save Theme to localStorage ----
@@ -149,7 +148,7 @@
         if (language?.value !== `{{ current }}`) {
             // Synchronous AJAX (intentional)
             // Хэл солих үед redirect хийх тул sync OK.
-            let xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
             xhr.open('GET', `{{ 'login'|link }}/language/${language.value}`, false);
             xhr.send();
         }

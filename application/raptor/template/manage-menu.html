@@ -651,7 +651,7 @@
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        // 🔹 motable – Indoraptor Admin-ийн стандарт хүснэгт helper
+        // 🔹 motable – Indoraptor стандарт хүснэгт helper
         const menu = new motable('table#raptor_menu');
         menu.setReady();
 
@@ -660,23 +660,19 @@
         deactivates.forEach(btn => btn.addEventListener('click', function (e) {
             e.preventDefault();
 
-            // Оролцогчийн хэлнээс хамаарч асуултыг локальчлана
-            let question;
-            if (document.documentElement.lang === 'mn') {
-                question = '<p class="text-danger mb-3">Та ({0}) цэсийг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
-            } else {
-                question = '<p class="text-danger mb-3">Are you sure to deactivate the menu ({0})?</p><p>If so, please provide a reason</p>';
-            }
-
-            let thisRow = btn.closest('tr');
+            const thisRow = btn.closest('tr');
             if (!thisRow) {
                 return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
             }
 
-            // Мөрийн эхний caption-ийг plain text хэлбэрээр гаргаж авна
-            let caption = thisRow.children[1].innerHTML;
-            let ask = question.format(caption.replace(/<\/?[^>]+(>|$)/g, ''));
-            let icon = thisRow.children[0].querySelector('i');
+            const caption = thisRow.children[1].innerHTML;
+            const cleanCaption = caption.replace(/<\/?[^>]+(>|$)/g, '');
+            let ask =
+                document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
+                    : `<p class="text-danger mb-3">Are you sure to deactivate the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
+
+            const icon = thisRow.children[0].querySelector('i');
             if (icon) {
                 ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
             }
@@ -737,11 +733,11 @@
         // 🔹 UPDATE MODAL – Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ
         const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
         updates.forEach(btn => btn.addEventListener('click', function () {
-            let thisRow = btn.closest('tr');
-            let record = JSON.parse(thisRow.dataset.record ?? '{}');
+            const thisRow = btn.closest('tr');
+            const record = JSON.parse(thisRow.dataset.record ?? '{}');
             if (record.id === undefined) return;
 
-            let updateModal = document.querySelector('div#menu-update-modal');
+            const updateModal = document.querySelector('div#menu-update-modal');
             updateModal.querySelector('input[name="id"]').value = record.id;
             updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
             updateModal.querySelector('input[name="position"]').value = record.position;
@@ -751,7 +747,7 @@
             updateModal.querySelector('select[name="alias"]').value = record.alias;
             updateModal.querySelector('select[name="permission"]').value = record.permission;
 
-            for (let code in record.localized?.title) {
+            for (const code in record.localized?.title) {
                 updateModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
             }
         }));
@@ -759,11 +755,11 @@
         // 🔹 VIEW MODAL – Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ
         const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
         views.forEach(btn => btn.addEventListener('click', function () {
-            let thisRow = btn.closest('tr');
-            let record = JSON.parse(thisRow.dataset.record ?? '{}');
+            const thisRow = btn.closest('tr');
+            const record = JSON.parse(thisRow.dataset.record ?? '{}');
             if (record.id === undefined) return;
 
-            let viewModal = document.querySelector('div#menu-view-modal');
+            const viewModal = document.querySelector('div#menu-view-modal');
             viewModal.querySelector('input[name="id"]').value = record.id;
             viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
             viewModal.querySelector('input[name="position"]').value = record.position;
@@ -773,7 +769,7 @@
             viewModal.querySelector('select[name="alias"]').value = record.alias;
             viewModal.querySelector('select[name="permission"]').value = record.permission;
 
-            for (let code in record.localized?.title) {
+            for (const code in record.localized?.title) {
                 viewModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
             }
             viewModal.querySelector('input[name="created_at"]').value = record.created_at;
@@ -809,10 +805,9 @@
 
                 submitter.growNstop();
 
-                let data = new FormData(this);
-                // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
-                let visible = this.querySelector('input[name="is_visible"]');
-                if (visible) {
+                const data = new FormData(this);
+                const visible = this.querySelector('input[name="is_visible"]');
+                if (visible) { // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
                     data.set('is_visible', visible.checked ? '1' : '0');
                 }
                 fetch(
@@ -822,11 +817,9 @@
                         method: this.getAttribute('method') ?? 'POST'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                    const contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) return res.json();
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 }).then(response => {
                     if (response.status !== 'success') {
                         throw new Error(response.message ? response.message : 'Invalid response!');
@@ -874,10 +867,9 @@
 
                 submitter.growNstop();
 
-                let data = new FormData(this);
-                // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
-                let visible = this.querySelector('input[name="is_visible"]');
-                if (visible) {
+                const data = new FormData(this);
+                const visible = this.querySelector('input[name="is_visible"]');
+                if (visible) { // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
                     data.set('is_visible', visible.checked ? '1' : '0');
                 }
                 fetch(
@@ -887,11 +879,9 @@
                         method: this.getAttribute('method') ?? 'PUT'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                    const contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) return res.json();
+                     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 }).then(response => {
                     if (response.status !== 'success') {
                         throw new Error(response.message ? response.message : 'Invalid response!');
@@ -917,12 +907,12 @@
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
-            let logger_id = logger.id ?? '';
-            let table = logger_id.substring(logger_id.indexOf('-') + 1);
+            const logger_id = logger.id ?? '';
+            const table = logger_id.substring(logger_id.indexOf('-') + 1);
             if (!table) return;
 
             logger.style.display = 'none';
-            let spinner = logger.previousElementSibling;
+            const spinner = logger.previousElementSibling;
             spinner.style.display = 'block';
 
             fetch(
@@ -949,9 +939,9 @@
 
                 logger.innerHTML = '';
 
-                let logModalLink = `${logsViewLink}?table=${table}&id=`;
+                const logModalLink = `${logsViewLink}?table=${table}&id=`;
                 Object.values(response).forEach(log => {
-                    let log_li = document.createElement('li');
+                    const log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
 
                     // Log level-с хамаарч Bootstrap өнгө тохируулах
@@ -965,7 +955,7 @@
                         default: log_li.classList.add('list-group-item-dark'); break;
                     }
 
-                    let a_link = document.createElement('a');
+                    const a_link = document.createElement('a');
                     a_link.textContent = `${log.created_at} [${log.id}]`;
                     a_link.href = logModalLink + log.id;
                     a_link.setAttribute('data-bs-target', '#static-modal');
@@ -977,12 +967,12 @@
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
 
-                    let span_msg = document.createElement('span');
+                    const span_msg = document.createElement('span');
                     span_msg.innerHTML = log.message;
                     log_li.appendChild(span_msg);
                     log_li.appendChild(document.createTextNode(' '));
 
-                    let span_user_action = document.createElement('span');
+                    const span_user_action = document.createElement('span');
                     span_user_action.innerHTML =
                         `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                     span_user_action.classList.add('text-muted', 'small');

@@ -183,9 +183,7 @@ class UserRole extends Model
      */
     public function insert(array $record): array|false
     {
-        if (!isset($record['created_at'])) {
-            $record['created_at'] = \date('Y-m-d H:i:s');
-        }
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
     }
 }

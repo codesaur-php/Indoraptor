@@ -166,9 +166,9 @@
             // Spinner toggle function
             function spinNstop(ele)
             {
-                let isDisabled = ele.disabled,
-                    hasDisabled = ele.classList.contains('disabled'),
-                    attrText = ele.getAttribute('data-innerHTML');
+                const isDisabled = ele.disabled;
+                const hasDisabled = ele.classList.contains('disabled');
+                const attrText = ele.getAttribute('data-innerHTML');
                 if (isDisabled && hasDisabled && attrText) {
                     ele.disabled = false;
                     ele.classList.remove('disabled');
@@ -176,7 +176,7 @@
                     return;
                 }
 
-                let html = ele.innerHTML;
+                const html = ele.innerHTML;
                 ele.setAttribute('data-innerHTML', html);
                 ele.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
                 ele.disabled = true;
@@ -186,16 +186,16 @@
             // DOM Loaded - event logic binding
             document.addEventListener('DOMContentLoaded', function () {
                 // Form references
-                let formLogin = document.querySelector('form#login');
-                let formForgot = document.querySelector('form#forgot');
-                let formSignUp = document.querySelector('form#register');
+                const formLogin = document.querySelector('form#login');
+                const formForgot = document.querySelector('form#forgot');
+                const formSignUp = document.querySelector('form#register');
                 
                 // Button references
-                let btnLoginSubmit = document.querySelector('button#login_signin_submit');
-                let btnForgotPassword = document.querySelector('a#forgot_password');
-                let btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
-                let btnSignup = document.querySelector('a#signup');
-                let btnSignupSubmit = document.querySelector('button#signup_submit');
+                const btnLoginSubmit = document.querySelector('button#login_signin_submit');
+                const btnForgotPassword = document.querySelector('a#forgot_password');
+                const btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
+                const btnSignup = document.querySelector('a#signup');
+                const btnSignupSubmit = document.querySelector('button#signup_submit');
 
                 // ============================================================
                 // Helper functions
@@ -204,7 +204,7 @@
                 {
                     removeAlert(form);
                     
-                    let alert = document.createElement('div');
+                    const alert = document.createElement('div');
                     alert.setAttribute('role', 'alert');
                     alert.className = `alert alert-${type}`;
                     alert.innerHTML = msg;
@@ -218,7 +218,7 @@
                 
                 function removeAlert(form)
                 {
-                    let alert = form.querySelector('.alert');
+                    const alert = form.querySelector('.alert');
                     if (alert !== null) {
                         form.removeChild(alert);
                     }
@@ -248,8 +248,7 @@
                 // ============================================================
                 // URL query message support (?message=...&message_type=...)
                 // ============================================================
-                let queryString = window.location.search;
-                let urlParams = new URLSearchParams(queryString);
+                const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams && urlParams.get('message')) {
                     showMessage(formLogin, urlParams.get('message_type') ?? 'warning', urlParams.get('message'));
                     window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
@@ -296,8 +295,8 @@
                 btnLoginSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    let username = formLogin.querySelector('input[name="username"]').value;
-                    let password = formLogin.querySelector('input[name="password"]').value;
+                    const username = formLogin.username?.value;
+                    const password = formLogin.password?.value;
                     if (isBlank(username)) {
                         return showMessage(formLogin, 'warning', `{{ 'error-username-empty'|text|e }}`);
                     } else if (isBlank(password)) {
@@ -337,8 +336,7 @@
                 btnForgotPasswordSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    let emailInput = formForgot.querySelector('input[name="codeForgetEmail"]');
-                    let email = emailInput?.value;
+                    const email = formForgot.codeForgetEmail?.value;
                     if (isBlank(email)) {
                         return showMessage(formForgot, 'warning', `{{ 'enter-email-empty'|text|e }}`);
                     } else if (!validateEmail(email)) {
@@ -364,7 +362,8 @@
                         
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
-                        emailInput.value = '';
+                        
+                        formForgot.codeForgetEmail.value = '';
                     }).catch(error => {
                         showMessage(formForgot, 'danger', error.message);
                     }).finally(() => {
@@ -378,14 +377,10 @@
                 btnSignupSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    let usernameInput = formSignUp.querySelector('input[name="codeUsername"]');
-                    let emailInput = formSignUp.querySelector('input[name="codeEmail"]');
-                    let passwordInput = formSignUp.querySelector('input[name="codePassword"]');
-                    let passwordReInput = formSignUp.querySelector('input[name="codeRePassword"]');
-                    let username = usernameInput.value;
-                    let email = emailInput.value;
-                    let password = passwordInput.value;
-                    let password_re = passwordReInput.value;
+                    const username = formSignUp.codeUsername?.value ?? '';
+                    const email = formSignUp.codeEmail?.value ?? '';
+                    const password = formSignUp.codePassword?.value ?? '';
+                    const password_re = formSignUp.codeRePassword?.value ?? '';
                     if (isBlank(username)) {
                         return showMessage(formSignUp, 'warning', `{{ 'error-username-empty'|text|e }}`);
                     } else if (isBlank(email)) {
@@ -419,10 +414,12 @@
                         
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
-                        usernameInput.value = '';
-                        emailInput.value = '';
-                        passwordInput.value = '';
-                        passwordReInput.value = '';
+                        
+                        // clear inputs
+                        formSignUp.codeUsername.value = '';
+                        formSignUp.codeEmail.value = '';
+                        formSignUp.codePassword.value = '';
+                        formSignUp.codeRePassword.value = '';
                     }).catch(error => {
                         showMessage(formSignUp, 'danger', error.message);
                     }).finally(() => {

@@ -34,6 +34,34 @@ use Raptor\Log\Logger;
  * Raptor-ийн бүх Controller-ууд энэ ангийг өргөтгөснөөр
  * дээрх боломжуудыг нэг мөр ашиглах боломжтой болдог.
  *
+ * --------------------------------------------------------------
+ * ⚙ PDO холболт хэрхэн ирдэг вэ?
+ * --------------------------------------------------------------
+ *  Raptor\Controller нь:
+ *
+ *      use \codesaur\DataObject\PDOTrait;
+ *
+ *  гэдэг trait-ийг ашигладаг. PDOTrait нь `$pdo` шинж чанарыг
+ *  controller-ийн объект дээр үүсгэж өгдөг.
+ *
+ *  Framework-ийн түвшинд DatabaseConnectMiddleware нь:
+ *
+ *      $request = $request->withAttribute('pdo', $pdo);
+ *
+ *  гэж PSR-7 ServerRequest дотор `pdo` attribute-ийг суулгадаг.
+ *
+ *  Controller нь __construct() нь:
+ *
+ *      $this->pdo = $request->getAttribute('pdo');
+ *
+ *  хэлбэрээр автоматаар авч `$this->pdo` болгон тохируулдаг.
+ *
+ * ✔ Үүний ачаар энэ Controller-оос удамшсан бүх контроллер дотор Model-классуудыг:
+ *      new UsersModel($this->pdo)
+ *      new Roles($this->pdo)
+ *      new OrganizationModel($this->pdo)
+ *  гэх мэтээр шууд найдвартай холбогдсон баазын холболттойгоор хэрэглэж чадна.
+ * 
  * @package Raptor
  */
 abstract class Controller extends \codesaur\Http\Application\Controller
@@ -43,7 +71,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     /**
      * Controller constructor.
      *
-     * Request объект дотор хадгалсан PDO instance-ийг
+     * ServerRequest объект дотор хадгалсан PDO instance-ийг
      * татаж авч $this->pdo хувьсагчид онооно.
      *
      * @param ServerRequestInterface $request

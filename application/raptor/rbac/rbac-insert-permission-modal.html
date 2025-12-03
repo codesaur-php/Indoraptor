@@ -230,11 +230,9 @@
             ).then(res => {
                 // JSON хариу шалгах
                 let contentType = res.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    return res.json();
-                }
-
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                if (contentType.includes('application/json')) return res.json();
+                // JSON биш бол алдаа
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }).then(response => {
                 if (response.status !== 'success') {
                     throw new Error(response.message ? response.message : 'Invalid response!');

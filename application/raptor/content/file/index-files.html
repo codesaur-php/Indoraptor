@@ -166,14 +166,20 @@
 
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та {0} файлын бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>';
+                    questiondel = (title) => `
+                        <p class="text-danger mb-3">
+                            Та <strong>${title}</strong> файлын бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?<br/><br/>
+                            Бодит файл нь устахгүй бөгөөд оршсоор байх болно.
+                        </p>`;
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the file record {0}?</p>';
+                    questiondel = (title) => `
+                        <p class="text-danger mb-3">
+                            Are you sure to deactivate the file record <strong>${title}</strong>?
+                        </p>`;
                 }
-
                 const id = deactivateFile.value;
-                const title = row.children[0].textContent;
-                let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+                let rawTitle = row.children[0].textContent.trim();
+                let question = questiondel(rawTitle);
 
                 let src = '';
                 let flag = row.children[0].querySelector('img');

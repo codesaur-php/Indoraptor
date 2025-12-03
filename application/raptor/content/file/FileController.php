@@ -4,6 +4,25 @@ namespace Raptor\Content;
 
 use Psr\Http\Message\UploadedFileInterface;
 
+/**
+ * Class FileController
+ *
+ * Файл upload, validate, rename, move хийх бүх үйлдлийг
+ * төвлөрүүлсэн Raptor Controller-ийн дэд класс.
+ *
+ * --------------------------------------------------------------
+ * 📌 Үндсэн боломжууд
+ * --------------------------------------------------------------
+ *  • setFolder() → upload root (local) & public URL зохицуулна  
+ *  • allowExtensions(), allowImageOnly(), allowCommonTypes()  
+ *  • setSizeLimit(), setOverwrite()  
+ *  • moveUploaded() → файлыг аюулгүй байршуулах гол функц  
+ *  • renameTo() → файл сервер дотор байр солих  
+ *  • MIME type илрүүлэх, filename collision хамгаалах  
+ *  • upload_max_filesize / POST max size → format + convert bytes  
+ *
+ * @package Raptor\Content
+ */
 class FileController extends \Raptor\Controller
 {
     protected string $local;
@@ -18,6 +37,15 @@ class FileController extends \Raptor\Controller
     
     private int $_upload_error = \UPLOAD_ERR_OK;
     
+    /**
+     * Upload хийх фолдерийг тохируулна.
+     *
+     * @param string $folder  /users/1, /pages/22/images зэрэг харьцангуй path
+     * @param bool   $relative  true → public URL server root-оос автоматаар үүсгэнэ
+     *
+     * $this->local  → физик (document root дотор)
+     * $this->public → браузер дээр харагдах public URL
+     */
     public function setFolder(string $folder, bool $relative = true)
     {
         $script_path = $this->getScriptPath();
@@ -27,6 +55,12 @@ class FileController extends \Raptor\Controller
         $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);
     }
     
+    /**
+     * Public URL үүсгэх (site дээр харуулах)
+     *
+     * @param string $fileName
+     * @return string example: /public/users/4/photo.jpg
+     */
     public function getPath(string $fileName): string
     {
         return $this->public . "/$fileName";
@@ -37,6 +71,12 @@ class FileController extends \Raptor\Controller
         return $this->getDocumentRoot() . $filePath;
     }
     
+    /**
+     * Зөвшөөрөх файл өргөтгөлүүдийг зааж өгнө.
+     *
+     * @param array $exts
+     * @return void
+     */
     public function allowExtensions(array $exts)
     {
         $this->_allowed_exts = $exts;
@@ -69,12 +109,38 @@ class FileController extends \Raptor\Controller
         $this->_size_limit = $size;
     }
 
+    /**
+     * Файл давхардах үед overwrite хийх эсэхийг тохируулна.
+     *
+     * @param bool $overwrite
+     *      true  → Нэг нэртэй файл байвал шууд дарж бичнэ
+     *      false → Давхцах нэртэй бол uniqueName() ашиглан шинэ нэр үүсгэнэ
+     *
+     * Анхдагч утга нь `false`.
+     *
+     * @return void
+     */
     public function setOverwrite(bool $overwrite)
     {
         $this->_overwrite = $overwrite;
     }
     
-    protected function uniqueName(string $uploadpath, string $name, string $ext): string
+    /**
+     * Давхардсан нэртэй файл байвал collision-оос хамгаалж
+     * автоматаар дараалсан нэр үүсгэх.
+     *
+     * Жишээ:
+     *   avatar.jpg (байгаа)
+     *   avatar_(1).jpg (байгаа)
+     *   avatar_(2).jpg (шинэ → сонгоно)
+     *
+     * @param string $uploadpath   Файлыг хадгалах физик абсолют path ("/var/www/.../")
+     * @param string $name         Файлын нэр (өргөтгөлгүй)
+     * @param string $ext          Файлын өргөтгөл
+     *
+     * @return string              Давхцахгүй баталгаатай шинэ filename.ext
+     */
+    private function uniqueName(string $uploadpath, string $name, string $ext): string
     {
         $filename = $name . '.' . $ext;
         if (\file_exists($uploadpath . $filename)) {
@@ -92,7 +158,32 @@ class FileController extends \Raptor\Controller
         return $filename;
     }
 
-    public function moveUploaded($uploadedFile, int $mode = 0755): array|false
+    /**
+     * Upload хийгдсэн файлыг баталгаажуулж server дээр байршуулна.
+     *
+     * Validate:
+     *   • file exists  
+     *   • error == UPLOAD_ERR_OK  
+     *   • size < size_limit  
+     *   • extension allowed  
+     *
+     * Хэрвээ overwrite=false → давхар filename collision-оос автоматаар хамгаална.
+     *
+     * @param string|UploadedFileInterface $uploadedFile
+     * @param int $mode  mkdir() permission
+     *
+     * @return array|false  Амжилттай бол:
+     *      [
+     *        'path' => public URL,
+     *        'file' => absolute local file path,
+     *        'size' => байтын хэмжээ,
+     *        'mime_content_type' => 'image/jpeg',
+     *        'type' => 'image'
+     *      ]
+     *
+     * Амжилтгүй бол false буцаана, алдаа code-г getLastUploadError() авч болно.
+     */
+    protected function moveUploaded($uploadedFile, int $mode = 0755): array|false
     {
         try {
             if (\is_string($uploadedFile)) {
@@ -154,13 +245,22 @@ class FileController extends \Raptor\Controller
         }
     }
     
-    public function renameTo(string $table, int $record_id, int $file_id, int $mode = 0755): array|false
+     /**
+     * Upload хийсэн файлыг шинэ фолдер руу зөөж нэр өөрчлөх.
+     *
+     * Тухайн file_id → files table-аас уншиж
+     *      users_files
+     *      products_files
+     *   гэх мэт хүснэгтээс мэдээллийг татаж шинэ замд байршуулна.
+     *
+     * @param string $table      Үндсэн хүснэгт (users, products гэх мэт)
+     * @param int    $record_id  Parent record ID
+     * @param int    $file_id    Файлын ID (files table)
+     * @return array|false
+     */
+    protected function renameTo(string $table, int $record_id, int $file_id, int $mode = 0755): array|false
     {
         try {
-            if (!$this->isUserAuthorized()) {
-                throw new \Exception('Unauthorized', 401);
-            }
-            
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
             $record = $model->getRowWhere([
@@ -202,27 +302,38 @@ class FileController extends \Raptor\Controller
         }
     }
     
-    protected function unlinkByName(string $fileName): bool
-    {
-        try {
-            $filePath = $this->local . "/$fileName";
-            if (!\file_exists($filePath)) {
-                throw new \Exception(__CLASS__ . ": File [$filePath] doesn't exist!");
-            }
-            
-            return \unlink($filePath);
-        } catch (\Throwable $err) {
-            $this->errorLog($err);
-            
-            return false;
-        }
-    }
-    
+    /**
+     * Сүүлийн файл upload хийх явцад гарсан алдааны кодыг буцаана.
+     *
+     * @return int
+     *      PHP UPLOAD_ERR_* тогтмолуудаас аль нэг нь буцна:
+     *          UPLOAD_ERR_OK (0)
+     *          UPLOAD_ERR_INI_SIZE
+     *          UPLOAD_ERR_FORM_SIZE
+     *          UPLOAD_ERR_NO_FILE
+     *          … гэх мэт
+     *
+     * moveUploaded() → false буцаасан тохиолдолд
+     * ямар шалтгаанаар upload амжилтгүй болсон гэдгийг
+     * яг энэ функцээр шалгана.
+     */
     protected function getLastUploadError(): int
     {
         return $this->_upload_error;
     }
     
+    /**
+     * PHP тохиргоонд зөвшөөрөгдөх хамгийн их upload хэмжээ
+     * (post_max_size, upload_max_filesize) хоёрын хамгийн бага утгыг
+     * хүн ойлгох форматаар (10mb, 512kb…) буцаана.
+     *
+     * Жишээ:
+     *   ini: post_max_size = 32M
+     *        upload_max_filesize = 8M
+     *   → буцах утга: "8mb"
+     *
+     * @return string
+     */
     protected function getMaximumFileUploadSize(): string
     {
         return $this->formatSizeUnits(
@@ -233,6 +344,14 @@ class FileController extends \Raptor\Controller
         );
     }
     
+    /**
+     * php.ini доторх “2M”, “128M”, “1G” зэрэг утгыг byte болгон хөрвүүлэх.
+     *
+     * @param string|int $sSize
+     *      php.ini хэмжээ (120M, 2G, 500K, 4096 гэх мэт)
+     *
+     * @return int  Byte болгон хөрвүүлсэн тоон утга
+     */
     protected function convertPHPSizeToBytes($sSize): int
     {
         $sSuffix = \strtoupper(\substr($sSize, -1));
@@ -256,6 +375,14 @@ class FileController extends \Raptor\Controller
         return (int)$iValue;
     }
 
+    /**
+     * Byte утгыг хүн уншихад ээлтэй формат руу хөрвүүлнэ:
+     *   1024    → "1kb"
+     *   1048576 → "1mb"
+     *
+     * @param int|null $bytes
+     * @return string
+     */
     protected function formatSizeUnits(?int $bytes): string
     {
         if ($bytes >= 1099511627776) {
