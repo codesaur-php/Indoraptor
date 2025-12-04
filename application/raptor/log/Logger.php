@@ -17,7 +17,7 @@ use codesaur\DataObject\Column;
  * • Table нэр нь динамик: setTable('dashboard') → dashboard_log
  * • Password, JWT, Token зэрэг нууц мэдээллийг автоматаар маскална
  * • Context → JSON хэлбэрээр хадгална
- * • {context.key} хэлбэрийн placeholder interpolation дэмждэг
+ * • {name}, {context.key} хэлбэрийн placeholder interpolation дэмждэг
  *
  * Лог бүтэц:
  * ───────────────────────────────────────────────────────────────────

@@ -5,6 +5,8 @@ namespace Raptor\Authentication;
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
+\define('CODESAUR_PASSWORD_RESET_MINUTES', (int) ($_ENV['CODESAUR_PASSWORD_RESET_MINUTES'] ?? 10));
+
 /**
  * Class ForgotModel
  *

@@ -34,7 +34,7 @@ namespace Raptor\Authentication;
  * ───────────────────────────────────────────────────────────────
  *   - Framework-ийн супер админ.
  *   - Хэрэв хэрэглэгч system_coder бол бүх role + permission = TRUE.
- *   - Энэ нь DevOps / Coder-д зориулагдсан дээд түвшний эрх.
+ *   - Энэ нь coder-д зориулагдсан дээд түвшний эрх.
  */
 class User
 {

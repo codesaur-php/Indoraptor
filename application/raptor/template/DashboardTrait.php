@@ -72,12 +72,10 @@ trait DashboardTrait
     {
         $dashboard = $this->twigTemplate(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
-        $dashboard->set('content', $this->twigTemplate($template, $vars));
-        
+        $dashboard->set('content', $this->twigTemplate($template, $vars));        
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
         }
-
         return $dashboard;
     }
 

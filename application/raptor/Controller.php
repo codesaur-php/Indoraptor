@@ -324,29 +324,72 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         return $twig;
     }
 
-
     /**
-     * JSON буцаах зориулалттай utility функц.
+     * Output buffer (Клиент) - рүү JSON бүтэцтэй HTTP хариулт хэвлэх зориулалттай utility функц.
+     * ----------------------------------------------------------------------------
+     * Энэ функц нь API болон AJAX хариултыг стандартаар нэг хэлбэрээр өгөх/хэвлэх зорилготой.
      *
-     * @param array $response
-     * @param int|string $code
+     *  ✔ HTTP Response Code-г динамикаар тохируулна
+     *  ✔ Content-Type: application/json header-ыг зөв тохируулна
+     *  ✔ headers_sent() → Apache/Nginx/CLI дээр header аль хэдийн илгээгдсэн эсэхийг шалгана
+     *  ✔ json_encode алдаа өгсөн тохиолдолд хоосон JSON `{}` дамжуулна (алдаанаас сэргийлнэ)
+     *
+     * Хэн ашиглах вэ?
+     *  - Controller-уудаас AJAX/FETCH хариу өгөх үед (Users, RBAC, Menu…)
+     *  - Modal / API endpoint-ууд
+     *  - Форм submit → JSON хариу
+     *
+     * ⚠ `$code` параметр нь int|string гэж заасан шалтгаан:
+     * ----------------------------------------------------
+     *  Controller доторх Exception-уудын `$e->getCode()` нь заримдаа:
+     *    • int (жишээ нь: 400, 401, 500)
+     *    • string (жишээ: 'invalid-email', 'duplication', 'DB-ERR')
+     * байдлаар ирдэг.
+     *
+     * PHP алдааны код string байх боломжтой учраас method signature-г
+     *   → `int|string $code`
+     * гэж тодорхойлох нь зөв.
+     *
+     * Гэхдээ:
+     *   ✔ HTTP статус код зөвхөн integer байх ёстой
+     *   ✔ string кодыг HTTP code болгон ашиглах боломжгүй
+     *   ✔ Тиймээс string байвал status code-д ямар ч нөлөө үзүүлэхгүй (IGNORE)
+     *
+     * @param array      $response  Клиентэд буцаагдах JSON structure
+     * @param int|string $code      HTTP status code. 
+     *                              string байвал автоматаар үл тооцно (ignored).
      * @return void
      */
     public function respondJSON(array $response, int|string $code = 0): void
     {
+        // Хэрвээ headers хараахан илгээгдээгүй бол л HTTP header бичнэ
         if (!\headers_sent()) {
-            if (!empty($code) && \is_int($code) && $code != 200
+            // HTTP статус кодыг зөв оноох
+            // 
+            // Асуудал:
+            //  - $code 0 бол → default 200 OK
+            //  - $code int биш бол алгасна
+            //  - STATUS_XXX гэж ReasonPhrase class доторх тогтмол байвал → HTTP code-ыг онооно
+            //
+            // Example:
+            //  - respondJSON([..], 403) → HTTP 403 Forbidden
+            //  - respondJSON([..], 200) → HTTP 200 OK
+            if (!empty($code)
+                && \is_int($code)
+                && $code != 200
                 && \defined(ReasonPrhase::class . "::STATUS_$code")
             ) {
                 \http_response_code($code);
             }
-
+            
+            // HTTP хариулт нь JSON гэж зарлах стандарт header
             \header('Content-Type: application/json');
         }
 
+        // JSON-д хувиргаж encoded string хэвлэнэ — алдаа гарвал '{}' хэвлэе
         echo \json_encode($response) ?: '{}';
     }
-
+    
     /**
      * Route нэрээр redirect хийх.
      *
@@ -446,7 +489,6 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             $this->errorLog($e);
         }
     }
-
 
     /**
      * Хөгжүүлэлтийн орчинд алдааны мессежийг системийн лог руу бичих.

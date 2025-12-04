@@ -88,13 +88,13 @@ class JWTAuthMiddleware implements MiddlewareInterface
      * Нэвтэрсэн хэрэглэгчийн мэдээллийг payload дотор хадгална.
      *
      * Payload:
-     *   - iat  : issued at
-     *   - exp  : хугацаа дуусах огноо
+     *   - iat     : issued at
+     *   - exp     : хугацаа дуусах огноо
      *   - seconds : токений амьдрах хугацаа
      *   - хэрэглэгч ба байгууллагын мэдээлэл
      *
      * @param array $data  Payload дотор орох мэдээлэл
-     * @return string       Кодолсон JWT токен
+     * @return string      Кодолсон JWT токен
      */
     public function generate(array $data): string
     {
@@ -122,7 +122,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
      */
     public function validate(string $jwt): array
     {
-        // Decode үед буруу бол Exception босно
+        // Decode үед буруу бол Exception шиднэ
         $decoded = JWT::decode($jwt, $this->getKey());
         $result = (array) $decoded;
 

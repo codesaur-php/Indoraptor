@@ -12,8 +12,6 @@ use Raptor\Organization\OrganizationUserModel;
 use Raptor\Content\ReferenceModel;
 use Raptor\Mail\Mailer;
 
-\define('CODESAUR_PASSWORD_RESET_MINUTES', $_ENV['CODESAUR_PASSWORD_RESET_MINUTES'] ?? 10);
-
 /**
  * Class LoginController
  *
@@ -194,13 +192,13 @@ class LoginController extends \Raptor\Controller
             // 5) Байгууллага тодорхойлох
             $login_info = ['user_id' => $user['id']];
 
-            // — Сүүлд нэвтэрсэн байгууллага
+            // Сүүлд нэвтэрсэн байгууллага
             $lastOrg = $this->getLastLoginOrg($user['id']);
             if ($lastOrg !== false) {
                 $login_info['organization_id'] = $lastOrg;
             }
-            // — сүүлд байгууллага лог байхгүй үед
             else {
+                // сүүлд нэвтэрсэн байгууллага лог байхгүй үед
                 $org_model = new OrganizationModel($this->pdo);
                 $org_user_model = new OrganizationUserModel($this->pdo);
                 $stmt_user_org = $this->prepare(
@@ -354,7 +352,7 @@ class LoginController extends \Raptor\Controller
      *   - Direct user creation биш → Admin баталгаажуулалт шаардлагатай
      *   - Username/email enumeration-ээс хамгаалах зорилгоор ганцхан төрлийн мессеж ашигладаг
      *
-     * @return void  JSON хариу буцаана
+     * @return void  JSON хариу хэвлэнэ
      */
     public function signup()
     {
@@ -370,11 +368,11 @@ class LoginController extends \Raptor\Controller
             } else {
                 unset($payload['password_re']);
             }
-
             // Нууц үгийг hash хийх
             $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
-            $payload['code'] = $code;
 
+            $payload['code'] = $code;
+            
             // 2) Email template татах (request-new-user)
             $referenceModel = new ReferenceModel($this->pdo);
             $referenceModel->setTable('templates');
@@ -456,7 +454,7 @@ class LoginController extends \Raptor\Controller
                 ]);
             }
         } catch (\Throwable $e) {
-            // Error response
+            // Error хэвлэнэ
             $this->respondJSON(
                 [
                     'message' =>
@@ -541,7 +539,7 @@ class LoginController extends \Raptor\Controller
      *   - ForgotModel.allow multi-attempts → бүртгэлийн түүх хадгална
      *   - Template эх бэлтгэл localization-т суурилдаг
      *
-     * @return void JSON хариу буцаана
+     * @return void JSON хариу хэвлэнэ
      */
     public function forgot()
     {
@@ -632,7 +630,7 @@ class LoginController extends \Raptor\Controller
                 );
             }
         } catch (\Throwable $e) {
-            // Error response
+            // Error хэвлэнэ
             $this->respondJSON(
                 [
                     'message' =>
@@ -717,7 +715,7 @@ class LoginController extends \Raptor\Controller
      *   - Token хэл (locale) таарахгүй бол UI-г автоматаар зөв хэл рүү шилжүүлдэг
      *
      * @param string $forgot_password  Unique reset token
-     * @return void  Template render хийнэ, response шууд гарах
+     * @return void  Template render хийнэ, response шууд гарна
      */
     public function forgotPassword(string $forgot_password)
     {
@@ -754,10 +752,11 @@ class LoginController extends \Raptor\Controller
             $now_date = new \DateTime();
             $then     = new \DateTime($forgot['created_at']);
             $diff     = $then->diff($now_date);
-            if (
-                $diff->y > 0 || $diff->m > 0 || $diff->d > 0 ||
+            if ($diff->y > 0 ||
+                $diff->m > 0 ||
+                $diff->d > 0 ||
                 $diff->h > 0 ||
-                $diff->i > (int) CODESAUR_PASSWORD_RESET_MINUTES
+                $diff->i > CODESAUR_PASSWORD_RESET_MINUTES
             ) {
                 throw new \Exception(
                     'Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв',
@@ -909,10 +908,11 @@ class LoginController extends \Raptor\Controller
             $now_date = new \DateTime();
             $then     = new \DateTime($forgot['created_at']);
             $diff     = $then->diff($now_date);
-            if (
-                $diff->y > 0 || $diff->m > 0 || $diff->d > 0 ||
-                $diff->h > 0 ||
-                $diff->i > (int) CODESAUR_PASSWORD_RESET_MINUTES
+            if ($diff->y > 0
+                || $diff->m > 0
+                || $diff->d > 0
+                || $diff->h > 0
+                || $diff->i > CODESAUR_PASSWORD_RESET_MINUTES
             ) {
                 throw new \Exception(
                     'Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв',
@@ -1263,8 +1263,8 @@ class LoginController extends \Raptor\Controller
             $orgTable     = (new OrganizationModel($this->pdo))->getName();
             $orgUserTable = (new OrganizationUserModel($this->pdo))->getName();
 
-            // 1) PostgreSQL JSONB query
             if ($this->getDriverName() == 'pgsql') {
+                // PostgreSQL JSONB query
                 $sql =
                     "SELECT context
                      FROM dashboard_log AS log
@@ -1279,8 +1279,8 @@ class LoginController extends \Raptor\Controller
                      ORDER BY log.id DESC
                      LIMIT 1";
 
-            // 2) MySQL JSON query
             } else {
+                // MySQL JSON query
                 $sql =
                     "SELECT context
                      FROM dashboard_log AS log
@@ -1298,12 +1298,12 @@ class LoginController extends \Raptor\Controller
 
             $result = $this->query($sql)->fetch();
 
-            // 3) Лог олдоогүй → false
             if (empty($result)) {
+                // Лог олдоогүй → false
                 throw new \Exception('No log');
             }
 
-            // 4) context JSON → decode
+            // context JSON → decode
             return \json_decode($result['context'], true)['id'];
         } catch (\Throwable) {
             return false;

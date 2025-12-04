@@ -110,9 +110,9 @@ use Raptor\Log\Logger;
  *  • update($id)           - хэрэглэгчийн мэдээлэл засварлах
  *  • view($id)             - хэрэглэгчийн дэлгэрэнгүй харах
  *  • deactivate()          - хэрэглэгчийг идэвхгүй болгох
- *  • requestsModal()       - signup / forgot хүсэлтүүдийг харах
- *  • signupApprove()       - шинээр бүртгүүлэх хүсэлтийг зөвшөөрөх
- *  • signupDeactivate()    - signup хүсэлтийг устгах
+ *  • requestsModal()       - signup / forgot хүсэлтүүдийн жагсаалт харах
+ *  • signupApprove()       - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг зөвшөөрөх
+ *  • signupDeactivate()    - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг устгах
  *  • setPassword($id)      - хэрэглэгчийн нууц үг тохируулах
  *  • setOrganization($id)  - хэрэглэгчийн байгууллага тохируулах
  *  • setRole($id)          - хэрэглэгчийн RBAC дүр тохируулах
@@ -148,9 +148,9 @@ class UsersController extends FileController
      * --------------------------------------------------------------
      *  try/catch/finally блок:
      *
-     *  ✔ try — UI-г хэвийн нээнэ  
-     *  ✔ catch — алдаа гарвал Dashboard UI дээр error box харуулна  
-     *  ✔ finally — indolog() руу протокол тэмдэглэнэ:
+     *  ✔ try - UI-г хэвийн нээнэ  
+     *  ✔ catch - алдаа гарвал Dashboard UI дээр error box харуулна  
+     *  ✔ finally - indolog() руу протокол тэмдэглэнэ:
      *      - Амжилттай нээсэн → LogLevel::NOTICE  
      *      - Алдаатай → LogLevel::ERROR  
      *
@@ -161,7 +161,6 @@ class UsersController extends FileController
      * 📡 Response
      * --------------------------------------------------------------
      *  - UI response (Twig Dashboard)
-     *  - JSON response буцаахгүй
      *
      * --------------------------------------------------------------
      * 🧩 Ашиглагдах template:
@@ -173,15 +172,13 @@ class UsersController extends FileController
     public function index()
     {
         try {
-            // RBAC эрх шалгана – хэрэглэгчид хэрэглэгчийн жагсаалт үзэх эрх байх ёстой
+            // RBAC эрх шалгана - хэрэглэгчид хэрэглэгчийн жагсаалт үзэх эрх байх ёстой
             if (!$this->isUserCan('system_user_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             // Dashboard зориулалтын Twig wrapper дотор template-ээ ачаална
-            $dashboard = $this->twigDashboard(
-                __DIR__ . '/user-index.html'
-            );
+            $dashboard = $this->twigDashboard(__DIR__ . '/user-index.html');            
              // Гарчгийг локальчилж, template-руу дамжуулна
             $dashboard->set('title', $this->text('users'));
             $dashboard->render();
@@ -192,7 +189,7 @@ class UsersController extends FileController
                 $err->getCode()
             )->render();
         } finally {
-            // Энэ action-ийн лог протокол – амжилттай эсэхээс үл хамааран бичнэ
+            // Энэ action-ийн лог протокол - амжилттай эсэхээс үл хамааран бичнэ
             $context = ['action' => 'index'];
             if (isset($err) && $err instanceof \Throwable) {
                 // Алдаатай төгссөн тохиолдолд ERROR level
@@ -233,7 +230,7 @@ class UsersController extends FileController
     public function list()
     {
         try {
-            // RBAC эрх шалгах – хэрэглэгчийн жагсаалт авах эрхтэй эсэх
+            // RBAC эрх шалгах - хэрэглэгчийн жагсаалт авах эрхтэй эсэх
             if (!$this->isUserCan('system_user_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -285,7 +282,7 @@ class UsersController extends FileController
                 }
             });
             
-            // Амжилттай status=success, list = хэрэглэгчдийн массив (0-based index-ээр)
+            // Амжилттай status=success, list = хэрэглэгчдийн массив (0-based index-ээр) хэвлэнэ
             $this->respondJSON([
                 'status' => 'success',
                 'list' => \array_values($users)
@@ -312,7 +309,7 @@ class UsersController extends FileController
      *     - UsersModel ашиглан users хүснэгтэд insert хийнэ
      *     - Хэрэв organization_id ирсэн бол OrganizationUserModel-д харьяалал үүсгэнэ
      *     - FileController::moveUploaded() ашиглан photo upload хийж, users.photo_* талбаруудыг шинэчилнэ
-     *     - Амжилттай бол JSON {status: success, message: ...} буцаана
+     *     - Амжилттай POST бол JSON {status: success, message: ...} хэвлэнэ
      *
      * Лог:
      *  - finally хэсэгт `indolog('users', ...)` ашиглан create үйлдлийн протокол үлдээнэ
@@ -332,7 +329,7 @@ class UsersController extends FileController
             // HTTP method шалгаад POST үед л DB insert хийнэ, бусад үед form харуулна
             if ($this->getRequest()->getMethod() == 'POST') {
                 // -----------------------------
-                // POST – хэрэглэгч үүсгэх
+                // POST - хэрэглэгч үүсгэх
                 // -----------------------------
                 $payload = $this->getParsedBody();
                 
@@ -353,7 +350,7 @@ class UsersController extends FileController
                 // Нууц үгийг bcrypt-аар hash хийж DB-д хадгалах бэлэн болно
                 $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
                 
-                // POST дээр ирсэн organization (optional) – дараа нь OrganizationUserModel-д ашиглана
+                // POST дээр ирсэн organization (optional) - дараа нь OrganizationUserModel-д ашиглана
                 $post_organization = $payload['organization'] ?? null;
                 unset($payload['organization']);
                 
@@ -362,7 +359,7 @@ class UsersController extends FileController
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
-                // Client-д зориулсан JSON хариу – амжилттай үүссэн тухай
+                // Client-д зориулан JSON хэвлэнэ - амжилттай үүссэн тухай
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
@@ -374,9 +371,11 @@ class UsersController extends FileController
                     if ($organization !== false
                         && !empty($orgModel->getRowWhere(['id' => $organization, 'is_active' => 1]))
                     ) {
-                        (new OrganizationUserModel($this->pdo))->insert(
-                            ['user_id' => $record['id'], 'organization_id' => $organization, 'created_by' => $this->getUserId()]
-                        );
+                        (new OrganizationUserModel($this->pdo))->insert([
+                            'user_id'        => $record['id'],
+                            'organization_id'=> $organization,
+                            'created_by'     => $this->getUserId(),
+                        ]);
                     }
                 }
                 
@@ -398,7 +397,7 @@ class UsersController extends FileController
                 }
             } else {
                 // -----------------------------
-                // GET – хэрэглэгч үүсгэх form-тай Dashboard хуудсыг харуулах
+                // GET - хэрэглэгч үүсгэх form-тай Dashboard хуудсыг харуулах
                 // -----------------------------
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/user-insert.html',
@@ -413,7 +412,7 @@ class UsersController extends FileController
         } catch (\Throwable $err) {
             // Алдаа гарсан үед:
             if ($this->getRequest()->getMethod() == 'POST') {
-                // Хэрэв POST хүсэлт байсан бол JSON алдаа буцаах хэрэгтэй
+                // Хэрэв POST хүсэлт байсан бол JSON алдаа хэвлэх хэрэгтэй
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
                 // Харин form нээх явцад алдаа гарвал dashboard алдааны дэлгэц харуулна
@@ -431,7 +430,7 @@ class UsersController extends FileController
                 // Амжилттай шинэ хэрэглэгч үүсгэсэн үед INFO level
                 $level = LogLevel::INFO;
                 $message = 'Хэрэглэгч [{record.username}] {record.id} дугаартай амжилттай үүслээ';
-                // POST амжилттай тул $record–г лог дээр нь хадгална
+                // POST амжилттай тул $record-г лог дээр нь хадгална
                 $context += ['id' => $record['id'], 'record' => $record];
             } else {
                 // Зөвхөн create form-ийг нээсэн үед NOTICE level
@@ -443,6 +442,34 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * Хэрэглэгчийн мэдээллийг засварлах (Edit User).
+     *
+     * Энэ method дараах 2 горимоор ажиллана:
+     *
+     *  1) GET /users/update/{id}
+     *      - Хэрэглэгчийн мэдээллийг формд populate хийж dashboard руу харуулна.
+     *      - Байгууллагууд, RBAC дүрүүд, тухайн хэрэглэгчийн харьяалагдаж буй
+     *        байгууллагууд болон ролуудыг ачаална.
+     *
+     *  2) PUT /users/update/{id}
+     *      - Backend логик: хэрэглэгчийн өгөгдлийг update хийх
+     *      - username, email давхардал шалгах
+     *      - password хоосон бол орхих, шинэ орж ирвэл hash хийх
+     *      - RBAC roles + Organizations-г configure хийх
+     *      - Зураг upload хийх
+     *      - Ямар талбар өөрчлөгдсөнийг "updates" массивт бүртгэх
+     *
+     * RBAC:
+     *  - Админ хэрэглэгч (`system_user_update`) бусдыг засах эрхтэй
+     *  - Хэрэглэгч өөрийнхөө профайлыг засаж болно
+     *
+     * Root user (id=1):
+     *  - Root-ийг зөвхөн root өөрөө засах боломжтой
+     *
+     * @param int $id  Засах гэж буй хэрэглэгчийн дугаар
+     * @return void JSON эсвэл HTML form рендерлэнэ
+     */
     public function update(int $id)
     {
         try {
@@ -453,10 +480,12 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Root хэрэглэгчийг зөвхөн root өөрөө засна
             if ($id == 1 && $this->getUserId() != $id) {
                 throw new \Exception('No one but root can edit this account!', 403);
             }
             
+            // Model-оос тухайн хэрэглэгчийн мэдээллийг авах
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
                 'id' => $id,
@@ -467,6 +496,7 @@ class UsersController extends FileController
             }
             
             if ($this->getRequest()->getMethod() == 'PUT') {
+                // PUT - Формаас ирсэн өгөгдлийг хадгална
                 $payload = $this->getParsedBody();
                 if (empty($payload['username']) || empty($payload['email'])
                     || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
@@ -474,22 +504,44 @@ class UsersController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 $payload['email'] = \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL);
+                
+                // Нууц үг ирсэн бол hash хийнэ
                 if (!empty($payload['password'])) {
                     $payload['password'] = \password_hash($payload['password'], \PASSWORD_BCRYPT);
                 }
-                $post_organizations = \filter_var($payload['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
+                
+                // Organizations ирүүлсэн массивыг validate хийн хадгалах
+                $post_organizations = \filter_var(
+                    $payload['organizations'] ?? [],
+                    \FILTER_VALIDATE_INT,
+                    \FILTER_REQUIRE_ARRAY
+                ) ?: [];
                 unset($payload['organizations']);
-                $post_roles = \filter_var($payload['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
+                
+                // Roles ирүүлсэн массивыг validate хийн хадгалах
+                $post_roles = \filter_var(
+                    $payload['roles'] ?? [],
+                    \FILTER_VALIDATE_INT,
+                    \FILTER_REQUIRE_ARRAY
+                ) ?: [];
                 unset($payload['roles']);
 
+                // Username / Email давхардал шалгах
                 $existing_username = $model->getRowWhere(['username' => $payload['username']]);
                 $existing_email = $model->getRowWhere(['email' => $payload['email']]);
                 if (!empty($existing_username) && $existing_username['id'] != $id) {
-                    throw new \Exception($this->text('user-exists') . " username => [{$payload['username']}], id => {$existing_username['id']}", 403);
+                    throw new \Exception(
+                        $this->text('user-exists') . " username => [{$payload['username']}], id => {$existing_username['id']}",
+                        403
+                    );
                 } elseif (!empty($existing_email) && $existing_email['id'] != $id) {
-                    throw new \Exception($this->text('user-exists') . " email => [{$payload['email']}], id => {$existing_email['id']}", 403);
+                    throw new \Exception(
+                        $this->text('user-exists') . " email => [{$payload['email']}], id => {$existing_email['id']}",
+                        403
+                    );
                 }
                 
+                // Хэрэв хэрэглэгч зураг устгахыг сонгосон бол
                 if ($payload['photo_removed'] == 1) {
                     if (\file_exists($record['photo_file'])) {
                         \unlink($record['photo_file']);
@@ -501,6 +553,7 @@ class UsersController extends FileController
                 }
                 unset($payload['photo_removed']);
                 
+                // Зураг upload хийх
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
@@ -508,6 +561,7 @@ class UsersController extends FileController
                     if (!empty($record['photo_file'])
                         && \file_exists($record['photo_file'])
                     ) {
+                        // Хуучин зураг байвал устгана
                         \unlink($record['photo_file']);
                     }
                     $payload['photo'] = $photo['path'];
@@ -515,6 +569,7 @@ class UsersController extends FileController
                     $payload['photo_size'] = $photo['size'];
                 }
                 
+                // Аль талбар өөрчлөгдсөн бэ? - updates[] массив
                 $updates = [];
                 foreach ($payload as $field => $value) {
                     if ($record[$field] != $value) {
@@ -522,6 +577,7 @@ class UsersController extends FileController
                     }
                 }
                 
+                // Organizations ба Roles тохируулья
                 if ($this->configureOrgs($id, $post_organizations)) {
                     $updates[] = 'organizations-configure';
                 }
@@ -533,22 +589,27 @@ class UsersController extends FileController
                     throw new \InvalidArgumentException('No update!');
                 }
                 
+                //  Database-д update хийх
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
                 $updated = $model->updateById($id, $payload);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
-                }                
+                }
+
+                // Client-рүү амжилттай JSON хариу хэвлэх                
                 $this->respondJSON([ 
                     'type' => 'primary',
                     'status' => 'success',
                     'message' => $this->text('record-update-success')
                 ]);
-            } else {
+            } else { // GET - форм руу мэдээлэл бэлдэх                                                
+                // Байгууллагууд
                 $orgModel = new OrganizationModel($this->pdo);
                 $orgUserModel = new OrganizationUserModel($this->pdo);
                 $organizations = $orgModel->getRows(['WHERE' => 'is_active=1']);
-                $vars = ['record' => $record, 'organizations' => $organizations];
+                
+                // Тухайн хэрэглэгчийн одоогийн байгууллагууд
                 $select_org_ids =
                     'SELECT ou.organization_id as id ' .
                     "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
@@ -558,8 +619,8 @@ class UsersController extends FileController
                 foreach ($org_ids as $org) {
                     $current_organizations[] = $org['id'];
                 }
-                $vars['current_organizations'] = $current_organizations;
                 
+                // RBAC бүтэц бэлдэх
                 $rbacs = ['common' => 'Common'];
                 $alias_names = $this->query(
                     "SELECT alias,name FROM {$orgModel->getName()} WHERE alias!='common' AND is_active=1 ORDER BY id desc"
@@ -571,8 +632,8 @@ class UsersController extends FileController
                         $rbacs[$row['alias']] = $row['name'];
                     }
                 }
-                $vars['rbacs'] = $rbacs;
 
+                // Roles жагсаалт
                 $rolesModel = new Roles($this->pdo);
                 $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $rbac_roles = $this->query(
@@ -588,8 +649,8 @@ class UsersController extends FileController
                         $roles[$value['alias']][$value['id']][] = $value['description'];
                     }
                 });
-                $vars['roles'] = $roles;
 
+                // Тухайн хэрэглэгчийн одоогийн ролууд
                 $userRoleModel = new UserRole($this->pdo);
                 $select_user_roles =
                     "SELECT rur.role_id FROM {$userRoleModel->getName()} as rur INNER JOIN {$rolesModel->getName()} as rr ON rur.role_id=rr.id " .
@@ -599,28 +660,45 @@ class UsersController extends FileController
                 foreach ($current_roles_rows as $row) {
                     $current_role[] = $row['role_id'];
                 }
-                $vars['current_roles'] = $current_role;                
-                $dashboard = $this->twigDashboard(__DIR__ . '/user-update.html', $vars);
+                
+                // Dashboard template рендерлэх
+                $dashboard = $this->twigDashboard(
+                    __DIR__ . '/user-update.html',
+                    [
+                        'record'                => $record,
+                        'organizations'         => $organizations,
+                        'current_organizations' => $current_organizations,
+                        'rbacs'                 => $rbacs,
+                        'roles'                 => $roles,
+                        'current_roles'         => $current_role
+                    ]
+                );
                 $dashboard->set('title', $this->text('edit-user'));
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
             if ($this->getRequest()->getMethod() == 'PUT') {
+                // PUT үед JSON рендерлэнэ
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
+                // Form нээх үед dashboard error рендерлэнэ
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
+            // ЛОГ ПРОТОКОЛ - бүх үйлдлийг бүртгэнэ
             $context = ['action' => 'update', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
+                // Алдаатай бол
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
+                // Амжилттай update хийсэн үед
                 $level = LogLevel::INFO;
                 $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
             } else {
+                // Form нээсэн үед
                 $level = LogLevel::NOTICE;
                 $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ';
                 $context += ['record' => $record, 'current_roles' => $current_role, 'current_organizations' => $current_organizations];
@@ -629,9 +707,38 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * Хэрэглэгчийн дэлгэрэнгүй мэдээллийг харах
+     * -------------------------------------------------------------
+     * Энэ функц нь нэг хэрэглэгчийн (profile) бүх мэдээллийг цуглуулж
+     * Dashboard-ийн readonly page дээр харуулах зориулалттай.
+     *
+     * Үйл ажиллагааны дараалал:
+     *   1) Эрхийн шалгалт - зөвхөн:
+     *        • system_user_index эрхтэй хэрэглэгч
+     *        • эсвэл өөрийн профайлыг үзэж буй хэрэглэгч
+     *   2) UsersModel-оос үндсэн profile мэдээллийг авах
+     *   3) created_by / updated_by талбаруудын мэдээллийг 
+     *      retrieveUsersDetail() ашиглан дэлгэрэнгүй болгох
+     *   4) Байгууллага (Organizations) холбоотой мэдээллийг цуглуулах
+     *   5) RBAC roles жагсаалтыг авах
+     *   6) Twig dashboard template-д дамжуулж үзүүлэх
+     *
+     * @param int $id - Дэлгэрэнгүй харах хэрэглэгчийн дугаар
+     * @throws Exception Хэрэв:
+     *          • Хэрэглэгч эрхгүй бол
+     *          • Бүртгэл олдохгүй бол
+     * @return void
+     */
     public function view(int $id)
     {
         try {
+            // ---------------------------------------------------------
+            // RBAC - эрхийн шалгалт
+            // ---------------------------------------------------------
+            // Зөвхөн дараах хүмүүс нэвтэрч болно:
+            //   • system_user_index эрхтэй хэрэглэгч
+            //   • эсвэл өөрийн профайлаа үзэж буй хэрэглэгч
             if (!$this->isUserAuthorized()
                 || (!$this->isUserCan('system_user_index')
                 && $this->getUserId() != $id)
@@ -639,6 +746,7 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Үндсэн PROFILE мэдээллийг авах
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
                 'id' => $id
@@ -646,8 +754,15 @@ class UsersController extends FileController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $record['rbac_users'] = $this->retrieveUsersDetail($record['created_by'], $record['updated_by']);
             
+            // created_by / updated_by ID → нэр, имэйл, утас гэх мэт
+            $record['rbac_users'] =
+                $this->retrieveUsersDetail(
+                    $record['created_by'],
+                    $record['updated_by']
+                );
+            
+            // Байгууллагын харьяалал авах
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_user_table = (new OrganizationUserModel($this->pdo))->getName();
             $select_user_orgs =
@@ -656,23 +771,36 @@ class UsersController extends FileController
                 "WHERE t2.is_active=1 AND t1.user_id=$id";
             $organizations = $this->query($select_user_orgs)->fetchAll();
 
+            // RBAC Roles жагсаалт авах
             $roles_table = (new Roles($this->pdo))->getName();
             $user_role_table = (new UserRole($this->pdo))->getName();
+            // PostgreSQL ба MySQL хоёрын хооронд string concat ялгаатай
+            $concat = $this->getDriverName() == 'pgsql'
+                ? "t2.alias || '_' || t2.name"
+                : "CONCAT(t2.alias, '_', t2.name)";
             $select_user_roles =
-                'SELECT ' . ($this->getDriverName() == 'pgsql' ? "t2.alias || '_' || t2.name" : 'CONCAT(t2.alias, "_", t2.name)') . ' as name ' . 
-                "FROM $user_role_table as t1 INNER JOIN $roles_table as t2 ON t1.role_id=t2.id " .
-                "WHERE t1.user_id=$id";
+                "SELECT $concat as name
+                 FROM $user_role_table as t1
+                 INNER JOIN $roles_table as t2 ON t1.role_id=t2.id
+                 WHERE t1.user_id=$id";
             $roles = $this->query($select_user_roles)->fetchAll();
             
+            // Dashboard-ийн template рүү дамжуулж render хийх
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/user-view.html',
-                ['record' => $record, 'roles' => $roles, 'organizations' => $organizations]
+                [
+                    'record' => $record,
+                    'roles' => $roles,
+                    'organizations' => $organizations
+                ]
             );
             $dashboard->set('title', $this->text('user'));
             $dashboard->render();
         } catch (\Throwable $err) {
+            // Алдаа гарвал permission forbidden template рендерлэнэ
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
+            // Үйлдлийн протокол
             $context = ['action' => 'view', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -687,27 +815,53 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * Хэрэглэгчийг идэвхгүй болгох (Soft Delete)
+     * -------------------------------------------------------------
+     * Энэ функц нь хэрэглэгчийн бүртгэлийг бүр мөсөн устгахгүй,
+     * зөвхөн is_active=0 болгож идэвхгүй төлөвт шилжүүлдэг.
+     *
+     * Гол зорилго:
+     *   • Хэрэглэгчийг систем ашиглах боломжгүй болгох
+     *   • Лог түүх хадгалагдана
+     *   • Физик устгал хийгдэхгүй (soft delete)
+     *
+     * Аюулгүй ажиллагааны шалгалтууд:
+     *   1) Зөвхөн system_user_delete эрхтэй хэрэглэгч ажиллуулна
+     *   2) Хэрэглэгч өөрийгөө устгаж болохгүй
+     *   3) Root account (#1) устгалтыг хориглоно
+     *
+     * @return void JSON рендерлэнэ
+     * @throws Throwable
+     */
     public function deactivate()
     {
         try {
+            // RBAC - Устгах эрхтэй эсэхийг шалгана
             if (!$this->isUserCan('system_user_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
+            // Request body (JSON) → payload авах
             $payload = $this->getParsedBody();
+            
+            // id (дугаар) заавал int байх ёстой
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }
-            
+            }            
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            
+            // Хэрэглэгч өөрийгөө устгахыг хориглох
             if ($this->getUserId() == $id) {
                 throw new \Exception('Cannot suicide myself :(', 403);
             } elseif ($id == 1) {
+                // Root (#1) account-ыг идэвхгүй болгох хориотой
                 throw new \Exception('Cannot remove first acccount!', 403);
             }
             
+            // Soft delete - is_active = 0 болгон update хийх
             $model = new UsersModel($this->pdo);
             $deactivated = $model->deactivateById(
                 $id,
@@ -720,18 +874,21 @@ class UsersController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
             
+            // Амжилттай хариу → JSON рендерлэнэ
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
         } catch (\Throwable $err) {
+            // Специфик алдаа → JSON рендерлэнэ
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
+            // Протокол бичих
             $context = ['action' => 'deactivate'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -739,37 +896,95 @@ class UsersController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{server_request.body.id} дугаартай [{server_request.body.name}] хэрэглэгчийг [{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
+                $message = 
+                    '[{server_request.body.id}] дугаартай [{server_request.body.name}] хэрэглэгчийг '
+                    . '[{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
             }
             $this->indolog('users', $level, $message, $context);
         }
     }
     
+    /**
+     * Бүртгүүлэх (signup) эсвэл Нууц үг мартсан (forgot) хүсэлтүүдийн модал
+     * ----------------------------------------------------------------------
+     * Энэхүү функц нь AJAX-аар дуудагддаг бөгөөд:
+     *
+     *   • forgot / signup хүсэлтүүдийн жагсаалтыг татаж modal-д харуулна
+     *   • Хүсэлтүүд нь тусдаа хүснэгтүүд (forgot, signup) дээр хадгалагддаг
+     *   • is_active хамаарахгүй бүхий л бичлэгүүдийг унших
+     *
+     * URL:
+     *   GET /users/requests-modal/{table}
+     *
+     * table утга нь:
+     *   - "forgot"
+     *   - "signup"
+     * өөр утга ирвэл алдаа шиднэ.
+     *
+     * Modal template:
+     *   /application/raptor/user/forgot-index-modal.html
+     *   /application/raptor/user/signup-index-modal.html
+     *
+     * @param string $table  "forgot" эсвэл "signup"
+     * @return void
+     */
     public function requestsModal(string $table)
     {
         try {
+            // Эрхийн шалгалт: хэрэглэгч мэдээлэл харах эрхтэй эсэх
             if (!$this->isUserCan('system_user_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            if (!\in_array($table, ['forgot', 'signup'])) {
-                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+            // Twig modal template дуудах
+            $template = $this->twigTemplate(__DIR__ . "/$table-index-modal.html");
+            
+           // table параметрийн зөв эсэхийг шалгах
+            switch ($table) {
+                case 'forgot':
+                    {
+                        $model = new ForgotModel($this->pdo);
+                        // isExpired() туслах Twig функц нэмэх
+                        // Хүсэлт амьд байх хугацаандаа байгаа эсэх шалгалтад хэрэглэнэ
+                        $template->addFunction(
+                            new TwigFunction(
+                                'isExpired',
+                                function (string $created_at): bool {
+                                    $now = new \DateTime();
+                                    $then = new \DateTime($created_at);
+                                    $diff = $then->diff($now);
+                                    return
+                                        $diff->y > 0 ||
+                                        $diff->m > 0 ||
+                                        $diff->d > 0 ||
+                                        $diff->h > 0 ||
+                                        $diff->i > CODESAUR_PASSWORD_RESET_MINUTES;
+                                }
+                            )
+                        );
+                    }
+                    break;
+
+                case 'signup':
+                    $model = new SignupModel($this->pdo);
+                    break;
+
+                default:
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
-            $model = $table == 'forgot' ? new ForgotModel($this->pdo) : new SignupModel($this->pdo);
-            $rows = $model->getRows(['WHERE' => 'is_active!=999', 'ORDER BY' => 'created_at Desc']);
-            $template = $this->twigTemplate(__DIR__ . "/$table-index-modal.html", ['rows' => $rows]);
-            $template->addFunction(new TwigFunction('isExpired', function (string $date, int $minutes = 5): bool
-            {
-                $now_date = new \DateTime();
-                $then = new \DateTime($date);
-                $diff = $then->diff($now_date);
-                return $diff->y > 0 || $diff->m > 0 || $diff->d > 0 || $diff->h > 0 || $diff->i > $minutes;
-            }));
+            // Хүснэгтээс хүсэлтүүдийг хамгийн сүүлд орсноор нь sort хийж авах
+            //  • is_active хамаарахгүй бүхий л бичлэгүүдийг унших
+            $rows = $model->getRows(['ORDER BY' => 'created_at Desc']);
+            
+            // Dashboard рендерлэнэ
+            $template->set('rows',$rows);            
             $template->render();
         } catch (\Throwable $err) {
+            // Error modal рендерлэнэ
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
+            // LOGGER — modal хүсэлт нээгдсэн эсвэл алдаатай эсэх
             $context = ['action' => 'requests-modal', 'table' => $table];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -784,13 +999,40 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * Бүртгүүлэх хүсэлтийг (signup request) зөвшөөрч,
+     * системийн users хүснэгтэд бодит хэрэглэгч болгон үүсгэх controller метод.
+     *
+     * Ажиллах дараалал:
+     *  1. Хэрэглэгч эрхтэй эсэхийг шалгана (system_user_insert).
+     *  2. signup хүсэлтийн ID-г шалгана, хүчинтэй integer эсэхийг баталгаажуулна.
+     *  3. SignupModel-оос тухайн хүсэлтийг татна (id, is_active=1).
+     *  4. Username / email давхардсан эсэхийг UsersModel дээр шалгана.
+     *  5. Хэрэв OK бол:
+     *        - UsersModel.insert() ашиглан жинхэнэ хэрэглэгч үүсгэнэ
+     *        - signup хүсэлтийг is_active=2 болгож хаана
+     *        - organization_id өгөгдвөл тухайн байгууллагад хэрэглэгчийг холбож нэмнэ
+     *  6. И-мэйл баталгаажуулах шаблон (templates) байвал хэрэглэгч рүү илгээнэ.
+     *  7. JSON хэлбэрээр хариу хэвлэнэ.
+     *
+     * Алдаа гарсан нөхцөл:
+     *  - Эрхгүй үед 401
+     *  - Хүсэлт буруу үед 400
+     *  - Давхардсан username/email үед 403
+     *  - Өгөгдөл бичихэд алдаа гарвал 500
+     *
+     * @return void JSON хариу render хийнэ
+     * @throws Throwable бүх төрлийн алдааг finally хэсэг лог хийнэ
+     */
     public function signupApprove()
     {
         try {
+            // Зөвшөөрөх эрх байгаа эсэхийг шалгах
             if (!$this->isUserCan('system_user_insert')) {
                 throw new \Exception('No permission for an action [approval]!', 401);
             }
             
+            // Request body → id авах, integer эсэхийг шалгах
             $parsedBody = $this->getParsedBody();
             if (empty($parsedBody['id'])
                 || !\filter_var($parsedBody['id'], \FILTER_VALIDATE_INT)
@@ -799,6 +1041,7 @@ class UsersController extends FileController
             }
             $id = \filter_var($parsedBody['id'], \FILTER_VALIDATE_INT);
             
+            // SignupModel - Тухайн signup хүсэлтийг авах
             $signupModel = new SignupModel($this->pdo);
             $signup = $signupModel->getRowWhere([
                 'id' => $id,
@@ -806,26 +1049,35 @@ class UsersController extends FileController
             ]);
             if (empty($signup)) {
                 throw new \Exception($this->text('no-record-selected'));
-            }            
-            $payload = [
-                'username' => $signup['username'],
-                'password' => $signup['password'],
-                'email' => $signup['email'],
-                'code' => $signup['code']
-            ];
+            }
             
+            // UsersModel-д яг ижил username / email давхардсан эсэхийг шалгах
             $model = new UsersModel($this->pdo);
             $existing = $this->prepare("SELECT id FROM {$model->getName()} WHERE username=:username OR email=:email");            
             $existing->bindParam(':email', $signup['email'], \PDO::PARAM_STR, $model->getColumn('email')->getLength());
             $existing->bindParam(':username', $signup['username'], \PDO::PARAM_STR, $model->getColumn('username')->getLength());
             if ($existing->execute() && !empty($existing->fetch())) {
-                throw new \Exception($this->text('user-exists') . ": username/email => {$signup['username']}/{$signup['email']}", 403);
+                
+                throw new \Exception(
+                    $this->text('user-exists')
+                    . ": username/email => {$signup['username']}/{$signup['email']}",
+                    403
+                );
             }
             
-            $record = $model->insert($payload);
+            // UsersModel.insert() → Жинхэнэ хэрэглэгч үүсгэх
+            $record = $model->insert([
+                'username' => $signup['username'],
+                'password' => $signup['password'],
+                'email' => $signup['email'],
+                'code' => $signup['code'],
+                'created_by' => $this->getUserId()
+            ]);
             if (empty($record)) {
                 throw new \Exception('Failed to create user');
             }
+            
+            // Signup хүсэлтийг хааж is_active=2 болгох
             $signupModel->updateById(
                 $id,
                 [
@@ -834,16 +1086,20 @@ class UsersController extends FileController
                     'updated_by' => $this->getUserId()
                 ]
             );
+            
+            // Хэрэв organization_id өгөгдвөл тухайн байгууллагад шууд холбох
             $organization_id = \filter_var($parsedBody['organization_id'] ?? 0, \FILTER_VALIDATE_INT);
             if (empty($organization_id)) {
-                $organization_id = 1;
-            }
+                $organization_id = 1; // system organization fallback
+            }            
             $orgModel = new OrganizationModel($this->pdo);
             $organization = $orgModel->getRowWhere([
                 'id' => $organization_id,
                 'is_active' => 1
             ]);
+            
             if (!empty($organization)) {
+                // Байгууллагын холбоосыг үүсгэх
                 $user_org = (new OrganizationUserModel($this->pdo))->insert([
                     'user_id' => $record['id'],
                     'organization_id' => $organization_id,
@@ -853,6 +1109,8 @@ class UsersController extends FileController
                     $record['organizations'] = [$organization];
                 }
             }
+            
+            // Амжилттай JSON хариу рендерлэнэ
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -860,9 +1118,11 @@ class UsersController extends FileController
                 'record' => $record
             ]);
             
+            // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
             $code = $this->getLanguageCode();
             $referenceModel = new ReferenceModel($this->pdo);
             $referenceModel->setTable('templates');
+            // approve-new-user template-ийг дуудна
             $reference = $referenceModel->getRowWhere(
                 [
                     'c.code' => $code,
@@ -871,23 +1131,32 @@ class UsersController extends FileController
                 ]
             );
             if (!empty($reference['localized']['content'][$code])) {
-                $localized = $reference['localized'];
+                $localized = $reference['localized'];                
+                // MemoryTemplate → placeholder орлуулах
                 $template = new MemoryTemplate();
                 $template->source($localized['content'][$code]);
                 $template->set('email', $signup['email']);
                 $template->set('login', $this->generateRouteLink('login', [], true));
                 $template->set('username', $signup['username']);
+                
+                // И-мэйл илгээж тухайн хүсэлт өгсөн хэрэглэгчдээ мэдээлэх
                 (new Mailer($this->pdo))
-                    ->mail($signup['email'], null, $localized['title'][$code], $template->output())
-                    ->send();
+                    ->mail(
+                        $signup['email'],
+                        null,
+                        $localized['title'][$code],
+                        $template->output()
+                    )->send();
             }
         } catch (\Throwable $err) {
+            // Алдаа → JSON рендерлэнэ
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
+            // Хэрэглэгчийн signup approval үйлдлийг системийн протоколд үлдээх
             $context = ['action' => 'signup-approve'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -902,47 +1171,79 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * signupDeactivate()
+     * -------------------
+     * Хэрэглэгчээр бүртгүүлэх (signup) хүсэлтийг идэвхгүй болгох (soft delete).
+     *
+     * Ашиглалт:
+     *  - Админ хэрэглэгч signup хүсэлтийг "устгах" үед дуудагдана.
+     *  - SignupModel дээрх is_active талбарыг өөрчилж, хүсэлтийг идэвхгүй төлөвт шилжүүлнэ.
+     *
+     * Алгоритм:
+     *  1. 'system_user_delete' эрхтэй эсэхийг шалгана.
+     *  2. Request body дундах id-г шалгаж, хүчинтэй integer эсэхийг баталгаажуулна.
+     *  3. SignupModel::deactivateById() ашиглан тухайн мөрийг идэвхгүй болгоно.
+     *  4. Амжилттай бол success, алдаа гарвал error JSON хэвлэнэ.
+     *  5. finally хэсэгт энэ үйлдлийг users лог дээр протокол болгон үлдээнэ.
+     *
+     * @return void JSON рендерлэнэ
+     */
     public function signupDeactivate()
     {
         try {
+            // Энэ үйлдлийг хийх эрх байгаа эсэхийг шалгах
             if (!$this->isUserCan('system_user_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
+            // Request body -> payload авч, id-г шалгах
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
+                // Буруу эсвэл байхгүй id
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }            
+            }
+            // Хүчинтэй integer болгох
+            $id = (int) $payload['id'];
+            
+            // SignupModel → тухайн бичлэгийг deactivateById() ашиглан идэвхгүй болгох
             $deactivated = (new SignupModel($this->pdo))->deactivateById(
-                (int)$payload['id'],
+                $id,
                 [
                     'updated_by' => $this->getUserId(),
                     'updated_at' => \date('Y-m-d H:i:s')
                 ]
             );
+            // Хэрэв нэг ч мөр шинэчлэгдээгүй бол "хоосон сонголт" гэж үзнэ
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
-            }            
+            }
+            
+            // Амжилттай JSON success хариу рендерлэнэ
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
         } catch (\Throwable $err) {
+            // Алдаа гарсан тул JSON error хариу рендерлэнэ
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
+            // Энэ үйл явцыг лог (users лог) дээр үлдээх
             $context = ['action' => 'signup-deactivate'];
             if (isset($err) && $err instanceof \Throwable) {
+                // Алдаатай дууссан тохиолдолд
                 $level = LogLevel::ERROR;
                 $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг идэвхгүй болгох явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
+                // Амжилттай идэвхгүй болгосон
                 $level = LogLevel::ALERT;
                 $message = '[{server_request.body.name}] хэрэглэгчээр бүртгүүлэх хүсэлтийг идэвхгүй болгов';
             }
@@ -950,15 +1251,52 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * setPassword(int $id)
+     * ---------------------
+     * Тухайн хэрэглэгчийн нууц үгийг солих функц.
+     *
+     * Хэн ашиглах вэ?
+     *   ✔ Хэрэглэгч өөрийн нууц үгийг солих
+     *   ✔ system_coder эрхтэй хэрэглэгч бусдын нууц үгийг солих
+     *      - Гэхдээ system_coder байсан ч:
+     *         if ($id == 1 && $this->getUserId() != 1)
+     *         → хориглоно (root password-г зөвхөн root өөрөө солино)
+     *
+     * Алгоритм:
+     *   1) Хэрэглэгч эрхтэй эсэхийг шалгах
+     *   2) Хэрэв POST бол:
+     *       - password + password_retype ижил эсэхийг баталгаажуулах
+     *       - password_hash → updateById
+     *       - JSON success рендерлэх
+     *   3) Хэрэв GET бол modal HTML-г зурах
+     *   4) finally → users лог дээр үйлдлийг бүртгэх
+     *
+     * @param int $id  Нууц үг өөрчлөх хэрэглэгчийн дугаар
+     * @return void JSON хэвлэх эсвэл rendered modal буцаана
+     */
     public function setPassword(int $id)
     {
         try {
+            // Эрх шалгах
             if (!$this->isUser('system_coder')
                 && $this->getUser()->profile['id'] != $id
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+
+            // ROOT USER (id=1) тохиолдолд тусгай нөхцөл
+            //    Зөвхөн root өөрийн нууц үгийг солих эрхтэй
+            //    system_coder ч гэсэн root user-ийн password-ийг солих хориотой!
+            // ---------------------------------------------------------
+            if ($id == 1 && $this->getUserId() != 1) {
+                throw new \Exception(
+                    'Root хэрэглэгчийн нууц үгийг зөвхөн root өөрөө сольж чадна!',
+                    403
+                );
+            }
             
+            // Хэрэглэгчийн бүртгэл шалгах
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
                 'id' => $id,
@@ -969,12 +1307,16 @@ class UsersController extends FileController
             }
 
             if ($this->getRequest()->getMethod() == 'POST') {
+                // ---------------------------------------------------------
+                // POST → нууц үг солих
+                // ---------------------------------------------------------
                 $parsedBody = $this->getParsedBody();
                 $password = $parsedBody['password'] ?? null;            
                 $password_retype = $parsedBody['password_retype'] ?? null;
                 if (empty($password) || $password != $password_retype) {
                     throw new \Exception($this->text('password-must-match'), 400);
-                }                
+                }
+                // Солилт
                 $updated = $model->updateById(
                     $id,
                     [
@@ -986,28 +1328,35 @@ class UsersController extends FileController
                 if (empty($updated)) {
                     throw new \Exception("Can't reset user [{$record['username']}] password", 500);
                 }
-                return $this->respondJSON([
+                $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
                     'message' => $this->text('set-new-password-success')
                 ]);
             } else {
+                // ---------------------------------------------------------
+                // GET → modal form рендерлэнэ
+                // ---------------------------------------------------------
                 $this->twigTemplate(
                     __DIR__ . '/user-set-password-modal.html',
                     ['profile' => $record]
                 )->render();
             }
-        } catch (\Throwable $err) {            
+        } catch (\Throwable $err) {
+            // Алдааны хэсэг            
             if ($this->getRequest()->getMethod() == 'POST') {
+                // POST үед JSON рендерлэнэ
                 $this->respondJSON([
                     'status'  => 'error',
                     'title'   => $this->text('error'),
                     'message' => $err->getMessage()
                 ], $err->getCode());
             } else {
+                // GET үед алдааны модал рендерлэнэ
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
-        } finally {            
+        } finally {
+            // Лог бичих (success болон error аль алинд)
             $context = ['action' => 'set-password', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -1028,13 +1377,34 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * Хэрэглэгчийн байгууллагын харьяаллыг тохируулах (OrganizationUser)
+     * ----------------------------------------------------------------------
+     * Энэ method нь хэрэглэгчийг ямар байгууллагад харьяалагдахыг сонгох,
+     * өөрчлөх, нэмэх, хасах боломжийг олгоно.
+     *
+     * Хэн ашиглах вэ?
+     *   ✔ system_user_organization_set эрхтэй админ хэрэглэгч
+     *
+     * Ажиллах зарчим:
+     *   1) Хэрэглэгчийг шалгах (id таарч байна уу, is_active=1 уу)
+     *   2) GET → popup modal харуулах (user-set-organization-modal.html)
+     *   3) POST → шинэчилсэн байгууллагуудыг configureOrgs() ашиглан update хийх
+     *   4) Root user (id=1) → үргэлж organization_id=1 дотор байх ёстой!
+     *   5) Амжилттай POST бол JSON рендерлэнэ
+     *
+     * @param int $id  Байгууллагыг тохируулах гэж буй хэрэглэгчийн id
+     * @return void
+     */
     public function setOrganization(int $id)
     {
-        try {            
+        try {
+            // Энэ үйлдлийг хийх эрхтэй эсэхийг шалгах
             if (!$this->isUserCan('system_user_organization_set')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-                   
+            
+            // Хэрэглэгчийн үндсэн мэдээллийг Model-оос авах
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
                 'id' => $id,
@@ -1044,13 +1414,21 @@ class UsersController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
             
+            // Хэрэв POST хүсэлт → Update хийх
             if ($this->getRequest()->getMethod() == 'POST') {
-                $post_organizations = \filter_var($this->getParsedBody()['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY) ?: [];
+                 // Ирсэн байгууллагуудын массивыг integer filter-тэйгээр цэвэрлэх
+                $post_organizations =
+                    \filter_var($this->getParsedBody()['organizations'] ?? [],
+                        \FILTER_VALIDATE_INT,
+                        \FILTER_REQUIRE_ARRAY
+                    ) ?: [];                
                 if ($id == 1
                     && (empty($post_organizations) || !\in_array(1, $post_organizations))
                 ) {
+                    // Root user бол үргэлж organization_id=1 -т харьяалагдсан байх ёстой
                     throw new \Exception('Root user must belong to a system organization', 503);
                 }
+                // configureOrgs() → нэмэх/хасах үйлдлүүдийг автоматаар гүйцэтгээд амжилттай бол true
                 if (!$this->configureOrgs($id, $post_organizations)) {
                     throw new \Exception('No updates');
                 }
@@ -1060,6 +1438,7 @@ class UsersController extends FileController
                     'message' => $this->text('record-update-success')
                 ]);
             } else {
+                // Одоогийн байгууллагуудыг user_id-аар татах
                 $orgModel = new OrganizationModel($this->pdo);
                 $orgUserModel = new OrganizationUserModel($this->pdo);
                 $response = $this->query(
@@ -1071,14 +1450,19 @@ class UsersController extends FileController
                 foreach ($response as $org) {
                     $current_organizations[] = $org['id'];
                 }
-                $vars = [
-                    'profile' => $record,
-                    'current_organizations' => $current_organizations,
-                    'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
-                ];
-                $this->twigTemplate(__DIR__ . '/user-set-organization-modal.html', $vars)->render();
+                
+                // GET хүсэлт → popup modal HTML-ийг render хийе
+                $this->twigTemplate(
+                    __DIR__ . '/user-set-organization-modal.html',
+                    [
+                        'profile' => $record,
+                        'current_organizations' => $current_organizations,
+                        'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
+                    ]
+                )->render();
             }
         } catch (\Throwable $err) {
+            // Алдаа гарсан үед → POST=JSON / GET=Modal хэлбэрээр хариу өгнө
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status'  => 'error',
@@ -1089,6 +1473,7 @@ class UsersController extends FileController
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
+            // Лог бүртгэх
             $context = ['action' => 'set-organization', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -1110,14 +1495,38 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * Хэрэглэгчийн байгууллагын харьяаллыг (OrganizationUser) тооцоолж шинэчлэх үндсэн логик
+     * ------------------------------------------------------------------------------------------
+     * Энэ private function нь setOrganization() дотроос дуудагддаг бөгөөд:
+     *
+     *   • Одоогийн байгууллагуудыг DB-с уншина
+     *   • POST ирсэн байгууллагуудтай харьцуулна
+     *   • Шинээр нэмэгдэх байгууллагуудыг insert хийнэ
+     *   • Хасагдах байгууллагуудыг delete хийнэ
+     *   • Үйлдэл бүрийг users table-ийн logger руу бичнэ
+     *
+     * Анхаарах зүйлс:
+     *   ✔ root user (id=1) → organization_id = 1-ийг хэзээ ч устгаж болохгүй  
+     *   ✔ root user түүнээс organization_id=1-ийг хасахыг оролдвол пропуск хийнэ  
+     *   ✔ logger → LogLevel::ALERT түвшинд бүртгэнэ  
+     *   ✔ Мэдээлэл өгөгдсөнөөс хамааран "+" эсвэл "−" өөрчлөлт тодорхойлогдоно  
+     *
+     * @param int   $id        Харьяалал өөрчлөх хэрэглэгчийн ID
+     * @param array $orgSets   POST-оор ирсэн organization_id массив
+     *
+     * @return bool  Тохируулалт амжилттай хийгдсэн эсэх (нэг ч өөрчлөлт байхгүй → false)
+     */
     private function configureOrgs(int $id, array $orgSets): bool
     {
         $configured = false;
-        try {            
+        try {
+            // Эрх шалгах — зөвхөн system_user_organization_set арга хийж чадна
             if (!$this->isUserCan('system_user_organization_set')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Лог бичигчийн мэдээлэл бэлтгэх
             $logger = new Logger($this->pdo);
             $logger->setTable('users');
             $auth_user = [
@@ -1129,6 +1538,7 @@ class UsersController extends FileController
                 'email' => $this->getUser()->profile['email']
             ];
             
+            // Одоогийн байгууллагуудын мэдээллийг татах
             $model = new UsersModel($this->pdo);
             $orgModel = new OrganizationModel($this->pdo);
             $orgUserModel = new OrganizationUserModel($this->pdo);
@@ -1137,14 +1547,22 @@ class UsersController extends FileController
                 "FROM {$orgUserModel->getName()} t1 INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id LEFT JOIN {$model->getName()} t3 ON t1.user_id=t3.id " .
                 "WHERE t1.user_id=$id AND t2.is_active=1 AND t3.is_active=1";
             $userOrgs = $this->query($sql)->fetchAll();
+            
+            // POST ирсэн шинэ байгууллагуудыг key→value болгон map хийх
+            //   Жишээ: [3,5,7] → ['3'=>true,'5'=>true,'7'=>true]
+            //          Энэ нь алгоритмд хурдтай ажиллана
             $organizationIds = \array_flip($orgSets);
             foreach ($userOrgs as $row) {
                 if (isset($organizationIds[$row['organization_id']])) {
+                    // Хэрэв одоо байгаа байгууллага POST-д бас байвал → хасахгүй/нэмэхгүй/өөрчлөлт хийхгүй
                     unset($organizationIds[$row['organization_id']]);
                 } elseif ($row['organization_id'] == 1 && $id == 1) {
+                    // ROOT USER → organization_id = 1-ийг хэзээ ч хасахгүй!
                     // can't strip root user from system organization!
-                } elseif ($orgUserModel->deleteById($row['id'])) {
+                } elseif ($orgUserModel->deleteById($row['id'])) { 
+                    // Байгууллагаас хаслаа
                     $configured = true;
+                    // strip лог бичих 
                     $logger->log(
                         LogLevel::ALERT,
                         '[{organization_name}:{organization_id}] байгууллагаас [{username}:{user_id}] хэрэглэгчийг хаслаа',
@@ -1152,11 +1570,14 @@ class UsersController extends FileController
                     );
                 }
             }
+            
+            // Шинээр нэмэгдэх байгууллагуудыг insert хийх
             foreach (\array_keys($organizationIds) as $org_id) {
                 if (!empty($orgUserModel->insert(
                     ['user_id' => $id, 'organization_id' => $org_id, 'created_by' => $this->getUserId()]))
                 ) {
                     $configured = true;
+                    // set лог бичих 
                     $logger->log(
                         LogLevel::ALERT,
                         '{organization_id}-р байгууллагад {user_id}-р хэрэглэгчийг нэмлээ',
@@ -1164,10 +1585,35 @@ class UsersController extends FileController
                     );
                 }
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable) {
+            // 🤫 ямар нэгэн exception гарвал зүгээр л false буцаана
+            // setOrganization() тал дээр алдааг барьдаг — энэ function silent mode
+        }
         return $configured;
     }
     
+    /**
+     * Хэрэглэгчийн RBAC дүрийг тохируулах action.
+     * -----------------------------------------------------------
+     * Энэхүү method нь:
+     *   ✔ Хэрэглэгч дээр шинэ дүр нэмэх
+     *   ✔ Хэрэглэгчээс дүр хасах
+     *   ✔ Super-admin (coder) дүртэй холбоотой тусгай хамгаалалтын логик
+     *   ✔ Дүр өөрчлөлтийн log протокол бүртгэх
+     *   ✔ GET → Modal form ачаалж харуулах
+     *   ✔ POST → Дүр солих update-г баталгаажуулах
+     *
+     * Хэн ашиглах вэ?
+     *   ✔ system_rbac эрхтэй хэрэглэгч
+     *
+     * Онцгой нөхцөлүүд (system_coder дүрийн):
+     *   • id=1 хэрэглэгч (root) → coder дүрийг хасах/нэмэх эрх зөвхөн root coder-т байдаг
+     *   • Root хэрэглэгчээс coder дүрийг хасахыг хэзээ ч зөвшөөрөхгүй
+     *   • Root биш хэрэглэгч coder дүр нэмэхийг хориглоно
+     *
+     * @param int $id  RBAC дүр солих гэж буй хэрэглэгчийн primary key
+     * @return void
+     */
     public function setRole(int $id)
     {
         try {
@@ -1175,6 +1621,7 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Засварлах гэж буй хэрэглэгчийг ачаалах
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
                 'id' => $id,
@@ -1183,22 +1630,45 @@ class UsersController extends FileController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-
-            if ($this->getRequest()->getMethod() == 'POST') {
-                $post_roles = \filter_var($this->getParsedBody()['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
-                if ((empty($post_roles) || !\in_array(1, $post_roles)) && $id == 1) {
-                    throw new \Exception('Default user must have a system role', 403);
+            
+            // -----------------------------------------------------------
+            // POST → Дүр солих UPDATE логик
+            // -----------------------------------------------------------
+            if ($this->getRequest()->getMethod() == 'POST') {                
+                // UI-аас ирсэн role_id массивыг integer array болгон normalize хийнэ
+                 $post_roles = \filter_var(
+                    $this->getParsedBody()['roles'] ?? [],
+                    \FILTER_VALIDATE_INT,
+                    \FILTER_REQUIRE_ARRAY
+                );
+                 
+                // ✨ ROOT хэрэглэгч → заавал system coder дүртэй байх ёстой
+                if (($id == 1) &&
+                    (empty($post_roles) || !\in_array(1, $post_roles))
+                ) {
+                    throw new \Exception(
+                        'Root user must have a system role',
+                        403
+                    );
                 }
+                
+                // configureRoles() — Дүрүүдийг нэмэх/хасах үндсэн логик
                 if (!$this->configureRoles($id, $post_roles)) {
                     throw new \Exception('No updates');
                 }
-                return $this->respondJSON([
+                
+                $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
                     'message' => $this->text('record-update-success')
                 ]);
             } else {
+                // -----------------------------------------------------------
+                // GET → Modal render (Дүр өөрчлөх UI)
+                // -----------------------------------------------------------                
                 $vars = ['profile' => $record];
+                
+                // RBAC-уудын жагсаалтыг байгууллагын alias-аар бүлэглэж харуулна
                 $rbacs = ['common' => 'Common'];
                 $org_table = (new OrganizationModel($this->pdo))->getName();
                 $organizations_result = $this->query(
@@ -1213,6 +1683,7 @@ class UsersController extends FileController
                 }
                 $vars['rbacs'] = $rbacs;
 
+                // Тухайн RBAC alias бүр дээр харьяалагдах дүрүүдийг татах
                 $roles_table = (new Roles($this->pdo))->getName();
                 $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $roles_result = $this->query("SELECT id,alias,name,description FROM $roles_table")->fetchAll();
@@ -1228,6 +1699,7 @@ class UsersController extends FileController
                 });
                 $vars['roles'] = $roles;
 
+                // Хэрэглэгчийн эзэмшиж буй дүрүүдийг татах
                 $userRoleModel = new UserRole($this->pdo);
                 $current_role = [];
                 $select_current_roles =
@@ -1239,9 +1711,11 @@ class UsersController extends FileController
                 }
                 $vars['current_role'] = $current_role;
                 
+                // Modal форм рүү дамжуулж render хийе
                 $this->twigTemplate(__DIR__ . '/user-set-role-modal.html', $vars)->render();
             }
-        } catch (\Throwable $err) {            
+        } catch (\Throwable $err) {
+            // Error handling — GET/POST ялгаж JSON эсвэл modal error руу шилжүүлнэ
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status'  => 'error',
@@ -1251,7 +1725,8 @@ class UsersController extends FileController
             } else {
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
-        } finally {            
+        } finally {
+            // LOGGING — Rollback/Success бүх тохиолдолд RBAC log үлдээдэг
             $context = ['action' => 'set-role', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -1273,6 +1748,27 @@ class UsersController extends FileController
         }
     }
     
+    /**
+     * RBAC дүрүүдийг update хийх (add/remove) үндсэн backend функц.
+     * --------------------------------------------------------------
+     * Энэхүү method нь хэрэглэгчийн хуучин дүрүүд болон UI-аас ирсэн
+     * шинэ roles array-г харьцуулж:
+     *
+     *   ✔ Шинээр нэмэгдэх дүрүүдийг олох
+     *   ✔ Хэрэглэгчээс хасагдах дүрүүдийг олох
+     *   ✔ Root болон Coder дүртэй холбоотой тусгай хамгаалалтуудыг баримтлах
+     *   ✔ Дүрийн өөрчлөлт бүрт системийн log үлдээх
+     *
+     * Аюулгүй байдлын гол зарчмууд:
+     *   • id = 1 хэрэглэгч → coder дүрийг хэзээ ч хасахгүй
+     *   • coder роль (role_id = 1) → зөвхөн root coder өөрчилнө
+     *   • Жирийн хэрэглэгч coder role хасах/нэмэх боломжгүй
+     *
+     * @param int   $id        Дүр солигдож буй хэрэглэгчийн ID
+     * @param array $roleSets  UI-аас ирсэн сонгосон role_id[] жагсаалт
+     *
+     * @return bool  Дүрийн өөрчлөлт хийгдсэн эсэх (true = өөрчлөгдсөн)
+     */
     private function configureRoles(int $id, array $roleSets): bool
     {
         $configured = false;
@@ -1281,8 +1777,10 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            // Log бичихэд ашиглах logger instance бэлтгэх
             $logger = new Logger($this->pdo);
             $logger->setTable('users');
+            // Log протоколд ашиглагдах authenticated user info
             $auth_user = [
                 'id' => $this->getUser()->profile['id'],
                 'username' => $this->getUser()->profile['username'],
@@ -1292,18 +1790,39 @@ class UsersController extends FileController
                 'email' => $this->getUser()->profile['email']
             ];
             
+            // UI-аас ирсэн дүрүүдийг flip хийж dictionary болгох
+            //    Формат: [role_id => true]
             $roles = \array_flip($roleSets);
+            
+            // Одоогийн хэрэглэгчийн дүрүүдийг databse-ээс авах
             $userRoleModel = new UserRole($this->pdo);
             $user_role = $userRoleModel->fetchAllRolesByUser($id);
+            
+            // Одоогийн дүрүүдийг шинээр ирсэнтэй харьцуулж “хасах” жагсаалт гаргах
             foreach ($user_role as $row) {
+                // roleSets-д байвал → keep, remove candidates-оос хасна
                 if (isset($roles[$row['role_id']])) {
                     unset($roles[$row['role_id']]);
-                } elseif ($row['role_id'] == 1 && $id == 1) {
+                    continue;
+                }
+                
+                // ✔ Root хэрэглэгчийн coder role хэзээ ч хасагдахгүй
+                if ($row['role_id'] == 1 && $id == 1) {
                     // can't delete root user's coder role!
-                } elseif ($row['role_id'] == 1 && !$this->isUser('system_coder')) {
+                    continue;
+                }
+                
+                // ✔ coder role-ийг зөвхөн system_coder л хасч чадна
+                if ($row['role_id'] == 1 && !$this->isUser('system_coder')) {
                     // only coder can strip another coder role
-                } elseif ($userRoleModel->deleteById($row['id'])) {
+                    continue;
+                }
+                
+                // Дүр хасах
+                if ($userRoleModel->deleteById($row['id'])) {
                     $configured = true;
+                    
+                    // strip log хийж үлдээх
                     $logger->log(
                         LogLevel::ALERT,
                         '{user_id}-р хэрэглэгчээс {role_id} дугаар бүхий дүрийг хаслаа',
@@ -1311,15 +1830,22 @@ class UsersController extends FileController
                     );
                 }
             }
+            
+            // Шинэ ирсэн roles array-д үлдсэн key-үүд → нэмэх шаардлагатай дүрүүд
             foreach (\array_keys($roles) as $role_id) {
                 if ($role_id == 1 && (
                     !$this->isUser('system_coder') || $this->getUserId() != 1)
                 ) {
+                    // ✔ system_coder role-г зөвхөн root coder нэмж чадна
                     // only root coder can add another coder role
                     continue;
                 }
+                
+                // Role-г шинээр нэмэх
                 if (!empty($userRoleModel->insert(['user_id' => $id, 'role_id' => $role_id]))) {
                     $configured = true;
+                    
+                    // set log хийж үлдээх
                     $logger->log(
                         LogLevel::ALERT,
                         '{user_id}-р хэрэглэгч дээр {role_id} дугаар бүхий дүр нэмлээ',
@@ -1327,7 +1853,9 @@ class UsersController extends FileController
                     );
                 }
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable) {
+            // Алдааг залгия (UI дээр crash биш)
+        }
         return $configured;
     }
 }

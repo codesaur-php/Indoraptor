@@ -121,8 +121,6 @@ class FilesModel extends Model
      *
      * Хэрэв parent хүснэгт байхгүй бол 3-р FK үүсгэхгүй.
      *
-     * ON DELETE CASCADE → гол бичлэг уствал бүх файлууд автоматаар устна.
-     *
      * @return void
      */
     protected function __initial()
@@ -134,7 +132,7 @@ class FilesModel extends Model
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         if ($this->hasTable($record_name)) {
-            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE CASCADE ON UPDATE CASCADE");            
+            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");            
         }
         $this->setForeignKeyChecks(true);
     }

@@ -1,12 +1,21 @@
-<div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
+<!-- 🔒 Password reset хүсэлтүүдийн жагсаалт Modal -->
+<div class="modal-xl modal-dialog modal-dialog-scrollable" role="document"> 
     <div class="modal-content">
+
+        <!-- 🟦 Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-info text-uppercase">
+                <!-- Илэрхийлэл — Нууцлалын icon -->
                 <i class="bi bi-shield-lock-fill"></i> {{ 'password-reset'|text }}
             </h3>
+            <!-- Modal хаах товч -->
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
+
+        <!-- 🟩 Modal Body -->
         <div class="modal-body">
+
+            <!-- Хүснэгт — Forgot password хүсэлтүүд -->
             <table class="table table-hover table-striped-columns table-bordered" id="forgot_requests">
                 <thead>
                     <tr>
@@ -18,34 +27,70 @@
                     </tr>
                 </thead>
                 <tbody>
+                <!-- 🔁 Backend-аас ирсэн хүсэлтүүдийг давталтаар харуулна -->
                 {% for row in rows %}
                     <tr>
+                        <!-- Имэйл -->
                         <th scope="row">{{ row['email'] }}</th>
+
+                        <!-- Хэрэглэгчийн мэдээлэл: Нэр + Username + ID -->
                         <td>{{ row['first_name'] }} {{ row['last_name'] }} [{{ row['username'] }}: {{ row['user_id'] }}]</td>
+
+                        <!-- 🌐 Хэл — flag дүрс -->
                         <td>
+                            {# `en` бол → us flag ашиглана, бусад хэл шууд code-рээ #}
                             {% set flag = row['code'] == 'en' ? 'us' : row['code'] %}
-                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15">
+                            <!-- flagcdn.com → өндөр чанартай flag icon -->
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                 srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                 width="20" height="15">
                         </td>
+                        
+                        <!-- 📌 Status → used / expired / ready -->
                         <td>
                             {% if row['is_active'] == 0 %}
+                                <!-- Хэрэглэгдсэн -->
                                 <span class="badge bg-secondary">used</span>
+
                             {% elseif isExpired(row['created_at']) %}
+                                <!-- Хугацаа дууссан хүсэлт (10 мин → тайлбар нь controller дээр) -->
                                 <span class="badge bg-danger">expired</span>
+
                             {% else %}
+                                <!-- Ашиглах боломжтой -->
                                 <span class="badge bg-primary">ready</span>
                             {% endif %}
                         </td>
+                        
+                        <!-- Үүссэн огноо -->
                         <td>{{ row['created_at'] }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <!-- 🟥 Modal Footer -->
         <div class="modal-footer">
-            <button class="btn btn-info shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+            <button class="btn btn-info shadow-sm" data-bs-dismiss="modal" type="button">
+                {{ 'close'|text }}
+            </button>
         </div>
+
     </div>
 </div>
+
+<!-- 🧩 motable.js — Хүснэгтийн UI сайжруулах -->
 <script type="text/javascript">
+    /*  
+        motable нь:
+        - хайлт
+        - сорт
+        - sticky header
+        - pagination
+        - row count info
+        - column filter
+        зэрэг dashboard-ийн бүх хүснэгтийг стандартчилах UI helper.
+    */
     new motable('table#forgot_requests');
 </script>

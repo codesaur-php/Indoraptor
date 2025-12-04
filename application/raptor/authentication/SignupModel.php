@@ -81,7 +81,7 @@ class SignupModel extends Model
      *
      * Foreign key холбоос:
      *   signup.user_id → users.id
-     *       ON DELETE CASCADE
+     *       ON DELETE SET NULL
      *       ON UPDATE CASCADE
      *
      *   signup.updated_by → users.id
@@ -103,7 +103,7 @@ class SignupModel extends Model
             "ALTER TABLE $table
              ADD CONSTRAINT {$table}_fk_user_id
              FOREIGN KEY (user_id) REFERENCES $users(id)
-             ON DELETE CASCADE ON UPDATE CASCADE"
+             ON DELETE SET NULL ON UPDATE CASCADE"
         );
         $this->exec(
             "ALTER TABLE $table

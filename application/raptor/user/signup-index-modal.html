@@ -1,15 +1,25 @@
+<!-- 🧩 Шинээр хэрэглэгч болох хүсэлтүүдийн Modal (signup requests) -->
 <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
     <div class="modal-content">
+
+        <!-- 🔵 Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
+                <!-- Шинэ хэрэглэгч хүсэлт icon -->
                 <i class="bi bi-person-plus-fill"></i> {{ 'request-new-user'|text }}
             </h3>
+            <!-- Хаах товч -->
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
+
+        <!-- 🟩 Modal Body -->
         <div class="modal-body">
+
+            <!-- 📋 Signup хүсэлтүүдийн хүснэгт -->
             <table class="table table-hover table-striped-columns table-bordered" id="signup">
                 <thead>
                     <tr>
+                        <!-- Толгой хэсгийн баганууд – бүх i18n текст Twig-ээр inject хийгдэнэ -->
                         <th class="text-primary" scope="col">{{ 'username'|text }}</th>
                         <th class="text-primary" scope="col">{{ 'email'|text }}</th>
                         <th class="text-primary" scope="col">{{ 'language'|text }}</th>
@@ -19,15 +29,30 @@
                     </tr>
                 </thead>
                 <tbody>
+
+                    <!-- 🔁 Backend-аас ирсэн signup хүсэлтүүдийг давтаж харуулж байна -->
                     {% for row in rows %}
                         <tr>
+
+                            <!-- Username -->
                             <td scope="row"><strong>{{ row['username'] }}</strong></td>
+
+                            <!-- Email -->
                             <td>{{ row['email'] }}</td>
+
+                            <!-- 🌐 Хэл → flag дүрс -->
                             <td>
+                                {# EN бол → US flag, бусад хэл → өөрийн code #}
                                 {% set flag =  row['code'] == 'en' ? 'us' :  row['code'] %}
-                                <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15">
+                                <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                     srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                     width="20" height="15">
                             </td>
+
+                            <!-- Огноо -->
                             <td>{{ row['created_at'] }}</td>
+
+                            <!-- 📌 Хүсэлтийн төлөв -->
                             <td>
                                 {% if row['is_active'] == 2 %}
                                     <span class="badge bg-info">approved</span>
@@ -35,211 +60,211 @@
                                     <span class="badge bg-danger">deactivated</span>
                                 {% else %}
                                     <span class="badge bg-warning">waiting</span>
-                                {% endif %}    
+                                {% endif %}
                             </td>
+
+                            <!-- ✨ Үйлдэлүүд – зөвхөн waiting төлөвт харагдана -->
                             <td>
                                 {% if row['is_active'] == 1 %}
                                     {% if user.can('system_user_insert') %}
-                                        <button class="approve-user-request btn btn-sm btn-success mb-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                        <!-- Зөвшөөрөх -->
+                                        <button class="approve-user-request btn btn-sm btn-success mb-1 shadow-sm"
+                                                value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-person-check"></i> {{ 'accept'|text }}
                                         </button>
                                     {% endif %}
                                     {% if user.can('system_user_delete') %}
-                                        <button class="deactivate-user-request btn btn-sm btn-danger mb-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                        <!-- Идэвхгүй болгох -->
+                                        <button class="deactivate-user-request btn btn-sm btn-danger mb-1 shadow-sm"
+                                                value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-trash"></i> {{ 'delete'|text }}
                                         </button>
                                     {% endif %}
                                 {% endif %}
                             </td>
+
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <!-- 🟥 Modal Footer -->
         <div class="modal-footer">
-            <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+            <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">
+                {{ 'close'|text }}
+            </button>
         </div>
+
     </div>
 </div>
+
 <script type="text/javascript">
+    /* -------------------------------------------------------------
+       Хэлнээс хамаарсан баталгаажуулах асуултыг функц болгов
+       ------------------------------------------------------------- */
     let acceptQuestion, questionDeletion;
     if (document.documentElement.lang === 'mn') {
-        acceptQuestion = '<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>';
-        questionDeletion = '<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг идэвхгүй болгохдоо итгэлтэй байна уу?</p>';
+        acceptQuestion = name =>
+            `<p class="text-primary">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>`;
+        questionDeletion = name =>
+            `<p class="text-danger">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`;
     } else {
-        acceptQuestion = '<p class="text-primary">Are you sure to accept this user request ({0})?</p>';
-        questionDeletion = '<p class="text-danger">Are you sure to deactivate this user request ({0})?</p>';
+        acceptQuestion = name =>
+            `<p class="text-primary">Are you sure to accept this user request (${name})?</p>`;
+        questionDeletion = name =>
+            `<p class="text-danger">Are you sure to deactivate this user request (${name})?</p>`;
     }
+
+    /* -------------------------------------------------------------
+       motable – хүснэгтийн UI helper
+       ------------------------------------------------------------- */
     const newbies = new motable('table#signup');
+
+    /* -------------------------------------------------------------
+       ✅ "Accept" button → шинэ хэрэглэгчийг батлах
+       ------------------------------------------------------------- */
     const requestWaits = newbies.table.querySelectorAll('.approve-user-request');
-    requestWaits.forEach(btn => btn.addEventListener('click', function (e) {
-        e.preventDefault();
+    requestWaits.forEach(btn =>
+        btn.addEventListener('click', function (e) {
 
-        let thisRow = btn.closest('tr');
-        if (!thisRow) {
-            return NotifyTop('warning', `{{ 'error'|text|e }}`, "Can't find parent row!");
-        }
-        let name = (`${thisRow.children[0].innerHTML} => ${thisRow.children[1].innerHTML}`).replace(/<\/?[^>]+(>|$)/g, '');
-        Swal.fire({
-            html: `<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>${acceptQuestion.format(name)}`,
-            showCancelButton: true,
-            cancelButtonText: `{{ 'no'|text|e }}`,
-            confirmButtonText: `<i class="bi bi-check"></i> {{ 'yes'|text|e }}`,
-            confirmButtonColor: '#0d6efd',
-            showLoaderOnConfirm: true,
-            allowOutsideClick: () => !Swal.isLoading(),
-            backdrop: true,
-            preConfirm: (willAccept) => {
-                if (!willAccept) {
-                    return;
-                }
-                
-                return fetch(
-                    `{{ 'user-signup-approve'|link }}`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({id: btn.value})
-                    }
-                ).then(res => {
-                    return res.json();
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ?? 'Invalid response!');
-                    }
-                    
-                    Swal.close();
-                    
-                    NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? 'User accepted');
+            e.preventDefault();
 
-                    thisRow.children[4].innerHTML = '<span class="badge bg-info">approved</span>';
-                    thisRow.children[5].innerHTML = '';
-                    
-                    let user = response.record;
-                    
-                    if (!window.usersTbl) {
-                        return;
-                    }
-                    
-                    let indexLink = `{{ 'users'|link }}`;
-                    let orgIndexLink = `{{ 'organizations'|link }}`;
-                    let canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
-                    let canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
-                    let canSetOrg = `{{ user.can('system_user_organization_set') ? 'true' : '' }}`;
-                    let authSystemCoder = `{{ user.is('system_coder') ? 'true' : '' }}`;
-                    let authUserId = {{ user.profile.id }};
-                    
-                    let photo;
-                    if (user.photo) {
-                        photo = `<img class="img-fluid img-thumbnail" src="${user.photo}" style="max-width:60px;max-height:60px">`;
-                    } else {
-                        photo = '<i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>';
-                    }
-
-                    let userProfile = `<strong>${user.username}</strong>`;
-                    if (user.is_active === 0) {
-                        userProfile += `<span class="badge bg-danger ms-3">${document.documentElement.lang === 'mn' ? 'устгагдсан' : 'deactivated'}</span>`;
-                    }
-                    let fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`;
-                    if (fullName.length > 1) {
-                        userProfile += '<br/>';
-                    }
-                    userProfile += fullName;
-                    userProfile += `<hr style="margin:0.2rem 0 0 0;"><div style="font-size:.8rem"><a class="text-decoration-none" href="mailto:${user.email}"><i class="bi bi-envelope-at"></i></a> ${user.email}</div>`;
-                    if (user.phone) {
-                        userProfile += `<div style="font-size:.8rem;"><a class="text-decoration-none" href="tel:${user.phone}"><i class="bi bi-telephone"></i></a> ${user.phone}</div>`;
-                    }
-
-                    let hasSystemCoder = Object.values(user.roles ?? []).includes('system_coder');
-                    
-                    let orgUserHtml = '';
-                    if (canSetOrg) {
-                        orgUserHtml += `<a class="ajax-modal-${user.id} btn btn-dark btn-sm shadow-sm mb-1" style="--bs-btn-font-size:.7rem;" href="${indexLink}/set/organization/${user.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i></a>`;
-                    }
-                    if (hasSystemCoder) {
-                        orgUserHtml += ' <span class="badge bg-secondary fw-normal shadow-sm">system_coder can enter any organization</span><br/>';
-                    }
-                    user.organizations?.forEach(org => {
-                        orgUserHtml += ` <a class="ajax-modal-${user.id} badge text-bg-light text-decoration-none ${org.alias === 'system' ? '' : 'fw-normal '}shadow-sm" href="${orgIndexLink}/view/${org.id}" data-bs-target="#static-modal" data-bs-toggle="modal">${org.name}</a>`;
-                    });
-
-                    let buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${user.id}"><i class="bi bi-eye"></i></a>`];
-                    if (canUpdate) {
-                        buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/update/${user.id}"><i class="bi bi-pencil-square"></i></a>`);
-                    }
-                    if (user.id === authUserId || authSystemCoder) {
-                        buttons.push(`<a class="ajax-modal-${user.id} btn btn-sm btn-dark mt-1 shadow-sm" href="${indexLink}/set/password/${user.id}" data-bs-target="#static-modal" data-bs-toggle="modal"><i class="bi bi-key-fill"></i></a>`);
-                    }
-                    let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
-                
-                    let usersBody = window.usersTbl.table.querySelector('tbody');
-                    usersBody.innerHTML = `<tr><th scope="row">${user.id}</th><td>${photo}</td><td>${userProfile}</td><td>${orgUserHtml}</td><td></td><td>${actions}</td></tr>` + usersBody.innerHTML;
-                    window.usersTbl.setReady();
-                    const modals = usersBody.querySelectorAll(`.ajax-modal-${user.id}`);
-                    modals.forEach(a => a.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        ajaxModal(a);
-                    }));
-                }).catch(error => {
-                    Swal.showValidationMessage(error.message);
-                });
+            // Мөрийг олж авах
+            const thisRow = btn.closest('tr');
+            if (!thisRow) {
+                return NotifyTop('warning', `{{ 'error'|text|e }}`, "Can't find parent row!");
             }
-        });
-    }));
-    
+
+            // Username => email
+            const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
+
+            // 🪪 Баталгаажуулах SweetAlert
+            Swal.fire({
+                html:
+                   `<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>
+                    ${acceptQuestion(name)}
+                `,
+                showCancelButton: true,
+                cancelButtonText: `{{ 'no'|text|e }}`,
+                confirmButtonText: `<i class="bi bi-check"></i> {{ 'yes'|text|e }}`,
+                confirmButtonColor: '#0d6efd',
+                showLoaderOnConfirm: true,
+                allowOutsideClick: () => !Swal.isLoading(),
+                backdrop: true,
+
+                // 🔄 Зөвшөөрөх үед API руу POST хийнэ
+                preConfirm: () => {
+                    return fetch(
+                        `{{ 'user-signup-approve'|link }}`,
+                        {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({id: btn.value})
+                        }
+                    )
+                    .then(res => res.json())
+                    .then(response => {
+                        // Амжилттай биш бол error throw
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? 'Invalid response!');
+                        }
+
+                        Swal.close();
+                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? 'User accepted');
+                        
+                        /* ---------------------------------------------------------
+                           UI Update:
+                           1) Status → approved
+                           2) Action column → clear
+                        --------------------------------------------------------- */
+                        thisRow.children[4].innerHTML =
+                            '<span class="badge bg-info">approved</span>';
+                        thisRow.children[5].innerHTML = '';
+
+                        newbies.setReady();
+                        
+                        // сек дараа modal-ыг хаагаад document reload
+                        setTimeout(() => {
+                            const modalEl = document.querySelector('.modal.show');
+                            if (modalEl) {
+                                const modal = bootstrap.Modal.getInstance(modalEl);
+                                modal.hide();
+                            }
+                            // 🔄 Full reload → Users table дээр шинэ user-г харах
+                            setTimeout(() => location.reload(), 400);
+                        }, 1000);
+                    })
+                    .catch(error => Swal.showValidationMessage(error.message));
+                }
+            });
+        })
+    );
+
+    /* -------------------------------------------------------------
+       ❌ "Delete" button → хүсэлтийг идэвхгүй болгох
+       ------------------------------------------------------------- */
     const requestDeactivates = newbies.table.querySelectorAll('.deactivate-user-request');
-    requestDeactivates.forEach(btn => btn.addEventListener('click', function (e) {
-        e.preventDefault();
+    requestDeactivates.forEach(btn =>
+        btn.addEventListener('click', function (e) {
 
-        let thisRow = btn.closest('tr');
-        if (!thisRow) {
-            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
-        }
-        let name = (`${thisRow.children[0].innerHTML} => ${thisRow.children[1].innerHTML}`).replace(/<\/?[^>]+(>|$)/g, '');
-        Swal.fire({
-            html: `<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>${questionDeletion.format(name)}`,
-            showCancelButton: true,
-            cancelButtonText: `{{ 'no'|text|e }}`,
-            confirmButtonText: `<i class="bi bi-check"></i> {{ 'yes'|text|e }}`,
-            confirmButtonColor: '#f32750',
-            showLoaderOnConfirm: true,
-            allowOutsideClick: () => !Swal.isLoading(),
-            backdrop: true,
-            preConfirm: (willDelete) => {
-                if (!willDelete) {
-                    return;
-                }
-                
-                return fetch(
-                    `{{ 'user-signup-deactivate'|link }}`,
-                    {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({id: btn.value, name})
-                    }
-                ).then(res => {
-                    return res.json();
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ?? 'Invalid response!');
-                    }
-                    
-                    Swal.close();
+            e.preventDefault();
 
-                    NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) request deactivated`);
-
-                    thisRow.children[4].innerHTML = '<span class="badge bg-danger">deactivated</span>';
-                    thisRow.children[5].innerHTML = '';
-                    
-                    newbies.setReady();
-                }).catch(error => {
-                    Swal.showValidationMessage(error.message);
-                });
+            const thisRow = btn.closest('tr');
+            if (!thisRow) {
+                return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
             }
-        });
-    }));
+
+            const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
+
+            // 🗑 Deactivate хийх SweetAlert
+            Swal.fire({
+                html:
+                   `<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>
+                    ${questionDeletion(name)}
+                `,
+                showCancelButton: true,
+                cancelButtonText: `{{ 'no'|text|e }}`,
+                confirmButtonText: `<i class="bi bi-check"></i> {{ 'yes'|text|e }}`,
+                confirmButtonColor: '#f32750',
+                showLoaderOnConfirm: true,
+                allowOutsideClick: () => !Swal.isLoading(),
+                backdrop: true,
+
+                // DELETE API дуудна
+                preConfirm: () => {
+                    return fetch(
+                        `{{ 'user-signup-deactivate'|link }}`,
+                        {
+                            method: 'DELETE',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({id: btn.value, name})
+                        }
+                    )
+                    .then(res => res.json())
+                    .then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? 'Invalid response!');
+                        }
+
+                        Swal.close();
+
+                        NotifyTop(
+                            'success',
+                            `{{ 'success'|text|e }}`,
+                            response.message ?? `User (${name}) request deactivated`
+                        );
+
+                        // UI дээр badge өөрчлөх
+                        thisRow.children[4].innerHTML =
+                            '<span class="badge bg-danger">deactivated</span>';
+                        thisRow.children[5].innerHTML = '';
+
+                        newbies.setReady();
+                    })
+                    .catch(error => Swal.showValidationMessage(error.message));
+                }
+            });
+        })
+    );
 </script>

@@ -16,7 +16,7 @@ use codesaur\DataObject\Column;
  *
  *  ✔ DataObject\Model дээр суурилсан  
  *  ✔ MySQL/PostgreSQL аль алинд нь ажиллахад бэлэн  
- *  ✔ created_at / updated_at автоматаар populate хийнэ  
+ *  ✔ created_at автоматаар populate хийнэ  
  *  ✔ Анхны админыг __initial() үед үүсгэнэ  
  * 
  *  * ⚡ **PDO Injection тухай тэмдэглэл**
@@ -110,9 +110,8 @@ class UsersModel extends Model
     // </editor-fold>
 
     // =====================================================================
-    //  🟦 CRUD override — created_at / updated_at автоматаар бөглөх
+    //  🟦 CRUD override — created_at автоматаар бөглөх
     // =====================================================================
-
     /**
      * insert()
      * ---------------------------------------------------------
@@ -126,22 +125,5 @@ class UsersModel extends Model
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
-    }
-
-    /**
-     * updateById()
-     * ---------------------------------------------------------
-     * @param int $id         Засах бичлэгийн ID
-     * @param array $record   Шинэ утгууд
-     *
-     * @return array|false
-     *
-     *  Бичлэг шинэчилж буй үед updated_at-г автоматаар онооно
-     *  (хэрвээ шинэ утгууд дотор агуулагдаагүй бол).
-     */
-    public function updateById(int $id, array $record): array|false
-    {
-        $record['updated_at'] ??= \date('Y-m-d H:i:s');
-        return parent::updateById($id, $record);
     }
 }

@@ -181,7 +181,7 @@ class FileController extends \Raptor\Controller
      *        'type' => 'image'
      *      ]
      *
-     * Амжилтгүй бол false буцаана, алдаа code-г getLastUploadError() авч болно.
+     * Амжилтгүй бол false буцаана, алдааны code-г getLastUploadError() авч мэдэж болно.
      */
     protected function moveUploaded($uploadedFile, int $mode = 0755): array|false
     {
