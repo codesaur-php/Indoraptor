@@ -158,12 +158,12 @@
              FRONT-END LOGIC - LOGIN / FORGOT / SIGNUP
              ============================================================ -->
         <script type="text/javascript">
-            // Dark theme auto-apply
+            /* Dark theme auto-apply */
             if (localStorage.getItem('data-bs-theme') === 'dark') {
                 document.body.setAttribute('data-bs-theme', 'dark');
             }
             
-            // Spinner toggle function
+            /* Spinner toggle function */
             function spinNstop(ele)
             {
                 const isDisabled = ele.disabled;
@@ -183,23 +183,23 @@
                 ele.classList.add('disabled');
             }
             
-            // DOM Loaded - event logic binding
+            /* DOM Loaded - event logic binding */
             document.addEventListener('DOMContentLoaded', function () {
-                // Form references
+                /* Form references */
                 const formLogin = document.querySelector('form#login');
                 const formForgot = document.querySelector('form#forgot');
                 const formSignUp = document.querySelector('form#register');
                 
-                // Button references
+                /* Button references */
                 const btnLoginSubmit = document.querySelector('button#login_signin_submit');
                 const btnForgotPassword = document.querySelector('a#forgot_password');
                 const btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
                 const btnSignup = document.querySelector('a#signup');
                 const btnSignupSubmit = document.querySelector('button#signup_submit');
 
-                // ============================================================
-                // Helper functions
-                // ============================================================
+                /* ============================================================
+                   Helper functions
+                   ============================================================ */
                 function showMessage(form, type, msg)
                 {
                     removeAlert(form);
@@ -245,18 +245,14 @@
                     removeAlert(formForgot);
                 }
 
-                // ============================================================
-                // URL query message support (?message=...&message_type=...)
-                // ============================================================
+                /* URL query message support (?message=...&message_type=...) */
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams && urlParams.get('message')) {
                     showMessage(formLogin, urlParams.get('message_type') ?? 'warning', urlParams.get('message'));
                     window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
                 }
                 
-                // ============================================================
-                // Forgot Password Form
-                // ============================================================
+                /* Forgot Password Form */
                 btnForgotPassword.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -267,9 +263,7 @@
                     formForgot.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
-                // ============================================================
-                // Signup Form
-                // ============================================================
+                /* Signup Form */
                 btnSignup.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -280,7 +274,7 @@
                     formSignUp.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
-                // Cancel buttons → Always return to Login form
+                /* Cancel buttons → Always return to Login form */
                 document.querySelectorAll('.cancel').forEach(function(link) {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -289,9 +283,7 @@
                     });
                 });
 
-                // ============================================================
-                // Login Submit
-                // ============================================================
+                /* Login Submit */
                 btnLoginSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -330,9 +322,7 @@
                     });
                 });
                 
-                // ============================================================
-                // Forgot Password Submit
-                // ============================================================                
+                /* Forgot Password Submit */
                 btnForgotPasswordSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -371,9 +361,7 @@
                     });
                 });
                 
-                // ============================================================
-                // Signup Submit
-                // ============================================================
+                /* Signup Submit */
                 btnSignupSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -415,7 +403,7 @@
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
                         
-                        // clear inputs
+                        /* clear inputs */
                         formSignUp.codeUsername.value = '';
                         formSignUp.codeEmail.value = '';
                         formSignUp.codePassword.value = '';

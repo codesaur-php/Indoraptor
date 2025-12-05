@@ -19,7 +19,7 @@
             <table class="table table-hover table-striped-columns table-bordered" id="signup">
                 <thead>
                     <tr>
-                        <!-- Толгой хэсгийн баганууд – бүх i18n текст Twig-ээр inject хийгдэнэ -->
+                        <!-- Толгой хэсгийн баганууд - бүх i18n текст Twig-ээр inject хийгдэнэ -->
                         <th class="text-primary" scope="col">{{ 'username'|text }}</th>
                         <th class="text-primary" scope="col">{{ 'email'|text }}</th>
                         <th class="text-primary" scope="col">{{ 'language'|text }}</th>
@@ -63,7 +63,7 @@
                                 {% endif %}
                             </td>
 
-                            <!-- ✨ Үйлдэлүүд – зөвхөн waiting төлөвт харагдана -->
+                            <!-- ✨ Үйлдэлүүд - зөвхөн waiting төлөвт харагдана -->
                             <td>
                                 {% if row['is_active'] == 1 %}
                                     {% if user.can('system_user_insert') %}
@@ -100,9 +100,7 @@
 </div>
 
 <script type="text/javascript">
-    /* -------------------------------------------------------------
-       Хэлнээс хамаарсан баталгаажуулах асуултыг функц болгов
-       ------------------------------------------------------------- */
+    /* Хэлнээс хамаарсан баталгаажуулах асуултыг функц болгов */
     let acceptQuestion, questionDeletion;
     if (document.documentElement.lang === 'mn') {
         acceptQuestion = name =>
@@ -116,30 +114,26 @@
             `<p class="text-danger">Are you sure to deactivate this user request (${name})?</p>`;
     }
 
-    /* -------------------------------------------------------------
-       motable – хүснэгтийн UI helper
-       ------------------------------------------------------------- */
+    /* motable - хүснэгтийн UI helper */
     const newbies = new motable('table#signup');
 
-    /* -------------------------------------------------------------
-       ✅ "Accept" button → шинэ хэрэглэгчийг батлах
-       ------------------------------------------------------------- */
+    /* ✅ "Accept" button → шинэ хэрэглэгчийг батлах */
     const requestWaits = newbies.table.querySelectorAll('.approve-user-request');
     requestWaits.forEach(btn =>
         btn.addEventListener('click', function (e) {
 
             e.preventDefault();
 
-            // Мөрийг олж авах
+            /* Мөрийг олж авах */
             const thisRow = btn.closest('tr');
             if (!thisRow) {
                 return NotifyTop('warning', `{{ 'error'|text|e }}`, "Can't find parent row!");
             }
 
-            // Username => email
+            /* Username => email */
             const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
 
-            // 🪪 Баталгаажуулах SweetAlert
+            /* 🪪 Баталгаажуулах SweetAlert */
             Swal.fire({
                 html:
                    `<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>
@@ -153,7 +147,7 @@
                 allowOutsideClick: () => !Swal.isLoading(),
                 backdrop: true,
 
-                // 🔄 Зөвшөөрөх үед API руу POST хийнэ
+                /* 🔄 Зөвшөөрөх үед API руу POST хийнэ */
                 preConfirm: () => {
                     return fetch(
                         `{{ 'user-signup-approve'|link }}`,
@@ -165,7 +159,7 @@
                     )
                     .then(res => res.json())
                     .then(response => {
-                        // Амжилттай биш бол error throw
+                        /* Амжилттай хариу биш бол error throw */
                         if (response.status !== 'success') {
                             throw new Error(response.message ?? 'Invalid response!');
                         }
@@ -173,25 +167,23 @@
                         Swal.close();
                         NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? 'User accepted');
                         
-                        /* ---------------------------------------------------------
-                           UI Update:
-                           1) Status → approved
-                           2) Action column → clear
-                        --------------------------------------------------------- */
+                        /* UI Update:
+                         * 1) Status → approved
+                         * 2) Action column → clear */
                         thisRow.children[4].innerHTML =
                             '<span class="badge bg-info">approved</span>';
                         thisRow.children[5].innerHTML = '';
 
                         newbies.setReady();
                         
-                        // сек дараа modal-ыг хаагаад document reload
+                        /* сек дараа modal-ыг хаагаад document reload */
                         setTimeout(() => {
                             const modalEl = document.querySelector('.modal.show');
                             if (modalEl) {
                                 const modal = bootstrap.Modal.getInstance(modalEl);
                                 modal.hide();
                             }
-                            // 🔄 Full reload → Users table дээр шинэ user-г харах
+                            /* 🔄 Full reload → Users table дээр шинэ user-г харах */
                             setTimeout(() => location.reload(), 400);
                         }, 1000);
                     })
@@ -201,9 +193,7 @@
         })
     );
 
-    /* -------------------------------------------------------------
-       ❌ "Delete" button → хүсэлтийг идэвхгүй болгох
-       ------------------------------------------------------------- */
+    /* ❌ "Delete" button → хүсэлтийг идэвхгүй болгох */
     const requestDeactivates = newbies.table.querySelectorAll('.deactivate-user-request');
     requestDeactivates.forEach(btn =>
         btn.addEventListener('click', function (e) {
@@ -217,7 +207,7 @@
 
             const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
 
-            // 🗑 Deactivate хийх SweetAlert
+            /* 🗑 Deactivate хийх SweetAlert */
             Swal.fire({
                 html:
                    `<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>
@@ -231,7 +221,7 @@
                 allowOutsideClick: () => !Swal.isLoading(),
                 backdrop: true,
 
-                // DELETE API дуудна
+                /* DELETE API дуудна */
                 preConfirm: () => {
                     return fetch(
                         `{{ 'user-signup-deactivate'|link }}`,
@@ -255,7 +245,7 @@
                             response.message ?? `User (${name}) request deactivated`
                         );
 
-                        // UI дээр badge өөрчлөх
+                        /* UI дээр badge өөрчлөх */
                         thisRow.children[4].innerHTML =
                             '<span class="badge bg-danger">deactivated</span>';
                         thisRow.children[5].innerHTML = '';

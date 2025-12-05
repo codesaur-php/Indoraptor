@@ -22,7 +22,7 @@
 <div id="hello"></div>
 
 <script type="text/javascript">
-    // Жижиг туслах функц - цагийн дагуу мэндчилгээ сонгоно
+    /* Жижиг туслах функц - цагийн дагуу мэндчилгээ сонгоно */
     function getGreeting() {
         const dd = new Date();
         const hh = dd.getHours();
@@ -35,7 +35,7 @@
         }
     }
 
-    // Мэндчилгээг HTML дээр харуулах
+    /* Мэндчилгээг HTML дээр харуулах */
     document.getElementById('hello').innerHTML =
         `${getGreeting()} <strong>{{ user.profile['first_name'] }}</strong>.<br/>Welcome to codesaur framework!`;
 </script>

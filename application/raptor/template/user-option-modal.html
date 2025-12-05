@@ -116,12 +116,7 @@
     </div>
 </div>
 <script type="text/javascript">
-    // ======================================================================
-    //  JavaScript - Theme болон Language сонголтуудыг хэрэгжүүлэх
-    // ======================================================================
-
-    // ------------------------------ Theme ------------------------------
-    // Хэрэглэгч Dashboard-д Light/Dark theme ашиглаж буй эсэхийг уншина.
+    /* Хэрэглэгч Dashboard-д Light/Dark theme ашиглаж буй эсэхийг уншина. */
     const light = document.querySelector('input#themeLight');
     const dark = document.querySelector('input#themeDark');
     if (document.body.getAttribute('data-bs-theme') === 'dark') {
@@ -130,30 +125,29 @@
         light.checked = true;
     }
 
-    // ------------------------------ Confirm Button ---------------------
+    /* Баталгаажуулах */
     const optionConfirm = document.querySelector('button#optConfirmBtn');
     optionConfirm?.addEventListener('click', function (e) {
         e.preventDefault();
 
+        /* Баталгаажуулах товчыг хүлээлгэе */
         this.growNstop();
 
-        // ---- Save Theme to localStorage ----
+        /* Бровзерийн localStorage дээр Theme хадгална */
         const theme = document.querySelector('input[type="radio"][name="theme"]:checked');
         localStorage.setItem('data-bs-theme', theme?.value);
 
-        // ---- Save Language (server-side update) ----
+        /* Хэрэв хэл өөрчлөгдвөл шинэ хэлний тохиргоог серверт дамжуулна. */
         const language = document.querySelector('input[type="radio"][name="language"]:checked');
-
-        // Хэрэв хэл өөрчлөгдвөл шинэ хэлний тохиргоог серверт дамжуулна.
         if (language?.value !== `{{ current }}`) {
-            // Synchronous AJAX (intentional)
-            // Хэл солих үед redirect хийх тул sync OK.
+            /* Synchronous AJAX (intentional)
+             * Хэл солих үед redirect хийх тул sync OK. */
             const xhr = new XMLHttpRequest();
             xhr.open('GET', `{{ 'login'|link }}/language/${language.value}`, false);
             xhr.send();
         }
 
-        // Theme & Language өөрчлөгдсөний дараа Dashboard-г дахин ачаалж харуулна.
+        /* Theme & Language өөрчлөгдсөний дараа Dashboard-г дахин ачаалж харуулна. */
         window.location.reload();
     });
 </script>

@@ -1,19 +1,18 @@
-// motable v2.3
-// ------------------------------------------------------------------
-// Энэ script нь ямар ч HTML <table>-ийг дэвшилтэт боломжтой болгож өгнө:
-//   ✔ Sticky header (толгой мөр гацдаг)
-//   ✔ Horizontal scroll илүү зөөлөн болгох
-//   ✔ Аль ч баганыг freeze/sticky position болгох
-//   ✔ Client-side search / filter
-//   ✔ Client-side sort (үсгийн болон тоон эрэмбэлэлт)
-//   ✔ Responsive scroll indicator + fade effect
-//   ✔ Монгол / Англи хэлний label-тэй
-//   ✔ lightweight ба external dependencyгүй.
-//
+/**
+ * motable v2.3
+ * ------------------------------------------------------------------
+ * Энэ script нь ямар ч HTML <table>-ийг дэвшилтэт боломжтой болгож өгнө:
+ *  ✔ Sticky header (толгой мөр гацдаг)
+ *  ✔ Horizontal scroll илүү зөөлөн болгох
+ *  ✔ Аль ч баганыг freeze/sticky position болгох
+ *  ✔ Client-side search / filter
+ *  ✔ Client-side sort (үсгийн болон тоон эрэмбэлэлт)
+ *  ✔ Responsive scroll indicator + fade effect
+ *  ✔ Монгол / Англи хэлний label-тэй
+ *  ✔ lightweight ба external dependencyгүй.
+ */
 
-// ------------------------------------------------------------
-// CSS-г динамикаар head рүү inject хийж байна
-// ------------------------------------------------------------
+/* CSS-г динамикаар head рүү inject хийж байна */
 const mostyle = document.createElement('style');
 mostyle.innerHTML = `
 @keyframes l1{to{clip-path:inset(0 -34% 0 0)}}
@@ -139,12 +138,8 @@ mostyle.innerHTML = `
 `;
 document.head.appendChild(mostyle);
 
-// ======================================================================
-// 🧩 motable() - үндсэн Constructor функц
-// ======================================================================
-
 /**
- * motable(<table>, options)
+ * motable(<table>, options) - үндсэн Constructor функц
  * -------------------------
  * - Хүснэгтийг динамикаар сайжруулж UI-г бүтээнэ
  * - Tools bar (info + search)
@@ -159,43 +154,35 @@ function motable(
     opts = {
         label: {},
         style: {},
-        // freezeColumns: [0, 1, 2]
+        /* freezeColumns: [0, 1, 2] */
     }
 ) {
-    // -----------------------------
-    // 1) Table элементийг resolve хийх
-    // -----------------------------
+    /* Table элементийг resolve хийх */
     const table = typeof ele === 'string' ? document.querySelector(ele) : ele;
     if (table?.tagName !== 'TABLE') throw new Error('motable must be an instance of the Table');
 
-    // -----------------------------
-    // 2) Options-г default-той нэгтгэх
-    // -----------------------------
+    /* Options-г default-той нэгтгэх */
     const options = this.getDefaults(opts);
 
-    // -----------------------------
-    // 3) Tools bar үүсгэх (info + search)
-    // -----------------------------
+    /* Tools bar үүсгэх (info + search) */
     const tools = document.createElement('div');
     tools.classList.add('motools');
     if (options.style.tools) tools.style.cssText = options.style.tools;
 
-    // Info text
+    /* Info text */
     const infoSpan = document.createElement('p');
     infoSpan.innerHTML = options.label.loading;
     if (options.style.info) infoSpan.style.cssText = options.style.info;
 
-    // Search input
+    /* Search input */
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
-    searchInput.disabled = true;  // Хүснэгт хоосон үед идэвхгүй
+    searchInput.disabled = true;  /* Хүснэгт хоосон үед идэвхгүй */
     searchInput.classList.add('mosearch');
     searchInput.placeholder = options.label.search;
     if (options.style.search) searchInput.style.cssText = options.style.search;
 
-    // -----------------------------
-    // 🔎 Хайлт хийх event
-    // -----------------------------
+    /* 🔎 Хайлт хийх event */
     searchInput.addEventListener('input', function () {
         const rows = table.querySelector('tbody')?.getElementsByTagName('tr');
         const total = rows?.length ?? 0;
@@ -219,9 +206,7 @@ function motable(
             .replace('{filtered}', filtered);
     }, false);
 
-    // -----------------------------
-    // 4) Wrapper + Container үүсгэх
-    // -----------------------------
+    /* Wrapper + Container үүсгэх */
     const container = document.createElement('div');
     container.classList.add('mocontainer');
     if (options.style.container) container.style = options.style.container;
@@ -230,18 +215,14 @@ function motable(
     wrapper.classList.add('mowrapper');
     if (options.style.wrapper) wrapper.style.cssText += options.style.wrapper;
 
-    // -----------------------------
-    // Эдгээр property-г instance дээр байршуулах
-    // -----------------------------
+    /* Эдгээр property-г instance дээр байршуулах */
     this.info = infoSpan;
     this.search = searchInput;
     this.table = table;
     this.options = options;
     this.wrapper = wrapper;
 
-    // -----------------------------
-    // Table-г wrapper рүү зөөж оруулах
-    // -----------------------------
+    /* Table-г wrapper рүү зөөж оруулах */
     table.classList.add('motable');
     table.parentNode.insertBefore(wrapper, table);
 
@@ -251,9 +232,7 @@ function motable(
     tools.appendChild(searchInput);
     container.appendChild(table);
 
-    // -----------------------------
-    // 5) Sorting (толгой мөр дээр click)
-    // -----------------------------
+    /* Sorting (толгой мөр дээр click) */
     if (table.tHead && table.tHead.rows[0]) {
         const isNumeric = (string) => /^[+-]?\d+(\.\d+)?$/.test(string);
         
@@ -265,7 +244,7 @@ function motable(
                 const rows = Array.from(tBody.querySelectorAll('tr'));
                 if (!rows.length) return;
 
-                // sort төлөв toggle хийх
+                /* sort төлөв toggle хийх */
                 if (!this.dataset.sort) this.dataset.sort = 'asc';
                 else this.dataset.sort = this.dataset.sort === 'asc' ? 'desc' : 'asc';
 
@@ -288,7 +267,7 @@ function motable(
                 tBody.innerHTML = '';
                 tBody.append(...sorted);
 
-                // Бусад баганаас data-sort-ийг цэвэрлэнэ
+                /* Бусад баганаас data-sort-ийг цэвэрлэнэ */
                 for (let j = 0; j < table.tHead.rows[0].cells.length; j++) {
                     if (i !== j || !sorting)
                         delete table.tHead.rows[0].cells[j].dataset.sort;
@@ -297,13 +276,11 @@ function motable(
         }
     }
 
-    // -----------------------------
-    // Scroll indicator update
-    // -----------------------------
+    /* Scroll indicator update */
     this.updateScrollable();
     wrapper.addEventListener('scroll', () => this.updateScrollable());
 
-    // Window resize үед frozen columns-г дахин тооцно
+    /* Window resize үед frozen columns-г дахин тооцно */
     window.addEventListener('resize', () => {
         this.updateScrollable();
         if (this.options.freezeColumns?.length) {
@@ -311,15 +288,11 @@ function motable(
         }
     });
 
-    // -----------------------------
-    // 6) Body-г эхлүүлэх
-    // -----------------------------
+    /* Body-г эхлүүлэх */
     this.setBody();
 }
 
-// ======================================================================
-// setBody(html) - tbody-г шинэчлэх
-// ======================================================================
+/* setBody(html) - tbody-г шинэчлэх */
 motable.prototype.setBody = function (html) {
     let tBody = this.table.querySelector('tbody');
 
@@ -334,9 +307,7 @@ motable.prototype.setBody = function (html) {
     if (tBody.querySelector('tr')) this.setReady();
 };
 
-// ======================================================================
-// setReady() - хүснэгт бүрэн ачаалсны дараах ажилбар
-// ======================================================================
+/* setReady() - хүснэгт бүрэн ачаалсны дараах ажилбар */
 motable.prototype.setReady = function () {
     const tBody = this.table.querySelector('tbody');
     const total = tBody?.rows.length ?? 0;
@@ -349,25 +320,21 @@ motable.prototype.setReady = function () {
     this.info.innerHTML =
         infostr.replace('{total}', total).replace('{filtered}', filtered);
 
-    // Search input-г идэвхжүүлэх
+    /* Search input-г идэвхжүүлэх */
     if (this.search.disabled && total > 0) this.search.disabled = false;
 
-    // Freeze columns тохируулна
+    /* Freeze columns тохируулна */
     if (this.options.freezeColumns?.length) {
         requestAnimationFrame(() => this.applyFreezeColumns());
     }
 };
 
-// ======================================================================
-// error(msg) - info дээр алдаа харуулах
-// ======================================================================
+/* error(msg) - info дээр алдаа харуулах */
 motable.prototype.error = function (message) {
     this.info.innerHTML = `<span style="color:red">${message}<span>`;
 };
 
-// ======================================================================
-// updateScrollable() - scroll shadow toggle
-// ======================================================================
+/* updateScrollable() - scroll shadow toggle */
 motable.prototype.updateScrollable = function () {
     if (!this.wrapper) return;
 
@@ -378,9 +345,7 @@ motable.prototype.updateScrollable = function () {
     el.classList.toggle('scrollable', hasOverflow && !atEnd);
 };
 
-// ======================================================================
-// applyFreezeColumns() - дурын багануудыг sticky болгох
-// ======================================================================
+/* applyFreezeColumns() - дурын багануудыг sticky болгох */
 motable.prototype.applyFreezeColumns = function () {
     const freeze = this.options.freezeColumns;
     if (!freeze?.length) return;
@@ -390,18 +355,18 @@ motable.prototype.applyFreezeColumns = function () {
     const body = table.tBodies[0];
     if (!headRow || !body) return;
 
-    // Өмнө байсан sticky class-уудыг цэвэрлэнэ
+    /* Өмнө байсан sticky class-уудыг цэвэрлэнэ */
     table.querySelectorAll('.freeze-col').forEach(cell => {
         cell.classList.remove('freeze-col', 'freeze-col-shadow');
         cell.style.left = '';
     });
 
-    // Unique + зөв индексүүдийг сонгох
+    /* Unique + зөв индексүүдийг сонгох */
     const cols = [...new Set(freeze)]
         .filter(i => Number.isInteger(i) && i >= 0 && i < headRow.cells.length)
         .sort((a, b) => a - b);
 
-    // Багануудын өргөнийг тооцох
+    /* Багануудын өргөнийг тооцох */
     const firstRow = body.rows[0];
     if (!firstRow) return;
 
@@ -411,7 +376,7 @@ motable.prototype.applyFreezeColumns = function () {
         colWidths[i] = cell.getBoundingClientRect().width;
     }
 
-    // Freeze-дэх offset
+    /* Freeze-дэх offset */
     let leftOffset = 0;
 
     cols.forEach((colIndex, idx) => {
@@ -435,14 +400,12 @@ motable.prototype.applyFreezeColumns = function () {
     });
 };
 
-// ======================================================================
-// getDefaults(options) - default утгууд
-// ======================================================================
+/* getDefaults(options) - default утгууд */
 motable.prototype.getDefaults = function (options) {
     if (!options) options = {};
     if (!options.label) options.label = {};
 
-    // Монгол хэл дээрх label-ууд
+    /* Монгол хэл дээрх label-ууд */
     if (document.documentElement.lang === 'mn') {
         if (!options.label.loading) options.label.loading = 'Хүснэгтийг ачаалж байна <span class="threedots"></span>';
         if (!options.label.empty) options.label.empty = 'Хүснэгтэд мэдээлэл байхгүй';
@@ -451,7 +414,7 @@ motable.prototype.getDefaults = function (options) {
         if (!options.label.search) options.label.search = 'Хүснэгтээс хайх утгаа оруулна уу ...';
         if (!options.label.notfound) options.label.notfound = '<span style="color:gray">Хайлтын утгад тохирох үр дүн олдсонгүй</span>';
     } else {
-        // English labels
+        /* English labels */
         if (!options.label.loading) options.label.loading = 'Loading table <span class="threedots"></span>';
         if (!options.label.empty) options.label.empty = 'There is no data in the table';
         if (!options.label.total) options.label.total = 'The table has a total of {total} rows of records';
@@ -460,7 +423,7 @@ motable.prototype.getDefaults = function (options) {
         if (!options.label.notfound) options.label.notfound = '<span style="color:gray">No results were found matching your search criteria</span>';
     }
 
-    // Style defaults
+    /* Style defaults */
     if (!options.style) options.style = {};
     if (!options.style.tools) options.style.tools = 'display:flex;flex-wrap:wrap;margin:0 0 .375rem;';
     if (!options.style.info) options.style.info = 'flex-basis:65%;margin:auto 0;padding-right:1rem;';

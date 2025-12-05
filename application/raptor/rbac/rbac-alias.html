@@ -254,21 +254,21 @@
             ).then(res => {
                 const contentType = res.headers.get('content-type') || '';
                 if (contentType.includes('application/json')) return res.json();
-                // JSON биш бол алдаа
+                /* JSON биш бол алдаа */
                 throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }).then(response => {
                 const type = response.type ?? 'warning';
                 const title = response.title ?? `{{ 'notice'|text|e }}`;
                 NotifyTop(type, title, response.message ?? 'Role permission set');
             }).catch(error => {
-                // Алдаа гарвал дээрх NotifyTop-оор хэрэглэгчид харуулна
+                /* Алдаа гарвал дээрх NotifyTop-оор хэрэглэгчид харуулна */
                 NotifyTop('danger', `{{ 'error'|text }}`, error.message);
             }).finally(() => {
                 if (requesting) requesting.style.display = 'none';
             });
         };
 
-        // Бүх role_permission checkbox-д click event bind хийх
+        /* Бүх role_permission checkbox-д click event bind хийх */
         const rolePermissionInputs = document.getElementsByClassName('role_permission');
         for (const i = 0; i < rolePermissionInputs.length; i++) {
             rolePermissionInputs[i].addEventListener('click', setRolePermission);
@@ -285,7 +285,7 @@
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
 
-            // logger-dashboard → "dashboard" хэсгийг table parameter болгон ашиглана
+            /* logger-dashboard → "dashboard" хэсгийг table parameter болгон ашиглана */
             const logger_id = logger.id ?? '';
             const table = logger_id.substring(logger_id.indexOf('-') + 1);
             if (!table) return;
@@ -304,7 +304,7 @@
                     body: JSON.stringify({
                         'ORDER BY': 'id Desc',
                         'CONTEXT': {
-                            // RBAC холбоотой action-уудыг шүүнэ (rbac-* pattern)
+                            /* RBAC холбоотой action-уудыг шүүнэ (rbac-* pattern) */
                             'action': 'rbac-*',
                             'alias': `{{ alias }}`
                         },
@@ -320,14 +320,14 @@
 
                 logger.innerHTML = '';
 
-                // Нэг log дээр дарахад нээх modal-ийн URL загвар
+                /* Нэг log дээр дарахад нээх modal-ийн URL загвар */
                 const logModalLink = `${logsViewLink}?table=${table}&id=`;
 
                 Object.values(response).forEach(log => {
                     const log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
 
-                    // Log level-ээр өнгө ялгах (Bootstrap list-group-item-* classes)
+                    /* Log level-ээр өнгө ялгах (Bootstrap list-group-item-* classes) */
                     switch (log.level) {
                         case 'notice':  log_li.classList.add('list-group-item-light');     break;
                         case 'info':    log_li.classList.add('list-group-item-primary');   break;
@@ -338,7 +338,7 @@
                         default:        log_li.classList.add('list-group-item-dark');      break;
                     }
 
-                    // [created_at] [id] дээр дарахад log modal нээнэ
+                    /* [created_at] [id] дээр дарахад log modal нээнэ */
                     const a_link = document.createElement('a');
                     a_link.textContent = `${log.created_at} [${log.id}]`;
                     a_link.href = logModalLink + log.id;
@@ -351,13 +351,13 @@
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
 
-                    // Логийн үндсэн мессеж (context-тэй интерполяцлагдсан)
+                    /* Логийн үндсэн мессеж (context-тэй интерполяцлагдсан) */
                     const span_msg = document.createElement('span');
                     span_msg.innerHTML = log.message;
                     log_li.appendChild(span_msg);
                     log_li.appendChild(document.createTextNode(' '));
 
-                    // Хэн (auth_user.username) ямар action хийснийг жижиг текстээр үзүүлэх
+                    /* Хэн (auth_user.username) ямар action хийснийг жижиг текстээр үзүүлэх */
                     const span_user_action = document.createElement('span');
                     span_user_action.innerHTML =
                         `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
@@ -368,7 +368,7 @@
                 });
 
             }).catch(error => {
-                // Лог ачаалах алдаа илэрсэн үед зөвхөн console-д бичнэ
+                /* Лог ачаалах алдаа илэрсэн үед зөвхөн console-д бичнэ */
                 console.log(error.message);
             }).finally(() => {
                 logger.style.display = '';

@@ -651,11 +651,11 @@
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        // 🔹 motable – Indoraptor стандарт хүснэгт helper
+        /* 🔹 motable – Indoraptor стандарт хүснэгт helper */
         const menu = new motable('table#raptor_menu');
         menu.setReady();
 
-        // 🔹 Цэс идэвхгүй болгох товч (trash icon) дээрх click event
+        /* 🔹 Цэс идэвхгүй болгох товч (trash icon) дээрх click event */
         const deactivates = menu.table.querySelectorAll('.deactivate-item');
         deactivates.forEach(btn => btn.addEventListener('click', function (e) {
             e.preventDefault();
@@ -677,7 +677,7 @@
                 ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
             }
 
-            // SweetAlert2 – Идэвхгүй болгохыг баталгаажуулах dialog
+            /* SweetAlert2 – Идэвхгүй болгохыг баталгаажуулах dialog */
             Swal.fire({
                 html: ask,
                 input: 'text',
@@ -711,11 +711,11 @@
 
                         Swal.close();
 
-                        // Тухайн мөрийг хүснэгтээс хасна
+                        /* Тухайн мөрийг хүснэгтээс хасна */
                         thisRow.remove();
                         menu.setReady();
 
-                        // UI-г шинэчлэх (refresh)
+                        /* UI-г шинэчлэх (refresh) */
                         window.location.reload();
 
                         NotifyTop(
@@ -730,7 +730,7 @@
             });
         }));
 
-        // 🔹 UPDATE MODAL – Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ
+        /* 🔹 UPDATE MODAL – Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ */
         const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
         updates.forEach(btn => btn.addEventListener('click', function () {
             const thisRow = btn.closest('tr');
@@ -752,7 +752,7 @@
             }
         }));
 
-        // 🔹 VIEW MODAL – Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ
+        /* 🔹 VIEW MODAL – Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ */
         const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
         views.forEach(btn => btn.addEventListener('click', function () {
             const thisRow = btn.closest('tr');
@@ -778,7 +778,7 @@
             viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
         }));
 
-        // 🔹 MENU INSERT FORM – Шинэ цэс нэмэх submit логик
+        /* 🔹 MENU INSERT FORM – Шинэ цэс нэмэх submit логик */
         const formInsert = document.querySelector('form#menu_insert');
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -807,7 +807,7 @@
 
                 const data = new FormData(this);
                 const visible = this.querySelector('input[name="is_visible"]');
-                if (visible) { // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
+                if (visible) { /* ✅ CHECKBOX NORMALIZE: is_visible → 1/0 */
                     data.set('is_visible', visible.checked ? '1' : '0');
                 }
                 fetch(
@@ -825,7 +825,7 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    // Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh
+                    /* Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh */
                     window.location.reload();
 
                     NotifyTop(
@@ -840,7 +840,7 @@
             });
         }
 
-        // 🔹 MENU UPDATE FORM – Цэс засварлах submit логик
+        /* 🔹 MENU UPDATE FORM – Цэс засварлах submit логик */
         const formUpdate = document.querySelector('form#menu_update');
         if (!formUpdate) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -869,7 +869,7 @@
 
                 const data = new FormData(this);
                 const visible = this.querySelector('input[name="is_visible"]');
-                if (visible) { // ✅ CHECKBOX NORMALIZE: is_visible → 1/0
+                if (visible) { /* ✅ CHECKBOX NORMALIZE: is_visible → 1/0 */
                     data.set('is_visible', visible.checked ? '1' : '0');
                 }
                 fetch(
@@ -887,7 +887,7 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    // Засварын дараа UI-г шинэчлэх
+                    /* Засварын дараа UI-г шинэчлэх */
                     window.location.reload();
 
                     NotifyTop(
@@ -902,7 +902,7 @@
             });
         }
 
-        // 🔹 LOGGER – Template Menu-тэй холбоотой бүх үйлдлийн протоколын жагсаалт
+        /* 🔹 LOGGER – Template Menu-тэй холбоотой бүх үйлдлийн протоколын жагсаалт */
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
@@ -944,7 +944,7 @@
                     const log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
 
-                    // Log level-с хамаарч Bootstrap өнгө тохируулах
+                    /* Log level-с хамаарч Bootstrap өнгө тохируулах */
                     switch (log.level) {
                         case 'notice': log_li.classList.add('list-group-item-light'); break;
                         case 'info': log_li.classList.add('list-group-item-primary'); break;

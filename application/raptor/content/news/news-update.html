@@ -599,7 +599,7 @@
 
                 const data = new FormData(this);
 
-                // Ensure switches are always sent as 1/0, even when unchecked
+                /* Ensure switches are always sent as 1/0, even when unchecked */
                 const publishedSwitch = formUpdate.querySelector('input[name="published"]');
                 if (publishedSwitch) {
                     data.set('published', publishedSwitch.checked ? 1 : 0);

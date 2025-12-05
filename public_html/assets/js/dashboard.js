@@ -31,18 +31,15 @@
  * ================================================================
  */
 
-/* ---------------------------------------------------------------
-   🌙 DARK MODE ИДЭВХЖҮҮЛЭХ
-   --------------------------------------------------------------- */
+/* 🌙 DARK MODE ИДЭВХЖҮҮЛЭХ */
 if (localStorage.getItem('data-bs-theme') === 'dark') {
     document.body.setAttribute('data-bs-theme', 'dark');
 }
 
-/* ---------------------------------------------------------------
-   📌 ajaxModal(link)
-   -- Modal-ийн агуулгыг AJAX-аар ачаалж харуулна
-   --------------------------------------------------------------- */
 /**
+ * 📌 ajaxModal(link)
+ * -- Modal-ийн агуулгыг AJAX-аар ачаалж харуулна
+ *
  * @description
  *  data-bs-target="#static-modal" гэсэн modal руу HTML response 
  *  ачаалж, скриптуудыг сэргээж ажиллуулдаг ухаалаг loader.
@@ -70,12 +67,12 @@ function ajaxModal(link)
         if (this.readyState === XMLHttpRequest.DONE) {
             modalDiv.innerHTML = this.responseText;
 
-            // хуудсан дахь <script> tag-уудыг дотор нь ажиллуулна
+            /* хуудсан дахь <script> tag-уудыг дотор нь ажиллуулна */
             const parser = new DOMParser();
             const responseDoc = parser.parseFromString(this.responseText, 'text/html');
             responseDoc.querySelectorAll('script').forEach(function (script) {
                 if (script.src) {
-                    // External JS дахин залгах
+                    /* External JS дахин залгах */
                     const newScript = document.createElement('script');
                     newScript.src = script.src;
                     document.body.appendChild(newScript);
@@ -85,7 +82,7 @@ function ajaxModal(link)
                 }
             });
 
-            // RESPONSE ERROR HANDLER
+            /* RESPONSE ERROR HANDLER */
             if (this.status !== 200) {
                 const isModal = responseDoc.querySelector('div.modal-dialog');
                 if (!isModal) {
@@ -111,10 +108,11 @@ function ajaxModal(link)
     xhr.send();
 }
 
-/* ---------------------------------------------------------------
-   📌 activateLink(href)
-   -- Sidebar-ийн идэвхтэй линк тодруулах
-   --------------------------------------------------------------- */
+/**
+ * 📌 activateLink(href)
+ * -- Sidebar-ийн идэвхтэй линк тодруулах
+ * 
+ * @param {string} href - Document link */
 function activateLink(href)
 {
     if (!href) return;
@@ -127,11 +125,10 @@ function activateLink(href)
     });
 }
 
-/* ---------------------------------------------------------------
-   📣 NotifyTop(type, title, content)
-   -- Дээд notification popup
-   --------------------------------------------------------------- */
-/**
+/** 
+ * 📣 NotifyTop(type, title, content)
+ * -- Дээд notification popup
+ *
  * @param {string} type - success, danger, warning, primary
  * @param {string} title - гарчиг
  * @param {string} content - доторх текст
@@ -145,7 +142,7 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
         previous.parentNode.removeChild(previous);
     }
 
-    // өнгө сонгох...
+    /* өнгө сонгох... */
     const bgColorHex =
         type === 'success' ? '#15cc1f' :
         type === 'warning' ? '#ffc107' :
@@ -174,7 +171,7 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
     section.append(h5, closeX, contentDiv);
     document.body.appendChild(section);
 
-    // анимэйшн …
+    /* анимэйшн … */
     const notifyHeight = section.offsetHeight;
     section.style.top = -notifyHeight + 'px';
 
@@ -201,10 +198,9 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
     setTimeout(close, delay);
 }
 
-/* ---------------------------------------------------------------
-   🔄 Button Spinner - spinNstop(), growNstop()
-   --------------------------------------------------------------- */
 /**
+ * 🔄 Button Spinner - spinNstop(), growNstop()
+ * 
  * @description
  *  Button дээр loader spinner тавиад, disable болгох.
  *  Ajax дуусаад буцааж сэргээхэд ашиглана.
@@ -241,11 +237,9 @@ Element.prototype.growNstop = function (block = true) {
     spinStop(this, 'grow', block);
 };
 
-/* ---------------------------------------------------------------
-   ⬆ Scroll-To-Top Button
-   --------------------------------------------------------------- */
+/* ⬆ Scroll-To-Top Button */
 function initScrollToTop(options = {}) {
-    // Default options
+    /* Default options */
     const config = {
         right: options.right ?? '25%',
         bottom: options.bottom ?? '0px',
@@ -256,16 +250,16 @@ function initScrollToTop(options = {}) {
         threshold: options.threshold ?? 200
     };
 
-    // Avoid creating multiple buttons
+    /* Avoid creating multiple buttons */
     if (document.getElementById('scrollToTopBtn')) return;
 
-    // Create arrow icon
+    /* Create arrow icon */
     const upArrow = document.createElement('i');
     upArrow.style.cssText =
         'border:solid black;border-width:0 2px 2px 0;border-color:white;display:inline-block;' +
         'padding:3.4px;margin-top:11px;transform:rotate(-135deg);-webkit-transform:rotate(-135deg)';
 
-    // Create button
+    /* Create button */
     const btnScroll = document.createElement('a');
     btnScroll.id = 'scrollToTopBtn';
     btnScroll.style.cssText =
@@ -278,7 +272,7 @@ function initScrollToTop(options = {}) {
     btnScroll.appendChild(upArrow);
     document.body.appendChild(btnScroll);
 
-    // Scroll detection
+    /* Scroll detection */
     window.addEventListener('scroll', function () {
         const windowpos = document.documentElement.scrollTop;
         if (windowpos > config.threshold) {
@@ -290,13 +284,13 @@ function initScrollToTop(options = {}) {
         }
     });
 
-    // Smooth scroll
+    /* Smooth scroll */
     btnScroll.addEventListener('click', function (e) {
         e.preventDefault();
         scroll({ top: 0, behavior: 'smooth' });
     });
 
-    // Hover states
+    /* Hover states */
     btnScroll.addEventListener('mouseover', () => {
         btnScroll.style.backgroundColor = config.hoverColor;
     });
@@ -305,10 +299,12 @@ function initScrollToTop(options = {}) {
     });
 }
 
-/* ---------------------------------------------------------------
-   📋 copyContent(elementId)
-   -- DOM текстийг clipboard руу хуулна
-   --------------------------------------------------------------- */
+/** 
+ * 📋 copyContent(elementId)
+ * @description
+ *  DOM текстийг clipboard руу хуулна
+ *  
+ * @param {HTMLElement} elem - текстийг агуулсан element */
 function copyContent(elem)
 {
     const text = document.getElementById(elem);
@@ -326,12 +322,11 @@ function copyContent(elem)
     document.execCommand('copy');
 }
 
-/* ---------------------------------------------------------------
-   🚀 DOMContentLoaded:
-   -- Sidebar activate
-   -- static-modal reset
-   -- AJAX modal binding
-   --------------------------------------------------------------- */
+/**
+ * 🚀 DOMContentLoaded:
+ * -- Sidebar activate
+ * -- static-modal reset
+ * -- AJAX modal binding */
 document.addEventListener('DOMContentLoaded', function () {
     activateLink(window.location.pathname);
 

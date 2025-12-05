@@ -1,9 +1,11 @@
+<!-- ✅ Хэрэглэгч шинээр үүсгэх формын толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-success">
         <i class="bi bi-person-plus-fill"></i> {{ 'create-new-user'|text }}
     </h3>
     <div class="ms-auto">
         {% if user.can('system_user_insert') %}
+            <!-- Формаас үл хамааран дээр, доор байрлах submit товчлуурууд -->
             <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
                 <i class="bi bi-check"></i> {{ 'submit'|text }}
             </button>
@@ -13,13 +15,30 @@
         </a>
     </div>
 </div>
+
+<!-- ✅ Tab цэс: Хувийн мэдээлэл / Зураг / Байгууллага -->
 <ul class="nav nav-tabs" role="tablist">
-    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }} <i class="bi bi-postcard"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }} <i class="bi bi-camera"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">{{ 'organization'|text }} <i class="bi bi-building"></i></a></li>
+    <li class="nav-item">
+        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">
+            {{ 'personal-info'|text }} <i class="bi bi-postcard"></i>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-picture">
+            {{ 'image'|text }} <i class="bi bi-camera"></i>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-organization">
+            {{ 'organization'|text }} <i class="bi bi-building"></i>
+        </a>
+    </li>
 </ul>
+
+<!-- ✅ Хэрэглэгч шинээр үүсгэх үндсэн FORM -->
 <form class="needs-validation pt-3" novalidate id="user_insert" action="{{ 'user-insert'|link }}" method="POST" enctype="multipart/form-data">
     <div class="tab-content">
+        <!-- 🧷 1-р tab: Хувийн мэдээлэл -->
         <div class="tab-pane active show" id="tab-personal" role="tabpanel">
             <div class="mb-3">
                 <label class="form-label">{{ 'login'|text }}</label>
@@ -38,7 +57,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">{{ 'lastname'|text }}</label>
-                <input class="form-control" required name="last_name" value="" maxlength="128" placeholder="" required type="text" autocomplete="off">
+                <input class="form-control" required name="last_name" value="" maxlength="128" placeholder="" type="text" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
             <div class="mb-3">
@@ -55,28 +74,42 @@
                 </div>
             </div>
         </div>
+
+        <!-- 🧷 2-р tab: Хэрэглэгчийн зураг -->
         <div class="tab-pane" id="tab-picture" role="tabpanel">
             <div class="input-group">
+                <!-- Зураг сонгоход харагдах файлын нэр -->
                 <input class="form-control" type="text" id="photo_name" disabled value="" placeholder="{{ 'select-an-image'|text|e }}">
                 <div class="input-group-append">
                     <div class="btn-group">
+                        <!-- Жинхэнэ file input (нуусан) -->
                         <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
-                        <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                        <!-- File сонгох товч -->
+                        <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">
+                            {{ 'choose'|text }}
+                        </button>
                     </div>
                 </div>
             </div>
+            <!-- Зураг сонгосны дараах урьдчилсан харагдац -->
             <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
         </div>
+
+        <!-- 🧷 3-р tab: Байгууллага сонгох хэсэг -->
         <div class="tab-pane" id="tab-organization" role="tabpanel">
             <label class="form-label">{{ 'organization'|text }}</label>
             <select class="form-control" name="organization">
                 {% for org in organizations %}
-                    <option value="{{ org['id'] }}"{{ loop.first ? ' selected' : '' }}>{{ org['name']|e }}</option>
+                    <option value="{{ org['id'] }}"{{ loop.first ? ' selected' : '' }}>
+                        {{ org['name']|e }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
     </div>
 </form>
+
+<!-- ✅ Доод хэсгийн Submit / Буцах товчнууд (дээрхтэй ижил функцтэй) -->
 <div class="rounded p-2 mt-3 shadow">
     {% if user.can('system_user_insert') %}
         <button class="submit-insert btn btn-success text-uppercase shadow-sm">
@@ -87,37 +120,67 @@
         <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
     </a>
 </div>
-<script type="text/javascript">    
+
+<script type="text/javascript">
+    /* Зураг сонголттой холбоотой элементүүдийг бэлэн болгох */
     const photoName = document.getElementById('photo_name');
     const photoBrowse = document.querySelector('button.photo-browse');
     const photoPreview = document.getElementById('photo_preview');
     const photo = document.querySelector('input[name="photo"]');
+
+    /* ------------------------------------------------------
+     *  File input дээр зураг сонгогдоход:
+     *   - Файлын нэрийг текст талбарт харуулах
+     *   - "Сонгох" товчийг "Өөрчлөх" болгон солих
+     *   - Хэрэв үүсээгүй бол "Устгах" товч үүсгэх
+     *   - Урьдчилсан харагдац зураг үзүүлэх
+     * ------------------------------------------------------ */
     photo.addEventListener('change', function (e) {
         e.preventDefault();
-        
+
+        /* FormData-д илгээгдэх name attribute-ийг баталгаажуулах */
         photo.name = 'photo';
-        photoName.value = photo.files[0].name;
-        
+
+        /* Сонгосон файлын нэрийг харуулах */
+        if (photo.files && photo.files[0]) {
+            photoName.value = photo.files[0].name;
+        } else {
+            photoName.value = '';
+        }
+
+        /* "Сонгох" → "Өөрчлөх" */
         photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
+
+        /* Хэрэв дараагийн sibling нь BUTTON биш бол "Устгах" товч шинээр үүсгэнэ */
         if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
-            let photoClear = document.createElement('button');
+            const photoClear = document.createElement('button');
             photoClear.classList.add('btn', 'btn-danger');
             photoClear.type = 'button';
             photoClear.innerHTML = `{{ 'remove'|text }}`;
+
+            /* "Устгах" товч дарагдах үед зураг болон сонголтыг reset хийх */
             photoClear.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
+                /* Урьдчилсан харагдац устгах */
                 photoPreview.removeAttribute('src');
                 photoPreview.style.display = 'none';
 
+                /* Файлын нэр талбарыг цэвэрлэх */
                 photoName.value = '';
+
+                /* "Өөрчлөх" товчийг дахин "Сонгох" болгох */
                 photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
 
+                /* File input-ийн утгыг reset хийх, name-г арилгах */
                 photo.value = '';
                 photo.removeAttribute('name');
 
+                /* "Устгах" товчийг DOM-оос устгах */
                 photoClear.remove();
             });
+
+            /* Шинээр үүсгэсэн товчийг "Сонгох" товчны хажууд байрлуулах */
             if (photoBrowse.nextSibling) {
                 photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
             } else {
@@ -125,67 +188,112 @@
             }
         }
 
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            photoPreview.src = e.target.result;
-            if (photoPreview.style.display === 'none') {
-                photoPreview.style.display = 'block';
-            }
-        };
-        reader.readAsDataURL(photo.files[0]);
+        /* Сонгосон зургийг урьдчилсан харагдац (preview) үзүүлэх */
+        if (photo.files && photo.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                photoPreview.src = e.target.result;
+                if (photoPreview.style.display === 'none') {
+                    photoPreview.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(photo.files[0]);
+        }
     });
-    
+
+    /* DOM бэлэн болмогц form submit логик бэлдэх */
     document.addEventListener('DOMContentLoaded', function () {
+        /* Хэрэглэгч шинээр үүсгэх FORM элемент */
         const formInsert = document.querySelector('form#user_insert');
+
+        /* Хэрэв form олдохгүй бол алдаа мэдэгдэл харуулаад зогсооно */
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-        } else {
-            const submitters = document.querySelectorAll('button.submit-insert');
-            submitters.forEach(function (button) {
-                button.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    formInsert.requestSubmit();
-                });
+            return;
+        }
+
+        /* Форм-с гадуур байрших "submit-insert" товчнуудыг form.requestSubmit()-тэй холбох */
+        const submitters = document.querySelectorAll('button.submit-insert');
+        submitters.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                formInsert.requestSubmit();
+            });
+        });
+
+        /* --------------------------------------------------
+         *  FORM submit event:
+         *   - HTML5 validation шалгах
+         *   - Алдаа байвал NotifyTop-р мэдэгдэх
+         *   - Зөв бол fetch ашиглан backend рүү илгээх
+         * -------------------------------------------------- */
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            /* HTML5 built-in validation */
+            const isValid = this.checkValidity();
+            this.classList.add('was-validated');
+
+            if (!isValid) {
+                event.stopPropagation();
+                NotifyTop(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
+                return;
+            }
+
+            /* Submit товчлуурууд дээр growNstop() animation ажиллуулах (loading effect) */
+            submitters.forEach(function (btn) {
+                btn.growNstop();
             });
 
-            formInsert.addEventListener('submit', function (event) {
-                event.preventDefault();
+            /* FormData ашиглан бүх талбаруудыг ачаалах */
+            const data = new FormData(this);
 
-                const _valid = this.checkValidity();
-                this.classList.add('was-validated');
-                if (!_valid) {
-                    event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            /* ----------------------------------------------
+             *  Fetch API ашиглан backend рүү хүсэлт илгээх
+             *  - this.action → form action URL
+             *  - method атрибут байвал ашиглана, үгүй бол POST
+             * ---------------------------------------------- */
+            fetch(this.action, {
+                body: data,
+                method: this.getAttribute('method') ?? 'POST'
+            })
+            .then(function (res) {
+                const contentType = res.headers.get('content-type') || '';
+                /* Хариу JSON төрөлтэй бол res.json() болгож буцаана */
+                if (contentType.includes('application/json')) return res.json();
+
+                /* JSON биш бол алдаа шиднэ */
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            })
+            .then(function (response) {
+                /* Backend талаас ирсэн business алдаа шалгах */
+                if (response.status !== 'success') {
+                    throw new Error(response.message || 'Invalid response!');
                 }
 
-                submitters.forEach(function (btn) { btn.growNstop(); });
+                /* Амжилттай бол хэрэглэгчдийн жагсаалт руу чиглүүлэх */
+                window.location.href = `{{ 'users'|link }}`;
 
-                const data = new FormData(this);
-                fetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'POST'
-                    }
-                ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
-                    }
+                /* Амжилтын мэдэгдэл */
+                NotifyTop(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'User created'
+                );
+            })
+            .catch(function (error) {
+                /* Сүлжээний эсвэл backend-ээс ирсэн алдаа */
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
 
-                    window.location.href = `{{ 'users'|link }}`;
-
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'User created');
-                }).catch(error => {
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitters.forEach(function (btn) { btn.growNstop(); });
+                /* Алдаа гарсан үед loading animation-үүдийг зогсоох */
+                submitters.forEach(function (btn) {
+                    btn.growNstop();
                 });
             });
-        }
+        });
     });
 </script>

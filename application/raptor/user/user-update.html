@@ -1,73 +1,195 @@
+<!-- can_update_me: Засах эрхтэй эсэх, эсвэл өөрийн профайл уу -->
 {% set can_update_me = user.can('system_user_update') or (user.profile['id'] == record['id']) %}
+
+<!-- Choices.js plugin-ийн CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<!-- Choices.js plugin-ийн JS (defer = DOM бэлэн болмогц ажиллана) -->
 <script defer src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+
+<!-- Хэрэглэгчийн мэдээлэл засах хуудасны толгой хэсэг
+     Зүүн талд нэр, баруун талд submit / буцах товчнууд -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">    
+    <!-- Хэрэглэгчийн Овог + Нэр -->
     <h3 class="px-2 my-auto fs-6 text-primary">
         <i class="bi bi-person-lines-fill"></i> {{ record['first_name'] ~ ' ' ~ record['last_name'] }}
     </h3>
+
     <div class="ms-auto">
         {% if can_update_me %}
+            <!-- Засах эрхтэй бол Submit товч -->
             <button class="submit-update btn btn-sm btn-primary text-uppercase shadow-sm">
                 <i class="bi bi-check"></i> {{ 'submit'|text }}
             </button>
         {% endif %}
+
         {% if user.can('system_user_index') %}
+        <!-- Хэрэглэгчдийн жагсаалт руу буцах -->
         <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'users'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
         </a>
         {% endif %}
     </div>
 </div>
+
+<!-- Tab цэс - Хувийн мэдээлэл / Зураг / Сонголтууд -->
 <ul class="nav nav-tabs mt-1" role="tablist">
-    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }} <i class="bi bi-postcard"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }} <i class="bi bi-camera"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }} <i class="bi bi-toggle-on"></i></a></li>
+    <li class="nav-item">
+        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">
+            {{ 'personal-info'|text }} <i class="bi bi-postcard"></i>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-picture">
+            {{ 'image'|text }} <i class="bi bi-camera"></i>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-options">
+            {{ 'options'|text }} <i class="bi bi-toggle-on"></i>
+        </a>
+    </li>
 </ul>
-<form class="needs-validation pt-3" novalidate id="user_update" action="{{ 'user-update'|link({'id': record['id']}) }}" method="PUT" enctype="multipart/form-data">
+
+<!-- Хэрэглэгчийн мэдээлэл шинэчлэх FORM
+     method="PUT" → fetch ашиглан илгээгдэх -->
+<form class="needs-validation pt-3"
+      novalidate
+      id="user_update"
+      action="{{ 'user-update'|link({'id': record['id']}) }}"
+      method="PUT"
+      enctype="multipart/form-data">
     <div class="tab-content">
+        
+        <!-- 1-р таб - Хувийн мэдээллийн талбарууд -->
         <div class="tab-pane active show" id="tab-personal" role="tabpanel">
+            
+            <!-- Нэвтрэх нэр -->
             <div class="mb-3">
                 <label class="form-label">{{ 'login'|text }}</label>
-                <input class="form-control" required name="username" value="{{ record['username']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                <input class="form-control"
+                       required
+                       name="username"
+                       value="{{ record['username']|e }}"
+                       maxlength="128"
+                       type="text"
+                       autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
+
+            <!-- Нэр -->
             <div class="mb-3">
                 <label class="form-label">{{ 'firstname'|text }}</label>
-                <input class="form-control" required name="first_name" value="{{ record['first_name']|e }}" maxlength="128" autocomplete="off">
+                <input class="form-control"
+                       required
+                       name="first_name"
+                       value="{{ record['first_name']|e }}"
+                       maxlength="128"
+                       autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
+
+            <!-- Овог -->
             <div class="mb-3">
                 <label class="form-label">{{ 'lastname'|text }}</label>
-                <input class="form-control" required name="last_name" value="{{ record['last_name']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                <input class="form-control"
+                       required
+                       name="last_name"
+                       value="{{ record['last_name']|e }}"
+                       maxlength="128"
+                       autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
+
+            <!-- Утас -->
             <div class="mb-3">
                 <label class="form-label">{{ 'telephone'|text }}</label>
-                <input class="form-control" required name="phone" value="{{ record['phone']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                <input class="form-control"
+                       required
+                       name="phone"
+                       value="{{ record['phone']|e }}"
+                       maxlength="128"
+                       autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
+
+            <!-- И-мэйл -->
             <div class="mb-3">
                 <label class="form-label">{{ 'email'|text }}</label>
                 <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text">@</span></div>
-                    <input class="form-control" required name="email" value="{{ record['email']|e }}" maxlength="128" placeholder="" type="email" autocomplete="off">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">@</span>
+                    </div>
+
+                    <input class="form-control"
+                           required
+                           name="email"
+                           value="{{ record['email']|e }}"
+                           maxlength="128"
+                           type="email"
+                           autocomplete="off">
+
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
+                
         </div>
+
+        <!-- 2-р таб - Хэрэглэгчийн зураг тохиргоо -->
         <div class="tab-pane" id="tab-picture" role="tabpanel">
+
+            <!-- Файлын нэр + Худал file input -->
             <div class="input-group">
-                <input class="form-control" type="text" id="photo_name" disabled value="{{ record['photo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+
+                <!-- Сонгосон файлын нэр харагдах disabled input -->
+                <input class="form-control"
+                       type="text"
+                       id="photo_name"
+                       disabled
+                       value="{{ record['photo']|e }}"
+                       placeholder="{{ 'select-an-image'|text|e }}">
+
                 <div class="input-group-append">
                     <div class="btn-group">
-                        <input type="file" name="photo" id="photo" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
-                        <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                        <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['photo'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
+
+                        <!-- Жинхэнэ file input (нуусан) -->
+                        <input type="file"
+                               name="photo"
+                               id="photo"
+                               accept="image/*"
+                               maxlength="256"
+                               style="display:none;"
+                               onchange="onFileInput(this);">
+
+                        <!-- Зураг сонгох товч -->
+                        <button class="photo-browse btn btn-info" type="button"
+                                onclick="this.previousElementSibling.click();">
+                            {{ 'choose'|text }}
+                        </button>
+
+                        <!-- Устгах товч -->
+                        <button class="btn btn-danger"
+                                type="button"
+                                onclick="onFileClear(this);"
+                                style="{% if record['photo'] is empty %}display:none;{% endif %}">
+                            {{ 'remove'|text }}
+                        </button>
+
+                        <!-- Backend рүү зураг устгасан эсэхийг илгээнэ -->
                         <input type="hidden" name="photo_removed" value="0">
+
                     </div>
                 </div>
             </div>
-            <img class="img-thumbnail img-fluid" id="photo_preview" src="{{ record['photo']|e }}" style="{% if record['photo'] is empty %}display:none;{% endif %}">
+
+            <!-- Урьдчилсан харагдац -->
+            <img class="img-thumbnail img-fluid"
+                 id="photo_preview"
+                 src="{{ record['photo']|e }}"
+                 style="{% if record['photo'] is empty %}display:none;{% endif %}">
+
+            <!-- Зургийн хэмжээ (KB) -->
             <div id="photo_info"
                  class="form-text text-muted"
                  style="{% if record['photo'] is empty %}display:none;{% endif %}font-size:0.7rem;">
@@ -76,180 +198,267 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- 3-р таб - Байгууллага / Role сонголтууд -->
         <div class="tab-pane" id="tab-options" role="tabpanel">
+
             {% if user.can('system_user_organization_set') %}
+                <!-- Байгууллага сонгох -->
                 <label class="form-label">{{ 'organization'|text }}</label>
-                <div class="form-text" id="organzationHelpBlock">хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу</div>
-                <select class="form-control" multiple name="organizations[]" id="organizations" aria-describedby="organzationHelpBlock">
+                <div class="form-text" id="organzationHelpBlock">
+                    хэрэглэгчийн харьяалагдах байгууллагыг сонгоно уу
+                </div>
+
+                <select class="form-control"
+                        multiple
+                        name="organizations[]"
+                        id="organizations"
+                        aria-describedby="organzationHelpBlock">
+
                     {% for organization in organizations %}
-                        <option value="{{ organization['id'] }}"{% if organization['id'] in current_organizations %} selected{% endif %}>{{ organization['name'] }}</option>
+                        <option value="{{ organization['id'] }}"
+                                {% if organization['id'] in current_organizations %} selected{% endif %}>
+                            {{ organization['name'] }}
+                        </option>
                     {% endfor %}
                 </select>
             {% endif %}
+
             {% if user.can('system_rbac') %}
+                <!-- Role сонгох -->
                 <label class="mt-1">{{ 'role'|text }}</label>
-                <div class="form-text" id="roleHelpBlock">хэрэглэгчийн дүрийг сонгон тохируулна уу</div>
-                <select class="form-control" multiple name="roles[]" id="roles" aria-describedby="roleHelpBlock">
+                <div class="form-text" id="roleHelpBlock">
+                    хэрэглэгчийн эрхийн дүрийг тохируулна уу
+                </div>
+
+                <select class="form-control"
+                        multiple
+                        name="roles[]"
+                        id="roles"
+                        aria-describedby="roleHelpBlock">
+
                     {% for key,data in roles %}
                         <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                             {% for value,name in data %}
-                                <option value="{{ value|e }}"{% if value in current_roles %} selected{% endif %}>[{{ name[0]|e }}] {{ name[1]|e }}</option>
+                                <option value="{{ value|e }}"
+                                        {% if value in current_roles %} selected{% endif %}>
+                                    [{{ name[0]|e }}] {{ name[1]|e }}
+                                </option>
                             {% endfor %}
                         </optgroup>
                     {% endfor %}
                 </select>
             {% endif %}
+
         </div>
+
     </div>
 </form>
+
+<!-- Доод хэсгийн Submit / Буцах товч (дээрхтэй ижил функцтэй) -->
 <div class="rounded p-2 mt-3 shadow">
     {% if can_update_me %}
-        <button class="submit-update btn btn-primary text-uppercase shadow-sm">
-            <i class="bi bi-check"></i> {{ 'submit'|text }}
-        </button>
+    <button class="submit-update btn btn-primary text-uppercase shadow-sm">
+        <i class="bi bi-check"></i> {{ 'submit'|text }}
+    </button>
     {% endif %}
+
     {% if user.can('system_user_index') %}
     <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'users'|link }}">
         <i class="bi bi-arrow-left"></i> {{ 'users'|text }}
     </a>
     {% endif %}
 </div>
+
 <script type="text/javascript">
-    const onFileInput = function (fileInput) {
-        let id = fileInput.id;
-        if (!id) {
-            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
-        }
-        
-        let file = fileInput.files[0];
-        
-        let nameInput = document.getElementById(id + '_name');
-        if (nameInput) {
-            nameInput.value = file.name;
-        }
+/* Зураг сонгох үед ажиллах event handler → fileInput.id = "photo" */
+const onFileInput = function (fileInput) {
+    /* file input–д id байх ёстой */
+    const id = fileInput?.id;
+    if (!id) {
+        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'File input ID заагдаагүй байна!');
+    }
 
-        let browseBtn = fileInput.nextElementSibling;
-        if (browseBtn) {
-            browseBtn.textContent = `{{ 'change'|text|e }}`;
-        }
+    /* Сонгосон файл */
+    const file = fileInput.files?.[0];
+    if (!file) return;
 
-        let removeBtn = browseBtn.nextElementSibling;
-        if (removeBtn && removeBtn.style.display === 'none') {
-            removeBtn.style.display = 'block';
-        }
-        let fileDeletedInput = removeBtn.nextElementSibling;
-        if (fileDeletedInput) fileDeletedInput.value = 0;
-        
-        let info = document.getElementById(id.replace(/$/, '_info')); // photo -> photo_info
-        if (info) {
-            let sizeKB = (file.size / 1024).toFixed(1) + ' KB';
-            info.textContent = sizeKB;
-            info.style.display = 'block';
-        }
+    /* Файлын нэрийг input-д оруулах → photo_name */
+    const nameInput = document.getElementById(`${id}_name`);
+    if (nameInput) {
+        nameInput.value = file.name;
+    }
 
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let previewImg = document.getElementById(id + '_preview');
-            if (previewImg) {
-                previewImg.src = e.target.result;
-                if (previewImg.style.display === 'none') {
-                    previewImg.style.display = 'block';
-                }
-            }
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    };
+    /* Browse → Change */
+    const browseBtn = fileInput.nextElementSibling;
+    if (browseBtn) {
+        browseBtn.textContent = `{{ 'change'|text|e }}`;
+    }
 
-    const onFileClear = function (removeBtn) {
-        let fileInput = removeBtn?.previousElementSibling?.previousElementSibling;
-        if (fileInput?.tagName === 'INPUT' && fileInput.type === 'file') {
-            let previewImg = document.getElementById(fileInput.id + '_preview');
-            if (previewImg) {
-                previewImg.removeAttribute('src');
-            }
-            let nameInput = document.getElementById(fileInput.id + '_name');
-            if (nameInput) {
-                nameInput.value = '';
-            }
+    /* Remove товчийг харуулах */
+    const removeBtn = browseBtn?.nextElementSibling;
+    if (removeBtn && removeBtn.style.display === 'none') {
+        removeBtn.style.display = 'block';
+    }
 
-            let browseBtn = fileInput.nextElementSibling;
-            if (browseBtn) {
-                browseBtn.textContent = `{{ 'choose'|text|e }}`;
-            }
+    /* photo_removed = 0 → зураг устгагдаагүй */
+    const fileDeletedInput = removeBtn?.nextElementSibling;
+    if (fileDeletedInput) {
+        fileDeletedInput.value = 0;
+    }
 
-            removeBtn.style.display = 'none';
+    /* Зургийн хэмжээ info текстэнд */
+    const info = document.getElementById(`${id}_info`);
+    if (info) {
+        const sizeKB = (file.size / 1024).toFixed(1);
+        info.textContent = `${sizeKB} KB`;
+        info.style.display = 'block';
+    }
 
-            fileInput.value = '';
-            
-            let fileDeletedInput = removeBtn.nextElementSibling;
-            if (fileDeletedInput) fileDeletedInput.value = 1;
+    /* Урьдчилсан харагдац зураг үзүүлэх → photo_preview */
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const previewImg = document.getElementById(`${id}_preview`);
+        if (previewImg) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = 'block';
         }
     };
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const organizations = document.getElementById('organizations');
-        if (organizations) {
-            new Choices(organizations, {removeItemButton: true});
-        }
-        const roles = document.getElementById('roles');
-        if (roles) {
-            new Choices(roles, {removeItemButton: true});
-        }
+    reader.readAsDataURL(file);
+};
 
-        const formUpdate = document.querySelector('form#user_update');
-        if (!formUpdate) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-        } else {
-            const submitters = document.querySelectorAll('button.submit-update');
-            submitters.forEach(function (button) {
-                button.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    formUpdate.requestSubmit();
-                });
-            });
+/* Зураг устгах функц */
+const onFileClear = function (removeBtn) {
+    /* removeBtn → browseBtn → fileInput */
+    const browseBtn = removeBtn?.previousElementSibling;
+    const fileInput = browseBtn?.previousElementSibling;
 
-            formUpdate.addEventListener('submit', function (event) {
-                event.preventDefault();
+    if (!fileInput || fileInput.tagName !== 'INPUT' || fileInput.type !== 'file') {
+        return;
+    }
 
-                const _valid = this.checkValidity();
-                this.classList.add('was-validated');
-                if (!_valid) {
-                    event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
-                }
+    /* Preview устгах */
+    const previewImg = document.getElementById(`${fileInput.id}_preview`);
+    if (previewImg) {
+        previewImg.removeAttribute('src');
+        previewImg.style.display = 'none';
+    }
 
-                submitters.forEach(function (btn) { btn.growNstop(); });
+    /* Файлын нэрийг цэвэрлэх */
+    const nameInput = document.getElementById(`${fileInput.id}_name`);
+    if (nameInput) {
+        nameInput.value = '';
+    }
 
-                const data = new FormData(this);
-                fetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'PUT'
-                    }
-                ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
-                    }
+    /* Browse товчийг reset хийх */
+    if (browseBtn) {
+        browseBtn.textContent = `{{ 'choose'|text|e }}`;
+    }
 
-                    {% if user.can('system_user_index') %}
-                        window.location.href = `{{ 'users'|link }}`;
-                    {% else %}
-                        window.location.href = `{{ 'home'|link }}`;
-                    {% endif %}
+    /* Remove товчийг нуух */
+    removeBtn.style.display = 'none';
 
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'User updated');
-                }).catch(error => {
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitters.forEach(function (btn) { btn.growNstop(); });
-                });
-            });
-        }
+    /* file input-г reset хийх */
+    fileInput.value = '';
+
+    /* Backend-д илгээх → зураг устгасан төлөв */
+    const fileDeletedInput = removeBtn.nextElementSibling;
+    if (fileDeletedInput) {
+        fileDeletedInput.value = 1;
+    }
+};
+
+/* FORM SUBMIT - Хэрэглэгчийн мэдээллийг PUT ашиглан шинэчлэх */
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* Choices.js - олон сонголттой select-үүдийг сайжруулав */
+    const orgSelect = document.getElementById('organizations');
+    if (orgSelect) {
+        new Choices(orgSelect, { removeItemButton: true });
+    }
+
+    const roleSelect = document.getElementById('roles');
+    if (roleSelect) {
+        new Choices(roleSelect, { removeItemButton: true });
+    }
+
+    /* UPDATE FORM */
+    const formUpdate = document.getElementById('user_update');
+
+    if (!formUpdate) {
+        return NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    }
+
+    /* Submit товчнууд (дээр/доор хоёулаа) */
+    const submitButtons = document.querySelectorAll('button.submit-update');
+
+    /* Submit товч дарахад form.requestSubmit() ажиллана */
+    submitButtons.forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
     });
+
+    /* ФОРМ SUBMIT event */
+    formUpdate.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        /* Built-in validation */
+        const isValid = this.checkValidity();
+        this.classList.add('was-validated');
+
+        if (!isValid) {
+            event.stopPropagation();
+            return NotifyTop(
+                'danger',
+                `{{ 'error'|text|e }}`,
+                `{{ 'u-have-some-form-errors'|text|e }}`
+            );
+        }
+
+        /* Submit товчийг анимэйшнтэй болгон блоклоно */
+        submitButtons.forEach(btn => btn.growNstop());
+
+        /* FormData бэлдэх */
+        const data = new FormData(this);
+
+        /* UPDATE хүсэлт backend рүү илгээх */
+        fetch(this.action, {
+            method: this.getAttribute('method') ?? 'PUT',
+            body: data
+        })
+        .then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+
+            throw new Error(`HTTP [${res.status}]: a${res.statusText}`);
+        })
+        .then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message || 'Invalid response!');
+            }
+
+            /* update амжилттай → redirect */
+            {% if user.can('system_user_index') %}
+                window.location.href = `{{ 'users'|link }}`;
+            {% else %}
+                window.location.href = `{{ 'home'|link }}`;
+            {% endif %}
+
+            NotifyTop(
+                response.type ?? 'success',
+                response.title ?? `{{ 'success'|text|e }}`,
+                response.message ?? 'User updated'
+            );
+        })
+        .catch(error => {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+
+            /* Submit анимэйшн зогсоож товчлууруудын блок арилна */
+            submitButtons.forEach(btn => btn.growNstop());
+        });
+    });
+});
 </script>

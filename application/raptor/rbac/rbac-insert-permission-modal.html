@@ -166,10 +166,10 @@
 </div>
 
 <script type="text/javascript">
-    // Permission insert хэлбэрийн үндсэн form
+    /* Permission insert хэлбэрийн үндсэн form */
     const formInsert = document.querySelector('form#rbac_permission_insert');
     if (!formInsert) {
-        // Form олдохгүй бол хэрэглэгчид мэдэгдэнэ
+        /* Form олдохгүй бол хэрэглэгчид мэдэгдэнэ */
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /*
@@ -186,7 +186,7 @@
             })
         );
 
-        // Submit товч - form.submit() биш, requestSubmit()
+        /* Submit товч - form.submit() биш, requestSubmit() */
         const submitter = document.querySelector('button.submit-new-permission');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
@@ -216,11 +216,11 @@
                 );
             }
 
-            // Grow animation
+            /* Grow animation */
             submitter.growNstop();
 
             const data = new FormData(this);
-            // Permission insert ajax request
+            /* Permission insert ajax request */
             fetch(
                 this.action,
                 {
@@ -228,17 +228,17 @@
                     method: this.getAttribute('method') ?? 'POST'
                 }
             ).then(res => {
-                // JSON хариу шалгах
+                /* JSON хариу шалгах */
                 let contentType = res.headers.get('content-type') || '';
                 if (contentType.includes('application/json')) return res.json();
-                // JSON биш бол алдаа
+                /* JSON биш бол алдаа */
                 throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }).then(response => {
                 if (response.status !== 'success') {
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                // Permission үүссэн → refresh
+                /* Permission үүссэн → refresh */
                 window.location.reload();
 
                 NotifyTop(
@@ -247,7 +247,7 @@
                     response.message ?? 'Permission created'
                 );
             }).catch(error => {
-                // Алдаа мэдэгдэх
+                /* Алдаа мэдэгдэх */
                 NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });

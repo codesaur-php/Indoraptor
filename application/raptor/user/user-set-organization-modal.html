@@ -1,86 +1,157 @@
+<!-- Байгууллага тохируулах Modal (Хэрэглэгч → Байгууллага олон сонголттой)
+     Modal-lg / modal-centered = төвд том харуулах -->
 <div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
+
+        <!-- Modal Header — Гарчиг + X товч -->
         <div class="modal-header">
-            <h3 class="modal-title fs-6 text-uppercase">{{ 'organization'|text }}</h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <h3 class="modal-title fs-6 text-uppercase">
+                {{ 'organization'|text }}
+            </h3>
+
+            <!-- Modal хаах товч -->
+            <button class="btn-close" type="button" data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"></button>
         </div>
+
+        <!-- Modal Body — Form хэсэг -->
         <div class="modal-body">
-            <form autocomplete="off" id="set_user_organization" role="form" action="{{ 'user-set-organization'|link({'id':profile['id']}) }}" method="POST" enctype="multipart/form-data">
+
+            <!-- Хэрэглэгчийн байгууллага тохируулах FORM -->
+            <form autocomplete="off"
+                  id="set_user_organization"
+                  role="form"
+                  action="{{ 'user-set-organization'|link({'id':profile['id']}) }}"
+                  method="POST"
+                  enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
-                        <label>{{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~ ' (' ~ profile['username'] ~ ' => ' ~ profile['email'] ~ ')' }} хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу!</label>
-                        <select class="form-control" multiple name="organizations[]" id="user_organizations">
+                        
+                        <!-- Хэрэглэгчийн нэр + логин + email -->
+                        <label>
+                            {{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~
+                               ' (' ~ profile['username'] ~ ' => ' ~ profile['email'] ~ ')' }}
+                            хэрэглэгчийн харьяалагдах байгууллагыг сонгон тохируулна уу!
+                        </label>
+
+                        <!-- Байгууллагын олон сонголттой select -->
+                        <select class="form-control"
+                                multiple
+                                name="organizations[]"
+                                id="user_organizations">
+                            
                             {% for organization in organizations %}
-                            <option value="{{ organization['id'] }}"{% if organization['id'] in current_organizations %} selected{% endif %}>{{ organization['name'] }}</option>
+                            <option value="{{ organization['id'] }}"
+                                    {% if organization['id'] in current_organizations %}
+                                    selected
+                                    {% endif %}>
+                                {{ organization['name'] }}
+                            </option>
                             {% endfor %}
+
                         </select>
                     </div>
                 </div>
             </form>
         </div>
+
+        <!-- Modal Footer — Save / Cancel -->
         <div class="modal-footer">
+            <!-- Хадгалах товч -->
             <button class="submit-set-organization btn btn-dark shadow-sm">
                 <i class="bi bi-check"></i> {{ 'save'|text }}
             </button>
-            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+
+            <!-- Болих / хаах -->
+            <button class="btn btn-secondary shadow-sm"
+                    data-bs-dismiss="modal"
+                    type="button">
                 {{ 'cancel'|text }}
             </button>
         </div>
     </div>
 </div>
+
 <script type="text/javascript">
-    const userOrgs = document.getElementById('user_organizations');
-    if (userOrgs) {
-        new Choices(userOrgs, {removeItemButton: true});
-    }
-    
-    const userOrgsForm = document.querySelector('form#set_user_organization');
-    if (!userOrgsForm) {
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-    } else {
-        const submitter = document.querySelector('button.submit-set-organization');
-        submitter.addEventListener('click', function (e) {
-            e.preventDefault();
-            userOrgsForm.requestSubmit();
-        });
+/* Choices.js ашиглан олон сонголттой select сайжруулж байна */
+const userOrgs = document.getElementById('user_organizations');
+if (userOrgs) {
+    new Choices(userOrgs, { removeItemButton: true });
+}
 
-        userOrgsForm.addEventListener('submit', function (event) {
-            event.preventDefault();
+/* FORM submit логик */
+const userOrgsForm = document.querySelector('form#set_user_organization');
 
-            const _valid = this.checkValidity();
-            this.classList.add('was-validated');
-            if (!_valid) {
-                event.stopPropagation();
-                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+if (!userOrgsForm) {
+    /* Хэрэв form олдохгүй бол алдаа харуулах */
+    NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+} else {
+    /* Хадгалах товч */
+    const submitter = document.querySelector('button.submit-set-organization');
+
+    /* Save товч → form.requestSubmit()  */
+    submitter.addEventListener('click', function (e) {
+        e.preventDefault();
+        userOrgsForm.requestSubmit();
+    });
+
+    /* FORM submit event */
+    userOrgsForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        /* HTML5 validation шалгалт */
+        const isValid = this.checkValidity();
+        this.classList.add('was-validated');
+
+        if (!isValid) {
+            event.stopPropagation();
+            return NotifyTop(
+                'danger',
+                `{{ 'error'|text|e }}`,
+                `{{ 'u-have-some-form-errors'|text|e }}`
+            );
+        }
+
+        /* Ажиллаж буй эффектийг харуулах */
+        submitter.growNstop();
+
+        /* FormData бэлдэх */
+        const data = new FormData(this);
+
+        /* fetch ашиглан backend рүү form илгээх */
+        fetch(this.action, {
+            body: data,
+            method: this.getAttribute('method') ?? 'POST'
+        })
+        .then(res => {
+            /* JSON эсэхийг шалгах */
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        })
+        .then(response => {
+            /* Backend business алдаа */
+            if (response.status !== 'success') {
+                throw new Error(response.message || 'Invalid response!');
             }
 
+            /* Амжилттай → Page refresh */
+            window.location.reload();
+
+            NotifyTop(
+                response.type ?? 'success',
+                response.title ?? `{{ 'success'|text|e }}`,
+                response.message ?? 'User organization set'
+            );
+        })
+        .catch(error => {
+            /* Алдаа гарвал */
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+
+            /* Анимэйшн зогсоох */
             submitter.growNstop();
-
-            const data = new FormData(this);
-            fetch(
-                this.action,
-                {
-                    body: data,
-                    method: this.getAttribute('method') ?? 'POST'
-                }
-            ).then(res => {
-                let contentType = res.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    return res.json();
-                }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message ? response.message : 'Invalid response!');
-                }
-
-                window.location.reload();
-
-                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'User organization set');
-            }).catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                submitter.growNstop();
-            });
         });
-    }
+    });
+}
 </script>

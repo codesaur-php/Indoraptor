@@ -984,7 +984,7 @@ class UsersController extends FileController
             // Error modal рендерлэнэ
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            // LOGGER — modal хүсэлт нээгдсэн эсвэл алдаатай эсэх
+            // LOGGER - modal хүсэлт нээгдсэн эсвэл алдаатай эсэх
             $context = ['action' => 'requests-modal', 'table' => $table];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -1521,7 +1521,7 @@ class UsersController extends FileController
     {
         $configured = false;
         try {
-            // Эрх шалгах — зөвхөн system_user_organization_set арга хийж чадна
+            // Эрх шалгах - зөвхөн system_user_organization_set арга хийж чадна
             if (!$this->isUserCan('system_user_organization_set')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -1587,7 +1587,7 @@ class UsersController extends FileController
             }
         } catch (\Throwable) {
             // 🤫 ямар нэгэн exception гарвал зүгээр л false буцаана
-            // setOrganization() тал дээр алдааг барьдаг — энэ function silent mode
+            // setOrganization() тал дээр алдааг барьдаг - энэ function silent mode
         }
         return $configured;
     }
@@ -1652,7 +1652,7 @@ class UsersController extends FileController
                     );
                 }
                 
-                // configureRoles() — Дүрүүдийг нэмэх/хасах үндсэн логик
+                // configureRoles() - Дүрүүдийг нэмэх/хасах үндсэн логик
                 if (!$this->configureRoles($id, $post_roles)) {
                     throw new \Exception('No updates');
                 }
@@ -1715,7 +1715,7 @@ class UsersController extends FileController
                 $this->twigTemplate(__DIR__ . '/user-set-role-modal.html', $vars)->render();
             }
         } catch (\Throwable $err) {
-            // Error handling — GET/POST ялгаж JSON эсвэл modal error руу шилжүүлнэ
+            // Error handling - GET/POST ялгаж JSON эсвэл modal error руу шилжүүлнэ
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status'  => 'error',
@@ -1726,7 +1726,7 @@ class UsersController extends FileController
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
-            // LOGGING — Rollback/Success бүх тохиолдолд RBAC log үлдээдэг
+            // LOGGING - Rollback/Success бүх тохиолдолд RBAC log үлдээдэг
             $context = ['action' => 'set-role', 'id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
