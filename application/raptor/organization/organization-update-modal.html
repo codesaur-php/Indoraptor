@@ -1,179 +1,303 @@
+<!--
+    ORGANIZATION UPDATE MODAL
+    ------------------------------------------------------------
+    Энэ modal нь байгууллагын бүртгэлд засвар хийх боломж олгодог.
+    Форм нь PUT дүрмээр ажиллана (Twig → Router нь correct mapping хийдэг).
+
+    Агуулга:
+      - Parent organization сонгох
+      - RBAC alias засварлах
+      - Байгууллагын нэр шинэчлэх
+      - Лого солих / устгах
+-->
+
 <div class="modal-xl modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
+
+        <!-- ---------------- Modal Header ---------------- -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
-                <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} - {{ record['name'] }}
+                <i class="bi bi-pencil-square"></i>
+                {{ 'edit-record'|text }} - {{ record['name'] }}
             </h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+
+            <!-- Modal хаах товч -->
+            <button class="btn-close" type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}">
+            </button>
         </div>
+
+        <!-- ---------------- Modal Body ---------------- -->
         <div class="modal-body">
-            <form class="needs-validation" novalidate id="organization_update" action="{{ 'organization-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data">
+
+            <!-- Засварлах форм -->
+            <form class="needs-validation" novalidate
+                  id="organization_update"
+                  action="{{ 'organization-update'|link({id: record['id']}) }}"
+                  method="PUT"
+                  enctype="multipart/form-data">
+
+                <!-- Parent селектор + RBAC alias -->
                 <div class="row">
+
+                    <!-- Parent Organization -->
                     <div class="col">
                         <div class="form-floating">
                             <select class="form-select" name="parent_id">
-                                <option value="0"{{ record['parent_id'] is null or record['parent_id'] == 0 ? ' selected' : '' }}></option>
+                                <option value="0"
+                                    {{ record['parent_id'] is null or record['parent_id'] == 0 ? ' selected' : '' }}>
+                                </option>
+
                                 {% for org in parents %}
                                     {% if org['id'] != record['id'] %}
-                                        <option value="{{ org['id'] }}"{{ record['parent_id'] == org['id'] ? ' selected' : '' }}>{{ org['name']|e }}</option>
+                                        <option value="{{ org['id'] }}"
+                                            {{ record['parent_id'] == org['id'] ? ' selected' : '' }}>
+                                            {{ org['name']|e }}
+                                        </option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
                             <label>{{ 'parent'|text }}</label>
                         </div>
                     </div>
+
+                    <!-- RBAC alias -->
                     <div class="col">
                         <div class="form-floating">
-                            <input class="form-control" required name="alias" value="{{ record['alias']|e }}" maxlength="64" placeholder="RBAC" type="text" autocomplete="off">
+                            <input class="form-control"
+                                   required
+                                   name="alias"
+                                   value="{{ record['alias']|e }}"
+                                   maxlength="64"
+                                   placeholder="RBAC"
+                                   type="text"
+                                   autocomplete="off">
                             <label>RBAC</label>
-                            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            <div class="invalid-feedback">
+                                {{ 'field-is-required'|text }}
+                            </div>
                         </div>
                     </div>
                 </div>
-                 <div class="form-floating mt-3">
-                    <input class="form-control" required name="name" value="{{ record['name']|e }}" maxlength="512" placeholder="{{ 'name'|text|e }}" type="text" autocomplete="off">
+
+                <!-- Name -->
+                <div class="form-floating mt-3">
+                    <input class="form-control"
+                           required
+                           name="name"
+                           value="{{ record['name']|e }}"
+                           maxlength="512"
+                           placeholder="{{ 'name'|text|e }}"
+                           type="text"
+                           autocomplete="off">
                     <label>{{ 'name'|text }}</label>
-                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    <div class="invalid-feedback">
+                        {{ 'field-is-required'|text }}
+                    </div>
                 </div>
+
+                <!-- Logo input + preview -->
                 <label class="form-label mt-3">{{ 'logo'|text }}</label>
+
                 <div class="input-group">
-                    <input class="form-control" type="text" id="logo_name" disabled value="{{ record['logo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                    <!-- Filename display -->
+                    <input class="form-control"
+                           type="text"
+                           id="logo_name"
+                           disabled
+                           value="{{ record['logo']|e }}"
+                           placeholder="{{ 'select-an-image'|text|e }}">
+
                     <div class="input-group-append">
                         <div class="btn-group">
-                            <input type="file" name="logo" accept="image/*" maxlength="256" style="display:none;">
-                            <button class="logo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                            {% if record['logo'] is not empty %}<button class="logo-remove btn btn-danger" type="button">{{ 'remove'|text }}</button>{% endif %}
+
+                            <!-- Хэрэглэгчээс шинэ зураг авах -->
+                            <input type="file"
+                                   name="logo"
+                                   accept="image/*"
+                                   maxlength="256"
+                                   style="display:none;">
+
+                            <button class="logo-browse btn btn-info"
+                                    type="button"
+                                    onclick="this.previousElementSibling.click();">
+                                {{ 'choose'|text }}
+                            </button>
+
+                            <!-- Хуучин лого байвал устгах товч -->
+                            {% if record['logo'] is not empty %}
+                                <button class="logo-remove btn btn-danger"
+                                        type="button">
+                                    {{ 'remove'|text }}
+                                </button>
+                            {% endif %}
+
+                            <!-- Лого устгагдсан эсэхийг серверт мэдэгдэх -->
                             <input type="hidden" name="logo_removed" value="0">
                         </div>
                     </div>
                 </div>
-                <img class="img-thumbnail img-fluid" id="logo_preview" src="{{ record['logo']|e }}" style="max-height:200px;{% if record['logo'] is empty %}display:none;{% endif %}">
+
+                <!-- Preview -->
+                <img class="img-thumbnail img-fluid"
+                     id="logo_preview"
+                     src="{{ record['logo']|e }}"
+                     style="max-height:200px;{% if record['logo'] is empty %}display:none;{% endif %}">
             </form>
         </div>
+
+        <!-- ---------------- Modal Footer ---------------- -->
         <div class="modal-footer">
+
+            <!-- UPDATE permission -->
             {% if user.can('system_organization_update') %}
                 <button class="submit-organization btn btn-primary shadow-sm">
                     <i class="bi bi-check"></i> {{ 'submit'|text }}
                 </button>
             {% endif %}
-            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+
+            <button class="btn btn-secondary shadow-sm"
+                    data-bs-dismiss="modal"
+                    type="button">
                 {{ 'cancel'|text }}
             </button>
         </div>
     </div>
 </div>
+
 <script type="text/javascript">
-    const logo = document.querySelector('input[name="logo"]');
-    const logoName = document.getElementById('logo_name');
-    const logoBrowse = document.querySelector('button.logo-browse');
-    const logoPreview = document.getElementById('logo_preview');
-    const logoRemoved = document.querySelector('input[name="logo_removed"]');
-    
-    const fileClear = function (button) {
-        logoPreview.removeAttribute('src');
-        logoPreview.style.display = 'none';
+/* LOGO FILE HANDLING (preview, remove, reset) */
+const logo = document.querySelector('input[name="logo"]');
+const logoName = document.getElementById('logo_name');
+const logoBrowse = document.querySelector('button.logo-browse');
+const logoPreview = document.getElementById('logo_preview');
+const logoRemoved = document.querySelector('input[name="logo_removed"]');
 
-        logoName.value = '';
-        logoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
+/* 
+    fileClear(button)
+    -----------------
+    Хэрэглэгч шинэ зураг сонгосон эсвэл устгах үед
+    форм дээрх preview болон input-үүдийг цэвэрлэнэ.
+*/
+const fileClear = function (button) {
+    logoPreview.removeAttribute('src');
+    logoPreview.style.display = 'none';
 
-        logo.value = '';
-        logo.removeAttribute('name');
-        
-        logoRemoved.value = 1;
+    logoName.value = '';
+    logoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
 
-        button.remove();
-    };
+    logo.value = '';
+    logo.removeAttribute('name');
 
-    const logoRemove = document.querySelector('button.logo-remove');
-    if (logoRemove) {
-        logoRemove.addEventListener('click', function (e) {
+    logoRemoved.value = 1; /* серверт → зураг устгасан мэдээлнэ */
+
+    button.remove();
+};
+
+/* Хуучин лого устгах товч (exists only if record had a logo) */
+const logoRemove = document.querySelector('button.logo-remove');
+if (logoRemove) {
+    logoRemove.addEventListener('click', function (e) {
+        e.preventDefault();
+        fileClear(this);
+    });
+}
+
+/* Лого сонгох үед preview шинэчлэх */
+logo.addEventListener('change', function (e) {
+    e.preventDefault();
+
+    logoRemoved.value = 0; /* зураг солигдсон → устгаагүй */
+
+    logo.name = 'logo';
+    logoName.value = logo.files[0].name;
+
+    logoBrowse.innerHTML = `{{ 'change'|text|e }}`;
+
+    /* Clear button үүсгэх */
+    if (logoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
+        const logoClear = document.createElement('button');
+        logoClear.classList.add('btn', 'btn-danger');
+        logoClear.type = 'button';
+        logoClear.innerHTML = `{{ 'remove'|text }}`;
+        logoClear.addEventListener('click', function (e) {
             e.preventDefault();
             fileClear(this);
         });
+
+        if (logoBrowse.nextSibling) {
+            logoBrowse.parentNode.insertBefore(logoClear, logoBrowse.nextSibling);
+        } else {
+            logoBrowse.parentNode.appendChild(logoClear);
+        }
     }
 
-    logo.addEventListener('change', function (e) {
+    /* Preview зураг унших */
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        logoPreview.src = e.target.result;
+        logoPreview.style.display = 'block';
+    };
+    reader.readAsDataURL(logo.files[0]);
+});
+
+
+/* FORM SUBMISSION (fetch API) */
+const formUpdate = document.querySelector('form#organization_update');
+if (!formUpdate) {
+    NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+} else {
+    const submitter = document.querySelector('button.submit-organization');
+
+    /* Submit товч → form.requestSubmit() */
+    submitter.addEventListener('click', function (e) {
         e.preventDefault();
-        
-        logoRemoved.value = 0;
+        formUpdate.requestSubmit();
+    });
 
-        logo.name = 'logo';
-        logoName.value = logo.files[0].name;
+    /* Form submit */
+    formUpdate.addEventListener('submit', function (event) {
+        event.preventDefault();
 
-        logoBrowse.innerHTML = `{{ 'change'|text|e }}`;
-        if (logoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
-            let logoClear = document.createElement('button');
-            logoClear.classList.add('btn', 'btn-danger');
-            logoClear.type = 'button';
-            logoClear.innerHTML = `{{ 'remove'|text }}`;
-            logoClear.addEventListener('click', function (e) {
-                e.preventDefault();
-                fileClear(this);
-            });
-            if (logoBrowse.nextSibling) {
-                logoBrowse.parentNode.insertBefore(logoClear, logoBrowse.nextSibling);
-            } else {
-                logoBrowse.parentNode.appendChild(logoClear);
-            }
+        /* HTML5 валидаци */
+        const _valid = this.checkValidity();
+        this.classList.add('was-validated');
+        if (!_valid) {
+            event.stopPropagation();
+            return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
         }
 
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            logoPreview.src = e.target.result;
-            if (logoPreview.style.display === 'none') {
-                logoPreview.style.display = 'block';
-            }
-        };
-        reader.readAsDataURL(logo.files[0]);
-    });
-    
-    const formUpdate = document.querySelector('form#organization_update');
-    if (!formUpdate) {
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-    } else {
-        const submitter = document.querySelector('button.submit-organization');
-        submitter.addEventListener('click', function (e) {
-            e.preventDefault();
-            formUpdate.requestSubmit();
-        });
+        submitter.growNstop();
 
-        formUpdate.addEventListener('submit', function (event) {
-            event.preventDefault();
+        const data = new FormData(this);
 
-            const _valid = this.checkValidity();
-            this.classList.add('was-validated');
-            if (!_valid) {
-                event.stopPropagation();
-                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+        /* Fetch PUT → JSON хариу */
+        fetch(this.action, {
+            body: data,
+            method: this.getAttribute('method') ?? 'PUT'
+        })
+        .then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+            
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        })
+        .then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message ?? 'Invalid response!');
             }
 
+            window.location.reload();
+
+            NotifyTop(response.type ?? 'success',
+                      response.title ?? `{{ 'success'|text|e }}`,
+                      response.message ?? 'Organization updated');
+        })
+        .catch(error => {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
             submitter.growNstop();
-
-            const data = new FormData(this);
-            fetch(
-                this.action,
-                {
-                    body: data,
-                    method: this.getAttribute('method') ?? 'PUT'
-                }
-            ).then(res => {
-                let contentType = res.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    return res.json();
-                }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message ? response.message : 'Invalid response!');
-                }
-
-                window.location.reload();
-
-                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Organization updated');
-            }).catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                submitter.growNstop();
-            });
         });
-    }
+    });
+}
 </script>

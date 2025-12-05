@@ -41,6 +41,7 @@
      motable.js ашиглан динамик хүснэгт бий болгоно
      ============================================ -->
 <table class="table table-sm table-hover table-striped table-bordered" id="users"></table>
+
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         /* motable instance үүсгэж хүснэгт, багануудыг тодорхойлох */
@@ -54,7 +55,8 @@
                     {title: `{{ 'organization'|text|e }}`},
                     {title: `{{ 'role'|text|e }}`},
                     {title: `{{ 'action'|text|e }}`, style: 'width:10rem'}
-                ]
+                ],
+                freezeColumns: [2] /* хэрэглэгчийн нэр баганыг наалттай болгох */
             }
         );
     

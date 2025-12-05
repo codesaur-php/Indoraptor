@@ -228,7 +228,13 @@
           - logger хэсгийн fetch параметрүүдийг өөрийн хүссэнээр
             (LIMIT, CONTEXT filter, ORDER BY) тохируулж өргөтгөх боломжтой.
     */
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {        
+        /* RBAC матриц хүснэгтэд motable инициализаци хийе
+           --------------------------------------------------------------
+           • #rbac_{alias} → тухайн RBAC модульд харгалзах хүснэгт
+           • freezeColumns: [0] → эхний баганыг (ROLE нэрс) наалдацтай болгоно */
+        const curriculumTable = new motable('#rbac_{{ alias }}', {freezeColumns: [0]});
+        
         /**
          * RolePermission toggle handler
          *
@@ -270,7 +276,7 @@
 
         /* Бүх role_permission checkbox-д click event bind хийх */
         const rolePermissionInputs = document.getElementsByClassName('role_permission');
-        for (const i = 0; i < rolePermissionInputs.length; i++) {
+        for (let i = 0; i < rolePermissionInputs.length; i++) {
             rolePermissionInputs[i].addEventListener('click', setRolePermission);
         }
 

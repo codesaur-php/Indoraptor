@@ -861,7 +861,15 @@ class UsersController extends FileController
                 throw new \Exception('Cannot remove first acccount!', 403);
             }
             
-            // Soft delete - is_active = 0 болгон update хийх
+            // -------------------------------------------------------------
+            // Soft delete - хэрэглэгчийн бичлэгийг is_active = 0 болгож идэвхгүй болгоно.
+            //
+            // Анхаарах зүйл:
+            //   • Энэ горимд хэрэглэгчийн profile photo файлыг серверээс устгахгүй.
+            //   • Учир нь тухайн хэрэглэгчийг ирээдүйд дахин идэвхжүүлэх (reactivate)
+            //     боломж нээлттэй тул зураг болон мэдээллүүдийг хадгалж үлдээх шаардлагатай.
+            //   • Хэрэв бүрэн устгах (hard delete) үйлдэл бол photo файлыг бас устгах хэрэгтэй.
+            //
             $model = new UsersModel($this->pdo);
             $deactivated = $model->deactivateById(
                 $id,
@@ -1462,7 +1470,7 @@ class UsersController extends FileController
                 )->render();
             }
         } catch (\Throwable $err) {
-            // Алдаа гарсан үед → POST=JSON / GET=Modal хэлбэрээр хариу өгнө
+            // Алдаа гарсан үед → POST=JSON / GET=Modal хэлбэрээр хариулна
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status'  => 'error',

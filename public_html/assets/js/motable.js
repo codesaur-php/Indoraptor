@@ -1,5 +1,5 @@
 /**
- * motable v2.3
+ * motable v2.4
  * ------------------------------------------------------------------
  * Энэ script нь ямар ч HTML <table>-ийг дэвшилтэт боломжтой болгож өгнө:
  *  ✔ Sticky header (толгой мөр гацдаг)
@@ -215,12 +215,30 @@ function motable(
     wrapper.classList.add('mowrapper');
     if (options.style.wrapper) wrapper.style.cssText += options.style.wrapper;
 
-    /* Эдгээр property-г instance дээр байршуулах */
     this.info = infoSpan;
     this.search = searchInput;
     this.table = table;
     this.options = options;
     this.wrapper = wrapper;
+    
+    /* THEAD автоматаар үүсгэх хэсэг */
+    if (!table.tHead && this.options.columns?.length) {
+        const thead = document.createElement('thead');
+        const tr = document.createElement('tr');
+        this.options.columns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col.title ?? '';
+            if (col.style) th.style.cssText = col.style;
+            tr.appendChild(th);
+        });
+        thead.appendChild(tr);
+
+        if (table.firstChild) {
+            table.insertBefore(thead, table.firstChild);
+        } else {
+            table.appendChild(thead);
+        }
+    }
 
     /* Table-г wrapper рүү зөөж оруулах */
     table.classList.add('motable');

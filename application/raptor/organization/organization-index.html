@@ -1,16 +1,26 @@
+<!-- SweetAlert2 - идэвхгүй болгох үед асууж баталгаажуулах диалог ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Хуудасны гарчиг ба "Шинэ байгууллага" үүсгэх товч -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6">
         <i class="bi bi-bank"></i> {{ 'organizations'|text }}
     </h3>
+
     <div class="ms-auto">
         {% if user.can('system_organization_insert') %}
-            <a class="btn btn-sm btn-outline-success shadow-sm" href="{{ 'organization-insert'|link }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+            <!-- Шинэ байгууллага үүсгэх modal нээх -->
+            <a class="btn btn-sm btn-outline-success shadow-sm"
+               href="{{ 'organization-insert'|link }}"
+               data-bs-target="#static-modal"
+               data-bs-toggle="modal">
                 <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
             </a>
         {% endif %}
     </div>
 </div>
+
+<!-- Байгууллагын жагсаалт motable-р харуулах хүснэгт -->
 <table class="table table-striped table-hover table-bordered" id="organizations">
     <thead>
         <tr>
@@ -22,139 +32,224 @@
         </tr>
     </thead>
 </table>
+
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const organizations = new motable('table#organizations');
-        fetch(
-            `{{ 'organizations-list'|link }}`
-        ).then(res => {
-            let contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-                return res.json();
-            }
+document.addEventListener('DOMContentLoaded', function () {
+    /* motable instance - хүснэгтийг динамикаар бөглөхөд ашиглана
+     *  - байгууллагын дугаар баганыг наалттай болгох */
+    const organizations = new motable('table#organizations', {freezeColumns: [0]});
+
+    /* Байгууллагын жагсаалтыг серверээс авах (GET /dashboard/organizations/list ) */
+    fetch(`{{ 'organizations-list'|link }}`)
+        .then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+            
             throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-        }).then(data => {
+        })
+        .then(data => {
             if (!data.list) {
                 throw new Error(data.message ?? 'Invalid response!');
             }
-            
+
+            const indexLink  = `{{ 'organizations'|link }}`;
+            const rbacLink   = `{{ user.can('system_rbac') ? 'rbac-alias'|link : '' }}`;
+            const canUpdate  = `{{ user.can('system_organization_update') ? 'true' : '' }}`;
+            const canDelete  = `{{ user.can('system_organization_delete') ? 'true' : '' }}`;
+
+            /* Серверээс ирсэн жагсаалтыг HTML болгох */
             let rowsHTML = '';
-            let indexLink = `{{ 'organizations'|link }}`;
-            let rbacLink = `{{ user.can('system_rbac') ? 'rbac-alias'|link : '' }}`;
-            let canUpdate = `{{ user.can('system_organization_update') ? 'true' : '' }}`;
-            let canDelete = `{{ user.can('system_organization_delete') ? 'true' : '' }}`;
             data.list.forEach(org => {
+                /* Байгууллагын лого харагдуулалт */
                 let logo;
                 if (org.logo) {
-                    let size = org.logo_size ? (Math.round(org.logo_size / 1024) + ' KB') : '0 KB';
-                    logo = `<img class="img-fluid img-thumbnail"
-                                 src="${org.logo}"
-                                 title="Size: ${size}"
-                                 style="max-width:150px;max-height:60px">
-                            <div style="font-size:0.7rem;"class="small text-muted">${size}</div>
-                        `;
+                    const size = org.logo_size
+                        ? (Math.round(org.logo_size / 1024) + ' KB')
+                        : '0 KB';
+                    logo = `
+                        <img class="img-fluid img-thumbnail"
+                             src="${org.logo}"
+                             title="Size: ${size}"
+                             style="max-width:150px;max-height:60px">
+                        <div class="small text-muted" style="font-size:0.7rem;">${size}</div>
+                    `;
                 } else {
+                    /* Лого байхгүй үед default icon */
                     logo = `
                         <span>
-                            <i class="bi bi-building text-secondary" style="font-size:1.5rem" 
-                               title="No logo"></i>
+                            <i class="bi bi-building text-secondary" style="font-size:1.5rem" title="No logo"></i>
                         </span>`;
                 }
-                
-                let aliasLink = !rbacLink ? org.alias
+
+                /* RBAC alias → system_rbac эрхтэй бол линк, эсрэг тохиолдолд текст хэлбэрээр */
+                let aliasLink = !rbacLink
+                    ? org.alias
                     : `<a href="${rbacLink}?alias=${org.alias}&title=${encodeURIComponent(org.name)}">${org.alias}</a>`;
-                
-                let buttons = [`<a class="org-modal btn btn-sm btn-info mt-1 shadow-sm" data-bs-target="#static-modal" data-bs-toggle="modal" href="${indexLink}/view/${org.id}"><i class="bi bi-eye"></i></a>`];
+
+                /* Action товчнууд */
+                let buttons = [
+                    /* Дэлгэрэнгүй харах modal */
+                    `<a class="org-modal btn btn-sm btn-info mt-1 shadow-sm"
+                        data-bs-target="#static-modal"
+                        data-bs-toggle="modal"
+                        href="${indexLink}/view/${org.id}">
+                        <i class="bi bi-eye"></i>
+                    </a>`
+                ];
+
+                /* Засах эрхтэй бол */
                 if (canUpdate) {
-                    buttons.push(`<a class="org-modal btn btn-sm btn-primary mt-1 shadow-sm" data-bs-target="#static-modal" data-bs-toggle="modal" href="${indexLink}/update/${org.id}"><i class="bi bi-pencil-square"></i></a>`);
+                    buttons.push(`
+                        <a class="org-modal btn btn-sm btn-primary mt-1 shadow-sm"
+                           data-bs-target="#static-modal"
+                           data-bs-toggle="modal"
+                           href="${indexLink}/update/${org.id}">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>`);
                 }
+
+                /* Устгах болгох эрхтэй бол */
                 if (canDelete) {
-                    buttons.push(`<button class="deactivate-organization btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${org.id}"><i class="bi bi-trash"></i></button>`);
+                    buttons.push(`
+                        <button class="deactivate-organization btn btn-sm btn-danger mt-1 shadow-sm"
+                                type="button"
+                                value="${org.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>`);
                 }
-                let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
-                        
-                rowsHTML += `<tr><th scope="row">${org.id}</th><td>${logo}</td><td>${org.name}</td><td>${aliasLink}</td><td>${actions}</td></tr>`;
+
+                const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+
+                /* Хүснэгтийн мөрийг нэмэх */
+                rowsHTML += `
+                    <tr>
+                        <th scope="row">${org.id}</th>
+                        <td>${logo}</td>
+                        <td>${org.name}</td>
+                        <td>${aliasLink}</td>
+                        <td>${actions}</td>
+                    </tr>`;
             });
+            
             organizations.setBody(rowsHTML);
-        }).catch(err => {
+        })
+        .catch(err => {
+            /* motable алдаа UI харуулах */
             organizations.error(err);
-        }).finally(() => {
+        })
+        .finally(() => {
+            /* Modal-аар харах / засах товчнуудын click handler */
             const modals = organizations.table.querySelectorAll('.org-modal');
-            modals.forEach(a => a.addEventListener('click', function (e) {
-                e.preventDefault();
-                ajaxModal(a);
-            }));
+            modals.forEach(a =>
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    ajaxModal(a); /* AJAX modal нээх */
+                })
+            );
+    
+            /* Хэлнээс хамаарсан deactivate баталгаажуулах асуулт */
+            let questionDeletion;
+            if (document.documentElement.lang === 'mn') {
+                questionDeletion = name => `
+                        <p class="text-danger mb-3">
+                            Та (${name}) байгууллагыг идэвхгүй болгоход итгэлтэй байна уу?
+                        </p>
+                        <p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>
+                    `;
+            } else {
+                questionDeletion = name => `
+                    <p class="text-danger mb-3">
+                        Are you sure to deactivate this organization (${name})?
+                    </p>
+                    <p>If so, please provide a reason</p>
+                `;
+            }
 
+            /* Байгууллага идэвхгүй болгох товчны click handler */
             const deactivates = organizations.table.querySelectorAll('.deactivate-organization');
-            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                
-                let question;
-                if (document.documentElement.lang === 'mn') {
-                    question = '<p class="text-danger mb-3">Та ({0}) байгууллагыг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>';
-                } else {
-                    question = '<p class="text-danger mb-3">Are you sure to deactivate this organization ({0})?</p><p>If so, please provide a reason</p>';
-                }
-                
-                let thisRow = btn.closest('tr');
-                if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
-                }
-                let name = thisRow.children[2].innerHTML;
-                let ask = question.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
-                let photo = thisRow.children[1].querySelector('img');
-                let src;
-                if (photo) {
-                    src = photo.src;
-                } else {
-                    src = '';
-                    ask = `<p><i class="bi bi-building text-danger mb-4" style="font-size:3rem"></i></p>${ask}`;
-                }
-                Swal.fire({
-                    imageUrl: src,
-                    imageHeight: 64,
-                    html: ask,
-                    input: 'text',
-                    showCancelButton: true,
-                    cancelButtonText: `{{ 'cancel'|text|e }}`,
-                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
-                    confirmButtonColor: '#df4759',
-                    showLoaderOnConfirm: true,
-                    allowOutsideClick: () => !Swal.isLoading(),
-                    backdrop: true,
-                    preConfirm: (reason) => {
-                        return fetch(
-                            `{{ 'organization-deactivate'|link }}`,
-                            {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    name,
-                                    reason,
-                                    id: btn.value
-                                })
-                            }
-                        ).then(res => {
-                            return res.json();
-                        }).then(response => {
-                            if (response.status !== 'success') {
-                                throw new Error(response.message ?? 'Invalid response!');
-                            }
-                            
-                            Swal.close();
-                            
-                            thisRow.remove();
-                            organizations.setReady();
+            deactivates.forEach(btn =>
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Organization (${name}) deactivated`);
-                        }).catch(error => {
-                            Swal.showValidationMessage(error.message);
-                        });
+                    /* Мөр сонгох */
+                    let thisRow = btn.closest('tr');
+                    if (!thisRow) {
+                        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                     }
-                });
-            }));
+
+                    /* Байгууллагын нэр */
+                    const name = thisRow.children[2]?.innerHTML;
+                    const cleanName = name.replace(/<\/?[^>]+(>|$)/g, '');
+                    
+                    /* Хэрэглэгчид харагдах асуулт */
+                    const askHtml = questionDeletion(cleanName);
+
+                    /* Лого зураг авах */
+                    const photo = thisRow.children[1]?.querySelector('img');
+                    const src   = photo ? photo.src : '';
+
+                     /* Лого байхгүй үед default icon нэмэх */
+                    const finalHtml = src
+                        ? askHtml
+                        : `
+                            <p><i class="bi bi-building text-danger mb-4" style="font-size:3rem"></i></p>
+                            ${askHtml}
+                        `;
+
+                    /* SweetAlert2 - баталгаажуулах цонх */
+                    Swal.fire({
+                        imageUrl: src || undefined,
+                        imageHeight: src ? 64 : undefined,
+                        html: finalHtml,
+                        input: 'text',
+                        showCancelButton: true,
+                        cancelButtonText: `{{ 'cancel'|text|e }}`,
+                        confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                        confirmButtonColor: '#df4759',
+                        showLoaderOnConfirm: true,
+                        allowOutsideClick: () => !Swal.isLoading(),
+                        backdrop: true,
+
+                        /* Идэвхгүй болгох хүсэлт сервер рүү илгээх */
+                        preConfirm: (reason) => {
+                            return fetch(
+                                `{{ 'organization-deactivate'|link }}`,
+                                {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        name,
+                                        reason,
+                                        id: btn.value
+                                    })
+                                }
+                            )
+                            .then(res => res.json())
+                            .then(response => {
+                                if (response.status !== 'success') {
+                                    throw new Error(response.message ?? 'Invalid response!');
+                                }
+
+                                Swal.close();
+                                
+                                /* Мөрийг хүснэгтээс устгах */
+                                thisRow.remove();
+                                organizations.setReady();
+
+                                NotifyTop(
+                                    'success',
+                                    `{{ 'success'|text|e }}`,
+                                    response.message ?? `Organization (${name}) deactivated`
+                                );
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage(error.message);
+                            });
+                        }
+                    });
+                })
+            );
         });
-    });
+
+});
 </script>
