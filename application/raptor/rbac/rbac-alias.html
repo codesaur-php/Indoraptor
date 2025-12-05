@@ -184,11 +184,11 @@
     </table>
 </div>
 
+{% if user.can('system_logger') %}
 <!--
     RBAC холбогдох логийг харах хэсэг.
     Зөвхөн system_logger эрхтэй хэрэглэгч харах боломжтой.
 -->
-{% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
     <label class="form-label fw-bolder">

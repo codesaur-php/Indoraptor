@@ -68,7 +68,7 @@ class OrganizationController extends FileController
      *
      * Permission: system_organization_index
      *
-     * @return void JSON буцаана
+     * @return void JSON хэвлэнэ
      */
     public function list()
     {
@@ -101,7 +101,7 @@ class OrganizationController extends FileController
      *
      * Permission: system_organization_insert
      *
-     * Лого байршуулах боломжтой. Амжилттай бол JSON success буцаана.
+     * Лого байршуулах боломжтой. Амжилттай бол JSON success хэвлэнэ.
      *
      * @return void
      * @throws Throwable
@@ -397,7 +397,7 @@ class OrganizationController extends FileController
      *
      * Анхан байгууллага (id=1) болон одоо идэвхтэй байгууллагыг устгахыг хориглоно.
      *
-     * @return void JSON буцаана
+     * @return void JSON хэвлэнэ
      */
     public function deactivate()
     {

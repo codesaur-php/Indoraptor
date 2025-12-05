@@ -1,35 +1,56 @@
 {% set can_insert = user.can('system_localization_insert') %}
 {% set can_update = user.can('system_localization_update') %}
 {% set can_delete = user.can('system_localization_delete') %}
+
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Локализацийн үндсэн хуудасны Header хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-1 my-auto fs-6 text-danger text-uppercase">
+        <!-- Дэлхийн бөмбөрцөг икон → Локализаци модулийг илэрхийлнэ -->
         <i class="bi bi-globe"></i> {{ 'localization'|text }}
     </h3>
     <div class="ms-auto">
+        <!-- Одоогоор нэмэлт action байхгүй -->
     </div>
 </div>
+
+<!-- Локализацийн таб(menu) – Хэл болон Текстийн бүлгүүдийг харуулна -->
 <ul class="nav nav-tabs text-uppercase" role="tablist">
     <li class="nav-item">
+        <!-- Хэл удирдах үндсэн таб -->
         <a class="nav-link active show" data-bs-toggle="tab" href="#tab-language">
             <i class="bi bi-flag"></i> {{ 'language'|text }}
         </a>
     </li>
+
+    <!-- texts хувьсагчаас орчуулгын таблицуудын нэрийг уншаад нэмэлт табууд үүсгэнэ -->
     {% for name in texts|keys %}
         <li class="nav-item">
+            <!-- Орчуулгын текстийн төрөл тус бүр өөрийн табтай -->
             <a class="nav-link" data-bs-toggle="tab" href="#tab-text-{{ name }}">
                 <i class="bi bi-translate"></i> {{ name }}
             </a>
         </li>
     {% endfor %}
 </ul>
+
+<!-- Табуудын агуулга -->
 <div class="tab-content pt-1">
+
+    <!-- 1-р таб: Хэлүүдийн жагсаалт -->
     <div class="tab-pane active show" id="tab-language" role="tabpanel">
         {% if can_insert %}
-            <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2" href="{{ 'language-insert'|link }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+            <!-- Хэл шинээр нэмэх товч – зөвхөн эрхтэй хэрэглэгчид харагдана -->
+            <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2"
+               href="{{ 'language-insert'|link }}"
+               data-bs-target="#static-modal"
+               data-bs-toggle="modal">
                 <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
             </a>
         {% endif %}
+
+        <!-- Хэлүүдийн хүснэгт -->
         <table class="table table-hover table-striped-columns table-bordered" id="languages">
             <thead>
                 <tr>
@@ -42,30 +63,64 @@
                     <th scope="col" style="width:8rem">{{ 'action'|text }}</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for language in languages %}
                     <tr>
+                        <!-- Хэлний 2 үсгийн код (mn, en гэх мэт) -->
                         <th scope="row">{{ language['code'] }}</th>
+
                         <td>
+                            <!-- Тухайн хэлний тугны код. en тохиолдолд → us болгон хувиргана. -->
                             {% set flag = language['code'] == 'en' ? 'us' : language['code'] %}
-                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['title']|e }}">
+
+                            <!-- Хэлний дүрс (flagcdn.com) -->
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                 srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                 width="20" height="15"
+                                 alt="{{ language['title']|e }}">
+
+                            <!-- Default хэл бол чек тэмдэг гаргана -->
                             {{ language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '' }}
                         </td>
+
+                        <!-- Хэлний locale – жишээ нь en_US, mn_MN -->
                         <td>{{ language['locale'] }}</td>
+
+                        <!-- Хэлний нэр -->
                         <td>{{ language['title'] }}</td>
+
+                        <!-- Тайлбар -->
                         <td>{{ language['description'] }}</td>
+
+                        <!-- Бичлэг үүсгэсэн огноо -->
                         <td>{{ language['created_at'] }}</td>
+
+                        <!-- Хэл удирдах үйлдлүүд (Харах / Засах / Идэвхгүй болгох) -->
                         <td>
-                            <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm" href="{{ 'language-view'|link({'id':language['id']}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                            <!-- Хэлний дэлгэрэнгүй харах -->
+                            <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm"
+                               href="{{ 'language-view'|link({'id':language['id']}) }}"
+                               data-bs-target="#static-modal"
+                               data-bs-toggle="modal">
                                 <i class="bi bi-eye"></i>
                             </a>
+
                             {% if can_update %}
-                                <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm" href="{{ 'language-update'|link({'id':language['id']}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                                <!-- Хэл засварлах -->
+                                <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm"
+                                   href="{{ 'language-update'|link({'id':language['id']}) }}"
+                                   data-bs-target="#static-modal"
+                                   data-bs-toggle="modal">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
                             {% endif %}
+
                             {% if can_delete %}
-                                <button class="deactivate-language btn btn-sm btn-danger mt-1 shadow-sm" value="{{ language['id'] }}" type="button">
+                                <!-- Хэл идэвхгүй болгох товч -->
+                                <button class="deactivate-language btn btn-sm btn-danger mt-1 shadow-sm"
+                                        value="{{ language['id'] }}"
+                                        type="button">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             {% endif %}
@@ -75,43 +130,77 @@
             </tbody>
         </table>
     </div>
+
+    <!-- 2-р табууд: Орчуулгын текстийн төрөл бүрийн хүснэгтүүд
+         texts хувьсагч нь {tableName: rows[]} бүтэцтэй -->
     {% for name,rows in texts %}
         <div class="tab-pane" id="tab-text-{{ name }}" role="tabpanel">
+
+            <!-- Шинэ текст нэмэх товч -->
             {% if can_insert %}
-                <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2" href="{{ 'text-insert'|link({'table':name}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2"
+                   href="{{ 'text-insert'|link({'table':name}) }}"
+                   data-bs-target="#static-modal"
+                   data-bs-toggle="modal">
                     <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
                 </a>
             {% endif %}
+
+            <!-- Тухайн текстийн төрлийн хүснэгт -->
             <table class="table table-hover table-striped table-bordered" data-table="{{ name }}">
                 <thead>
                     <tr>
                         <th scope="col">{{ 'keyword'|text }}</th>
+
+                        <!-- Бүх бүртгэлтэй хэл дээрх орчуулга -->
                         {% for language in localization.language %}
                             <th scope="col">{{ 'title'|text }} ({{ language['title'] }})</th>
                         {% endfor %}
+
                         <th scope="col">{{ 'type'|text }}</th>
                         <th scope="col" style="width:8rem">{{ 'action'|text }}</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     {% for row in rows %}
                         <tr>
+                            <!-- Текстийн түлхүүр keyword -->
                             <td>{{ row['keyword'] }}</td>
+
+                            <!-- Хэл бүрийн текст -->
                             {% for code in localization.language|keys %}
                                 <td>{{ row['localized']['text'][code] }}</td>
                             {% endfor %}
+
+                            <!-- Текстийн төрөл (plain, html…) -->
                             <td>{{ row['type'] }}</td>
+
+                            <!-- Үйлдлүүд -->
                             <td>
-                                <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm" href="{{ 'text-view'|link({'table':name,'id':row['id']}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                                <!-- Харах -->
+                                <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm"
+                                   href="{{ 'text-view'|link({'table':name,'id':row['id']}) }}"
+                                   data-bs-target="#static-modal"
+                                   data-bs-toggle="modal">
                                     <i class="bi bi-eye"></i>
                                 </a>
+
                                 {% if can_update %}
-                                    <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm" href="{{ 'text-update'|link({'table':name,'id':row['id']}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                                    <!-- Засах -->
+                                    <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm"
+                                       href="{{ 'text-update'|link({'table':name,'id':row['id']}) }}"
+                                       data-bs-target="#static-modal"
+                                       data-bs-toggle="modal">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
                                 {% endif %}
+
                                 {% if can_delete %}
-                                    <button class="deactivate-text btn btn-sm btn-danger mt-1 shadow-sm" value="{{ row['id'] }}" type="button">
+                                    <!-- Идэвхгүй болгох -->
+                                    <button class="deactivate-text btn btn-sm btn-danger mt-1 shadow-sm"
+                                            value="{{ row['id'] }}"
+                                            type="button">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 {% endif %}
@@ -123,135 +212,112 @@
         </div>
     {% endfor %}
 </div>
+
 {% if user.can('system_logger') %}
+<!-- Хэрэв хэрэглэгч logger харах эрхтэй бол лог хэсгийг үзүүлнэ -->
 <div class="mt-5">
     <hr>
+    
+    <!-- Логийн гарчиг -->
     <label class="form-label fw-bolder">
         {{ 'log'|text }} <i class="bi bi-clock-history"></i>
     </label>
+
+    <!-- Лог ачаалж байгааг илтгэх spinner -->
     <div class="spinner-grow mt-3" role="status" style="display:none">
         <span class="visually-hidden">Loading logs...</span>
     </div>
-    <ul class="list-group logger-protocol" id="logger-localization" style="max-height:240px; overflow-y:auto">
+
+    <!-- Логийн жагсаалт (динамик байдлаар дүүрнэ) -->
+    <ul class="list-group logger-protocol" id="logger-localization"
+        style="max-height:240px; overflow-y:auto">
     </ul>
 </div>
 {% endif %}
+
 <script type="text/javascript">
-    var tabLink = window.location.hash;
+    /* URL дээр hash (жишээ: #tab-language) байвал тухайн табыг идэвхжүүлнэ */
+    const tabLink = window.location.hash;
     if (tabLink) {
-        let activeTab = document.querySelector('ul.nav.nav-tabs > li.nav-item > a.active.show');
+        const activeTab = document.querySelector('ul.nav.nav-tabs > li.nav-item > a.active.show');
+
         if (activeTab.href !== tabLink) {
-            let linkTab = document.querySelector(`ul.nav.nav-tabs > li.nav-item > a[href="${tabLink}"]`);
+            const linkTab = document.querySelector(`ul.nav.nav-tabs > li.nav-item > a[href="${tabLink}"]`);
             if (linkTab) {
                 activeTab.classList.remove('active', 'show');
+
                 linkTab.classList.add('active', 'show');
-                document.querySelector(`div.tab-content > div.tab-pane.active.show`).classList.remove('active', 'show');
-                document.querySelector(`div.tab-pane[id="${tabLink.substr(1)}"]`).classList.add('active', 'show');
+                document.querySelector(`div.tab-content > div.tab-pane.active.show`)
+                    .classList.remove('active', 'show');
+
+                const newTabPaneId = tabLink.substr(1);
+                document.querySelector(`div.tab-pane[id="${newTabPaneId}"]`)
+                    .classList.add('active', 'show');
             }
         }
     }
 
+    /* Document бүрэн уншигдсаны дараах бүх UI event binding ажиллана */
     document.addEventListener('DOMContentLoaded', function () {
-        let tabLinks = document.querySelectorAll('ul.nav.nav-tabs > li > a.nav-link');
-        tabLinks.forEach(navLink => navLink.addEventListener('click', function (e) {
-            e.preventDefault();
-            window.location.hash = navLink.href.substr(navLink.href.indexOf("#"));
-        }));
-        
-        const languages = new motable('table#languages');
-
-        const deactivateLanguages = languages.table.querySelectorAll('.deactivate-language');
-        deactivateLanguages.forEach(btn => btn.addEventListener('click', function (e) {
-            e.preventDefault();
-
-            let thisRow = btn.closest('tr');
-            if (!thisRow) {
-                return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
-            }
-
-            let questiondel;
-            if (document.documentElement.lang === 'mn') {
-                questiondel = '<p class="text-danger mb-3">Та ({0}) хэлийг идэвхгүй болгоход итгэлтэй байна уу?</p>';
-            } else {
-                questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the language ({0})?</p>';
-            }
-            let title = thisRow.children[2].innerHTML;
-            let ask = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
-            let src = '';
-            let flag = thisRow.children[1].querySelector('img');
-            if (flag) {
-                src = flag.src;
-            }
-            Swal.fire({
-                imageUrl: src,
-                imageHeight: 16,
-                html: ask,
-                input: 'text',
-                showCancelButton: true,
-                cancelButtonText: `{{ 'cancel'|text|e }}`,
-                confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
-                confirmButtonColor: '#df4759',
-                showLoaderOnConfirm: true,
-                allowOutsideClick: () => !Swal.isLoading(),
-                backdrop: true,
-                preConfirm: (reason) => {
-                    return fetch(
-                        `{{ 'language-deactivate'|link }}`,
-                        {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                title,
-                                reason,
-                                id: btn.value
-                            })
-                        }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
-                        if (response.status !== 'success') {
-                            throw new Error(response.message ?? 'Invalid response!');
-                        }
-
-                        window.location.reload();
-
-                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Language (${title}) deactivated`);
-                    }).catch(error => {
-                        Swal.showValidationMessage(error.message);
-                    });
-                }
-            });
-        }));
-        
-        const textTables = document.querySelectorAll('table[data-table]');
-        textTables.forEach(table => {
-            let text = new motable(table);
-            text.setReady();
-            
-            let name = text.table.getAttribute('data-table');
-            if (!name) return;
-            
-            const deactivateText = text.table.querySelectorAll('.deactivate-text');
-            deactivateText.forEach(btn => btn.addEventListener('click', function (e) {
+        /* Таб дээр дарахад URL hash-г шинэчилнэ */
+        const tabLinks = document.querySelectorAll('ul.nav.nav-tabs > li > a.nav-link');
+        tabLinks.forEach(navLink =>
+            navLink.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                let thisRow = btn.closest('tr');
+                /* hash хэсгийг URL-д тавих */
+                const hash = navLink.href.substr(navLink.href.indexOf("#"));
+                window.location.hash = hash;
+            })
+        );
+
+        /* "languages" хүснэгтийг motable ашиглан амьлуулж, код баганыг наая */
+        const languages = new motable('table#languages', { freezeColumns: [0] });
+
+        /* Хэл устгах товчлууруудыг цуглуулна */
+        const deactivateLanguages = languages.table.querySelectorAll('.deactivate-language');
+        deactivateLanguages.forEach(btn =>
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                /* Устгах гэж буй мөрийг олж авах */
+                const thisRow = btn.closest('tr');
                 if (!thisRow) {
                     return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
-                
+
+                /* Хэл устгах баталгаажуулах асуултын текст бэлдэх */
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та [{0}] текст бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?</p>';
+                    /* Монгол хэл дээр */
+                    questiondel =
+                        `<p class="text-danger mb-3">
+                            Та ({0}) хэлийг идэвхгүй болгоход итгэлтэй байна уу?
+                        </p>`;
                 } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the text with keyword [{0}]?</p>';
+                    /* Англи болон бусад хэл дээр */
+                    questiondel =
+                        `<p class="text-danger mb-3">
+                            Are you sure to deactivate the language ({0})?
+                        </p>`;
                 }
-                let keyword = thisRow.children[0].innerHTML;
-                let question = questiondel.format(keyword.replace(/<\/?[^>]+(>|$)/g, ''));
+
+                /* Таблицын гурав дахь багана - Locale/Title */
+                const title = thisRow.children[3]?.innerHTML;
+                const cleanTitle = title.replace(/<\/?[^>]+(>|$)/g, '');
+                const ask = questiondel.replace('{0}', cleanTitle);
+
+                /* Тугны зураг */
+                let src = '';
+                const flag = thisRow.children[1].querySelector('img');
+                if (flag) src = flag.src;
+
+                /* SweetAlert - Устгах баталгаажуулалт */
                 Swal.fire({
-                    html: question,
+                    imageUrl: src,
+                    imageHeight: 16,
+                    html: ask,
+                    input: 'text',
                     showCancelButton: true,
                     cancelButtonText: `{{ 'cancel'|text|e }}`,
                     confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
@@ -259,52 +325,158 @@
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
-                    preConfirm: () => {
+
+                    /* preConfirm → сервер рүү DELETE хүсэлт илгээнэ */
+                    preConfirm: (reason) => {
                         return fetch(
-                            `{{ 'text-deactivate'|link }}`,
+                            `{{ 'language-deactivate'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    keyword,
-                                    table: name,
+                                    title,
+                                    reason,
                                     id: btn.value
                                 })
                             }
-                        ).then(res => {
-                            return res.json();
-                        }).then(response => {
+                        )
+                        .then(res => res.json())
+                        .then(response => {
                             if (response.status !== 'success') {
                                 throw new Error(response.message ?? 'Invalid response!');
                             }
 
-                            Swal.close();
+                            /* Амжилттай тул хуудас шинэчилнэ */
+                            window.location.reload();
 
-                            thisRow.remove();
-                            text.setReady();
-
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Text ${keyword} deactivated`);
-                        }).catch(error => {
+                            NotifyTop(
+                                'success',
+                                `{{ 'success'|text|e }}`,
+                                response.message ?? `Language (${title}) deactivated`
+                            );
+                        })
+                        .catch(error => {
                             Swal.showValidationMessage(error.message);
                         });
                     }
                 });
-            }));
-        });
+            })
+        );
         
+        /* Бүх текстийн хүснэгтүүдийг (data-table attribute-тэй) цуглуулна */
+        const textTables = document.querySelectorAll('table[data-table]');
+        textTables.forEach(table => {
+            /* motable ашиглан хүснэгтийг тохируулна (оун багана fixed) */
+            const text = new motable(table, { freezeColumns: [0] });
+            text.setReady();
+
+            /* Тухайн текстийн хүснэгтийн нэр (жишээ: default) */
+            const name = text.table.getAttribute('data-table');
+            if (!name) return;
+
+            /* Тухайн хүснэгтийн бүх "устгах" товчлууруудыг цуглуулах */
+            const deactivateText = text.table.querySelectorAll('.deactivate-text');
+            deactivateText.forEach(btn =>
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    /* Устгах гэж буй мөрийг тодорхойлох */
+                    const thisRow = btn.closest('tr');
+                    if (!thisRow) {
+                        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    }
+
+                    /* Баталгаажуулах асуултын үндсэн текст */
+                    let questiondel;
+                    if (document.documentElement.lang === 'mn') {
+                        questiondel =
+                            `<p class="text-danger mb-3">
+                                Та [{0}] текст бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?
+                             </p>`;
+                    } else {
+                        questiondel =
+                            `<p class="text-danger mb-3">
+                                Are you sure to deactivate the text with keyword [{0}]?
+                             </p>`;
+                    }
+
+                    const keyword = thisRow.children[0]?.innerHTML;
+                    const cleanedKeyword = keyword.replace(/<\/?[^>]+(>|$)/g, '');
+                    const question = questiondel.replace('{0}', cleanedKeyword);
+
+                    /* SweetAlert - Устгах баталгаажуулах цонх */
+                    Swal.fire({
+                        html: question,
+                        showCancelButton: true,
+                        cancelButtonText: `{{ 'cancel'|text|e }}`,
+                        confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                        confirmButtonColor: '#df4759',
+                        showLoaderOnConfirm: true,
+                        allowOutsideClick: () => !Swal.isLoading(),
+                        backdrop: true,
+                        /* preConfirm → сервер рүү DELETE хүсэлт илгээнэ */
+                        preConfirm: () => {
+                            return fetch(
+                                `{{ 'text-deactivate'|link }}`,
+                                {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        keyword,
+                                        table: name,
+                                        id: btn.value
+                                    })
+                                }
+                            )
+                            .then(res => res.json())
+                            .then(response => {
+                                if (response.status !== 'success') {
+                                    throw new Error(response.message ?? 'Invalid response!');
+                                }
+
+                                /* Амжилттай тул мөрийг DOM-оос устгана */
+                                Swal.close();
+
+                                thisRow.remove();
+                                text.setReady(); /* motable-ийг дахин бэлэн болгоно */
+
+                                NotifyTop(
+                                    'success',
+                                    `{{ 'success'|text|e }}`,
+                                    response.message ?? `Text ${keyword} deactivated`
+                                );
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage(error.message);
+                            });
+                        }
+                    });
+                })
+            );
+        });
+
+        /* LOGGER харуулах */
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
+
             let logger_id = logger.id ?? '';
             let table = logger_id.substring(logger_id.indexOf('-') + 1);
+
             if (!table) return;
 
+            /* Лог дуудах явцад эхлээд жагсаалтыг нууж spinner-г харуулна */
             logger.style.display = 'none';
-            let spinner = logger.previousElementSibling;
+
+            const spinner = logger.previousElementSibling;
             spinner.style.display = 'block';
+
+            /* Серверээс лог татах */
             fetch(
                 `${logsRetrieveLink}?table=${table}`,
                 {
@@ -314,22 +486,28 @@
                     },
                     body: JSON.stringify({
                         'ORDER BY': 'id Desc',
-                        'LIMIT':  10000
+                        'LIMIT': 10000
                     })
                 }
-            ).then(res => {
-                return res.json();
-            }).then(response => {
+            )
+            .then(res => res.json())
+            .then(response => {
                 if (response.error) {
                     throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
                 }
 
+                /* Хуучин контентыг цэвэрлэнэ */
                 logger.innerHTML = '';
 
-                let logModalLink = `${logsViewLink}?table=${table}&id=`;
+                /* Лог modal нээх линк */
+                const logModalLink = `${logsViewLink}?table=${table}&id=`;
+
+                /* Лог бүрийг <li> болон <a>, <span> элементүүдээр үүсгэнэ */
                 Object.values(response).forEach(log => {
-                    let log_li = document.createElement('li');
+                    const log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
+
+                    /* Логийн түвшнээс хамаарч өнгө өөрчлөгдөнө */
                     switch (log.level) {
                         case 'notice': log_li.classList.add('list-group-item-light'); break;
                         case 'info': log_li.classList.add('list-group-item-primary'); break;
@@ -340,34 +518,46 @@
                         default: log_li.classList.add('list-group-item-dark'); break;
                     }
 
-                    let a_link = document.createElement('a');
+                    /* Лог дэлгэрэнгүй нээх холбоос */
+                    const a_link = document.createElement('a');
                     a_link.textContent = `${log.created_at} [${log.id}]`;
                     a_link.href = logModalLink + log.id;
                     a_link.setAttribute('data-bs-target', '#static-modal');
                     a_link.setAttribute('data-bs-toggle', 'modal');
+
+                    /* Modal AJAX-аар ачаалах */
                     a_link.addEventListener('click', function (e) {
                         e.preventDefault();
                         ajaxModal(a_link);
                     });
+
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
 
-                    let span_msg = document.createElement('span');
+                    /* Логийн үндсэн мессеж */
+                    const span_msg = document.createElement('span');
                     span_msg.innerHTML = log.message;
                     log_li.appendChild(span_msg);
                     log_li.appendChild(document.createTextNode(' '));
 
-                    let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    /* Хэн ямар үйлдэл хийснийг харуулах */
+                    const span_user_action = document.createElement('span');
+                    span_user_action.innerHTML =
+                        `<span class="text-muted small">
+                            <u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u>
+                         </span>`;
                     span_user_action.classList.add('text-muted', 'small');
+
                     log_li.appendChild(span_user_action);
 
                     logger.appendChild(log_li);
                 });
-
-            }).catch(error => {
+            })
+            .catch(error => {
                 console.log(error.message);
-            }).finally(() => {
+            })
+            .finally(() => {
+                /* Лог татсаны дараа spinner-г нууж, жагсаалтыг харуулна */
                 logger.style.display = '';
                 spinner.style.display = 'none';
             });
