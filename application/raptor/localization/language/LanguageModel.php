@@ -8,7 +8,7 @@ use codesaur\DataObject\Column;
 /**
  * Class LanguageModel
  *
- * Локализацийн модульд ашиглагддаг "localization_language" хүснэгтийн
+ * Нутагшуулалтын модульд ашиглагддаг "localization_language" хүснэгтийн
  * мэдээллийн загвар (Model) юм.
  *
  * Энэхүү модель нь:

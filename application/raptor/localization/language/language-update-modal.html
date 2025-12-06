@@ -7,45 +7,59 @@
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form class="needs-validation" novalidate id="language_update" action="{{ 'language-update'|link({id: record['id']}) }}" method="PUT">
+            <form class="needs-validation" novalidate id="language_update"
+                  action="{{ 'language-update'|link({id: record['id']}) }}" method="PUT">
                 <div class="row mb-2">
                     <div class="col">
                         <label class="form-label">{{ 'code'|text }}</label>
-                        <input class="form-control" name="code" required value="{{ record['code']|e }}" maxlength="2" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="code" required value="{{ record['code']|e }}"
+                               maxlength="2" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
+
                     <div class="col">
                         <label class="form-label">{{ 'name'|text }}</label>
-                        <input class="form-control" name="title" required value="{{ record['title']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="title" required value="{{ record['title']|e }}"
+                               maxlength="128" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
+
                     <div class="col">
                         <label class="form-label">{{ 'description'|text }}</label>
-                        <input class="form-control" name="description" value="{{ record['description']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="description" value="{{ record['description']|e }}"
+                               maxlength="255" autocomplete="off">
                     </div>
                 </div>
+
                 <div class="row mb-2">
                     <div class="col">
                         <label class="form-label">{{ 'flag'|text }}</label>
                         {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
                         <p class="lang_flag">
-                            <img src="https://flagcdn.com/40x30/{{ flag }}.png" srcset="https://flagcdn.com/80x60/{{ flag }}.png 2x" width="40" height="30">
+                            <img src="https://flagcdn.com/40x30/{{ flag }}.png"
+                                 srcset="https://flagcdn.com/80x60/{{ flag }}.png 2x"
+                                 width="40" height="30">
                         </p>
                     </div>
+
                     <div class="col">
                         <label class="form-label">locale</label>
-                        <input class="form-control" name="locale" required value="{{ record['locale']|e }}" maxlength="11" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="locale" required value="{{ record['locale']|e }}"
+                               maxlength="11" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
+
                     <div class="col">
                         <label class="form-label">is_default?</label>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" name="is_default" type="checkbox" role="switch"{{ record['is_default'] == 1 ? ' checked' : '' }}>
+                            <input class="form-check-input" name="is_default" type="checkbox" role="switch"
+                                   {{ record['is_default'] == 1 ? ' checked' : '' }}>
                         </div>
                     </div>
                 </div>
             </form>
         </div>
+
         <div class="modal-footer">
             {% if user.can('system_localization_update') %}
                 <button class="submit-language btn btn-primary shadow-sm">
@@ -58,62 +72,92 @@
         </div>
     </div>
 </div>
+
 <script type="text/javascript">
-    let codeInput = document.querySelector('#language_update input[name="code"]');
+    /* Code input дээр flag real-time засах */
+    const codeInput = document.querySelector('#language_update input[name="code"]');
     codeInput.addEventListener('input', function () {
-        let langFlag = document.querySelector('#language_update p.lang_flag');
+        const langFlag = document.querySelector('#language_update p.lang_flag');
         if (this.value.length === 2) {
-            let flagstr = this.value === 'en' ? 'us' : this.value;
-            langFlag.innerHTML = `<img src="https://flagcdn.com/40x30/${flagstr}.png" srcset="https://flagcdn.com/80x60/${flagstr}.png 2x" width="40" height="30">`;
+            /* en → us flag */
+            const flagstr = this.value === 'en' ? 'us' : this.value;
+            langFlag.innerHTML =
+                `<img src="https://flagcdn.com/40x30/${flagstr}.png" 
+                      srcset="https://flagcdn.com/80x60/${flagstr}.png 2x"
+                      width="40" height="30">`;
         } else {
             langFlag.innerHTML = '';
         }
-    }, false);
+    });
 
+    /* Form болон submit товч */
     const formUpdate = document.querySelector('form#language_update');
     if (!formUpdate) {
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         const submitter = document.querySelector('button.submit-language');
+
+        /* Submit товч → form.requestSubmit() */
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
             formUpdate.requestSubmit();
         });
 
+        /* Үндсэн submit эвент */
         formUpdate.addEventListener('submit', function (event) {
             event.preventDefault();
 
-            const _valid = this.checkValidity();
+            /* HTML5 validation */
+            const valid = this.checkValidity();
             this.classList.add('was-validated');
-            if (!_valid) {
+            if (!valid) {
                 event.stopPropagation();
-                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                return NotifyTop(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
             }
 
             submitter.growNstop();
 
-            const data = new FormData(this);
+            /* FormData авах */
+            const data = new FormData(formUpdate);
+            const checkbox = formUpdate.querySelector('input[name="is_default"]');
+            /* is_default checkbox status шалган 0/1 болгон дахин overwrite хийн optimize form data */
+            if (checkbox) {
+                data.set('is_default', checkbox.checked ? '1' : '0');
+            }
+
+            /* PUT хүсэлтийн fetch */
             fetch(
                 this.action,
                 {
-                    body: data,
-                    method: this.getAttribute('method') ?? 'PUT'
+                    method: this.getAttribute('method') ?? 'PUT',
+                    body: data
                 }
-            ).then(res => {
-                let contentType = res.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    return res.json();
-                }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message ? response.message : 'Invalid response!');
-                }
+            )
+            .then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
 
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            })
+            .then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ?? 'Invalid response!');
+                }
+                
+                /* Амжилттай → reload localization dashboard */
                 window.location.reload();
 
-                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Language updated');
-            }).catch(error => {
+                NotifyTop(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'Language updated'
+                );
+            })
+            .catch(error => {
                 NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });

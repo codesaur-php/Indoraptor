@@ -1,38 +1,67 @@
+<!-- Текст бичлэгийн дэлгэрэнгүй харах modal -->
 <div class="modal-lg modal-dialog">
     <div class="modal-content">
         <div class="modal-header">
+            <!-- table:name + row:id гаргана → админд ойлгомжтой -->
             <h3 class="modal-title fs-6 text-uppercase text-info">
                 <i class="bi bi-eye"></i> {{ 'view-record'|text }} ({{ table ~ ':' ~ record['id'] }})
             </h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+
+            <!-- Modal хаах товч -->
+            <button class="btn-close" type="button" data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"></button>
         </div>
+
         <div class="modal-body">
+            <!-- Түлхүүр үг (keyword) талбар -->
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'keyword'|text }}</label>
                 <div class="col-9">
-                    <input class="form-control" name="keyword" readonly value="{{ record['keyword']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                    <input class="form-control" readonly
+                           name="keyword"
+                           value="{{ record['keyword']|e }}"
+                           maxlength="128" autocomplete="off">
                 </div>
             </div>
+
+            <!-- Бүх идэвхтэй хэлнүүдийг loop хийх -->
             {% for code,language in localization.language %}
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">
-                    {{ 'title'|text }} ({{ language['title'] }}
+                    {{ 'title'|text }} ({{ language['title'] }}                    
+                    <!-- Далбааг кодоор оноож харуулна -->
                     {% set flag = code == 'en' ? 'us' : code %}
-                    <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ language['title']|e }}">)
+                    <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                         srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                         width="16" height="12"
+                         alt="{{ language['title']|e }}">)
                 </label>
+
                 <div class="col-9">
-                    <textarea class="form-control" disabled name="text[{{ code }}]" required maxlength="255">{{ record['localized']['text'][code]|e }}</textarea>
+                    <!-- Тухайн хэл дээр хадгалсан текст.
+                         record['localized'] бүтэц нь LocalizedModel-ын формат 
+                         record['localized']['text'][code] хэлбэртэй ирдэг. -->
+                    <textarea class="form-control"
+                              disabled
+                              name="text[{{ code }}]"
+                              maxlength="255">{{ record['localized']['text'][code]|e }}</textarea>
                 </div>
             </div>
             {% endfor %}
+
+            <!-- Текстийн төрөл (sys-defined/user-defined) -->
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'type'|text }}</label>
                 <div class="col-9">
-                    <input class="form-control" readonly value="{{ record['type']|e }}" type="text">
+                    <!-- Системийн TextInitial-р үүсгэгдсэн текст үү, хэрэглэгчийн үүсгэсэн текст үү гэдгийг харуулна. -->
+                    <input class="form-control" readonly value="{{ record['type']|e }}">
                 </div>
             </div>
+
         </div>
+
         <div class="modal-footer">
+            <!-- Хаах товч -->
             <button class="btn btn-info" data-bs-dismiss="modal" type="button">
                 {{ 'close'|text }}
             </button>
