@@ -6,7 +6,7 @@ namespace Raptor\Content;
  * Class PrivateFilesController
  *
  * --------------------------------------------------------------
- * 🔐 Private Files — Secure File Access Controller
+ * 🔐 Private Files - Secure File Access Controller
  * --------------------------------------------------------------
  * Энэ controller нь серверийн public/ (HTTP-ээр шууд харагддаг)
  * сангаас ялгаатайгаар:

@@ -282,7 +282,7 @@ class FileController extends \Raptor\Controller
      *
      *  Файл дараах байрлал руу зөөгдөнө:
      *
-     *      /pages/10/contact.jpg      (эсвэл contact(2).jpg)
+     *      /pages/10/contact.jpg      (эсвэл contact_(2).jpg)
      *
      *  Мөн DB дээр:
      *

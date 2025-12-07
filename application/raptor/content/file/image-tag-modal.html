@@ -1,22 +1,61 @@
+<!--
+    📌 Image Tag Embed Code Modal
+    ------------------------------------------------------------
+    Энэ modal нь тухайн зураг файлыг HTML-д embed хийхэд
+    зориулсан <img> tag-ийг (relative болон absolute path хэлбэрээр)
+    автоматаар үүсгэж харуулдаг.
+
+    • record['path'] → public URL эсвэл private redirect URL
+    • record['description'] → <img alt="..."> утгад ашиглагдана
+    • host → бүрэн absolute URL угсрахад хэрэглэнэ
+-->
+
 <div class="modal-lg modal-dialog modal-dialog-centered">
     <div class="modal-content">
+        <!-- Modal Header -->
         <div class="modal-header">
+            <!-- Modal Title -->
             <h3 class="modal-title fs-6 text-uppercase text-primary">
                 <i class="bi bi-magic"></i> Image embed code
             </h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <!-- Close button -->
+            <button class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}">
+            </button>
         </div>
+
+        <!-- Modal Body -->
         <div class="modal-body">
+            <!-- RELATIVE IMAGE EMBED CODE -->
             <strong>Relative:</strong>
+            <!-- Copy button - copyContent(id) нь тухайн <pre>-ийн text-г clipboard рүү хуулна -->
             <a class="btn btn-sm btn-primary" onclick="copyContent('relative');">copy</a>
-            <pre class="border border-primary bg-dark text-light" id="relative" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
+            <!-- Генерацлагдсан <img> tag - зөвхөн relative URL -->
+            <pre class="border border-primary bg-dark text-light"
+                 id="relative"
+                 style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
+
             <hr>
+
+            <!-- ABSOLUTE IMAGE EMBED CODE -->
             <strong>Absolute:</strong>
+            <!-- Copy button - copyContent(id) нь тухайн <pre>-ийн text-г clipboard рүү хуулна -->
             <a class="btn btn-sm btn-primary" onclick="copyContent('absolute');">copy</a>
-            <pre class="border border-primary bg-dark text-light" id="absolute" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
+            <!-- Генерацлагдсан <img> tag - бүрэн absolute URL → host + path -->
+            <pre class="border border-primary bg-dark text-light"
+                 id="absolute"
+                 style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
         </div>
+
+        <!-- Modal Footer -->
         <div class="modal-footer">
-            <button class="btn btn-primary" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+            <button class="btn btn-primary"
+                    data-bs-dismiss="modal"
+                    type="button">
+                {{ 'close'|text }}
+            </button>
         </div>
     </div>
 </div>

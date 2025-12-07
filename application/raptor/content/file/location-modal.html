@@ -1,22 +1,56 @@
+<!--
+    📌 File Location Modal
+    ------------------------------------------------------------
+    Энэ modal нь тухайн файлын хаягийг (URL) харуулах зорилготой.
+    Хоёр хэлбэрээр үзүүлнэ:
+        • Relative URL  → серверийн domain агуулаагүй дотоод зам
+        • Absolute URL  → бүрэн URL (host + path)
+
+    ✦ Хэрэглэгч copy товчийг дарахад copyContent(id) функц
+      тухайн <pre> блокийн текстийг clipboard руу хуулах үйлдэл хийнэ.
+-->
 <div class="modal-lg modal-dialog modal-dialog-centered">
     <div class="modal-content">
+        <!-- Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-info">
                 <i class="bi bi-magic"></i> File address
             </h3>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <!-- Modal хаах товч -->
+            <button class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}">
+            </button>
         </div>
+
+        <!-- Modal Body -->
         <div class="modal-body">
+            <!-- Relative URL хэсэг -->
             <strong>Relative URL:</strong>
+            <!-- copy товч - "<pre id='relative_url'>" доторх текстийг хуулна -->
             <a class="btn btn-sm btn-info" onclick="copyContent('relative_url');">copy</a>
+            <!-- Файлын харьцангуй зам -->
             <pre class="border border-info" id="relative_url" style="white-space:pre-wrap">{{ record['path'] }}</pre>
+
             <hr>
+
+            <!-- Absolute URL хэсэг -->
             <strong>Absolute URL:</strong>
+            <!-- copy товч -->
             <a class="btn btn-sm btn-info" onclick="copyContent('absolute_url');">copy</a>
+
+            <!-- Файлын бүрэн зам (host + path) -->
             <pre class="border border-info" id="absolute_url" style="white-space:pre-wrap">{{ host ~ record['path'] }}</pre>
         </div>
+
+        <!-- Modal Footer -->
         <div class="modal-footer">
-            <button class="btn btn-info" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+            <button class="btn btn-info"
+                    data-bs-dismiss="modal"
+                    type="button">
+                {{ 'close'|text }}
+            </button>
         </div>
     </div>
 </div>
