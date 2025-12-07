@@ -204,7 +204,7 @@ class TextModel extends LocalizedModel
     /**
      * updateById()
      *
-     * @param int $id         Бичлэгийн ID
+     * @param int $id         Бичлэгийн id дугаар
      * @param array $record   Parent хүснэгтийн шинэ мэдээлэл
      * @param array $content  Content хүснэгтийн шинэ текстүүд
      *
