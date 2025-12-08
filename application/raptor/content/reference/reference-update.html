@@ -331,7 +331,6 @@
                         e.preventDefault();
                         ajaxModal(a_link);
                     });
-
                     /* Текст контентуудыг <li> дотор байрлуулах */
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
@@ -339,6 +338,7 @@
                     let span_msg = document.createElement('span');
                     span_msg.innerHTML = log.message;
                     log_li.appendChild(span_msg);
+                    
                     log_li.appendChild(document.createTextNode(' '));
 
                     let span_user_action = document.createElement('span');

@@ -40,7 +40,7 @@ class FileController extends \Raptor\Controller
     /**
      * Upload хийх фолдерийг тохируулна.
      *
-     * @param string $folder  /users/1, /pages/22/images зэрэг харьцангуй path
+     * @param string $folder  /users/1, /pages/22, /settings зэрэг харьцангуй path
      * @param bool   $relative  true → public URL server root-оос автоматаар үүсгэнэ
      *
      * $this->local  → физик (document root дотор)
@@ -59,7 +59,7 @@ class FileController extends \Raptor\Controller
      * Public URL үүсгэх (site дээр харуулах)
      *
      * @param string $fileName
-     * @return string example: /public/users/4/photo.jpg
+     * @return string example: /public/users/1/photo.jpg
      */
     public function getPath(string $fileName): string
     {
