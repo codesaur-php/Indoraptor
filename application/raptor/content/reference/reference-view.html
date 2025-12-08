@@ -1,5 +1,7 @@
+<!-- Лавлах мэдээллийн дэлгэрэнгүй харах үндсэн карт -->
 <div class="card shadow border-info">
     <div class="card-header text-uppercase">
+        <!-- Гарчиг + Буцах товч -->
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
             <h3 class="text-info fs-6 pt-1">
                 <i class="bi bi-eye"></i> {{ 'view-record'|text }} ({{ table }}:{{ record['id'] }})
@@ -11,43 +13,67 @@
             </div>
         </div>
     </div>
+
     <div class="card-body">
+        <!-- Түлхүүр ба төрөл (ангилал) -->
         <div class="row form-group">
             <div class="col-6">
                 <label class="form-label">{{ 'keyword'|text }}</label>
-                <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" readonly type="text" autocomplete="off">
+                <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" readonly type="text">
             </div>
             <div class="col-6">
                 <label class="form-label">{{ 'type'|text }}</label>
-                <input class="form-control" name="category" readonly type="text" value="{{ record['category']|e }}" maxlength="32">
+                <input class="form-control" name="category" value="{{ record['category']|e }}" maxlength="32" readonly type="text">
             </div>
         </div>
+
+        <!-- Хэл тус бүрийн табууд -->
         <ul class="nav nav-tabs nav-tabs-content mt-3">
             {% for code in localization.language|keys %}
             <li class="nav-item">
-                <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
+                <a class="nav-link{% if loop.first %} active show{% endif %}"
+                   data-bs-toggle="tab"
+                   href="#tab-{{ code }}">
                     {{ 'version'|text }}
+                    <!-- Хэлний туг -->
                     {% set flag = code == 'en' ? 'us' : code %}
-                    <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12">
+                    <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                         srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                         width="16"
+                         height="12">
                 </a>
             </li>
             {% endfor %}
         </ul>
+
+        <!-- Хэл тус бүрийн контент -->
         <div class="tab-content">
             {% for code in localization.language|keys %}
             <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+                <!-- Гарчиг -->
                 <div class="form-group mt-3">
                     <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                    <input class="form-control" name="title[{{ code }}]" readonly value="{{ record['localized']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                    <input class="form-control"
+                           name="title[{{ code }}]"
+                           value="{{ record['localized']['title'][code]|e }}"
+                           readonly
+                           maxlength="255"
+                           type="text">
                 </div>
+                <!-- Контент -->
                 <div class="form-group mt-3">
                     <label class="form-label">{{ 'content'|text }} ({{ code }})</label>
-                    <textarea class="form-control" name="full[{{ code }}]" readonly rows="10">{{ record['localized']['content'][code]|e }}</textarea>
+                    <textarea class="form-control"
+                              name="full[{{ code }}]"
+                              readonly
+                              rows="10">{{ record['localized']['content'][code]|e }}</textarea>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
+
+    <!-- Доорх энгийн буцах товч -->
     <div class="card-footer text-uppercase">
         <div class="row pb-1">
             <div class="col-12 d-grid">
@@ -58,102 +84,112 @@
         </div>
     </div>
 </div>
+
+<!-- Лог харах хэсэг (зөвшөөрөлтэй хэрэглэгчидэд) -->
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
     <label class="form-label fw-bolder">
         {{ 'log'|text }} <i class="bi bi-clock-history"></i>
     </label>
+
+    <!-- Ачаалж буй spinner -->
     <div class="spinner-grow mt-3" role="status" style="display:none">
         <span class="visually-hidden">Loading logs...</span>
     </div>
+
+    <!-- Лог жагсаалт -->
     <ul class="list-group logger-protocol" id="logger-content" style="max-height:240px; overflow-y:auto">
     </ul>
 </div>
 {% endif %}
+
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const logger = document.querySelector('ul.logger-protocol');
-        if (logger && logger.tagName === 'UL') {
-            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
-            const logsViewLink = `{{ 'logs-view'|link }}`;
-            let logger_id = logger.id ?? '';
-            let table = logger_id.substring(logger_id.indexOf('-') + 1);
-            if (!table) return;
+<!-- Log татаж үзүүлэх JS -->
+document.addEventListener('DOMContentLoaded', function () {
+    const logger = document.querySelector('ul.logger-protocol');
+    if (logger && logger.tagName === 'UL') {
+        const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+        const logsViewLink = `{{ 'logs-view'|link }}`;
+        
+        let logger_id = logger.id ?? '';
+        let table = logger_id.substring(logger_id.indexOf('-') + 1);
+        if (!table) return;
 
-            logger.style.display = 'none';
-            let spinner = logger.previousElementSibling;
-            spinner.style.display = 'block';
-            fetch(
-                `${logsRetrieveLink}?table=${table}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
+        logger.style.display = 'none';
+        let spinner = logger.previousElementSibling;
+        spinner.style.display = 'block';
+
+        fetch(
+            `${logsRetrieveLink}?table=${table}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'ORDER BY': 'id Desc',
+                    'CONTEXT': {
+                        'action': 'reference-*',
+                        'id': '{{ record['id'] }}'
                     },
-                    body: JSON.stringify({
-                        'ORDER BY': 'id Desc',
-                        'CONTEXT': {
-                            'action': 'reference-*',
-                            'id': '{{ record['id'] }}'
-                        },
-                        'LIMIT': 10000
-                    })
+                    'LIMIT': 10000
+                })
+            }
+        )
+        .then(res => res.json())
+        .then(response => {
+            if (response.error) {
+                throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+            }
+
+            logger.innerHTML = '';
+
+            let logModalLink = `${logsViewLink}?table=${table}&id=`;
+            
+            Object.values(response).forEach(log => {
+                let log_li = document.createElement('li');
+                log_li.classList.add('list-group-item', 'list-group-item-action');
+                switch (log.level) {
+                    case 'notice': log_li.classList.add('list-group-item-light'); break;
+                    case 'info': log_li.classList.add('list-group-item-primary'); break;
+                    case 'error': log_li.classList.add('list-group-item-danger'); break;
+                    case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                    case 'alert': log_li.classList.add('list-group-item-info'); break;
+                    case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                    default: log_li.classList.add('list-group-item-dark'); break;
                 }
-            ).then(res => {
-                return res.json();
-            }).then(response => {
-                if (response.error) {
-                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
-                }
 
-                logger.innerHTML = '';
-
-                let logModalLink = `${logsViewLink}?table=${table}&id=`;
-                Object.values(response).forEach(log => {
-                    let log_li = document.createElement('li');
-                    log_li.classList.add('list-group-item', 'list-group-item-action');
-                    switch (log.level) {
-                        case 'notice': log_li.classList.add('list-group-item-light'); break;
-                        case 'info': log_li.classList.add('list-group-item-primary'); break;
-                        case 'error': log_li.classList.add('list-group-item-danger'); break;
-                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
-                        case 'alert': log_li.classList.add('list-group-item-info'); break;
-                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
-                        default: log_li.classList.add('list-group-item-dark'); break;
-                    }
-
-                    let a_link = document.createElement('a');
-                    a_link.textContent = `${log.created_at} [${log.id}]`;
-                    a_link.href = logModalLink + log.id;
-                    a_link.setAttribute('data-bs-target', '#static-modal');
-                    a_link.setAttribute('data-bs-toggle', 'modal');
-                    a_link.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        ajaxModal(a_link);
-                    });
-                    log_li.appendChild(a_link);
-                    log_li.appendChild(document.createTextNode(' '));
-
-                    let span_msg = document.createElement('span');
-                    span_msg.innerHTML = log.message;
-                    log_li.appendChild(span_msg);
-                    log_li.appendChild(document.createTextNode(' '));
-
-                    let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
-                    span_user_action.classList.add('text-muted', 'small');
-                    log_li.appendChild(span_user_action);
-
-                    logger.appendChild(log_li);
+                let a_link = document.createElement('a');
+                a_link.textContent = `${log.created_at} [${log.id}]`;
+                a_link.href = logModalLink + log.id;
+                a_link.setAttribute('data-bs-target', '#static-modal');
+                a_link.setAttribute('data-bs-toggle', 'modal');
+                a_link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    ajaxModal(a_link);
                 });
 
-            }).catch(error => {
-                console.log(error.message);
-            }).finally(() => {
-                logger.style.display = '';
-                spinner.style.display = 'none';
+                log_li.appendChild(a_link);
+                log_li.appendChild(document.createTextNode(' '));
+
+                let span_msg = document.createElement('span');
+                span_msg.innerHTML = log.message;
+                log_li.appendChild(span_msg);
+                log_li.appendChild(document.createTextNode(' '));
+
+                let span_user_action = document.createElement('span');
+                span_user_action.innerHTML =
+                    `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                log_li.appendChild(span_user_action);
+
+                logger.appendChild(log_li);
             });
-        }
-    });
+
+        })
+        .catch(error => console.log(error.message))
+        .finally(() => {
+            logger.style.display = '';
+            spinner.style.display = 'none';
+        });
+    }
+});
 </script>

@@ -6,80 +6,143 @@
   'notification': { 'mn': 'Сонордуулга' },
   'email': { 'mn': 'Цахим захиа' }
 } %}
+<!-- UPDATE FORM CARD - лавлах мэдээлэл засах үндсэн wrapper -->
 <div class="card shadow border-primary">
     <div class="card-header">
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
+            <!-- Гарчиг -->
             <h3 class="text-primary fs-6 text-uppercase pt-1">
-                <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} ({{ table }}:{{ record['id'] }})
+                <i class="bi bi-pencil-square"></i>
+                {{ 'edit-record'|text }} ({{ table }}:{{ record['id'] }})
             </h3>
+
+            <!-- Баруун талын Save + Back товчууд -->
             <div class="ms-auto">
                 <button class="submit-update btn btn-sm btn-primary shadow-sm text-uppercase" type="button">
                     <i class="bi bi-check-lg"></i> {{ 'save'|text }}
                 </button>
+
                 <a class="btn btn-sm btn-secondary shadow-sm text-uppercase" href="{{ 'references'|link }}">
                     <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
                 </a>
             </div>
         </div>
     </div>
+
+    <!--  CARD BODY - үндсэн форм -->
     <div class="card-body">
-        <form class="needs-validation" id="reference_update" action="{{ 'reference-update'|link({'table': table, 'id': record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
+        <!-- Update form -->
+        <form class="needs-validation"
+              id="reference_update"
+              action="{{ 'reference-update'|link({'table': table, 'id': record['id']}) }}"
+              method="PUT"
+              enctype="multipart/form-data"
+              novalidate>
             <div class="form-group row">
+                <!-- Keyword -->
                 <div class="col-6">
                     <label class="form-label">{{ 'keyword'|text }}</label>
-                    <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off">
+                    <!-- Хэрэглэгчийн тодорхойлох түлхүүр -->
+                    <input class="form-control"
+                        name="keyword"
+                        value="{{ record['keyword']|e }}"
+                        maxlength="128"
+                        required
+                        autocomplete="off">
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
+
+                <!-- Category (dropdown) -->
                 <div class="col-6">
                     <label class="form-label">{{ 'category'|text }}</label>
                     <div class="input-group">
-                        <input class="form-control" name="category" required type="text" value="{{ record['category']|e }}" maxlength="32">
+                        <!-- Категорийн нэр -->
+                        <input class="form-control"
+                            name="category"
+                            required
+                            maxlength="32"
+                            value="{{ record['category']|e }}">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <!-- Dropdown toggle -->
+                        <button class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"></button>
+                        <!-- Category dropdown list -->
                         <ul class="dropdown-menu dropdown-menu-end" id="category_list">
                         {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value|e }}">{{ (name[localization.code] ?? value)|capitalize }}</li>
+                            <li class="dropdown-item" value="{{ value|e }}">
+                                {{ (name[localization.code] ?? value)|capitalize }}
+                            </li>
                         {% endfor %}
                         </ul>
                     </div>
                 </div>
             </div>
+
             <ul class="nav nav-tabs nav-tabs-content mt-3">
                 {% for code in localization.language|keys %}
                 <li class="nav-item">
-                    <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
+                    <!-- Хэл тус бүрийн Tab -->
+                    <a class="nav-link{% if loop.first %} active show{% endif %}"
+                       data-bs-toggle="tab"
+                       href="#tab-{{ code }}">
                         {{ 'version'|text }}
+
+                        <!-- Flag icon -->
                         {% set flag = code == 'en' ? 'us' : code %}
-                        <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12">
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12">
                     </a>
                 </li>
                 {% endfor %}
             </ul>
+
+            <!-- TAB CONTENT -->
             <div class="tab-content">
                 {% for code in localization.language|keys %}
-                <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+                <div class="tab-pane{% if loop.first %} active show{% endif %}"
+                     id="tab-{{ code }}">
+                    <!-- Title -->
                     <div class="form-group mt-3">
                         <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['localized']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+
+                        <input class="form-control"
+                               name="title[{{ code }}]"
+                               required
+                               maxlength="255"
+                               value="{{ record['localized']['title'][code]|e }}"
+                               autocomplete="off">
+
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
+
+                    <!-- Content -->
                     <div class="form-group mt-3">
                         <label class="form-label">{{ 'content'|text }} ({{ code }})</label>
-                        <textarea class="form-control" name="content[{{ code }}]" required rows="10">{{ record['localized']['content'][code]|e }}</textarea>
+                        <textarea class="form-control"
+                                  name="content[{{ code }}]"
+                                  rows="10"
+                                  required>{{ record['localized']['content'][code]|e }}</textarea>
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+
         </form>
     </div>
+
     <div class="card-footer">
         <div class="row pb-1">
+            <!-- Save -->
             <div class="col-6 d-grid">
                 <button class="submit-update btn btn-primary text-uppercase shadow-sm" type="button">
                     <i class="bi bi-check2"></i> {{ 'save'|text }}
                 </button>
             </div>
+
+            <!-- Back -->
             <div class="col-6 d-grid">
                 <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'references'|link }}">
                     <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
@@ -88,91 +151,133 @@
         </div>
     </div>
 </div>
+
+<!-- LOGGER SECTION (зөвхөн system_logger эрхтэй)  -->
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
+
+    <!-- Log Header -->
     <label class="form-label fw-bolder">
         {{ 'log'|text }} <i class="bi bi-clock-history"></i>
     </label>
+
+    <!-- Loading spinner -->
     <div class="spinner-grow mt-3" role="status" style="display:none">
         <span class="visually-hidden">Loading logs...</span>
     </div>
-    <ul class="list-group logger-protocol" id="logger-content" style="max-height:240px; overflow-y:auto">
-    </ul>
+
+    <!-- Log output -->
+    <ul class="list-group logger-protocol" id="logger-content"
+        style="max-height:240px; overflow-y:auto"></ul>
 </div>
 {% endif %}
+
 <script type="text/javascript">
+    /* CATEGORY DROPDOWN - категори сонгох үйлдэл */
     const category = document.querySelector('input[name="category"]');
+    /* Dropdown дотор LI дээр дарахад input value-г шинэчилнэ */
     document.getElementById('category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             category.value = e.target.getAttribute('value');
         }
     });
-    
+
     document.addEventListener('DOMContentLoaded', function () {
+        /* FORM UPDATE - лавлах мэдээлэл шинэчлэх үндсэн логик */
         const formUpdate = document.querySelector('form#reference_update');
         if (!formUpdate) {
+            /* Форм олдохгүй үед алдаа мэдэгдэнэ */
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
+            /* Submit товч → form.requestSubmit() */
             const submitters = document.querySelectorAll('button.submit-update');
             submitters.forEach(function (button) {
                 button.addEventListener('click', function (e) {
                     e.preventDefault();
-                    formUpdate.requestSubmit();
+                    formUpdate.requestSubmit(); /* HTML5 submit trigger */
                 });
             });
 
+            /* FORM SUBMIT - Form validation + Fetch PUT request */
             formUpdate.addEventListener('submit', function (event) {
                 event.preventDefault();
 
+                /* HTML5 стандарт required validation */
                 const _valid = this.checkValidity();
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                    return NotifyTop('danger',
+                        `{{ 'error'|text|e }}`,
+                        `{{ 'u-have-some-form-errors'|text|e }}`
+                    );
                 }
 
-                submitters.forEach(function (btn) { btn.growNstop(); });
+                /* Save button-ууд дээр grow animation */
+                submitters.forEach(btn => btn.growNstop());
 
+                /* FormData → сервер рүү илгээх payload */
                 const data = new FormData(this);
+                /* FETCH PUT REQUEST */
                 fetch(
                     this.action,
                     {
                         body: data,
                         method: this.getAttribute('method') ?? 'PUT'
                     }
-                ).then(res => {
+                )
+                .then(res => {
+                    /* JSON хариу эсэхийг шалгана */
                     let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-                }).then(response => {
+                    if (contentType.includes('application/json')) return res.json();
+                    
+                    throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+                })
+                .then(response => {
+                    /* Сервер амжилттай гэж мэдэгдээгүй бол алдаа гэж үзнэ */
                     if (response.status !== 'success') {
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
+                    /* Амжилттай бол жагсаалт руу буцаана */
                     window.location.href = `{{ 'references'|link }}`;
 
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Reference updated');
-                }).catch(error => {
+                    NotifyTop(
+                        response.type ?? 'success',
+                        response.title ?? `{{ 'success'|text|e }}`,
+                        response.message ?? 'Reference updated'
+                    );
+                })
+                .catch(error => {
+                    /* Серверийн болон Fetch алдаа */
                     NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitters.forEach(function (btn) { btn.growNstop(); });
+
+                    submitters.forEach(btn => btn.growNstop());
                 });
             });
         }
-        
+
+
+        /* LOGGER SECTION - тухайн бичлэгийн log түүх харах */
         const logger = document.querySelector('ul.logger-protocol');
+        /* Хэрэглэгч logger харах эрхтэй үед л ажиллана */
         if (logger && logger.tagName === 'UL') {
+            /* Back-end API endpoint-ууд */
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
+
+            /* logger-content → UL.ID-аас хүснэгтийн нэрийг салгаж авах */
             let logger_id = logger.id ?? '';
             let table = logger_id.substring(logger_id.indexOf('-') + 1);
             if (!table) return;
 
+            /* Loading Spinner → эхэнд гарч ирнэ */
             logger.style.display = 'none';
             let spinner = logger.previousElementSibling;
             spinner.style.display = 'block';
+
+            /* FETCH LOG REQUEST - тухайн бичлэгийн logs татах */
             fetch(
                 `${logsRetrieveLink}?table=${table}`,
                 {
@@ -189,19 +294,23 @@
                         'LIMIT': 10000
                     })
                 }
-            ).then(res => {
-                return res.json();
-            }).then(response => {
+            )
+            .then(res => res.json())
+            .then(response => {
                 if (response.error) {
                     throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
                 }
 
+                /* Log list-ийг эхлээд цэвэрлэнэ */
                 logger.innerHTML = '';
 
                 let logModalLink = `${logsViewLink}?table=${table}&id=`;
+
+                /* LOG ITEM бүрийг <li> элемент болгон үүсгэх */
                 Object.values(response).forEach(log => {
                     let log_li = document.createElement('li');
                     log_li.classList.add('list-group-item', 'list-group-item-action');
+                    /* Log level-ээс хамаарч өнгө өөрчлөх */
                     switch (log.level) {
                         case 'notice': log_li.classList.add('list-group-item-light'); break;
                         case 'info': log_li.classList.add('list-group-item-primary'); break;
@@ -212,6 +321,7 @@
                         default: log_li.classList.add('list-group-item-dark'); break;
                     }
 
+                    /* Log ID дээр дарж modal-тай дэлгэрэнгүй харах линк */
                     let a_link = document.createElement('a');
                     a_link.textContent = `${log.created_at} [${log.id}]`;
                     a_link.href = logModalLink + log.id;
@@ -221,6 +331,8 @@
                         e.preventDefault();
                         ajaxModal(a_link);
                     });
+
+                    /* Текст контентуудыг <li> дотор байрлуулах */
                     log_li.appendChild(a_link);
                     log_li.appendChild(document.createTextNode(' '));
 
@@ -230,16 +342,19 @@
                     log_li.appendChild(document.createTextNode(' '));
 
                     let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.innerHTML =
+                        `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
                     span_user_action.classList.add('text-muted', 'small');
                     log_li.appendChild(span_user_action);
 
                     logger.appendChild(log_li);
                 });
-
-            }).catch(error => {
+            })
+            .catch(error => {
                 console.log(error.message);
-            }).finally(() => {
+            })
+            .finally(() => {
+                /* Spinner алга болж log жагсаалт харагдана */
                 logger.style.display = '';
                 spinner.style.display = 'none';
             });

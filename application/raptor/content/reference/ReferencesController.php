@@ -4,10 +4,44 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
+/**
+ * Class ReferencesController
+ *
+ * Лавлах төрлийн контентуудыг (reference tables) харах, үүсгэх,
+ * засварлах, идэвхгүй болгох зэрэг CRUD үйлдлүүдийг
+ * хариуцдаг Indoraptor Dashboard Controller.
+ *
+ * ReferenceModel нь олон хэлний (localized) контент удирдах чадвартай
+ * тул энэхүү controller нь үр дүнд ашиглагдах бүх хэл дээрх title/content
+ * утгуудыг нэг дор хүлээн авч хадгалдаг.
+ *
+ * Гол ажиллагаа:
+ * ---------------
+ * 1) reference_* болон reference_*_content хүснэгтүүдийг илрүүлж, жагсаана
+ * 2) ReferenceInitial дахь seed функцуудыг ашиглан хүснэгт байхгүй бол
+ *      ReferenceModel::__initial() → хүснэгт үүсгэнэ → seed өгөгдөл оруулна
+ * 3) Лавлах контентуудыг жагсаах, харах, үүсгэх, шинэчлэх, идэвхгүй болгох
+ * 4) Бүх үйлдлийг indolog() ашиглан системийн лог-д тэмдэглэнэ
+ *
+ * Permission:
+ * -----------
+ * - system_content_index
+ * - system_content_insert
+ * - system_content_update
+ * - system_content_delete
+ *
+ * @package Raptor\Content
+ */
 class ReferencesController extends \Raptor\Controller
 {
     use \Raptor\Template\DashboardTrait;
     
+    /**
+     * Лавлах хүснэгтүүдийн жагсаалт (reference tables) болон тэдгээрт
+     * хадгалагдсан бичлэгүүдийг админ Dashboard дээр харуулна.
+     *
+     * @return void ReferenceModel + ReferenceInitial дээр үндэслэн лавлах хүснэгтүүдийг админд харагдуулна
+     */
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -58,6 +92,28 @@ class ReferencesController extends \Raptor\Controller
         $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг үзэж байна', ['action' => 'reference-index']);
     }
     
+    /**
+     * reference_{table} хүснэгтэд шинээр бичлэг (reference record) нэмэх (INSERT).
+     *
+     * Ажиллах зарчим:
+     * ---------------
+     * 1) POST бол:
+     *      - payload + олон хэлний контентийг задлаж ангилна
+     *      - хүснэгт баазад (DB) байгаа эсэх/эсвэл ReferenceInitial дотор method байдгийг шалгана
+     *      - ReferenceModel::insert() → бичлэг хадгална
+     *      - JSON хариу буцаана
+     *
+     * 2) GET бол:
+     *      - шинээр бичлэг нэмэх форм бүхий dashboard template рендерлэнэ
+     *
+     * Анхаарах онцлогууд:
+     * ------------------
+     * - reference_{table} хүснэгт баазад байхгүй байж болно!
+     *   Энэ тохиолдолд ReferenceModel → __initial() → хүснэгт үүсгэнэ.
+     *
+     * @param string $table  reference_ дараах хүснэгтийн нэр
+     * @return void
+     */
     public function insert(string $table)
     {
         try {
@@ -136,6 +192,23 @@ class ReferencesController extends \Raptor\Controller
         }
     }
     
+    /**
+     * Лавлах контентийн дэлгэрэнгүй мэдээллийг модал хэлбэрээр харах (VIEW).
+     *
+     * Процесс:
+     * --------
+     * 1) Хүснэгт байгаа эсэхийг шалгана
+     * 2) p.id = $id ба p.is_active = 1 нөхцөлөөр бичлэгийг уншина
+     * 3) Dashboard modal-ийг render хийнэ
+     *
+     * Хэрэглээ:
+     * ---------
+     * Админ хэсэгт view button дарсан үед ашиглагдана.
+     *
+     * @param string $table  reference_ дараах хүснэгтийн нэр
+     * @param int    $id     Бичлэгийн ID
+     * @return void
+     */
     public function view(string $table, int $id)
     {
         try {
@@ -181,6 +254,29 @@ class ReferencesController extends \Raptor\Controller
         }
     }
     
+    /**
+     * Лавлах бичлэгийг шинэчлэх (UDPATE).
+     *
+     * Ажиллах зарчим:
+     * ---------------
+     * 1) Бичлэг байгаа эсэхийг шалгах
+     * 2) PUT хүсэлт ирсэн бол:
+     *      - Payload болон олон хэлний content-ийг салгаж ангилна
+     *      - Өөрчлөгдсөн талбаруудыг updates[] дотор бүртгэнэ
+     *      - ReferenceModel::updateById() ашиглан шинэчилнэ
+     *      - JSON хариу буцаана
+     *
+     * 3) GET бол:
+     *      - Update modal form бүхий dashboard template-ийг render хийнэ
+     *
+     * Онцгой тохиолдол:
+     * -----------------
+     * - Хүсэлтэд ямар ч өөрчлөгдсөн утга агуулаагүй байвал "No update!" алдаа өгнө.
+     *
+     * @param string $table  reference_ дараах хүснэгтийн нэр
+     * @param int    $id     Бичлэгийн ID
+     * @return void
+     */
     public function update(string $table, int $id)
     {
         try {
@@ -274,6 +370,26 @@ class ReferencesController extends \Raptor\Controller
         }
     }
     
+    /**
+     * Лавлах мэдээллийг идэвхгүй болгох (SOFT DELETE).
+     *
+     * ReferenceModel::deactivateById() функц ашиглан:
+     *  - is_active = 0
+     *  - updated_by = current user $id
+     *  - updated_at = now()
+     *
+     * Үр дүн:
+     * -------
+     * - Dashboard JSON success/error буцаана
+     * - Лог-д бичигдэнэ
+     *
+     * Анхаарах зүйл:
+     * --------------
+     * - Table нэрийг хэрэглэгчийн илгээсэн утгаас шалгаж цэвэрлэнэ
+     * - reference_{table} байхгүй бол 404 алдаа
+     *
+     * @return void
+     */
     public function deactivate()
     {
         try {

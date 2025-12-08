@@ -1,15 +1,15 @@
-<!-- SweetAlert2 сан – файлыг идэвхгүй болгох зэрэг үйлдлийн үед гоёмсог alert харуулахад ашиглана -->
+<!-- SweetAlert2 сан - файлыг идэвхгүй болгох зэрэг үйлдлийн үед гоёмсог alert харуулахад ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Plupload – олон төрлийн browser/runtime дээр файлыг upload хийхэд ашиглах JS сан -->
+<!-- Plupload - олон төрлийн browser/runtime дээр файлыг upload хийхэд ашиглах JS сан -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<!-- Fancybox – зураг болон медиа файлуудыг modal lightbox хэлбэрээр томруулж харахад ашиглана -->
+<!-- Fancybox - зураг болон медиа файлуудыг modal lightbox хэлбэрээр томруулж харахад ашиглана -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 
 <!--
-    Дээд талын callout хэсэг –
+    Дээд талын callout хэсэг -
     Мэдээллийн санд бүртгэгдсэн бүх файлын ерөнхий статистик мэдээлэл (хэдэн хүснэгт, хэдэн файл, нийт хэмжээ)
     мөн файл хадгалж буй бүх хүснэгтийг линк хэлбэрээр харуулна.
 -->
@@ -38,7 +38,7 @@
 
 <!--
     Сонгогдсон files table-ийн гарчиг.
-    Жишээ нь: files, pages_files гэх мэт – {{ table }} хувьсагчийг capitalize хийж харуулна.
+    Жишээ нь: files, pages_files гэх мэт - {{ table }} хувьсагчийг capitalize хийж харуулна.
 -->
 <div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto text-danger">
@@ -57,7 +57,7 @@
 </div>
 
 <!--
-    Файл сонгох, upload хийх товчнууд – Plupload-ийн container.
+    Файл сонгох, upload хийх товчнууд - Plupload-ийн container.
     pickfiles → файл сонгох
     uploadfiles → сонгосон файлуудыг сервер рүү upload хийх
 -->
@@ -84,7 +84,7 @@
             <th scope="col">{{ 'file'|text }}</th>
             <!-- MIME төрөл, хэмжээ зэрэг техникийн шинж чанар -->
             <th scope="col">{{ 'properties'|text }}</th>
-            <!-- Файлын тайлбар – хэрэглэгчийн оруулсан description -->
+            <!-- Файлын тайлбар - хэрэглэгчийн оруулсан description -->
             <th scope="col">{{ 'description'|text }}</th>
             <!-- Файлын ангилал (category) -->
             <th scope="col">{{ 'category'|text }}</th>
@@ -137,7 +137,7 @@
         return s.replace(/[&"'<>]/g, c => lookup[c]);
     }
 
-    /* 📌 DOMContentLoaded – Бүх JS функциональ эндээс эхэлнэ
+    /* 📌 DOMContentLoaded - Бүх JS функциональ эндээс эхэлнэ
        -------------------------------------------------------------------
        Энэ дотор:
          • motable-ийн append override хийх
@@ -146,7 +146,7 @@
          • plupload uploader-ийг эхлүүлэх
        ------------------------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function () {
-        /* Файлын modal нээх линк – TWIG-ээс ирнэ */
+        /* Файлын modal нээх линк - TWIG-ээс ирнэ */
         const filesModalLink = `{{ 'files-modal'|link({'table': table}) }}`;
 
         /* Хэрэглэгч засварлах эрхтэй эсэх */
@@ -168,7 +168,7 @@
             let fileIcon = '';
             const fileName = escapeStr(getBasename(file['path']));
 
-            /* default link attribute – файл нээх үед confirm асууна */
+            /* default link attribute - файл нээх үед confirm асууна */
             let fileLinkAttr =
                 `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
 
@@ -269,22 +269,22 @@
                 ${formatSizeUnits(file['size'])}`;
             row.appendChild(cell2);
 
-            /* 📌 3-р багана – description */
+            /* 📌 3-р багана - description */
             const cell3 = document.createElement('td');
             cell3.innerHTML = file['description'] ?? '';
             row.appendChild(cell3);
 
-            /* 📌 4-р багана – category */
+            /* 📌 4-р багана - category */
             const cell4 = document.createElement('td');
             cell4.innerHTML = file['category'] ?? '';
             row.appendChild(cell4);
 
-            /* 📌 5-р багана – keyword */
+            /* 📌 5-р багана - keyword */
             const cell5 = document.createElement('td');
             cell5.innerHTML = file['keyword'] ?? '';
             row.appendChild(cell5);
 
-            /* 📌 6-р багана – created_at */
+            /* 📌 6-р багана - created_at */
             const cell6 = document.createElement('td');
             cell6.innerHTML = file['created_at'] ?? '';
             row.appendChild(cell6);

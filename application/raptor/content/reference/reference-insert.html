@@ -8,7 +8,7 @@
 } %}
 <div class="card shadow border-success">
     <div class="card-header text-uppercase">
-        <div class="d-flex flex-wrap justify-content-between align-items-center">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">            
             <h3 class="text-success fs-6 pt-1">
                 <i class="bi bi-plus-circle-dotted"></i> {{ 'add-record'|text }} ({{ table }})
             </h3>
@@ -22,50 +22,104 @@
             </div>
         </div>
     </div>
+
     <div class="card-body">
-        <form class="needs-validation" id="reference_insert" action="{{ 'reference-insert'|link({'table': table}) }}" method="POST" enctype="multipart/form-data" novalidate>
+        <!-- INSERT FORM -->
+        <form class="needs-validation"
+              id="reference_insert"
+              action="{{ 'reference-insert'|link({'table': table}) }}"
+              method="POST"
+              enctype="multipart/form-data"
+              novalidate>
+            
             <div class="form-group row">
+                <!-- Keyword input -->
                 <div class="col-6">
                     <label class="form-label">{{ 'keyword'|text }}</label>
-                    <input class="form-control" name="keyword" value="" maxlength="128" placeholder="" required type="text" autocomplete="off">
+                    <input class="form-control"
+                           name="keyword"
+                           maxlength="128"
+                           required
+                           autocomplete="off">
+
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
+                
+                <!-- Category dropdown -->
                 <div class="col-6">
                     <label class="form-label">{{ 'category'|text }}</label>
+                    <!-- Category Input + Dropdown -->
                     <div class="input-group">
-                        <input class="form-control" name="category" required type="text" value="{{ categories|keys|first|e }}" maxlength="32">
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <!-- Category text input -->
+                        <input class="form-control"
+                               name="category"
+                               required
+                               maxlength="32"
+                               value="{{ categories|keys|first|e }}">
+
+                        <!-- Dropdown toggle -->
+                        <button class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"></button>
+
+                        <!-- Dropdown list -->
                         <ul class="dropdown-menu dropdown-menu-end" id="category_list">
                         {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value|e }}">{{ (name[localization.code] ?? value)|capitalize }}</li>
+                            <li class="dropdown-item" value="{{ value|e }}">
+                                {{ (name[localization.code] ?? value)|capitalize }}
+                            </li>
                         {% endfor %}
                         </ul>
+
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
             </div>
+
             <ul class="nav nav-tabs nav-tabs-content mt-3">
                 {% for code in localization.language|keys %}
                     <li class="nav-item">
-                        <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
+                        <a class="nav-link{% if loop.first %} active show{% endif %}"
+                           data-bs-toggle="tab"
+                           href="#tab-{{ code }}">
                             {{ 'version'|text }}
+
+                            <!-- Flag icon -->
                             {% set flag = code == 'en' ? 'us' : code %}
-                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12">
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                 srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                 width="16" height="12">
                         </a>
                     </li>
                 {% endfor %}
             </ul>
+
             <div class="tab-content">
                 {% for code in localization.language|keys %}
                 <div class="tab-pane{% if loop.first %} active show{% endif %} mt-2" id="tab-{{ code }}">
+
+                    <!-- Title -->
                     <div class="form-group">
                         <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                        <input class="form-control" name="title[{{ code }}]" required value="" maxlength="255" placeholder="" type="text" autocomplete="off">
+
+                        <input class="form-control"
+                               name="title[{{ code }}]"
+                               maxlength="255"
+                               required
+                               autocomplete="off">
+
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
+
+                    <!-- Content -->
                     <div class="form-group mt-2">
                         <label class="form-label">{{ 'content'|text }} ({{ code }})</label>
-                        <textarea class="form-control" name="content[{{ code }}]" required rows="10"></textarea>
+
+                        <textarea class="form-control"
+                                  name="content[{{ code }}]"
+                                  rows="10"
+                                  required></textarea>
+
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
@@ -73,22 +127,28 @@
             </div>
         </form>
     </div>
+
     <div class="card-footer">
         <div class="row pb-1">
+            <!-- Save -->
             <div class="col-6 d-grid">
                 <button class="submit-insert btn btn-success text-uppercase shadow-sm" type="button">
                     <i class="bi bi-check2"></i> {{ 'save'|text }}
                 </button>
             </div>
+
+            <!-- Back -->
             <div class="col-6 d-grid">
-                <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'references'|link }}">
+                <a class="btn btn-secondary text-uppercase shadow-sm"
+                   href="{{ 'references'|link }}">
                     <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
                 </a>
             </div>
         </div>
     </div>
 </div>
-<script type="text/javascript">    
+
+<script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const category = document.querySelector('input[name="category"]');
         document.getElementById('category_list').addEventListener('click', function (e) {
@@ -96,55 +156,66 @@
                 category.value = e.target.getAttribute('value');
             }
         });
-        
+
         const formInsert = document.querySelector('form#reference_insert');
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
+            /* Submit buttons */
             const submitters = document.querySelectorAll('button.submit-insert');
-            submitters.forEach(function (button) {
-                button.addEventListener('click', function (e) {
-                    e.preventDefault();
+            submitters.forEach(btn =>
+                btn.addEventListener('click', function () {
                     formInsert.requestSubmit();
-                });
-            });
+                })
+            );
 
+            /* FORM SUBMIT EVENT */
             formInsert.addEventListener('submit', function (event) {
                 event.preventDefault();
 
-                const _valid = this.checkValidity();
+                const valid = this.checkValidity();
                 this.classList.add('was-validated');
-                if (!_valid) {
+                if (!valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                    return NotifyTop(
+                        'danger',
+                        `{{ 'error'|text|e }}`,
+                        `{{ 'u-have-some-form-errors'|text|e }}`
+                    );
                 }
 
-                submitters.forEach(function (btn) { btn.growNstop(); });
+                submitters.forEach(btn => btn.growNstop());
 
+                /* Prepare data */
                 const data = new FormData(this);
-                fetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'POST'
-                    }
-                ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-                }).then(response => {
+
+                /* SEND REQUEST */
+                fetch(this.action, {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                })
+                .then(res => {
+                    const type = res.headers.get('content-type') || '';
+                    if (type.includes('application/json')) return res.json();
+                    
+                    throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+                })
+                .then(response => {
                     if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
+                        throw new Error(response.message ?? 'Invalid response!');
                     }
 
                     window.location.href = `{{ 'references'|link }}`;
 
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Reference created');
-                }).catch(error => {
+                    NotifyTop(
+                        response.type ?? 'success',
+                        response.title ?? `{{ 'success'|text|e }}`,
+                        response.message ?? 'Reference created'
+                    );
+                })
+                .catch(error => {
                     NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitters.forEach(function (btn) { btn.growNstop(); });
+                    submitters.forEach(btn => btn.growNstop());
                 });
             });
         }
