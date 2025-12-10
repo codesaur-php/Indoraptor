@@ -29,15 +29,19 @@ namespace Web;
  *    - PDO instance үүсгэж, хожим нь Controller-т дамжуулна  
  *    - DB connection автоматаар нээгдэж хаагдана  
  *
- * 3) **SessionMiddleware**  
+ * 3) **ContainerMiddleware**  
+ *    - Dependency Injection Container-г request attributes-д inject хийнэ  
+ *    - PDO-г container-д бүртгэнэ  
+ *
+ * 4) **SessionMiddleware**  
  *    - PHP session удирдах  
  *    - Хэрэглэгчийн authentication / session-based data хадгалах  
  *
- * 4) **LocalizationMiddleware**  
+ * 5) **LocalizationMiddleware**  
  *    - Системийн хэл (mn/en/...) тодорхойлох  
  *    - Twig template-д localization объект дамжуулах  
  *
- * 5) **SettingsMiddleware**  
+ * 6) **SettingsMiddleware**  
  *    - System settings (branding, favicon, footer, title, зэрэг)  
  *    - Хуудсуудад дамжуулах болно  
  *
@@ -78,6 +82,9 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new \Raptor\MySQLConnectMiddleware()); 
         // → Хэрэв PostgreSQL ашиглавал:
         // $this->use(new \Raptor\PostgresConnectMiddleware());
+
+        // 📦 Container middleware (PDO шаардлагатай тул Database-ийн дараа)
+        $this->use(new \Raptor\ContainerMiddleware());
 
         // 🔐 Session middleware
         $this->use(new SessionMiddleware());

@@ -20,9 +20,12 @@ namespace Raptor;
  *                      → PHP session эхлүүлж хэрэглэгчийн session-г удирдана
  *   4) JWTAuthMiddleware
  *                      → Session доторх JWT-г шалгаж authenticated User объект үүсгэнэ
- *   5) LocalizationMiddleware
+ *   5) ContainerMiddleware
+ *                      → Dependency Injection Container-г request attributes-д inject хийнэ
+ *                      → PDO болон User ID-г container-д бүртгэнэ
+ *   6) LocalizationMiddleware
  *                      → Хэлний жагсаалт, сонгогдсон хэл, орчуулгуудыг request attributes-д inject хийнэ
- *   6) Content\SettingsMiddleware
+ *   7) Content\SettingsMiddleware
  *                      → Системийн тохиргоог (settings) дуудлага бүрт inject хийнэ
  *
  * Мөн дараах router-үүдийг бүртгэж өгнө:
@@ -65,7 +68,10 @@ abstract class Application extends \codesaur\Http\Application\Application
         $this->use(new Authentication\SessionMiddleware());
         $this->use(new Authentication\JWTAuthMiddleware());
 
-        // 4. Localization болон системийн тохиргоо
+        // 4. Container middleware
+        $this->use(new ContainerMiddleware());
+
+        // 5. Localization болон системийн тохиргоо
         $this->use(new Localization\LocalizationMiddleware());
         $this->use(new Content\SettingsMiddleware());
 

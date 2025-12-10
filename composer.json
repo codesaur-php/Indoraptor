@@ -16,6 +16,7 @@
     "require": {
         "ext-json": "*",
         "psr/log": ">=3.0.0",
+        "psr/container": "^1.0 || ^2.0",
         "vlucas/phpdotenv": ">=5.5.0",
         "phpmailer/phpmailer": ">=6.8.0",
         "getbrevo/brevo-php": ">=1.0.2",
@@ -23,7 +24,8 @@
         "codesaur/http-application": ">=5.8.1",
         "codesaur/dataobject": ">=7.3.0",
         "codesaur/http-client": ">=1.6.0",
-        "codesaur/template": ">=2.0.1"
+        "codesaur/template": ">=2.0.1",
+        "codesaur/container": ">=1.2.1"
     },
     "autoload": {
         "psr-4": {

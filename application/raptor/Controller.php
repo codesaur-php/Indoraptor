@@ -3,6 +3,7 @@
 namespace Raptor;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Container\ContainerInterface;
 use Twig\TwigFilter;
 
 use codesaur\Template\TwigTemplate;
@@ -488,6 +489,52 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         } catch (\Throwable $e) {
             $this->errorLog($e);
         }
+    }
+
+    /**
+     * Container instance авах.
+     *
+     * @return ContainerInterface|null
+     */
+    protected function getContainer(): ?ContainerInterface
+    {
+        return $this->getAttribute('container');
+    }
+
+    /**
+     * Service-г container-аас авах.
+     *
+     * @param string $id Service ID
+     * @return mixed
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     * @throws \RuntimeException Container байхгүй үед
+     */
+    protected function getService(string $id)
+    {
+        $container = $this->getContainer();
+        if (!$container) {
+            throw new \RuntimeException(
+                'Container is not available. ' .
+                'Make sure ContainerMiddleware is registered in Application.'
+            );
+        }
+        return $container->get($id);
+    }
+
+    /**
+     * Service байгаа эсэхийг шалгах.
+     *
+     * @param string $id Service ID
+     * @return bool
+     */
+    protected function hasService(string $id): bool
+    {
+        $container = $this->getContainer();
+        if (!$container) {
+            return false;
+        }
+        return $container->has($id);
     }
 
     /**
