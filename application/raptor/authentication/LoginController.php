@@ -9,8 +9,6 @@ use codesaur\Template\MemoryTemplate;
 use Raptor\User\UsersModel;
 use Raptor\Organization\OrganizationModel;
 use Raptor\Organization\OrganizationUserModel;
-use Raptor\Content\ReferenceModel;
-use Raptor\Mail\Mailer;
 
 /**
  * Class LoginController
@@ -91,16 +89,10 @@ class LoginController extends \Raptor\Controller
         }
 
         // TOS + Privacy Policy орчуулга татаж template-д дамжуулах
-        $reference = new ReferenceModel($this->pdo);
-        $reference->setTable('templates');
-        $rows = $reference->getRows([
-            'WHERE' =>
-                "c.code='{$this->getLanguageCode()}' " .
-                "AND (p.keyword='tos' OR p.keyword='pp') " .
-                "AND p.is_active=1"
-        ]);
-        foreach ($rows as $row) {
-            $login->set($row['keyword'], $row['localized']);
+        $templateService = $this->getService('template_service');
+        $templates = $templateService->getMultipleByKeywords(['tos', 'pp']);
+        foreach ($templates as $keyword => $localized) {
+            $login->set($keyword, $localized);
         }
 
         // Template-г render хийх
@@ -374,17 +366,11 @@ class LoginController extends \Raptor\Controller
             $payload['code'] = $code;
             
             // 2) Email template татах (request-new-user)
-            $referenceModel = new ReferenceModel($this->pdo);
-            $referenceModel->setTable('templates');
-            $reference = $referenceModel->getRowWhere([
-                'c.code'     => $code,
-                'p.keyword'  => 'request-new-user',
-                'p.is_active' => 1
-            ]);
-            if (empty($reference['localized'])) {
+            $templateService = $this->getService('template_service');
+            $content = $templateService->getByKeyword('request-new-user');
+            if (empty($content)) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
-            $content = $reference['localized'];
 
             // 3) Payload fields validation
             if (empty($payload['email']) || empty($payload['username'])) {
@@ -437,10 +423,10 @@ class LoginController extends \Raptor\Controller
             $template = new MemoryTemplate();
             $template->set('email',    $profile['email']);
             $template->set('username', $profile['username']);
-            $template->source($content['content'][$code]);
+            $template->source($content['content']);
             if (
-                (new Mailer($this->pdo))
-                    ->mail($profile['email'], null, $content['title'][$code], $template->output())
+                $this->getService('mailer')
+                    ->mail($profile['email'], null, $content['title'], $template->output())
                     ->send()
             ) {
                 $this->respondJSON([
@@ -558,17 +544,11 @@ class LoginController extends \Raptor\Controller
             }
 
             // 2) Email template авах
-            $referenceModel = new ReferenceModel($this->pdo);
-            $referenceModel->setTable('templates');
-            $reference = $referenceModel->getRowWhere([
-                'c.code'      => $code,
-                'p.keyword'   => 'forgotten-password-reset',
-                'p.is_active' => 1
-            ]);
-            if (empty($reference['localized'])) {
+            $templateService = $this->getService('template_service');
+            $content = $templateService->getByKeyword('forgotten-password-reset');
+            if (empty($content)) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
-            $content = $reference['localized'];
 
             // 3) Хэрэглэгчийг шалгах
             $users = new UsersModel($this->pdo);
@@ -615,10 +595,10 @@ class LoginController extends \Raptor\Controller
                 'link',
                 "{$this->generateRouteLink('login', [], true)}?forgot={$request['forgot_password']}"
             );
-            $template->source($content['content'][$code]);
+            $template->source($content['content']);
             if (
-                (new Mailer($this->pdo))
-                    ->mail($payload['email'], null, $content['title'][$code], $template->output())
+                $this->getService('mailer')
+                    ->mail($payload['email'], null, $content['title'], $template->output())
                     ->send()
             ) {
                 $this->respondJSON(

@@ -8,7 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Codesaur\Container\Container;
+use codesaur\Container\Container;
 
 /**
  * Class ContainerMiddleware
@@ -40,20 +40,25 @@ use Codesaur\Container\Container;
  * class MyContainerMiddleware extends ContainerMiddleware
  * {
  *     protected function registerServices(
- *         ContainerInterface $container,
+ *         ContainerInterface &$container,
  *         ServerRequestInterface $request
  *     ): void {
- *         parent::registerServices($container, $request);
- *
  *         // PDO шаардлагатай service (Lazy loading - request-ээс PDO авч)
  *         $container->set('mailer', function(ContainerInterface $c) use ($request) {
  *             $pdo = $request->getAttribute('pdo');
  *             return new \Raptor\Mail\Mailer($pdo);
  *         });
  *
- *         // PDO шаардлагагүй service
+ *         // PDO шаардлагагүй service (Lazy loading)
  *         $container->set('cache', function(ContainerInterface $c) {
  *             return new \App\Services\CacheService();
+ *         });
+ *
+ *         // Container-аас өөр service авч ашиглах жишээ
+ *         // Email Notification Service нь Mailer service-г ашиглана
+ *         $container->set('email_notification', function(ContainerInterface $c) {
+ *             $mailer = $c->get('mailer');  // Container-аас mailer service авах
+ *             return new \App\Services\EmailNotificationService($mailer);
  *         });
  *     }
  * }
@@ -133,6 +138,13 @@ class ContainerMiddleware implements MiddlewareInterface
      *         $user = $request->getAttribute('user');
      *         return new \App\Services\UserService($pdo, $user);
      *     });
+     *
+     *     // Container-аас өөр service авч ашиглах жишээ
+     *     // Email Notification Service нь Mailer service-г ашиглана
+     *     $container->set('email_notification', function(ContainerInterface $c) {
+     *         $mailer = $c->get('mailer');  // Container-аас mailer service авах
+     *         return new \App\Services\EmailNotificationService($mailer);
+     *     });
      * }
      * ```
      *
@@ -159,6 +171,11 @@ class ContainerMiddleware implements MiddlewareInterface
      *    ✅ 'mailer', 'cache', 'email_notification'
      *    ❌ 'm', 'c', 'e'
      *
+     * 5. Container-аас өөр service авч ашиглах
+     *    → $mailer = $c->get('mailer');  // Container-аас service авах
+     *    → Factory function-д ContainerInterface $c параметр ашиглана
+     *    → use ($request) шаардлагагүй, учир нь зөвхөн container-аас service авч байна
+     *
      * @param ContainerInterface $container Container instance
      * @param ServerRequestInterface $request Server request (PDO, User зэрэг dependency-ууд агуулна)
      * @return void
@@ -167,15 +184,24 @@ class ContainerMiddleware implements MiddlewareInterface
         ContainerInterface &$container,
         ServerRequestInterface $request
     ): void {
+        // Mailer service бүртгэе (Dashboard-оос хэрэглэгчдэд мэдэгдэл шуудан илгээхэд ашиглана)
+        $container->set('mailer', function(ContainerInterface $c) use ($request) {
+            $pdo = $request->getAttribute('pdo');
+            return new \Raptor\Mail\Mailer($pdo);
+        });
+
+        // Template service бүртгэх (templates хүснэгтээс keyword-аар орчуулга татах)
+        $container->set('template_service', function(ContainerInterface $c) use ($request) {
+            $pdo = $request->getAttribute('pdo');
+            // Request-ээс localization attribute-аас code-г авч, олдохгүй бол 'en' гэж default утга өгөх
+            $localization = $request->getAttribute('localization');
+            $code = $localization['code'] ?? 'en';
+            return new \Raptor\Content\TemplateService($pdo, $code);
+        });
+        
         // ============================================================
-        // Энд өөрийн service-уудыг бүртгэнэ
+        // Хөгжүүлэгч энд өөрийн service-уудыг нэмж бүртгэнэ
         // ============================================================
-        //
-        // Жишээ: PDO шаардлагатай service (Lazy loading)
-        // $container->set('mailer', function(ContainerInterface $c) use ($request) {
-        //     $pdo = $request->getAttribute('pdo');
-        //     return new \Raptor\Mail\Mailer($pdo);
-        // });
         //
         // Жишээ: PDO шаардлагагүй service (Lazy loading)
         // $container->set('cache', function(ContainerInterface $c) {
@@ -187,6 +213,12 @@ class ContainerMiddleware implements MiddlewareInterface
         //     $pdo = $request->getAttribute('pdo');
         //     $user = $request->getAttribute('user');
         //     return new \MyNamespace\UserService($pdo, $user);
+        // });
+        //
+        // Жишээ: Container-аас өөр service авч ашиглах (Lazy loading)
+        // $container->set('email_notification', function(ContainerInterface $c) {
+        //     $mailer = $c->get('mailer');  // Container-аас mailer service авах
+        //     return new \MyNamespace\EmailNotificationService($mailer);
         // });
         //
     }

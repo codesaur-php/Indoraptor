@@ -15,8 +15,6 @@ use Raptor\Organization\OrganizationModel;
 use Raptor\Organization\OrganizationUserModel;
 use Raptor\RBAC\UserRole;
 use Raptor\RBAC\Roles;
-use Raptor\Content\ReferenceModel;
-use Raptor\Mail\Mailer;
 use Raptor\Log\Logger;
 
 /**
@@ -1127,32 +1125,23 @@ class UsersController extends FileController
             ]);
             
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
-            $code = $this->getLanguageCode();
-            $referenceModel = new ReferenceModel($this->pdo);
-            $referenceModel->setTable('templates');
+            $templateService = $this->getService('template_service');
             // approve-new-user template-ийг дуудна
-            $reference = $referenceModel->getRowWhere(
-                [
-                    'c.code' => $code,
-                    'p.keyword' => 'approve-new-user',
-                    'p.is_active' => 1
-                ]
-            );
-            if (!empty($reference['localized']['content'][$code])) {
-                $localized = $reference['localized'];                
+            $localized = $templateService->getByKeyword('approve-new-user');
+            if (!empty($localized) && !empty($localized['content'])) {
                 // MemoryTemplate → placeholder орлуулах
                 $template = new MemoryTemplate();
-                $template->source($localized['content'][$code]);
+                $template->source($localized['content']);
                 $template->set('email', $signup['email']);
                 $template->set('login', $this->generateRouteLink('login', [], true));
                 $template->set('username', $signup['username']);
                 
                 // И-мэйл илгээж тухайн хүсэлт өгсөн хэрэглэгчдээ мэдээлэх
-                (new Mailer($this->pdo))
+                $this->getService('mailer')
                     ->mail(
                         $signup['email'],
                         null,
-                        $localized['title'][$code],
+                        $localized['title'],
                         $template->output()
                     )->send();
             }
