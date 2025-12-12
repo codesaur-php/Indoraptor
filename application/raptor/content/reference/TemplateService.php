@@ -5,11 +5,11 @@ namespace Raptor\Content;
 /**
  * Class TemplateService
  *
- * Templates хүснэгтээс keyword-аар орчуулга татах service.
+ * ReferenceModel моделийн templates content хүснэгтээс keyword-аар орчуулга татах service.
  *
  * Энэ service нь:
- * - templates хүснэгтээс keyword-аар орчуулга татана
- * - Language code-г constructor-оос авна
+ * - reference_templates_content хүснэгтээс keyword-аар орчуулга татна
+ * - Language code-г method parameter-оос авна
  * - is_active=1 шалгана
  *
  * @package Raptor\Content
@@ -17,23 +17,21 @@ namespace Raptor\Content;
 class TemplateService
 {
     protected \PDO $pdo;
-    protected string $code;
 
     /**
      * TemplateService constructor.
      *
      * @param \PDO $pdo Database connection
-     * @param string $code Language code (жишээ: 'mn', 'en')
      */
-    public function __construct(\PDO $pdo, string $code)
+    public function __construct(\PDO $pdo)
     {
         $this->pdo = $pdo;
-        $this->code = $code;
     }
 
     /**
      * Нэг keyword-аар template татах.
      *
+     * @param string $code Language code (жишээ: 'mn', 'en')
      * @param string $keyword Template keyword (жишээ: 'tos', 'pp', 'request-new-user')
      * @return array|null Сонгосон хэлний контент эсвэл null
      * 
@@ -43,26 +41,27 @@ class TemplateService
      *     'content' => string     // Сонгосон хэлний контент
      * ]
      */
-    public function getByKeyword(string $keyword): ?array
+    public function getByKeyword(string $code, string $keyword): ?array
     {
         $referenceModel = new ReferenceModel($this->pdo);
         $referenceModel->setTable('templates');
         $reference = $referenceModel->getRowWhere([
-            'c.code'      => $this->code,
+            'c.code'      => $code,
             'p.keyword'   => $keyword,
             'p.is_active' => 1
         ]);
 
-        if (empty($reference['localized'][$this->code])) {
+        if (empty($reference['localized'][$code])) {
             return null;
         }
 
-        return $reference['localized'][$this->code];
+        return $reference['localized'][$code];
     }
 
     /**
      * Олон keyword-аар template-ууд татах.
      *
+     * @param string $code Language code (жишээ: 'mn', 'en')
      * @param array $keywords Template keyword-уудын массив (жишээ: ['tos', 'pp'])
      * @return array Keyword => Сонгосон хэлний контент бүтэцтэй массив
      * 
@@ -79,7 +78,7 @@ class TemplateService
      *     // ... бусад keyword-ууд
      * ]
      */
-    public function getMultipleByKeywords(array $keywords): array
+    public function getMultipleByKeywords(string $code, array $keywords): array
     {
         if (empty($keywords)) {
             return [];
@@ -96,14 +95,14 @@ class TemplateService
         $keywordWhere = '(' . implode(' OR ', $keywordConditions) . ')';
         $rows = $referenceModel->getRows([
             'WHERE' =>
-                "c.code='{$this->code}' " .
+                "c.code='{$code}' " .
                 "AND {$keywordWhere} " .
                 "AND p.is_active=1"
         ]);
 
         $result = [];
         foreach ($rows as $row) {
-            $result[$row['keyword']] = $row['localized'][$this->code];
+            $result[$row['keyword']] = $row['localized'][$code];
         }
 
         return $result;

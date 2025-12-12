@@ -89,13 +89,15 @@ class LoginController extends \Raptor\Controller
         }
 
         // TOS + Privacy Policy орчуулга татаж template-д дамжуулах
+        $code = $this->getLanguageCode();
         $templateService = $this->getService('template_service');
-        $templates = $templateService->getMultipleByKeywords(['tos', 'pp']);
-        foreach ($templates as $keyword => $localized) {
-            $login->set($keyword, $localized);
+        $templateService->getByKeyword($code, 'pp');
+        $templates = $templateService->getMultipleByKeywords($code, ['tos', 'pp']);
+        foreach ($templates as $keyword => $template) {
+            $login->set($keyword, $template);
         }
 
-        // Template-г render хийх
+        // Login template-г render хийх
         $login->render();
     }
     
@@ -367,8 +369,8 @@ class LoginController extends \Raptor\Controller
             
             // 2) Email template татах (request-new-user)
             $templateService = $this->getService('template_service');
-            $content = $templateService->getByKeyword('request-new-user');
-            if (empty($content)) {
+            $template = $templateService->getByKeyword($code, 'request-new-user');
+            if (empty($template)) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
 
@@ -420,13 +422,13 @@ class LoginController extends \Raptor\Controller
             }
 
             // 5) Email илгээх
-            $template = new MemoryTemplate();
-            $template->set('email',    $profile['email']);
-            $template->set('username', $profile['username']);
-            $template->source($content['content']);
+            $memtemplate = new MemoryTemplate();
+            $memtemplate->set('email',    $profile['email']);
+            $memtemplate->set('username', $profile['username']);
+            $memtemplate->source($template['content']);
             if (
                 $this->getService('mailer')
-                    ->mail($profile['email'], null, $content['title'], $template->output())
+                    ->mail($profile['email'], null, $template['title'], $memtemplate->output())
                     ->send()
             ) {
                 $this->respondJSON([
@@ -545,8 +547,8 @@ class LoginController extends \Raptor\Controller
 
             // 2) Email template авах
             $templateService = $this->getService('template_service');
-            $content = $templateService->getByKeyword('forgotten-password-reset');
-            if (empty($content)) {
+            $template = $templateService->getByKeyword($payload['code'], 'forgotten-password-reset');
+            if (empty($template)) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
 
@@ -588,17 +590,17 @@ class LoginController extends \Raptor\Controller
             }
 
             // 5) Reset email илгээх
-            $template = new MemoryTemplate();
-            $template->set('email',   $payload['email']);
-            $template->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
-            $template->set(
+            $memtemplate = new MemoryTemplate();
+            $memtemplate->set('email',   $payload['email']);
+            $memtemplate->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
+            $memtemplate>-set(
                 'link',
                 "{$this->generateRouteLink('login', [], true)}?forgot={$request['forgot_password']}"
             );
-            $template->source($content['content']);
+            $memtemplate->source($template['content']);
             if (
                 $this->getService('mailer')
-                    ->mail($payload['email'], null, $content['title'], $template->output())
+                    ->mail($payload['email'], null, $template['title'], $memtemplate->output())
                     ->send()
             ) {
                 $this->respondJSON(

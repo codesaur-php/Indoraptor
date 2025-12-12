@@ -1127,22 +1127,22 @@ class UsersController extends FileController
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
             $templateService = $this->getService('template_service');
             // approve-new-user template-ийг дуудна
-            $localized = $templateService->getByKeyword('approve-new-user');
-            if (!empty($localized) && !empty($localized['content'])) {
+            $template = $templateService->getByKeyword($signup['code'], 'approve-new-user');
+            if (!empty($template) && !empty($template['content'])) {
                 // MemoryTemplate → placeholder орлуулах
-                $template = new MemoryTemplate();
-                $template->source($localized['content']);
-                $template->set('email', $signup['email']);
-                $template->set('login', $this->generateRouteLink('login', [], true));
-                $template->set('username', $signup['username']);
+                $memtemplate = new MemoryTemplate();
+                $memtemplate->source($template['content']);
+                $memtemplate->set('email', $signup['email']);
+                $memtemplate->set('login', $this->generateRouteLink('login', [], true));
+                $memtemplate->set('username', $signup['username']);
                 
                 // И-мэйл илгээж тухайн хүсэлт өгсөн хэрэглэгчдээ мэдээлэх
                 $this->getService('mailer')
                     ->mail(
                         $signup['email'],
                         null,
-                        $localized['title'],
-                        $template->output()
+                        $template['title'],
+                        $memtemplate->output()
                     )->send();
             }
         } catch (\Throwable $err) {

@@ -193,13 +193,13 @@ class ReferencesController extends \Raptor\Controller
     }
     
     /**
-     * Лавлах контентийн дэлгэрэнгүй мэдээллийг модал хэлбэрээр харах (VIEW).
+     * Лавлах контентийн дэлгэрэнгүй мэдээллийг харах (VIEW).
      *
      * Процесс:
      * --------
      * 1) Хүснэгт байгаа эсэхийг шалгана
      * 2) p.id = $id ба p.is_active = 1 нөхцөлөөр бичлэгийг уншина
-     * 3) Dashboard modal-ийг render хийнэ
+     * 3) Dashboard-ийг render хийнэ
      *
      * Хэрэглээ:
      * ---------
@@ -267,7 +267,7 @@ class ReferencesController extends \Raptor\Controller
      *      - JSON хариу буцаана
      *
      * 3) GET бол:
-     *      - Update modal form бүхий dashboard template-ийг render хийнэ
+     *      - Update form бүхий dashboard template-ийг render хийнэ
      *
      * Онцгой тохиолдол:
      * -----------------
