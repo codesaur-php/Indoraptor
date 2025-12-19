@@ -125,30 +125,35 @@ class NewsModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-        
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-        
-        // Foreign key constraint-ууд үүсгэх
-        $constraints = [
-            'published_by' => "{$table}_fk_published_by",
-            'created_by'   => "{$table}_fk_created_by",
-            'updated_by'   => "{$table}_fk_updated_by"
-        ];
-        
-        foreach ($constraints as $column => $constraint) {
-            $this->exec(
-                "ALTER TABLE $table " .
-                "ADD CONSTRAINT $constraint " .
-                "FOREIGN KEY ($column) " .
-                "REFERENCES $users(id) " .
-                "ON DELETE SET NULL " .
-                "ON UPDATE CASCADE"
-            );
+
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
+            
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            
+            // Foreign key constraint-ууд үүсгэх
+            $constraints = [
+                'published_by' => "{$table}_fk_published_by",
+                'created_by'   => "{$table}_fk_created_by",
+                'updated_by'   => "{$table}_fk_updated_by"
+            ];
+            
+            foreach ($constraints as $column => $constraint) {
+                $this->exec(
+                    "ALTER TABLE $table " .
+                    "ADD CONSTRAINT $constraint " .
+                    "FOREIGN KEY ($column) " .
+                    "REFERENCES $users(id) " .
+                    "ON DELETE SET NULL " .
+                    "ON UPDATE CASCADE"
+                );
+            }
+            
+            $this->setForeignKeyChecks(true);
         }
-        
-        $this->setForeignKeyChecks(true);
     }
     
     /**

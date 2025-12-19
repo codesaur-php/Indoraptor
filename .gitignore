@@ -1,22 +1,22 @@
-# Public файлууд – бүх файлыг ignore хийнэ, зөвхөн .htaccess үлдээнэ
+# Public файлууд - бүх файлыг ignore хийнэ, зөвхөн .htaccess үлдээнэ
 /public_html/public/*
 !/public_html/public/.htaccess
 
-# Private хавтас – серверийн дотоод өгөгдөл, зөвхөн .htaccess үлдэнэ
+# Private хавтас - серверийн дотоод өгөгдөл, зөвхөн .htaccess үлдэнэ
 /private/*
 !/private/.htaccess
 
-# Database backup хавтас – git-д оруулахгүй
+# Database backup хавтас - git-д оруулахгүй
 /databack/*
 !/databack/.htaccess
 
 # NetBeans private тохиргоо
 /nbproject/private/
 
-# Composer vendor – автоматаар татагддаг тул оруулахгүй
+# Composer vendor - автоматаар татагддаг тул оруулахгүй
 vendor/
 
-# Composer lock – фреймворк төслийн хувьд lock commit хийхгүй
+# Composer lock - фреймворк төслийн хувьд lock commit хийхгүй
 composer.lock
 
 # Environment variables - серверийн нууц тохиргоо (DB нууц үг, API key, JWT secret гэх мэт)

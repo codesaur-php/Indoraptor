@@ -118,18 +118,23 @@ class Permissions extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-        $this->exec("
-            ALTER TABLE $table
-            ADD CONSTRAINT {$table}_fk_created_by
-            FOREIGN KEY (created_by)
-            REFERENCES $users(id)
-            ON DELETE SET NULL
-            ON UPDATE CASCADE
-        ");        
-        $this->setForeignKeyChecks(true);
+
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $this->exec("
+                ALTER TABLE $table
+                ADD CONSTRAINT {$table}_fk_created_by
+                FOREIGN KEY (created_by)
+                REFERENCES $users(id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE
+            ");        
+            $this->setForeignKeyChecks(true);
+        }
 
         // Seed үндсэн permission-үүд
         $nowdate = \date('Y-m-d H:i:s');

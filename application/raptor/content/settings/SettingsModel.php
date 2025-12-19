@@ -94,33 +94,38 @@ class SettingsModel extends LocalizedModel
      */
     protected function __initial(): void
     {
-        // FK constraint нэмэхийн өмнө FK шалгалтыг түр унтраана
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        // Raptor\User\UsersModel-ийн хүснэгтийн нэрийг авах
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        // created_by талбарын FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_created_by 
-             FOREIGN KEY (created_by) REFERENCES $users(id) 
-             ON DELETE SET NULL 
-             ON UPDATE CASCADE"
-        );
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            // FK constraint нэмэхийн өмнө FK шалгалтыг түр унтраана
+            $this->setForeignKeyChecks(false);
 
-        // updated_by талбарын FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_updated_by 
-             FOREIGN KEY (updated_by) REFERENCES $users(id) 
-             ON DELETE SET NULL 
-             ON UPDATE CASCADE"
-        );
+            // Raptor\User\UsersModel-ийн хүснэгтийн нэрийг авах
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        // FK шалгалтыг дахин идэвхжүүлнэ
-        $this->setForeignKeyChecks(true);
+            // created_by талбарын FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_created_by 
+                 FOREIGN KEY (created_by) REFERENCES $users(id) 
+                 ON DELETE SET NULL 
+                 ON UPDATE CASCADE"
+            );
+
+            // updated_by талбарын FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_updated_by 
+                 FOREIGN KEY (updated_by) REFERENCES $users(id) 
+                 ON DELETE SET NULL 
+                 ON UPDATE CASCADE"
+            );
+
+            // FK шалгалтыг дахин идэвхжүүлнэ
+            $this->setForeignKeyChecks(true);
+        }
     }
 
     /**

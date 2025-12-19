@@ -52,12 +52,12 @@
 
                     <div class="col-9">
                         <!-- LocalizedModel бүтэц:
-                             record['localized']['text'][code]
+                             record['localized'][code]['text']
                              Тухайн хэл дээрх текстийг засварлах талбар. -->
                         <textarea class="form-control"
                                   name="text[{{ code }}]"
                                   required
-                                  maxlength="255">{{ record['localized']['text'][code]|e }}</textarea>
+                                  maxlength="255">{{ record['localized'][code]['text']|e }}</textarea>
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>

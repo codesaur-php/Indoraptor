@@ -48,11 +48,14 @@ class LogsController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // DB driver-ийн хувьд 2 өөр лог хандах зарчим:
+            // DB driver-ийн хувьд 3 өөр лог хандах зарчим:
             if ($this->getDriverName() == 'pgsql') {
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
                     "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_log'";
+            } elseif ($this->getDriverName() == 'sqlite') {
+                // SQLite хувилбар
+                $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE '%_log'";
             } else {
                 $query = 'SHOW TABLES LIKE ' . $this->quote('%_log');
             }
@@ -188,13 +191,20 @@ class LogsController extends \Raptor\Controller
                 $keys = \explode('.', $field);
 
                 if ($this->getDriverName() == 'pgsql') {
-                    // JSONB → a->'b'->>'c'
+                    // PostgreSQL JSONB → a->'b'->>'c'
                     $expr = '(context::jsonb)';
                     $lastKey = \array_pop($keys);
                     foreach ($keys as $k) {
                         $expr .= "->'$k'";
                     }
                     $expr .= "->>'$lastKey'";
+                } elseif ($this->getDriverName() == 'sqlite') {
+                    // SQLite json_extract() - JSON_UNQUOTE шаардлагагүй
+                    $jsonPath = '$';
+                    foreach ($keys as $k) {
+                        $jsonPath .= ".$k";
+                    }
+                    $expr = "json_extract(context, '$jsonPath')";
                 } else {
                     // MySQL JSON_EXTRACT
                     $jsonPath = '$';

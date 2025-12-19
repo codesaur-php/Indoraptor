@@ -40,11 +40,11 @@
                 <div class="col-9">
                     <!-- Тухайн хэл дээр хадгалсан текст.
                          record['localized'] бүтэц нь LocalizedModel-ын формат 
-                         record['localized']['text'][code] хэлбэртэй ирдэг. -->
+                         record['localized'][code]['text'] хэлбэртэй ирдэг. -->
                     <textarea class="form-control"
                               disabled
                               name="text[{{ code }}]"
-                              maxlength="255">{{ record['localized']['text'][code]|e }}</textarea>
+                              maxlength="255">{{ record['localized'][code]['text']|e }}</textarea>
                 </div>
             </div>
             {% endfor %}

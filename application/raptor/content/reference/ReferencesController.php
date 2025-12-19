@@ -53,6 +53,9 @@ class ReferencesController extends \Raptor\Controller
             $query = 
                 'SELECT tablename FROM pg_catalog.pg_tables ' .
                 "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like 'reference_%'";
+        } elseif ($this->getDriverName() == 'sqlite') {
+            // SQLite хувилбар
+            $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE 'reference_%'";
         } else {
             $query = 'SHOW TABLES LIKE ' . $this->quote('reference_%');
         }

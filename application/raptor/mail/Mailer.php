@@ -17,8 +17,8 @@ use Raptor\Log\Logger;
  * ✉️ Indoraptor Framework-ийн и-мэйл илгээх үндсэн сервис.
  *
  * Энэ класс нь хоёр төрлийн илгээх механизмыг дэмждэг:
- *   1) Brevo (SendInBlue) Transactional Email API — илгээх өндөр найдвартай шийдэл
- *   2) SMTP (PHPMailer) — шаардлагатай үед хэрэглэж болох уламжлалт арга
+ *   1) Brevo (SendInBlue) Transactional Email API - илгээх өндөр найдвартай шийдэл
+ *   2) SMTP (PHPMailer) - шаардлагатай үед хэрэглэж болох уламжлалт арга
  *
  * Mailer нь дараах үүргийг гүйцэтгэнэ:
  *   ● .env файлаас Mail тохиргоонуудыг автоматаар уншина
@@ -44,7 +44,7 @@ class Mailer extends \codesaur\Http\Client\Mail
     /**
      * Mailer constructor.
      *
-     * @param \PDO      $pdo           Database connection — илгээх протокол лог бичихэд ашиглагдана.
+     * @param \PDO      $pdo           Database connection - илгээх протокол лог бичихэд ашиглагдана.
      * @param string|null $from        Илгээгчийн и-мэйл (хоосон бол .env → INDO_MAIL_FROM)
      * @param string|null $fromName    Илгээгчийн нэр (.env → INDO_MAIL_FROM_NAME)
      * @param string|null $replyTo     Хариу хүлээж авах хаяг (.env → INDO_MAIL_REPLY_TO)

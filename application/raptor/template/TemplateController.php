@@ -84,8 +84,12 @@ class TemplateController extends \Raptor\Controller
             // Permission жагсаалт
             $permissions = [];
             $permissions_table = (new Permissions($this->pdo))->getName();
+            // String concatenation - SQLite болон PostgreSQL дээр ||, MySQL дээр CONCAT()
+            $concat_expr = ($this->getDriverName() == 'pgsql' || $this->getDriverName() == 'sqlite')
+                ? "alias || '_' || name"
+                : "CONCAT(alias, '_', name)";
             $permission_results = $this->query(
-                "SELECT CONCAT(alias, '_', name) as permission FROM $permissions_table"
+                "SELECT $concat_expr as permission FROM $permissions_table"
             )->fetchAll();
             foreach ($permission_results as $row) {
                 $permissions[] = $row['permission'];

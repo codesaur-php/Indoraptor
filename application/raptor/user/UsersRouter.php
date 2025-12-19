@@ -33,7 +33,7 @@ class UsersRouter extends Router
     {
         /**
          * ----------------------------------------------------------
-         * DASHBOARD — Users main list
+         * DASHBOARD - Users main list
          * ----------------------------------------------------------
          */
 

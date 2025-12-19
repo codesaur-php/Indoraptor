@@ -64,13 +64,14 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  */
 class ExceptionHandler implements ExceptionHandlerInterface
 {
-    public function exception(\Throwable $throwable)
+    public function exception(\Throwable $throwable): void
     {
         $errorTemplate = __DIR__ . '/page-404.html';
         if (!\class_exists(FileTemplate::class)
             || !\file_exists($errorTemplate)
         ) {
-            return (new Base())->exception($throwable);
+            (new Base())->exception($throwable);
+            return;
         }
 
         $code = $throwable->getCode();

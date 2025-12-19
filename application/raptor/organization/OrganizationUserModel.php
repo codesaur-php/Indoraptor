@@ -103,45 +103,50 @@ class OrganizationUserModel extends Model
      */
     protected function __initial()
     {
-        // FK шалгалтыг түр хаах
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-        $organizations = (new OrganizationModel($this->pdo))->getName();
 
-        // user_id → FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_user_id 
-             FOREIGN KEY (user_id) 
-             REFERENCES $users(id) 
-             ON DELETE CASCADE 
-             ON UPDATE CASCADE"
-        );
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            // FK шалгалтыг түр хаах
+            $this->setForeignKeyChecks(false);
 
-        // organization_id → FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_organization_id 
-             FOREIGN KEY (organization_id) 
-             REFERENCES $organizations(id) 
-             ON DELETE CASCADE 
-             ON UPDATE CASCADE"
-        );
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $organizations = (new OrganizationModel($this->pdo))->getName();
 
-        // created_by → FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_created_by 
-             FOREIGN KEY (created_by) 
-             REFERENCES $users(id) 
-             ON DELETE SET NULL 
-             ON UPDATE CASCADE"
-        );
+            // user_id → FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_user_id 
+                 FOREIGN KEY (user_id) 
+                 REFERENCES $users(id) 
+                 ON DELETE CASCADE 
+                 ON UPDATE CASCADE"
+            );
 
-        // FK буцааж асаах
-        $this->setForeignKeyChecks(true);
+            // organization_id → FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_organization_id 
+                 FOREIGN KEY (organization_id) 
+                 REFERENCES $organizations(id) 
+                 ON DELETE CASCADE 
+                 ON UPDATE CASCADE"
+            );
+
+            // created_by → FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_created_by 
+                 FOREIGN KEY (created_by) 
+                 REFERENCES $users(id) 
+                 ON DELETE SET NULL 
+                 ON UPDATE CASCADE"
+            );
+
+            // FK буцааж асаах
+            $this->setForeignKeyChecks(true);
+        }
 
         // Анхны өгөгдөл - Super Admin → System Organization
         $nowdate = \date('Y-m-d H:i:s');

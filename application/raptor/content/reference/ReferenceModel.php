@@ -101,21 +101,26 @@ class ReferenceModel extends LocalizedModel
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        /* FK - created_by / updated_by талбаруудыг хэрэглэгчийн хүснэгттэй холбох */
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by 
-            FOREIGN KEY (created_by) REFERENCES $users(id)
-            ON DELETE SET NULL ON UPDATE CASCADE");
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
 
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by 
-            FOREIGN KEY (updated_by) REFERENCES $users(id)
-            ON DELETE SET NULL ON UPDATE CASCADE");
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        $this->setForeignKeyChecks(true);
+            /* FK - created_by / updated_by талбаруудыг хэрэглэгчийн хүснэгттэй холбох */
+            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by 
+                FOREIGN KEY (created_by) REFERENCES $users(id)
+                ON DELETE SET NULL ON UPDATE CASCADE");
+
+            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by 
+                FOREIGN KEY (updated_by) REFERENCES $users(id)
+                ON DELETE SET NULL ON UPDATE CASCADE");
+
+            $this->setForeignKeyChecks(true);
+        }
 
         /* Seed function байвал түүнийг ажиллуулна */
         if (\method_exists(ReferenceInitial::class, $table)) {

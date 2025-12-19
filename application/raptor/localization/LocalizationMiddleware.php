@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  *      ['mn' => [...], 'en' => [...], ...]
  *    бүтэцтэйгээр request-д attribute хэлбэрээр дамжуулна.
  *
- * 2) Аль хэл сонгогдсоныг (RAPTOR_LANGUAGE_CODE – session key) шалгаж,
+ * 2) Аль хэл сонгогдсоныг (RAPTOR_LANGUAGE_CODE - session key) шалгаж,
  *    боломжгүй бол default хэлийг автоматаар сонгоно.
  *
  * 3) default, dashboard, user зэрэг хүснэгтүүдээс тухайн хэл дээрх

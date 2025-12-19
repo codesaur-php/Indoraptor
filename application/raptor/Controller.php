@@ -387,7 +387,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             \header('Content-Type: application/json');
         }
 
-        // JSON-д хувиргаж encoded string хэвлэнэ — алдаа гарвал '{}' хэвлэе
+        // JSON-д хувиргаж encoded string хэвлэнэ - алдаа гарвал '{}' хэвлэе
         echo \json_encode($response) ?: '{}';
     }
     

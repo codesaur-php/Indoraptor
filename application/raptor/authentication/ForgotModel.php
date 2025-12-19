@@ -74,21 +74,26 @@ class ForgotModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        $this->exec("
-            ALTER TABLE $table 
-            ADD CONSTRAINT {$table}_fk_user_id 
-            FOREIGN KEY (user_id) 
-            REFERENCES $users(id) 
-            ON DELETE SET NULL 
-            ON UPDATE CASCADE
-        ");
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
 
-        $this->setForeignKeyChecks(true);
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+
+            $this->exec("
+                ALTER TABLE $table 
+                ADD CONSTRAINT {$table}_fk_user_id 
+                FOREIGN KEY (user_id) 
+                REFERENCES $users(id) 
+                ON DELETE SET NULL 
+                ON UPDATE CASCADE
+            ");
+
+            $this->setForeignKeyChecks(true);
+        }
     }
     
     /**

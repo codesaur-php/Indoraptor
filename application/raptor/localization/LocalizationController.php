@@ -78,6 +78,9 @@ class LocalizationController extends \Raptor\Controller
                     "WHERE schemaname != 'pg_catalog'
                        AND schemaname != 'information_schema'
                        AND tablename like 'localization_text_%_content'";
+            } elseif ($this->getDriverName() == 'sqlite') {
+                // SQLite хувилбар
+                $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE 'localization_text_%_content'";
             } else {
                 // MySQL хувилбар
                 $query = 'SHOW TABLES LIKE ' . $this->quote('localization_text_%_content');

@@ -8,7 +8,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Session middleware — HTTP session-г зохицуулах үндсэн давхарга.
+ * Session middleware - HTTP session-г зохицуулах үндсэн давхарга.
  *
  * Энэхүү middleware нь Indoraptor системийн бүх хүсэлт дээр ажиллана
  * (login, dashboard, API гэх мэт) бөгөөд session нээх, cookie хугацаа,

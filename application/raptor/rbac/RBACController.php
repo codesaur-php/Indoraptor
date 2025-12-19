@@ -235,9 +235,14 @@ class RBACController extends \Raptor\Controller
 
             // Role-г alias_name байдлаар lookup хийх
             $roles_table = (new Roles($this->pdo))->getName();
+            // String concatenation - SQLite болон PostgreSQL дээр ||, MySQL дээр CONCAT_WS
+            // SQLite дээр CONCAT_WS байхгүй тул || эсвэл CONCAT ашиглана
+            $concat_expr = ($this->getDriverName() == 'pgsql' || $this->getDriverName() == 'sqlite')
+                ? "alias || '_' || name"
+                : "CONCAT_WS('_',alias,name)";
             $select_role = $this->prepare(
                 "SELECT * FROM $roles_table
-                 WHERE CONCAT_WS('_',alias,name)=:role
+                 WHERE $concat_expr=:role
                  ORDER BY id DESC LIMIT 1"
             );
             $select_role->bindParam(':role', $roleKey);

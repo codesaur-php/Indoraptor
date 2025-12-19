@@ -59,7 +59,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  */
 class JsonExceptionHandler implements ExceptionHandlerInterface
 {
-    public function exception(\Throwable $throwable)
+    public function exception(\Throwable $throwable): void
     {
         $code = $throwable->getCode();
         $message = $throwable->getMessage();

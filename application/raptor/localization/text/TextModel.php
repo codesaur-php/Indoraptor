@@ -33,8 +33,8 @@ class TextModel extends LocalizedModel
      *
      * Parent хүснэгтийн баганууд:
      *    id           - анхдагч түлхүүр
-     *    keyword      - текстийн түлхүүр нэр (жишээ: page.title)
-     *    type         - текстийн төрөл (plain, html, message ...)
+     *    keyword      - текстийн түлхүүр нэр (жишээ: accept)
+     *    type         - текстийн төрөл (sys-defined, user-defined ...)
      *    is_active    - идэвхтэй эсэх
      *    created_at / created_by
      *    updated_at / updated_by
@@ -115,13 +115,12 @@ class TextModel extends LocalizedModel
     {
         $text = [];
 
-        // Бүх хэлээр татах
         if (empty($code)) {
+            // Бүх хэлээр татах
             $stmt = $this->select(
                 "p.keyword as keyword, c.code as code, c.text as text",
                 ['WHERE' => 'p.is_active=1', 'ORDER BY' => 'p.keyword']
             );
-
             // keyword → code → text
             while ($row = $stmt->fetch()) {
                 $text[$row['keyword']][$row['code']] = $row['text'];
@@ -133,9 +132,7 @@ class TextModel extends LocalizedModel
                 'ORDER BY' => 'p.keyword',
                 'PARAM' => [':code' => $code]
             ];
-
             $stmt = $this->select('p.keyword as keyword, c.text as text', $condition);
-
             while ($row = $stmt->fetch()) {
                 $text[$row['keyword']] = $row['text'];
             }
@@ -154,30 +151,35 @@ class TextModel extends LocalizedModel
      */
     protected function __initial()
     {
-        // FK одоохондоо шалгахгүй
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        // created_by FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_created_by
-             FOREIGN KEY (created_by) REFERENCES $users(id)
-             ON DELETE SET NULL ON UPDATE CASCADE"
-        );
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            // FK одоохондоо шалгахгүй
+            $this->setForeignKeyChecks(false);
 
-        // updated_by FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_updated_by
-             FOREIGN KEY (updated_by) REFERENCES $users(id)
-             ON DELETE SET NULL ON UPDATE CASCADE"
-        );
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        // FK шалгалт буцаан асаана
-        $this->setForeignKeyChecks(true);
+            // created_by FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_created_by
+                 FOREIGN KEY (created_by) REFERENCES $users(id)
+                 ON DELETE SET NULL ON UPDATE CASCADE"
+            );
+
+            // updated_by FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_updated_by
+                 FOREIGN KEY (updated_by) REFERENCES $users(id)
+                 ON DELETE SET NULL ON UPDATE CASCADE"
+            );
+
+            // FK шалгалт буцаан асаана
+            $this->setForeignKeyChecks(true);
+        }
 
         // TextInitial class дотор тусгай анхны өгөгдөл байгаа эсэхийг шалгах
         if (\method_exists(TextInitial::class, $table)) {

@@ -49,7 +49,7 @@ class ErrorHandler implements ExceptionHandlerInterface
      *
      * @return mixed HTML render эсвэл fallback Exception handler
      */
-    public function exception(\Throwable $throwable)
+    public function exception(\Throwable $throwable): void
     {
         $errorTemplate = __DIR__ . '/error.html';
 
@@ -57,7 +57,8 @@ class ErrorHandler implements ExceptionHandlerInterface
         if (!\class_exists(FileTemplate::class)
             || !\file_exists($errorTemplate)
         ) {
-            return (new Base())->exception($throwable);
+            (new Base())->exception($throwable);
+            return;
         }
 
         // Exception мэдээлэл

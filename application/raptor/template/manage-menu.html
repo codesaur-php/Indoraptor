@@ -44,7 +44,7 @@
     </div>
 </div>
 
-<!-- Indoraptor Admin – Sidebar/Topbar-ийн цэсний мастер жагсаалт -->
+<!-- Indoraptor Admin - Sidebar/Topbar-ийн цэсний мастер жагсаалт -->
 <table class="table table-sm table-hover table-bordered menu-table" id="raptor_menu">
     <thead>
         <tr>
@@ -70,7 +70,7 @@
                 {% endif %}
             </th>
             {% for code in localization.language|keys %}
-                <td>{{ item['localized']['title'][code] }}</td>
+                <td>{{ item['localized'][code]['title'] }}</td>
             {% endfor %}
             <td>
                 {% if item['href'] is not empty %}
@@ -125,7 +125,7 @@
     </tbody>
 </table>
 
-<!-- 🔹 MENU INSERT MODAL – Шинэ цэс үүсгэх форм -->
+<!-- 🔹 MENU INSERT MODAL - Шинэ цэс үүсгэх форм -->
 <div class="modal fade" id="menu-insert-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -159,7 +159,7 @@
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
                                             <option value="{{ item['id'] }}">
-                                                {{ item['localized']['title'][localization.code]|e }}
+                                                {{ item['localized'][localization.code]['title']|e }}
                                             </option>
                                         {% endif %}
                                     {% endfor %}
@@ -302,7 +302,7 @@
     </div>
 </div>
 
-<!-- 🔹 MENU VIEW MODAL – Цэсний мэдээллийг зөвхөн унших горимоор харах -->
+<!-- 🔹 MENU VIEW MODAL - Цэсний мэдээллийг зөвхөн унших горимоор харах -->
 <div class="modal fade" id="menu-view-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -330,7 +330,7 @@
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
                                             <option value="{{ item['id'] }}">
-                                                {{ item['localized']['title'][localization.code]|e }}
+                                                {{ item['localized'][localization.code]['title']|e }}
                                             </option>
                                         {% endif %}
                                     {% endfor %}
@@ -461,7 +461,7 @@
     </div>
 </div>
 
-<!-- 🔹 MENU UPDATE MODAL – Цэсийг засварлах форм -->
+<!-- 🔹 MENU UPDATE MODAL - Цэсийг засварлах форм -->
 <div class="modal fade" id="menu-update-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -496,7 +496,7 @@
                                     {% for item in menu %}
                                         {% if item['parent_id'] == 0 %}
                                             <option value="{{ item['id'] }}">
-                                                {{ item['localized']['title'][localization.code]|e }}
+                                                {{ item['localized'][localization.code]['title']|e }}
                                             </option>
                                         {% endif %}
                                     {% endfor %}
@@ -635,7 +635,7 @@
 </div>
 
 {% if user.can('system_logger') %}
-    <!-- 🔹 Access log – Template menu дээр хийсэн бүх өөрчлөлтийн протокол -->
+    <!-- 🔹 Access log - Template menu дээр хийсэн бүх өөрчлөлтийн протокол -->
     <div class="mt-5">
         <hr>
         <label class="form-label fw-bolder">
@@ -651,7 +651,7 @@
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        /* 🔹 motable – Indoraptor стандарт хүснэгт helper */
+        /* 🔹 motable - Indoraptor стандарт хүснэгт helper */
         const menu = new motable('table#raptor_menu');
         menu.setReady();
 
@@ -677,7 +677,7 @@
                 ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
             }
 
-            /* SweetAlert2 – Идэвхгүй болгохыг баталгаажуулах dialog */
+            /* SweetAlert2 - Идэвхгүй болгохыг баталгаажуулах dialog */
             Swal.fire({
                 html: ask,
                 input: 'text',
@@ -730,13 +730,13 @@
             });
         }));
 
-        /* 🔹 UPDATE MODAL – Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ */
+        /* 🔹 UPDATE MODAL - Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ */
         const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
         updates.forEach(btn => btn.addEventListener('click', function () {
             const thisRow = btn.closest('tr');
             const record = JSON.parse(thisRow.dataset.record ?? '{}');
             if (record.id === undefined) return;
-
+            
             const updateModal = document.querySelector('div#menu-update-modal');
             updateModal.querySelector('input[name="id"]').value = record.id;
             updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
@@ -747,12 +747,18 @@
             updateModal.querySelector('select[name="alias"]').value = record.alias;
             updateModal.querySelector('select[name="permission"]').value = record.permission;
 
-            for (const code in record.localized?.title) {
-                updateModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
+            for (const code in record.localized) {
+                if (record.localized.hasOwnProperty(code)) {
+                    const localizedItem = record.localized[code];
+                    const titleInput = updateModal.querySelector(`input#title_${code}`);
+                    if (titleInput && localizedItem) {
+                        titleInput.value = localizedItem.title || '';
+                    }
+                }
             }
         }));
 
-        /* 🔹 VIEW MODAL – Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ */
+        /* 🔹 VIEW MODAL - Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ */
         const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
         views.forEach(btn => btn.addEventListener('click', function () {
             const thisRow = btn.closest('tr');
@@ -769,8 +775,14 @@
             viewModal.querySelector('select[name="alias"]').value = record.alias;
             viewModal.querySelector('select[name="permission"]').value = record.permission;
 
-            for (const code in record.localized?.title) {
-                viewModal.querySelector(`input#title_${code}`).value = record.localized.title[code];
+            for (const code in record.localized) {
+                if (record.localized.hasOwnProperty(code)) {
+                    const localizedItem = record.localized[code];
+                    const titleInput = viewModal.querySelector(`input#title_${code}`);
+                    if (titleInput && localizedItem) {
+                        titleInput.value = localizedItem.title || '';
+                    }
+                }
             }
             viewModal.querySelector('input[name="created_at"]').value = record.created_at;
             viewModal.querySelector('input[name="created_by"]').value = record.created_by;
@@ -778,7 +790,7 @@
             viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
         }));
 
-        /* 🔹 MENU INSERT FORM – Шинэ цэс нэмэх submit логик */
+        /* 🔹 MENU INSERT FORM - Шинэ цэс нэмэх submit логик */
         const formInsert = document.querySelector('form#menu_insert');
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -840,7 +852,7 @@
             });
         }
 
-        /* 🔹 MENU UPDATE FORM – Цэс засварлах submit логик */
+        /* 🔹 MENU UPDATE FORM - Цэс засварлах submit логик */
         const formUpdate = document.querySelector('form#menu_update');
         if (!formUpdate) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -902,7 +914,7 @@
             });
         }
 
-        /* 🔹 LOGGER – Template Menu-тэй холбоотой бүх үйлдлийн протоколын жагсаалт */
+        /* 🔹 LOGGER - Template Menu-тэй холбоотой бүх үйлдлийн протоколын жагсаалт */
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;

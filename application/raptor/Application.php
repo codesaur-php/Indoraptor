@@ -60,9 +60,18 @@ abstract class Application extends \codesaur\Http\Application\Application
         // 1. Universal error handler
         $this->use(new Exception\ErrorHandler());
 
-        // 2. Database middleware (MySQL эсвэл Postgres сонгох боломжтой)
-        $this->use(new MySQLConnectMiddleware()); 
-        // $this->use(new PostgresConnectMiddleware()); // Ашиглах бол MySQL-ийн оронд
+        // 2. Database middleware (MySQL, PostgreSQL, эсвэл SQLite сонгох боломжтой)
+        $this->use(new MySQLConnectMiddleware());
+        // → Хэрэв PostgreSQL ашиглавал:
+        // $this->use(new PostgresConnectMiddleware());
+        // → Хэрэв SQLite ашиглавал:
+        // $this->use(new SQLiteConnectMiddleware());
+        //
+        // ⚠️  Анхаарах зүйлс:
+        //     - Зөвхөн НЭГ database middleware ашиглах ёстой
+        //     - SQLite ашиглах тохиолдолд Model классуудын __initial дээрх FK constraint-ууд
+        //       автоматаар алгасах болно (SQLite дээр ALTER TABLE ... ADD CONSTRAINT
+        //       дэмжигддэггүй тул)
 
         // 3. Session ба JWT authentication pipeline
         $this->use(new Authentication\SessionMiddleware());

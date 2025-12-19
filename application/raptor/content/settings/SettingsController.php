@@ -29,7 +29,7 @@ class SettingsController extends FileController
     use \Raptor\Template\DashboardTrait;
 
     /**
-     * Тохиргооны нүүр хуудас (settings.html)–г харуулах.
+     * Тохиргооны нүүр хуудас (settings.html)-г харуулах.
      *
      * - Хэрэглэгч system_content_settings эрхтэй эсэхийг шалгана.
      * - SettingsModel → retrieve() ашиглан идэвхтэй тохиргоог авна.

@@ -45,6 +45,10 @@ class JWTAuthMiddleware implements MiddlewareInterface
      * JWT нууц түлхүүрийг ENV-аас уншина.
      * Хэрвээ тохируулагдаагүй бол Authentication-ийг шууд зогсооно.
      *
+     * firebase/php-jwt 7.x хувилбарт HS256 алгоритмын хувьд түлхүүр
+     * дор хаяж 32 байт (256 бит) байх ёстой. Hex-кодлогдсон түлхүүр
+     * (128 тэмдэгт) ашиглаж байгаа бол энэ шаардлага хангагдсан байна.
+     *
      * Энэ нь production орчин дахь аюулгүй байдлыг хамгаалах
      * хамгийн чухал safeguard юм.
      *
@@ -59,6 +63,19 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 'INDO_JWT_SECRET тохируулагдаагүй байна. JWT баталгаажуулалт үргэлжлэх боломжгүй.'
             );
         }
+
+        // firebase/php-jwt 7.x-д HS256 алгоритмын хувьд түлхүүр дор хаяж 32 байт байх ёстой
+        $algorithm = $this->getAlgorithm();
+        if ($algorithm === 'HS256' || $algorithm === 'HS384' || $algorithm === 'HS512') {
+            $minLength = $algorithm === 'HS256' ? 32 : ($algorithm === 'HS384' ? 48 : 64);
+            if (\strlen($secret) < $minLength) {
+                throw new \RuntimeException(
+                    "INDO_JWT_SECRET түлхүүр урт хангалтгүй байна. $algorithm алгоритмын хувьд дор хаяж $minLength тэмдэгт шаардлагатай. " .
+                    "Composer-ын post-root-package-install script нь автоматаар зөв урттай түлхүүр үүсгэнэ."
+                );
+            }
+        }
+
         return $secret;
     }
 
@@ -93,6 +110,10 @@ class JWTAuthMiddleware implements MiddlewareInterface
      *   - seconds : токений амьдрах хугацаа
      *   - хэрэглэгч ба байгууллагын мэдээлэл
      *
+     * firebase/php-jwt 7.x хувилбарт symmetric алгоритмуудын (HS256, HS384, HS512)
+     * хувьд string түлхүүрийг шууд ашиглах боломжтой, гэхдээ түлхүүр урт хангалттай
+     * байх ёстой (HS256-ийн хувьд дор хаяж 32 байт).
+     *
      * @param array $data  Payload дотор орох мэдээлэл
      * @return string      Кодолсон JWT токен
      */
@@ -107,6 +128,8 @@ class JWTAuthMiddleware implements MiddlewareInterface
             'seconds' => $lifeSeconds,
         ] + $data;
 
+        // getSecret() нь түлхүүрийн уртыг шалгана (HS256-ийн хувьд >= 32 байт)
+        // firebase/php-jwt 7.x-д encode() нь string түлхүүрийг хүлээн авна
         return JWT::encode($payload, $this->getSecret(), $this->getAlgorithm());
     }
 
@@ -163,7 +186,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             return $response->withStatus($status)->withHeader('Location', $location);
         }
 
-        // 3) Сүүлийн арга — Browser redirect
+        // 3) Сүүлийн арга - Browser redirect
         header("Location: $location", false, $status);
         exit;
     }

@@ -91,34 +91,39 @@ class OrganizationModel extends Model
      */
     protected function __initial()
     {
-        // FK шалгалтыг түр хаах
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        // created_by → users.id FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_created_by 
-             FOREIGN KEY (created_by) 
-             REFERENCES $users(id) 
-             ON DELETE SET NULL 
-             ON UPDATE CASCADE"
-        );
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            // FK шалгалтыг түр хаах
+            $this->setForeignKeyChecks(false);
 
-        // updated_by → users.id FK
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_updated_by 
-             FOREIGN KEY (updated_by) 
-             REFERENCES $users(id) 
-             ON DELETE SET NULL 
-             ON UPDATE CASCADE"
-        );
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        // FK шалгалтыг буцааж идэвхжүүлэх
-        $this->setForeignKeyChecks(true);
+            // created_by → users.id FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_created_by 
+                 FOREIGN KEY (created_by) 
+                 REFERENCES $users(id) 
+                 ON DELETE SET NULL 
+                 ON UPDATE CASCADE"
+            );
+
+            // updated_by → users.id FK
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_updated_by 
+                 FOREIGN KEY (updated_by) 
+                 REFERENCES $users(id) 
+                 ON DELETE SET NULL 
+                 ON UPDATE CASCADE"
+            );
+
+            // FK шалгалтыг буцааж идэвхжүүлэх
+            $this->setForeignKeyChecks(true);
+        }
 
         // Анхны өгөгдөл: System байгууллага үүсгэх
         $nowdate = \date('Y-m-d H:i:s');

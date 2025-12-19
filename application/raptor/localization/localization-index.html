@@ -15,7 +15,7 @@
     </div>
 </div>
 
-<!-- Локализацийн таб(menu) – Хэл болон Текстийн бүлгүүдийг харуулна -->
+<!-- Локализацийн таб(menu) - Хэл болон Текстийн бүлгүүдийг харуулна -->
 <ul class="nav nav-tabs text-uppercase" role="tablist">
     <li class="nav-item">
         <!-- Хэл удирдах үндсэн таб -->
@@ -41,7 +41,7 @@
     <!-- 1-р таб: Хэлүүдийн жагсаалт -->
     <div class="tab-pane active show" id="tab-language" role="tabpanel">
         {% if can_insert %}
-            <!-- Хэл шинээр нэмэх товч – зөвхөн эрхтэй хэрэглэгчид харагдана -->
+            <!-- Хэл шинээр нэмэх товч - зөвхөн эрхтэй хэрэглэгчид харагдана -->
             <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2"
                href="{{ 'language-insert'|link }}"
                data-bs-target="#static-modal"
@@ -84,7 +84,7 @@
                             {{ language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '' }}
                         </td>
 
-                        <!-- Хэлний locale – жишээ нь en_US, mn_MN -->
+                        <!-- Хэлний locale - жишээ нь en_US, mn_MN -->
                         <td>{{ language['locale'] }}</td>
 
                         <!-- Хэлний нэр -->

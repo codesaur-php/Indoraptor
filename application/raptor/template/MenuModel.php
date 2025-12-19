@@ -71,19 +71,24 @@ class MenuModel extends LocalizedModel
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-        // created_by / updated_by → Users FK
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by 
-                     FOREIGN KEY (created_by) REFERENCES $users(id) 
-                     ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by 
-                     FOREIGN KEY (updated_by) REFERENCES $users(id) 
-                     ON DELETE SET NULL ON UPDATE CASCADE");
 
-        $this->setForeignKeyChecks(true);
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
+
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            // created_by / updated_by → Users FK
+            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by 
+                         FOREIGN KEY (created_by) REFERENCES $users(id) 
+                         ON DELETE SET NULL ON UPDATE CASCADE");
+            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by 
+                         FOREIGN KEY (updated_by) REFERENCES $users(id) 
+                         ON DELETE SET NULL ON UPDATE CASCADE");
+
+            $this->setForeignKeyChecks(true);
+        }
 
         // --- Base URL (subfolder дотор суусан тохиолдолд зөв линк үүсгэх) ---
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');

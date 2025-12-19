@@ -15,8 +15,8 @@ use Raptor\Content\PagesModel;
  *
  * ✨ Үндсэн боломжууд:
  * ---------------------------------------------------------------
- * ✔ Вэб хуудсын үндсэн загвар (`index.html`)–ийг ачаалах  
- * ✔ Контент template–ийг index layout дотор оруулж нэгтгэх  
+ * ✔ Вэб хуудсын үндсэн загвар (`index.html`)-ийг ачаалах  
+ * ✔ Контент template-ийг index layout дотор оруулж нэгтгэх  
  * ✔ System settings → footer, SEO, branding гэх мэт template хувьсагчид  
  * ✔ Олон түвшинтэй Main Menu (dynamic page tree) үүсгэх  
  * ✔ Important Menu (footer-ийн товч меню) үүсгэх  

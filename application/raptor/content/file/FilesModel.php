@@ -181,16 +181,21 @@ class FilesModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
         $my_name = $this->getName();
-        $record_name = $this->getRecordName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        if ($this->hasTable($record_name)) {
-            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");            
+
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
+            $record_name = $this->getRecordName();
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+            if ($this->hasTable($record_name)) {
+                $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");            
+            }
+            $this->setForeignKeyChecks(true);
         }
-        $this->setForeignKeyChecks(true);
     }
     
     /**

@@ -25,9 +25,10 @@ namespace Web;
  *    - Template ашиглан error page рендерлэх  
  *    - Хэрвээ Template алга бол кодын default ExceptionHandler ажиллана  
  *
- * 2) **MySQLConnectMiddleware / PostgresConnectMiddleware**  
+ * 2) **MySQLConnectMiddleware / PostgresConnectMiddleware / SQLiteConnectMiddleware**  
  *    - PDO instance үүсгэж, хожим нь Controller-т дамжуулна  
  *    - DB connection автоматаар нээгдэж хаагдана  
+ *    - Зөвхөн НЭГ database middleware ашиглах ёстой  
  *
  * 3) **ContainerMiddleware**  
  *    - Dependency Injection Container-г request attributes-д inject хийнэ  
@@ -78,10 +79,18 @@ class Application extends \codesaur\Http\Application\Application
         // 🎭 Template тулгуурласан Error Handler
         $this->use(new Template\ExceptionHandler());
         
-        // 🗄️ Database connection (MySQL эсвэл Postgres)
+        // 🗄️ Database connection (MySQL, PostgreSQL, эсвэл SQLite)
         $this->use(new \Raptor\MySQLConnectMiddleware()); 
         // → Хэрэв PostgreSQL ашиглавал:
         // $this->use(new \Raptor\PostgresConnectMiddleware());
+        // → Хэрэв SQLite ашиглавал:
+        // $this->use(new \Raptor\SQLiteConnectMiddleware());
+        //
+        // ⚠️  Анхаарах зүйлс:
+        //     - Зөвхөн НЭГ database middleware ашиглах ёстой
+        //     - SQLite ашиглах тохиолдолд Model классуудын __initial дээрх FK constraint-ууд
+        //       автоматаар алгасах болно (SQLite дээр ALTER TABLE ... ADD CONSTRAINT
+        //       дэмжигддэггүй тул)
 
         // 📦 Container middleware (PDO шаардлагатай тул Database-ийн дараа)
         $this->use(new \Raptor\ContainerMiddleware());

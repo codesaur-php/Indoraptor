@@ -31,7 +31,7 @@ class LanguageModel extends Model
      *
      * @param \PDO $pdo  PDO instance - мэдээллийн сантай ажиллах холболт
      *
-     * Хүснэгтийн багана (Column)–уудыг тодорхойлно:
+     * Хүснэгтийн багана (Column)-уудыг тодорхойлно:
      *  - id: анхдагч түлхүүр
      *  - code: 2 оронтой хэлний код (mn, en гэх мэт)
      *  - locale: системийн locale код (mn-MN, en-US)
@@ -117,28 +117,33 @@ class LanguageModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        /* created_by → users(id) холбоос */
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_created_by 
-             FOREIGN KEY (created_by) REFERENCES $users(id)
-             ON DELETE SET NULL ON UPDATE CASCADE"
-        );
+        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
 
-        /* updated_by → users(id) холбоос */
-        $this->exec(
-            "ALTER TABLE $table 
-             ADD CONSTRAINT {$table}_fk_updated_by 
-             FOREIGN KEY (updated_by) REFERENCES $users(id)
-             ON DELETE SET NULL ON UPDATE CASCADE"
-        );
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-        $this->setForeignKeyChecks(true);
+            /* created_by → users(id) холбоос */
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_created_by 
+                 FOREIGN KEY (created_by) REFERENCES $users(id)
+                 ON DELETE SET NULL ON UPDATE CASCADE"
+            );
+
+            /* updated_by → users(id) холбоос */
+            $this->exec(
+                "ALTER TABLE $table 
+                 ADD CONSTRAINT {$table}_fk_updated_by 
+                 FOREIGN KEY (updated_by) REFERENCES $users(id)
+                 ON DELETE SET NULL ON UPDATE CASCADE"
+            );
+
+            $this->setForeignKeyChecks(true);
+        }
 
         /* Анхны 2 хэл бүртгэх */
         $nowdate = \date('Y-m-d H:i:s');

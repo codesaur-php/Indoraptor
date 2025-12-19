@@ -5,7 +5,7 @@
         <!-- 🟦 Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-info text-uppercase">
-                <!-- Илэрхийлэл — Нууцлалын icon -->
+                <!-- Илэрхийлэл - Нууцлалын icon -->
                 <i class="bi bi-shield-lock-fill"></i> {{ 'password-reset'|text }}
             </h3>
             <!-- Modal хаах товч -->
@@ -15,7 +15,7 @@
         <!-- 🟩 Modal Body -->
         <div class="modal-body">
 
-            <!-- Хүснэгт — Forgot password хүсэлтүүд -->
+            <!-- Хүснэгт - Forgot password хүсэлтүүд -->
             <table class="table table-hover table-striped-columns table-bordered" id="forgot_requests">
                 <thead>
                     <tr>
@@ -36,7 +36,7 @@
                         <!-- Хэрэглэгчийн мэдээлэл: Нэр + Username + ID -->
                         <td>{{ row['first_name'] }} {{ row['last_name'] }} [{{ row['username'] }}: {{ row['user_id'] }}]</td>
 
-                        <!-- 🌐 Хэл — flag дүрс -->
+                        <!-- 🌐 Хэл - flag дүрс -->
                         <td>
                             {# `en` бол → us flag ашиглана, бусад хэл шууд code-рээ #}
                             {% set flag = row['code'] == 'en' ? 'us' : row['code'] %}
@@ -80,7 +80,7 @@
     </div>
 </div>
 
-<!-- 🧩 motable.js — Хүснэгтийн UI сайжруулах -->
+<!-- 🧩 motable.js - Хүснэгтийн UI сайжруулах -->
 <script type="text/javascript">
     /*  
         motable нь:

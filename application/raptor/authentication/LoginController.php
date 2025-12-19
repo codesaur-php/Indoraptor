@@ -1261,6 +1261,22 @@ class LoginController extends \Raptor\Controller
                      ORDER BY log.id DESC
                      LIMIT 1";
 
+            } elseif ($this->getDriverName() == 'sqlite') {
+                // SQLite JSON query
+                $sql =
+                    "SELECT context
+                     FROM dashboard_log AS log
+                     INNER JOIN $orgTable AS org
+                        ON CAST(json_extract(log.context,'$.id') AS INTEGER) = org.id
+                     LEFT JOIN $orgUserTable AS orgUser
+                        ON orgUser.organization_id = org.id
+                     WHERE json_extract(log.context,'$.action') = 'login-to-organization'
+                       AND CAST(json_extract(log.context,'$.auth_user.id') AS INTEGER) = $userId
+                       AND orgUser.user_id = $userId
+                       AND org.is_active = 1
+                     ORDER BY log.id DESC
+                     LIMIT 1";
+
             } else {
                 // MySQL JSON query
                 $sql =

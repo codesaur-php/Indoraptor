@@ -33,7 +33,7 @@ mostyle.innerHTML = `
   background-color: var(--bs-table-bg, var(--bs-tertiary-bg, #f8f9fa)) !important;
 }
 
-/* Sort icon – default arrow */
+/* Sort icon - default arrow */
 .motable thead th::after{
   content:'';
   float:right;
@@ -98,7 +98,7 @@ mostyle.innerHTML = `
   min-width:100%;
 }
 
-/* Freeze column – sticky left */
+/* Freeze column - sticky left */
 .motable .freeze-col {
   position: sticky;
   left: 0;

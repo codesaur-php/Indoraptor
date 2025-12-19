@@ -413,11 +413,14 @@ class LanguageController extends \Raptor\Controller
     private function copyLocalizedContent(string $from, string $to): array|false
     {
         try {
-            // Хайх query: MySQL эсвэл PostgreSQL
+            // Хайх query: MySQL, PostgreSQL, эсвэл SQLite
             if ($this->getDriverName() == 'pgsql') {
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
                     "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_content'";
+            } elseif ($this->getDriverName() == 'sqlite') {
+                // SQLite хувилбар
+                $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE '%_content'";
             } else {
                 $query = 'SHOW TABLES LIKE ' . $this->quote('%_content');
             }
@@ -432,23 +435,47 @@ class LanguageController extends \Raptor\Controller
                 $contentTable = \current($rows);
                 
                 // Хүснэгтийн баганууд
-                $query = $this->query("SHOW COLUMNS FROM $contentTable");
-                $columns = $query->fetchAll();
-                $id = $parent_id = $code = false;
-                $field = $param = [];
+                if ($this->getDriverName() == 'sqlite') {
+                    // SQLite хувилбар
+                    $query = $this->query("PRAGMA table_info($contentTable)");
+                    $columns = $query->fetchAll();
+                    $id = $parent_id = $code = false;
+                    $field = $param = [];
 
-                // Багануудыг ангилах
-                foreach ($columns as $column) {
-                    $name = $column['Field'];
-                    if ($name == 'id' && $column['Extra'] == 'auto_increment') {
-                        $id = true;
-                    } elseif ($name == 'parent_id') {
-                        $parent_id = true;
-                    } elseif ($name == 'code') {
-                        $code = true;
-                    } else {
-                        $field[] = $name;
-                        $param[] = ":$name";
+                    // Багануудыг ангилах
+                    foreach ($columns as $column) {
+                        $name = $column['name'];
+                        if ($name == 'id' && $column['pk'] == 1) {
+                            $id = true;
+                        } elseif ($name == 'parent_id') {
+                            $parent_id = true;
+                        } elseif ($name == 'code') {
+                            $code = true;
+                        } else {
+                            $field[] = $name;
+                            $param[] = ":$name";
+                        }
+                    }
+                } else {
+                    // MySQL/PostgreSQL хувилбар
+                    $query = $this->query("SHOW COLUMNS FROM $contentTable");
+                    $columns = $query->fetchAll();
+                    $id = $parent_id = $code = false;
+                    $field = $param = [];
+
+                    // Багануудыг ангилах
+                    foreach ($columns as $column) {
+                        $name = $column['Field'];
+                        if ($name == 'id' && $column['Extra'] == 'auto_increment') {
+                            $id = true;
+                        } elseif ($name == 'parent_id') {
+                            $parent_id = true;
+                        } elseif ($name == 'code') {
+                            $code = true;
+                        } else {
+                            $field[] = $name;
+                            $param[] = ":$name";
+                        }
                     }
                 }
                 if (!$id || !$parent_id || !$code || empty($field)) {
@@ -464,15 +491,17 @@ class LanguageController extends \Raptor\Controller
                 }
 
                 // parent table баганууд
-                $table_query = $this->query("SHOW COLUMNS FROM $table");
-                $table_columns = $table_query->fetchAll();
-                $update = false;
-                $primary = false;
-                $updates = [];
-                $update_arguments = [];
-                $by_account = $this->getUserId();
-                foreach ($table_columns as $column) {
-                    $name = $column['Field'];
+                if ($this->getDriverName() == 'sqlite') {
+                    // SQLite хувилбар
+                    $table_query = $this->query("PRAGMA table_info($table)");
+                    $table_columns = $table_query->fetchAll();
+                    $update = false;
+                    $primary = false;
+                    $updates = [];
+                    $update_arguments = [];
+                    $by_account = $this->getUserId();
+                    foreach ($table_columns as $column) {
+                        $name = $column['name'];
                     if ($name == 'id') {
                         $primary = true;
                     } elseif ($name == 'updated_at') {
@@ -480,6 +509,27 @@ class LanguageController extends \Raptor\Controller
                     } elseif ($name == 'updated_by' && !empty($by_account)) {
                         $updates[] = 'updated_by=:by';
                         $update_arguments = [':by' => $by_account];
+                    }
+                }
+                } else {
+                    // MySQL/PostgreSQL хувилбар
+                    $table_query = $this->query("SHOW COLUMNS FROM $table");
+                    $table_columns = $table_query->fetchAll();
+                    $update = false;
+                    $primary = false;
+                    $updates = [];
+                    $update_arguments = [];
+                    $by_account = $this->getUserId();
+                    foreach ($table_columns as $column) {
+                        $name = $column['Field'];
+                        if ($name == 'id') {
+                            $primary = true;
+                        } elseif ($name == 'updated_at') {
+                            $updates[] = 'updated_at=:at';
+                        } elseif ($name == 'updated_by' && !empty($by_account)) {
+                            $updates[] = 'updated_by=:by';
+                            $update_arguments = [':by' => $by_account];
+                        }
                     }
                 }
 

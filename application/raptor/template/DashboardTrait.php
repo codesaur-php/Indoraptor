@@ -211,19 +211,19 @@ trait DashboardTrait
         $sidemenu = [];
 
         try {
-            $model = new MenuModel($this->pdo);
             $alias = $this->getUser()->organization['alias'];
-            $code  = $this->getLanguageCode();
-            $rows = $model->getRows([
-                'ORDER BY' => 'p.position',
-                'WHERE'    => 'p.is_active=1 AND p.is_visible=1'
-            ]);
+            
+            $model = new MenuModel($this->pdo);
+            $rows = $model->getRowsByCode(
+                $this->getLanguageCode(),
+                [
+                    'ORDER BY' => 'p.position',
+                    'WHERE'    => 'p.is_active=1 AND p.is_visible=1'
+                ]
+            );
             foreach ($rows as $row) {
-                // Localization title шалгах
-                $title = $row['localized']['title'][$code] ?? null;
-                if (!isset($title)) {
-                    continue;
-                }
+                // Localization title авах
+                $title = $row['localized']['title'] ?? null;
 
                 // Organization alias filter
                 if (!empty($row['alias']) && $alias !== $row['alias']) {
