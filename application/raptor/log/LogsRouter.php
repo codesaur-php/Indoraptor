@@ -38,14 +38,14 @@ class LogsRouter extends Router
     {
         /**
          * GET /dashboard/logs
-         * ───────────────────────────────────────────────
+         * ─────────────────────────────────────────
          * Логийн үндсэн dashboard хуудсыг харуулна.
          */
         $this->GET('/dashboard/logs', [LogsController::class, 'index'])->name('logs');
 
         /**
          * GET /dashboard/logs/view
-         * ───────────────────────────────────────────────
+         * ─────────────────────────────────────────
          * Нэг бүртгэлийг modal-аар харах.
          * AJAX modal loader-аар дуудагддаг → logs-view
          */

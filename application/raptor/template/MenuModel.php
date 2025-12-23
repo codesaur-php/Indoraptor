@@ -73,7 +73,7 @@ class MenuModel extends LocalizedModel
     {
         $table = $this->getName();
 
-        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
         // MySQL/PostgreSQL дээр л FK constraint нэмнэ
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);

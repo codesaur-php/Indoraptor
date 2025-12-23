@@ -26,18 +26,16 @@ class TemplateRouter extends Router
      * Энд Dashboard UI-тай холбоотой бүх замуудыг бүртгэнэ.
      * 
      * Жишээ:
-     *   GET    /dashboard/user/option               →  Хэрэглэгчийн DASHBOARD UI тохиргоо
-     *   GET    /dashboard/manage/menu               →  Меню удирдлага хуудас
-     *   POST   /dashboard/manage/menu/insert        →  Шинэ меню үүсгэх
-     *   PUT    /dashboard/manage/menu/update        →  Одоогийн менюг шинэчлэх
-     *   DELETE /dashboard/manage/menu/deactivate    →  Менюг идэвхгүй болгох
+     *   GET    /dashboard/user/option             → Хэрэглэгчийн DASHBOARD UI тохиргоо
+     *   GET    /dashboard/manage/menu             → Меню удирдлага хуудас
+     *   POST   /dashboard/manage/menu/insert      → Шинэ меню үүсгэх
+     *   PUT    /dashboard/manage/menu/update      → Одоогийн менюг шинэчлэх
+     *   DELETE /dashboard/manage/menu/deactivate  → Менюг идэвхгүй болгох
      */
     public function __construct()
     {
         /**
-         * ----------------------------------------------------------
          * ХЭРЭГЛЭГЧИЙН DASHBOARD UI ТОХИРГОО
-         * ----------------------------------------------------------
          */
         $this->GET(
             '/dashboard/user/option',
@@ -45,9 +43,7 @@ class TemplateRouter extends Router
         )->name('user-option');
 
         /**
-         * ----------------------------------------------------------
          * МЕНЮ УДИРДЛАГА (Dashboard → System → Menu Management)
-         * ----------------------------------------------------------
          */
 
         // Меню жагсаалт, удирдлагын хуудас

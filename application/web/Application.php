@@ -90,7 +90,7 @@ class Application extends \codesaur\Http\Application\Application
         //     - Зөвхөн НЭГ database middleware ашиглах ёстой
         //     - SQLite ашиглах тохиолдолд Model классуудын __initial дээрх FK constraint-ууд
         //       автоматаар алгасах болно (SQLite дээр ALTER TABLE ... ADD CONSTRAINT
-        //       дэмжигддэггүй тул)
+        //       дэмжихгүй тул)
 
         // 📦 Container middleware (PDO шаардлагатай тул Database-ийн дараа)
         $this->use(new \Raptor\ContainerMiddleware());

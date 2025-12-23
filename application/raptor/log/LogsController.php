@@ -83,7 +83,7 @@ class LogsController extends \Raptor\Controller
      * Нэг логийн бичлэгийг modal-аар харуулах.
      *
      * Query params:
-     * ───────────────────────────────────────────────
+     * ────────────────────────────────────────
      * ?id=123
      * ?table=dashboard
      *
@@ -146,7 +146,7 @@ class LogsController extends \Raptor\Controller
      * бүгдийг хариуцдаг.
      *
      * Request format:
-     * ───────────────────────────────────────────────
+     * ─────────────────────────────────────────────
      * POST /dashboard/logs/retrieve?table=dashboard
      * Body (JSON):
      * {

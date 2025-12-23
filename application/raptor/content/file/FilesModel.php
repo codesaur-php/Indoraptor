@@ -183,7 +183,7 @@ class FilesModel extends Model
     {
         $my_name = $this->getName();
 
-        // SQLite дээр ALTER TABLE ... ADD CONSTRAINT дэмжигддэггүй
+        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
         // MySQL/PostgreSQL дээр л FK constraint нэмнэ
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);
