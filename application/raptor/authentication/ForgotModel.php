@@ -82,7 +82,7 @@ class ForgotModel extends Model
             $this->setForeignKeyChecks(false);
 
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
+            
             $this->exec("
                 ALTER TABLE $table 
                 ADD CONSTRAINT {$table}_fk_user_id 

@@ -69,7 +69,6 @@ class MySQLConnectMiddleware implements MiddlewareInterface
         $database = $_ENV['INDO_DB_NAME'] ?? 'indoraptor';
 
         $client_ip = $request->getServerParams()['REMOTE_ADDR'] ?? '';
-
         if (\in_array($client_ip, ['127.0.0.1', '::1'])) {
             // Localhost-аас ажиллаж байгаа бол мөрөнд колляц тохируулна
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `$database` COLLATE $collation");

@@ -193,10 +193,7 @@ class ContainerMiddleware implements MiddlewareInterface
         // Template service бүртгэх (templates хүснэгтээс keyword-аар орчуулга татах)
         $container->set('template_service', function(ContainerInterface $c) use ($request) {
             $pdo = $request->getAttribute('pdo');
-            // Request-ээс localization attribute-аас code-г авч, олдохгүй бол 'en' гэж default утга өгөх
-            $localization = $request->getAttribute('localization');
-            $code = $localization['code'] ?? 'en';
-            return new \Raptor\Content\TemplateService($pdo, $code);
+            return new \Raptor\Content\TemplateService($pdo);
         });
         
         // ============================================================

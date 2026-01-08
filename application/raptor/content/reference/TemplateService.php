@@ -5,12 +5,13 @@ namespace Raptor\Content;
 /**
  * Class TemplateService
  *
- * ReferenceModel моделийн templates content хүснэгтээс keyword-аар орчуулга татах service.
+ * LocalizedModel-ийн templates content хүснэгтээс keyword-аар орчуулга татах service.
  *
  * Энэ service нь:
  * - reference_templates_content хүснэгтээс keyword-аар орчуулга татна
  * - Language code-г method parameter-оос авна
  * - is_active=1 шалгана
+ * - LocalizedModel-ийн шинэ method-уудыг ашиглана
  *
  * @package Raptor\Content
  */
@@ -45,13 +46,15 @@ class TemplateService
     {
         $referenceModel = new ReferenceModel($this->pdo);
         $referenceModel->setTable('templates');
+        
+        // LocalizedModel-ийн getRowWhere() method ашиглах
         $reference = $referenceModel->getRowWhere([
             'c.code'      => $code,
             'p.keyword'   => $keyword,
             'p.is_active' => 1
         ]);
 
-        if (empty($reference['localized'][$code])) {
+        if (empty($reference) || empty($reference['localized'][$code])) {
             return null;
         }
 
@@ -87,22 +90,31 @@ class TemplateService
         $referenceModel = new ReferenceModel($this->pdo);
         $referenceModel->setTable('templates');
         
-        // WHERE нөхцөл үүсгэх
-        $keywordConditions = [];
-        foreach ($keywords as $keyword) {
-            $keywordConditions[] = "p.keyword='{$keyword}'";
+        // LocalizedModel-ийн getRows() method ашиглах
+        // WHERE нөхцөл үүсгэх - keyword-уудыг IN clause ашиглах
+        $placeholders = [];
+        $params = [];
+        foreach ($keywords as $index => $keyword) {
+            $placeholder = ":keyword_$index";
+            $placeholders[] = $placeholder;
+            $params[$placeholder] = $keyword;
         }
-        $keywordWhere = '(' . implode(' OR ', $keywordConditions) . ')';
+        
+        $keywordIn = 'p.keyword IN (' . implode(', ', $placeholders) . ')';
+        $params[':code'] = $code;
+        
         $rows = $referenceModel->getRows([
-            'WHERE' =>
-                "c.code='{$code}' " .
-                "AND {$keywordWhere} " .
-                "AND p.is_active=1"
+            'WHERE' => "c.code=:code AND $keywordIn AND p.is_active=1",
+            'PARAM' => $params
         ]);
 
         $result = [];
         foreach ($rows as $row) {
-            $result[$row['keyword']] = $row['localized'][$code];
+            // Keyword-г primary талбараас авах
+            $keyword = $row['keyword'] ?? null;
+            if ($keyword && isset($row['localized'][$code])) {
+                $result[$keyword] = $row['localized'][$code];
+            }
         }
 
         return $result;

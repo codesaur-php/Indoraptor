@@ -70,7 +70,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $minLength = $algorithm === 'HS256' ? 32 : ($algorithm === 'HS384' ? 48 : 64);
             if (\strlen($secret) < $minLength) {
                 throw new \RuntimeException(
-                    "INDO_JWT_SECRET түлхүүр урт хангалтгүй байна. $algorithm алгоритмын хувьд дор хаяж $minLength тэмдэгт шаардлагатай. " .
+                    "INDO_JWT_SECRET түлхүүр урт хангалтгүй байна. $algorithm алгоритмын хувьд дор хаяж $minLength тэмдэгт байх шаардлагатай. " .
                     "Composer-ын post-root-package-install script нь автоматаар зөв урттай түлхүүр үүсгэнэ."
                 );
             }
@@ -121,7 +121,6 @@ class JWTAuthMiddleware implements MiddlewareInterface
     {
         $issuedAt = \time();
         $lifeSeconds = (int) ($_ENV['INDO_JWT_LIFETIME'] ?? 604800); // 604800 гэдэг бол 7 хоног
-
         $payload = [
             'iat' => $issuedAt,
             'exp' => $issuedAt + $lifeSeconds,
@@ -148,15 +147,12 @@ class JWTAuthMiddleware implements MiddlewareInterface
         // Decode үед буруу бол Exception шиднэ
         $decoded = JWT::decode($jwt, $this->getKey());
         $result = (array) $decoded;
-
         if (($result['exp'] ?? 0) < \time()) {
             throw new \RuntimeException('JWT хугацаа дууссан байна.');
         }
-
         if (!isset($result['user_id']) || !isset($result['organization_id'])) {
             throw new \RuntimeException('JWT мэдээлэл дутуу байна.', 401);
         }
-
         return $result;
     }
 
@@ -226,17 +222,14 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // 3. Хэрэглэгчийн profile баталгаажуулах
             // -------------------------------------------------------------
             $pdo = $request->getAttribute('pdo');
-
             $users = new UsersModel($pdo);
             $profile = $users->getRowWhere([
                 'id'        => $result['user_id'],
                 'is_active' => 1,
             ]);
-
             if (!isset($profile['id'])) {
                 throw new \RuntimeException('Хэрэглэгч олдсонгүй.', 404);
             }
-
             unset($profile['password']);
 
             // -------------------------------------------------------------
@@ -244,28 +237,23 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // -------------------------------------------------------------
             $orgModel     = new OrganizationModel($pdo);
             $orgUserModel = new OrganizationUserModel($pdo);
-
             $stmt = $orgUserModel->prepare(
                 'SELECT t2.* ' .
                 "FROM {$orgUserModel->getName()} t1 " .
                 "INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
                 'WHERE t1.user_id=:user AND t1.organization_id=:org AND t2.is_active=1 LIMIT 1'
             );
-
             $stmt->bindParam(':user', $result['user_id'], \PDO::PARAM_INT);
             $stmt->bindParam(':org',  $result['organization_id'], \PDO::PARAM_INT);
-
             if (!$stmt->execute() || $stmt->rowCount() !== 1) {
                 throw new \RuntimeException('Хэрэглэгч тухайн байгууллагад харьяалагдахгүй байна.', 406);
             }
-
             $organization = $stmt->fetch();
 
             // -------------------------------------------------------------
             // 5. RBAC эрхүүдийг ачаалан User объект үүсгэх
             // -------------------------------------------------------------
             $permissions = (new RBAC($pdo, $profile['id']))->jsonSerialize();
-
             $userObject = new User($profile, $organization, $permissions);
 
             // -------------------------------------------------------------

@@ -20,10 +20,10 @@
         "getbrevo/brevo-php": "^2.0.14",
         "firebase/php-jwt": "^7.0.2",
         "codesaur/http-application": "^6.0.0",
-        "codesaur/dataobject": "^8.1.0",
-        "codesaur/http-client": "^2.0.0",
+        "codesaur/dataobject": "^9.0.0",
+        "codesaur/http-client": "^2.0.1",
         "codesaur/template": "^3.0.0",
-        "codesaur/container": "^3.0.0"
+        "codesaur/container": "^3.1.1"
     },
     "autoload": {
         "psr-4": {

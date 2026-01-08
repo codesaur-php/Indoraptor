@@ -451,20 +451,16 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                     'method' => $this->getRequest()->getMethod(),
                     'target' => $this->getRequest()->getRequestTarget(),
                 ];
-
                 if (isset($this->getRequest()->getServerParams()['REMOTE_ADDR'])) {
                     $server_request['remote_addr'] =
                         $this->getRequest()->getServerParams()['REMOTE_ADDR'];
                 }
-
                 if (!empty($this->getRequest()->getParsedBody())) {
                     $server_request['body'] = $this->getRequest()->getParsedBody();
                 }
-
                 if (!empty($this->getRequest()->getUploadedFiles())) {
                     $server_request['files'] = $this->getRequest()->getUploadedFiles();
                 }
-
                 $context['server_request'] = $server_request;
             }
 
@@ -485,7 +481,6 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             $logger = new Logger($this->pdo);
             $logger->setTable($table);
             $logger->log($level, $message, $context);
-
         } catch (\Throwable $e) {
             $this->errorLog($e);
         }
