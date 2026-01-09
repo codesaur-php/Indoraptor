@@ -32,8 +32,8 @@ class TemplateService
     /**
      * Нэг keyword-аар template татах.
      *
-     * @param string $code Language code (жишээ: 'mn', 'en')
      * @param string $keyword Template keyword (жишээ: 'tos', 'pp', 'request-new-user')
+     * @param string $code Language code (жишээ: 'mn', 'en')
      * @return array|null Сонгосон хэлний контент эсвэл null
      * 
      * Буцаах утгын бүтэц:
@@ -42,7 +42,7 @@ class TemplateService
      *     'content' => string     // Сонгосон хэлний контент
      * ]
      */
-    public function getByKeyword(string $code, string $keyword): ?array
+    public function getByKeyword(string $keyword, string $code): ?array
     {
         $referenceModel = new ReferenceModel($this->pdo);
         $referenceModel->setTable('templates');
@@ -64,8 +64,8 @@ class TemplateService
     /**
      * Олон keyword-аар template-ууд татах.
      *
-     * @param string $code Language code (жишээ: 'mn', 'en')
      * @param array $keywords Template keyword-уудын массив (жишээ: ['tos', 'pp'])
+     * @param string $code Language code (жишээ: 'mn', 'en')
      * @return array Keyword => Сонгосон хэлний контент бүтэцтэй массив
      * 
      * Буцаах утгын бүтэц:
@@ -81,7 +81,7 @@ class TemplateService
      *     // ... бусад keyword-ууд
      * ]
      */
-    public function getMultipleByKeywords(string $code, array $keywords): array
+    public function getByKeywords(array $keywords, string $code): array
     {
         if (empty($keywords)) {
             return [];

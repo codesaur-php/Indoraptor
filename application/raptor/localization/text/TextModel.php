@@ -114,7 +114,6 @@ class TextModel extends LocalizedModel
     public function retrieve(?string $code = null): array
     {
         $text = [];
-
         if (empty($code)) {
             // Бүх хэлээр татах
             $stmt = $this->select(
@@ -137,7 +136,6 @@ class TextModel extends LocalizedModel
                 $text[$row['keyword']] = $row['text'];
             }
         }
-
         return $text;
     }
 

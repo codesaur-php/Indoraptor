@@ -76,16 +76,13 @@ class TemplateController extends \Raptor\Controller
     {
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
-
         $pages_query =
             'SELECT id, parent_id, title, link ' .
             "FROM $pages_table " .
             "WHERE code=:code AND is_active=1 AND published=1 AND type!='special-page' " .
             'ORDER BY position, id';
-
         $stmt = $this->prepare($pages_query);
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
-
         if ($stmt->execute() && $stmt->rowCount() > 0) {
             while ($row = $stmt->fetch()) {
                 $pages[$row['id']] = $row;
@@ -106,20 +103,16 @@ class TemplateController extends \Raptor\Controller
     private function buildMenu(array $pages, int $parent_id = 0): array
     {
         $navigation = [];
-
         foreach ($pages as $element) {
             if ($element['parent_id'] == $parent_id) {
-
                 // Хүүхэд submenu байвал оноох
                 $children = $this->buildMenu($pages, $element['id']);
                 if ($children) {
                     $element['submenu'] = $children;
                 }
-
                 $navigation[$element['id']] = $element;
             }
         }
-
         return $navigation;
     }
 
@@ -135,22 +128,18 @@ class TemplateController extends \Raptor\Controller
     {
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
-
         $pages_query =
             'SELECT id, title, link ' .
             "FROM $pages_table " .
             "WHERE code=:code AND is_active=1 AND published=1 AND type='important-menu' " .
             'ORDER BY position, id';
-
         $stmt = $this->prepare($pages_query);
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
-
         if ($stmt->execute() && $stmt->rowCount() > 0) {
             while ($row = $stmt->fetch()) {
                 $pages[$row['id']] = $row;
             }
         }
-
         return $pages;
     }
 }

@@ -371,30 +371,4 @@ class SettingsController extends FileController
             $this->indolog('content', $level, $message, $context);
         }
     }
-
-    /**
-     * Файлыг физик байрлалаас устгах.
-     *
-     * @param string $fileName  Устгах шаардлагатай файлын нэр
-     * @return bool              Амжилттай устгасан эсэх
-     *
-     * Алдаа гарвал лог үлдээнэ.
-     */
-    private function unlinkByName(string $fileName): bool
-    {
-        try {
-            $filePath = $this->local . "/$fileName";
-
-            if (!\file_exists($filePath)) {
-                throw new \Exception(__CLASS__ . ": File [$filePath] doesn't exist!");
-            }
-
-            return \unlink($filePath);
-
-        } catch (\Throwable $err) {
-
-            $this->errorLog($err);
-            return false;
-        }
-    }
 }

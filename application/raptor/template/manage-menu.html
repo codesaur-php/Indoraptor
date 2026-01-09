@@ -880,10 +880,12 @@
                 submitter.growNstop();
 
                 const data = new FormData(this);
+                console.log(data);
                 const visible = this.querySelector('input[name="is_visible"]');
                 if (visible) { /* ✅ CHECKBOX NORMALIZE: is_visible → 1/0 */
                     data.set('is_visible', visible.checked ? '1' : '0');
                 }
+                console.log(data);
                 fetch(
                     this.action,
                     {

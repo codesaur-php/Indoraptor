@@ -89,10 +89,8 @@ class LoginController extends \Raptor\Controller
         }
 
         // TOS + Privacy Policy орчуулга татаж template-д дамжуулах
-        $code = $this->getLanguageCode();
         $templateService = $this->getService('template_service');
-        $templateService->getByKeyword($code, 'pp');
-        $templates = $templateService->getMultipleByKeywords($code, ['tos', 'pp']);
+        $templates = $templateService->getByKeywords(['tos', 'pp'], $this->getLanguageCode());
         foreach ($templates as $keyword => $template) {
             $login->set($keyword, $template);
         }
@@ -369,7 +367,7 @@ class LoginController extends \Raptor\Controller
             
             // 2) Email template татах (request-new-user)
             $templateService = $this->getService('template_service');
-            $template = $templateService->getByKeyword($code, 'request-new-user');
+            $template = $templateService->getByKeyword('request-new-user', $code);
             if (empty($template)) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
@@ -547,7 +545,7 @@ class LoginController extends \Raptor\Controller
 
             // 2) Email template авах
             $templateService = $this->getService('template_service');
-            $template = $templateService->getByKeyword($payload['code'], 'forgotten-password-reset');
+            $template = $templateService->getByKeyword('forgotten-password-reset', $payload['code']);
             if (empty($template)) {
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }

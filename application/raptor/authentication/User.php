@@ -113,7 +113,7 @@ class User
             return $this->_rbac[$role][$permission] ?? false;
         }
 
-        // Бүх ролоор давтаж privilege шалгах
+        // Бүх ролиос privilege хайх
         foreach ($this->_rbac as $role) {
             if (isset($role[$permission]) && $role[$permission] === true) {
                 return true;

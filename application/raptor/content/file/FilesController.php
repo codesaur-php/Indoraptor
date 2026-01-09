@@ -291,7 +291,6 @@ class FilesController extends FileController
                     'message' => $err->getMessage()
                 ]
             ];
-
             $this->respondJSON($error, $err->getCode());
 
             // Files (DB) бичлэг амжилтгүй тул upload-лагдсан файл байвал устгах хэрэгтэй
@@ -415,7 +414,7 @@ class FilesController extends FileController
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-
+            
             $parsedBoy = $this->getParsedBody();
             if (empty($parsedBoy)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -430,11 +429,34 @@ class FilesController extends FileController
                 $payload[$k] = $v;
             }
 
-            // Update хийх
             $model = new FilesModel($this->pdo);
             $model->setTable($table);
-            $record = $model->updateById($id, $payload + ['updated_by' => $this->getUserId()]);
+
+            // Одоогийн record-ийг татаж байна, өөрчлөлт байгаа эсэхийг шалгахын тулд
+            $record = $model->getRowWhere(['id' => $id]);
             if (empty($record)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
+
+            // Өөрчлөгдсөн талбаруудыг тодорхойлох
+            $updates = [];
+            foreach ($payload as $field => $value) {
+                if (\array_key_exists($field, $record)
+                    && $record[$field] != $value) {
+                    $updates[] = $field;
+                }
+            }
+            if (empty($updates)) {
+                // Өөрчлөгдсөн талбарууд байхгүй үед зогсооно
+                throw new \InvalidArgumentException('No update!');
+            }
+
+            // Update metadata
+            $payload['updated_by'] = $this->getUserId();
+            
+            // Update row with payload
+            $updated = $model->updateById($id, $payload);
+            if (empty($updated)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
             $this->respondJSON([
@@ -442,24 +464,23 @@ class FilesController extends FileController
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-update-success'),
-                'record'  => $record
+                'record'  => $updated
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
-
         } finally {
             // Лог бичих
-            if (empty($record)) {
+            if (empty($updated)) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context = ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $message = '{id} дугаартай [{path}] файлын бичлэгийг амжилттай засварлалаа';
-                if (!empty($record['record_id'])) {
+                if (!empty($updated['record_id'])) {
                     $message = "{record_id}-р бичлэгт зориулсан $message";
                 }
-                $context = $record;
+                $context = $updated;
             }
             $this->indolog($table, $level, $message, ['action' => 'files-update', 'id' => $id] + $context);
         }

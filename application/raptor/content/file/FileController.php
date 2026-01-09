@@ -177,8 +177,8 @@ class FileController extends \Raptor\Controller
      *        'path' => public URL,
      *        'file' => absolute local file path,
      *        'size' => байтын хэмжээ,
-     *        'mime_content_type' => 'image/jpeg',
-     *        'type' => 'image'
+     *        'type' => 'image',
+     *        'mime_content_type' => 'image/jpeg'
      *      ]
      *
      * Амжилтгүй бол false буцаана, алдааны code-г getLastUploadError() авч мэдэж болно.
@@ -232,8 +232,8 @@ class FileController extends \Raptor\Controller
                 'path' => $this->getPath($file_name),
                 'file' => $file_path,
                 'size' => $file_size,
-                'mime_content_type' => $mime_type,
-                'type' => \explode('/', $mime_type)[0] ?? 'unknown'
+                'type' => \explode('/', $mime_type)[0] ?? 'unknown',
+                'mime_content_type' => $mime_type
             ];
         } catch (\Throwable $err) {
             if (\is_numeric($err->getCode())) {
@@ -477,6 +477,28 @@ class FileController extends \Raptor\Controller
             return \number_format($bytes / 1024, 2) . 'kb';
         } else {
             return $bytes . 'b';
+        }
+    }
+
+    /**
+     * Файлыг физик байрлалаас устгах.
+     *
+     * @param string $fileName  Устгах шаардлагатай файлын нэр
+     * @return bool             Амжилттай устгасан эсэх
+     *
+     * Алдаа гарвал лог үлдээнэ.
+     */
+    protected function unlinkByName(string $fileName): bool
+    {
+        try {
+            $filePath = $this->local . "/$fileName";
+            if (!\file_exists($filePath)) {
+                throw new \Exception(__CLASS__ . ": File [$filePath] doesn't exist!");
+            }
+            return \unlink($filePath);
+        } catch (\Throwable $err) {
+            $this->errorLog($err);
+            return false;
         }
     }
 }

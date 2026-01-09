@@ -1127,7 +1127,7 @@ class UsersController extends FileController
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
             $templateService = $this->getService('template_service');
             // approve-new-user template-ийг дуудна
-            $template = $templateService->getByKeyword($signup['code'], 'approve-new-user');
+            $template = $templateService->getByKeyword('approve-new-user', $signup['code']);
             if (!empty($template) && !empty($template['content'])) {
                 // MemoryTemplate → placeholder орлуулах
                 $memtemplate = new MemoryTemplate();

@@ -46,10 +46,8 @@ class HomeController extends TemplateController
      */
     public function index()
     {
-        $language_code = $this->getLanguageCode();
-
+        $code = $this->getLanguageCode();
         $news_table = (new NewsModel($this->pdo))->getName();
-
         $stmt_recent = $this->prepare(
             "SELECT id, title, photo, published_at 
              FROM $news_table
@@ -57,13 +55,11 @@ class HomeController extends TemplateController
              ORDER BY published_at DESC
              LIMIT 20"
         );
-
-        $recent = $stmt_recent->execute([':code' => $language_code])
+        $recent = $stmt_recent->execute([':code' => $code])
             ? $stmt_recent->fetchAll()
             : [];
-
         $vars = ['recent' => $recent];
-
+        
         // Public layout template
         $home = $this->template(__DIR__ . '/home.html', $vars);
         $home->render();
@@ -87,7 +83,6 @@ class HomeController extends TemplateController
     public function contact()
     {
         $pages_table = (new PagesModel($this->pdo))->getName();
-
         $stmt = $this->prepare(
             "SELECT id 
              FROM $pages_table
@@ -97,11 +92,9 @@ class HomeController extends TemplateController
              ORDER BY published_at DESC
              LIMIT 1"
         );
-
         $contact = $stmt->execute([':code' => $this->getLanguageCode()])
             ? $stmt->fetch()
             : [];
-
         return $this->page($contact['id'] ?? -1);
     }
 
@@ -125,12 +118,10 @@ class HomeController extends TemplateController
     {
         $model = new PagesModel($this->pdo);
         $table = $model->getName();
-
         $record = $model->getRowWhere([
             'id' => $id,
             'is_active' => 1
         ]);
-
         if (empty($record)) {
             throw new \Error('Хуудас олдсонгүй', 404);
         }
@@ -178,12 +169,10 @@ class HomeController extends TemplateController
     {
         $model = new NewsModel($this->pdo);
         $table = $model->getName();
-
         $record = $model->getRowWhere([
             'id' => $id,
             'is_active' => 1
         ]);
-
         if (empty($record)) {
             throw new \Error('Мэдээ олдсонгүй', 404);
         }
@@ -224,15 +213,13 @@ class HomeController extends TemplateController
     {
         $from = $this->getLanguageCode();
         $language = $this->getLanguages();
-
         if (isset($language[$code]) && $code !== $from) {
             $_SESSION['WEB_LANGUAGE_CODE'] = $code;
         }
 
         $script_path = $this->getScriptPath();
         $home = (string)$this->getRequest()->getUri()->withPath($script_path);
-
-        header("Location: $home", false, 302);
+        \header("Location: $home", false, 302);
         exit;
     }
 }

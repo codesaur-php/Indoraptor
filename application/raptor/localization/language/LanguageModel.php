@@ -79,16 +79,13 @@ class LanguageModel extends Model
             'WHERE' => "is_active=$is_active",
             'ORDER BY' => 'is_default Desc'
         ];
-
         $stmt = $this->selectStatement($this->getName(), '*', $condition);
-
         while ($row = $stmt->fetch()) {
             $languages[$row['code']] = [
                 'locale' => $row['locale'],
                 'title'  => $row['title']
             ];
         }
-
         return $languages;
     }
 
