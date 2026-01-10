@@ -591,7 +591,7 @@ class LoginController extends \Raptor\Controller
             $memtemplate = new MemoryTemplate();
             $memtemplate->set('email',   $payload['email']);
             $memtemplate->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
-            $memtemplate>-set(
+            $memtemplate->set(
                 'link',
                 "{$this->generateRouteLink('login', [], true)}?forgot={$request['forgot_password']}"
             );
