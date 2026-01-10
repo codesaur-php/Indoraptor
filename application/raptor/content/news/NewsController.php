@@ -4,10 +4,38 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
+/**
+ * Class NewsController
+ *
+ * Мэдээ (News) контент удирдах controller.
+ *
+ * Энэ controller нь:
+ * - Мэдээний жагсаалт харуулах (index, list)
+ * - Шинэ мэдээ үүсгэх (insert)
+ * - Мэдээ шинэчлэх (update)
+ * - Мэдээ унших (read)
+ * - Мэдээний дэлгэрэнгүй мэдээлэл харуулах (view)
+ * - Мэдээг идэвхгүй болгох (deactivate)
+ * зэрэг үйлдлүүдийг гүйцэтгэнэ.
+ *
+ * @package Raptor\Content
+ */
 class NewsController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
     
+    /**
+     * Мэдээний жагсаалтын dashboard хуудсыг харуулах.
+     *
+     * Энэ method нь:
+     * - Хэл (code), төрөл (type), ангилал (category), статус (published)
+     *   зэрэг шүүлтийн сонголтуудыг бэлтгэнэ
+     * - news-index.html template-ийг render хийнэ
+     *
+     * Permission: system_content_index
+     *
+     * @return void
+     */
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -55,6 +83,20 @@ class NewsController extends FileController
         $this->indolog($table, LogLevel::NOTICE, 'Мэдээний жагсаалтыг үзэж байна', ['action' => 'index']);
     }
     
+    /**
+     * Мэдээний жагсаалтыг JSON хэлбэрээр буцаах.
+     *
+     * Энэ method нь:
+     * - Query parameter-уудаас шүүлтийн нөхцөлүүдийг авна
+     *   (code, type, category, published, is_active)
+     * - Мэдээний жагсаалтыг бүртгэлийн огноогоор буурахаар эрэмбэлэнэ
+     * - Мэдээ бүрийн хавсаргасан файлын тоог тоолж буцаана
+     *
+     * Permission: system_content_index
+     *
+     * @return void JSON response буцаана
+     * @throws \Exception Эрхгүй бол exception шидэнэ
+     */
     public function list()
     {
         try {
@@ -96,6 +138,23 @@ class NewsController extends FileController
         }
     }
     
+    /**
+     * Шинэ мэдээ үүсгэх.
+     *
+     * Энэ method нь:
+     * - GET method: Мэдээ үүсгэх форм хуудсыг харуулна
+     * - POST method: Шинэ мэдээний бичлэгийг үүсгэнэ
+     *   - Гол зураг (photo) upload хийх боломжтой
+     *   - Content доторх файлуудын path-ийг автоматаар шинэчлэнэ
+     *   - Published, comment зэрэг статусыг тохируулна
+     *
+     * Permission:
+     * - system_content_insert: Мэдээ үүсгэх эрх
+     * - system_content_publish: Мэдээ нийтлэх эрх (published=1 үед)
+     *
+     * @return void
+     * @throws \Exception Эрхгүй эсвэл буруу хүсэлт бол exception шидэнэ
+     */
     public function insert()
     {
         try {
@@ -205,6 +264,25 @@ class NewsController extends FileController
         }
     }
     
+    /**
+     * Мэдээний бичлэгийг шинэчлэх.
+     *
+     * Энэ method нь:
+     * - GET method: Мэдээ шинэчлэх форм хуудсыг харуулна
+     * - PUT method: Мэдээний бичлэгийг шинэчлэнэ
+     *   - Өөрчлөлт байгаа эсэхийг шалгана (No update! exception)
+     *   - Гол зураг (photo) шинэчлэх, устгах боломжтой
+     *   - Хавсаргасан файлууд өөрчлөгдсөн эсэхийг шалгана
+     *   - Published статус өөрчлөгдсөн эсэхийг шалгаж, нийтлэх эрх шаардлагатай
+     *
+     * Permission:
+     * - system_content_update: Мэдээ шинэчлэх эрх
+     * - system_content_publish: Мэдээ нийтлэх эрх (published статус өөрчлөх үед)
+     *
+     * @param int $id Шинэчлэх мэдээний ID дугаар
+     * @return void
+     * @throws \Exception Эрхгүй, бичлэг олдохгүй эсвэл өөрчлөлт байхгүй бол exception шидэнэ
+     */
     public function update(int $id)
     {
         try {
@@ -333,6 +411,21 @@ class NewsController extends FileController
         }
     }
     
+    /**
+     * Мэдээний бичлэгийг унших.
+     *
+     * Энэ method нь:
+     * - Мэдээний бүрэн мэдээллийг харуулна
+     * - Хавсаргасан файлуудыг харуулна
+     * - Уншсан тооллогыг (read_count) нэмэгдүүлнэ
+     * - news-read.html template ашиглана
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Унших мэдээний ID дугаар
+     * @return void
+     * @throws \Exception Эрхгүй эсвэл бичлэг олдохгүй бол exception шидэнэ
+     */
     public function read(int $id)
     {
         try {
@@ -376,6 +469,20 @@ class NewsController extends FileController
         }
     }
     
+    /**
+     * Мэдээний дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
+     *
+     * Энэ method нь:
+     * - Мэдээний бүрэн мэдээллийг харуулна
+     * - Хавсаргасан файлуудыг харуулна
+     * - news-view.html template ашиглана
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Үзэх мэдээний ID дугаар
+     * @return void
+     * @throws \Exception Эрхгүй эсвэл бичлэг олдохгүй бол exception шидэнэ
+     */
     public function view(int $id)
     {
         try {
@@ -417,6 +524,19 @@ class NewsController extends FileController
         }
     }
     
+    /**
+     * Мэдээний бичлэгийг идэвхгүй болгох.
+     *
+     * Энэ method нь:
+     * - Request body-оос id дугаарыг авна
+     * - Мэдээний бичлэгийг is_active=0 болгон шинэчлэнэ
+     * - updated_by, updated_at талбаруудыг автоматаар шинэчлэнэ
+     *
+     * Permission: system_content_delete
+     *
+     * @return void JSON response буцаана
+     * @throws \Exception Эрхгүй, буруу хүсэлт эсвэл бичлэг олдохгүй бол exception шидэнэ
+     */
     public function deactivate()
     {
         try {
@@ -470,6 +590,18 @@ class NewsController extends FileController
         }
     }
     
+    /**
+     * Мэдээ бүрийн хавсаргасан идэвхтэй файлын тоог тоолох.
+     *
+     * Энэ method нь:
+     * - Мэдээний хүснэгт (news) болон файлын хүснэгт (news_files) хооронд
+     *   INNER JOIN хийж файлын тоог тоолно
+     * - Зөвхөн идэвхтэй (is_active=1) бичлэг болон файлуудыг тоолно
+     * - Үр дүнг [id => files_count] хэлбэртэй массив хэлбэрээр буцаана
+     *
+     * @param string $table Хүснэгтийн нэр (жишээ: 'news')
+     * @return array Мэдээний ID => Файлын тоо бүтэцтэй массив
+     */
     private function getFilesCounts(string $table): array
     {
         try {
