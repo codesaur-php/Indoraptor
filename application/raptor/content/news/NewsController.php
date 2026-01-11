@@ -44,6 +44,7 @@ class NewsController extends FileController
         }
         
         $filters = [];
+        // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new NewsModel($this->pdo))->getName();
         $codes_result = $this->query(
             "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
@@ -117,7 +118,8 @@ class NewsController extends FileController
                     unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);            
+            $where = \implode(' AND ', $conditions);
+            // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new NewsModel($this->pdo))->getName();
             $select_pages = 
                 'SELECT id, photo, title, code, type, category, published, published_at, date(created_at) as created_date ' .

@@ -237,6 +237,8 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // -------------------------------------------------------------
             $orgModel     = new OrganizationModel($pdo);
             $orgUserModel = new OrganizationUserModel($pdo);
+            // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $stmt = $orgUserModel->prepare(
                 'SELECT t2.* ' .
                 "FROM {$orgUserModel->getName()} t1 " .

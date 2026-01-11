@@ -188,6 +188,7 @@ class FilesModel extends Model
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);
             $record_name = $this->getRecordName();
+            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
             $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");

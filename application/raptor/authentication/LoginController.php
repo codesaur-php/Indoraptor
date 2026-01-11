@@ -193,6 +193,8 @@ class LoginController extends \Raptor\Controller
                 // сүүлд нэвтэрсэн байгууллага лог байхгүй үед
                 $org_model = new OrganizationModel($this->pdo);
                 $org_user_model = new OrganizationUserModel($this->pdo);
+                // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
+                // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
                 $stmt_user_org = $this->prepare(
                     'SELECT t1.* ' .
                     "FROM {$org_user_model->getName()} t1 INNER JOIN {$org_model->getName()} t2 ON t1.organization_id=t2.id " .
@@ -1240,6 +1242,8 @@ class LoginController extends \Raptor\Controller
     private function getLastLoginOrg(int $userId): int|false
     {
         try {
+            // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $orgTable     = (new OrganizationModel($this->pdo))->getName();
             $orgUserTable = (new OrganizationUserModel($this->pdo))->getName();
 
