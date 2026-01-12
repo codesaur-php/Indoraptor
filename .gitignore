@@ -22,3 +22,7 @@ composer.lock
 # Environment variables - серверийн нууц тохиргоо (DB нууц үг, API key, JWT secret гэх мэт)
 # Энэ файлд системийн нэвтрэх эрх, нууц түлхүүрүүд агуулагддаг тул git-д ОРУУЛЖ БОЛОХГҮЙ.
 .env
+
+# Claude Code - түр зуурын файлууд болон тохиргоо
+.claude/
+tmpclaude-*-cwd
