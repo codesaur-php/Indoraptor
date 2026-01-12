@@ -52,6 +52,8 @@ class OrganizationUserController extends \Raptor\Controller
             }
 
             // Байгууллага болон холболтын хүснэгтийн нэрүүд
+            // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_users_table = (new OrganizationUserModel($this->pdo))->getName();
             

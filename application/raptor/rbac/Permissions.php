@@ -124,6 +124,7 @@ class Permissions extends Model
         // MySQL/PostgreSQL дээр л FK constraint нэмнэ
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);
+            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $this->exec("
                 ALTER TABLE $table

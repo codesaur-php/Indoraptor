@@ -66,6 +66,8 @@ class Role
      */
     public function fetchPermissions(\PDO $pdo, int $role_id)
     {
+        // Хүснэгтийн нэрийг Permissions болон RolePermission-ийн getName() метод ашиглан динамикаар авна.
+        // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
         $permissions_table = (new Permissions($pdo))->getName();
         $role_perm_table   = (new RolePermission($pdo))->getName();
         $sql =

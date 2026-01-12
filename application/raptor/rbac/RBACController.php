@@ -74,6 +74,7 @@ class RBACController extends \Raptor\Controller
             $title = $queryParams['title'] ?? null;
 
             // Roles жагсаалт
+            // roles хүснэгтийн нэрийг Roles::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $roles_table = (new Roles($this->pdo))->getName();
             $select_roles = $this->prepare(
                 "SELECT id,name,description FROM $roles_table
@@ -84,6 +85,7 @@ class RBACController extends \Raptor\Controller
             $roles = $select_roles->fetchAll() ?: [];
 
             // Permissions жагсаалт
+            // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $permissions_table = (new Permissions($this->pdo))->getName();
             $select_perms = $this->prepare(
                 "SELECT id,name,description FROM $permissions_table
@@ -94,6 +96,7 @@ class RBACController extends \Raptor\Controller
             $permissions = $select_perms->fetchAll() ?: [];
 
             // RolePermission mapping
+            // role_permission хүснэгтийн нэрийг RolePermission::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $role_perm_table = (new RolePermission($this->pdo))->getName();
             $select_rp = $this->prepare(
                 "SELECT role_id,permission_id FROM $role_perm_table WHERE alias=:alias"
@@ -234,6 +237,7 @@ class RBACController extends \Raptor\Controller
             $values  = ['role' => $roleKey];
 
             // Role-г alias_name байдлаар lookup хийх
+            // roles хүснэгтийн нэрийг Roles::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $roles_table = (new Roles($this->pdo))->getName();
             // String concatenation - SQLite болон PostgreSQL дээр ||, MySQL дээр CONCAT_WS
             // SQLite дээр CONCAT_WS байхгүй тул || эсвэл CONCAT ашиглана
@@ -316,6 +320,7 @@ class RBACController extends \Raptor\Controller
                 ]);
             } else {
                 // Module-уудын жагсаалт (UI dropdown)
+                // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
                 $permissions_table = (new Permissions($this->pdo))->getName();
                 $select_modules = $this->prepare(
                     "SELECT DISTINCT(module) FROM $permissions_table

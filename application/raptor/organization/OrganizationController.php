@@ -77,6 +77,7 @@ class OrganizationController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
+            // organization хүснэгтийн нэрийг OrganizationModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new OrganizationModel($this->pdo))->getName();
             $this->respondJSON([
                 'status' => 'success',

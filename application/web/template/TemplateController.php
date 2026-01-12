@@ -75,6 +75,7 @@ class TemplateController extends \Raptor\Controller
     public function getMainMenu(string $code): array
     {
         $pages = [];
+        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
             'SELECT id, parent_id, title, link ' .
@@ -127,6 +128,7 @@ class TemplateController extends \Raptor\Controller
     public function getImportantMenu(string $code): array
     {
         $pages = [];
+        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
             'SELECT id, title, link ' .

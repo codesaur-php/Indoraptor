@@ -75,6 +75,8 @@ class RBAC implements \JsonSerializable
      */
     public function __construct(\PDO $pdo, int $user_id)
     {
+        // Хүснэгтийн нэрийг Roles болон UserRole-ийн getName() метод ашиглан динамикаар авна.
+        // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
         $roles_table       = (new Roles($pdo))->getName();
         $user_role_table   = (new UserRole($pdo))->getName();
         $sql =

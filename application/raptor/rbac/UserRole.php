@@ -140,6 +140,8 @@ class UserRole extends Model
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);
 
+            // Хүснэгтийн нэрийг Roles болон UsersModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $roles = (new Roles($this->pdo))->getName();
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             // FK: user_id → users.id

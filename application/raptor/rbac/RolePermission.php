@@ -129,7 +129,9 @@ class RolePermission extends Model
         // MySQL/PostgreSQL дээр л FK constraint нэмнэ
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);
-            
+
+            // Хүснэгтийн нэрийг Roles, Permissions, UsersModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $roles       = (new Roles($this->pdo))->getName();
             $permissions = (new Permissions($this->pdo))->getName();
             $users       = (new \Raptor\User\UsersModel($this->pdo))->getName();

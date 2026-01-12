@@ -47,6 +47,7 @@ class HomeController extends TemplateController
     public function index()
     {
         $code = $this->getLanguageCode();
+        // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt_recent = $this->prepare(
             "SELECT id, title, photo, published_at 
@@ -82,6 +83,7 @@ class HomeController extends TemplateController
      */
     public function contact()
     {
+        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT id 
@@ -117,6 +119,7 @@ class HomeController extends TemplateController
     public function page(int $id)
     {
         $model = new PagesModel($this->pdo);
+        // Хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = $model->getName();
         $record = $model->getRowWhere([
             'id' => $id,
@@ -168,6 +171,7 @@ class HomeController extends TemplateController
     public function news(int $id)
     {
         $model = new NewsModel($this->pdo);
+        // Хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = $model->getName();
         $record = $model->getRowWhere([
             'id' => $id,

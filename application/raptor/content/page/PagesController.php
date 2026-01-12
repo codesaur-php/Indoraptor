@@ -16,6 +16,7 @@ class PagesController extends FileController
         }
         
         $filters = [];
+        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new PagesModel($this->pdo))->getName();
         $codes_result = $this->query(
             "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
@@ -75,7 +76,8 @@ class PagesController extends FileController
                     unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);         
+            $where = \implode(' AND ', $conditions);
+            // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages = 
                 'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active ' .
