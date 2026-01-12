@@ -73,6 +73,7 @@ class TemplateController extends \Raptor\Controller
 
             // Байгууллагын alias жагсаалт
             $aliases = ['common'];
+            // organization хүснэгтийн нэрийг OrganizationModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $alias_results = $this->query(
                 "SELECT alias FROM $org_table WHERE alias!='common' AND is_active=1 GROUP BY alias"
@@ -83,6 +84,7 @@ class TemplateController extends \Raptor\Controller
 
             // Permission жагсаалт
             $permissions = [];
+            // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $permissions_table = (new Permissions($this->pdo))->getName();
             // String concatenation - SQLite болон PostgreSQL дээр ||, MySQL дээр CONCAT()
             $concat_expr = ($this->getDriverName() == 'pgsql' || $this->getDriverName() == 'sqlite')

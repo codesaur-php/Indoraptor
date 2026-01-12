@@ -46,6 +46,7 @@ class PagesModel extends Model
         // MySQL/PostgreSQL дээр л FK constraint нэмнэ
         if ($this->getDriverName() != 'sqlite') {
             $this->setForeignKeyChecks(false);
+            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_published_by FOREIGN KEY (published_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
             $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");

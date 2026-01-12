@@ -111,6 +111,8 @@ class OrganizationUserModel extends Model
             // FK шалгалтыг түр хаах
             $this->setForeignKeyChecks(false);
 
+            // Хүснэгтийн нэрийг UsersModel болон OrganizationModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $organizations = (new OrganizationModel($this->pdo))->getName();
 

@@ -99,6 +99,7 @@ class OrganizationModel extends Model
             // FK шалгалтыг түр хаах
             $this->setForeignKeyChecks(false);
 
+            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
             // created_by → users.id FK

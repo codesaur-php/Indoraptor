@@ -232,7 +232,8 @@ class UsersController extends FileController
             if (!$this->isUserCan('system_user_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
+            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new UsersModel($this->pdo))->getName();
             $users_infos = $this->query(
                 "SELECT id,photo,photo_size,last_name,first_name,username,phone,email,is_active FROM $table ORDER BY id"
@@ -244,6 +245,8 @@ class UsersController extends FileController
             }
             
             // Хэрэглэгч бүрийн role-уудыг (alias_name) хэлбэрээр нэгтгэх
+            // Хүснэгтийн нэрийг UserRole болон Roles-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $user_role_table = (new UserRole($this->pdo))->getName();
             $roles_table = (new Roles($this->pdo))->getName();
             $select_user_role =
@@ -261,6 +264,8 @@ class UsersController extends FileController
             });
             
             // Байгууллагын мэдээллийг хэрэглэгч бүр дээр нэгтгэх
+            // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_user_table = (new OrganizationUserModel($this->pdo))->getName();
             $select_orgs_users =
@@ -761,6 +766,8 @@ class UsersController extends FileController
                 );
             
             // Байгууллагын харьяалал авах
+            // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $org_user_table = (new OrganizationUserModel($this->pdo))->getName();
             $select_user_orgs =
@@ -770,6 +777,8 @@ class UsersController extends FileController
             $organizations = $this->query($select_user_orgs)->fetchAll();
 
             // RBAC Roles жагсаалт авах
+            // Хүснэгтийн нэрийг Roles болон UserRole-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $roles_table = (new Roles($this->pdo))->getName();
             $user_role_table = (new UserRole($this->pdo))->getName();
             // PostgreSQL, SQLite, болон MySQL нарт string concat ялгаатай
@@ -1667,6 +1676,7 @@ class UsersController extends FileController
                 
                 // RBAC-уудын жагсаалтыг байгууллагын alias-аар бүлэглэж харуулна
                 $rbacs = ['common' => 'Common'];
+                // organization хүснэгтийн нэрийг OrganizationModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
                 $org_table = (new OrganizationModel($this->pdo))->getName();
                 $organizations_result = $this->query(
                     "SELECT alias,name FROM $org_table WHERE alias!='common' AND is_active=1 ORDER BY id desc"
@@ -1681,6 +1691,7 @@ class UsersController extends FileController
                 $vars['rbacs'] = $rbacs;
 
                 // Тухайн RBAC alias бүр дээр харьяалагдах дүрүүдийг татах
+                // roles хүснэгтийн нэрийг Roles::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
                 $roles_table = (new Roles($this->pdo))->getName();
                 $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $roles_result = $this->query("SELECT id,alias,name,description FROM $roles_table")->fetchAll();
