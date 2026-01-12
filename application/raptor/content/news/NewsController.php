@@ -47,7 +47,7 @@ class NewsController extends FileController
         // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new NewsModel($this->pdo))->getName();
         $codes_result = $this->query(
-            "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
+            "SELECT DISTINCT code FROM $table WHERE is_active=1"
         )->fetchAll();
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
@@ -55,14 +55,14 @@ class NewsController extends FileController
             $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
         $types_result = $this->query(
-            "SELECT DISTINCT (type) FROM $table WHERE is_active=1"
+            "SELECT DISTINCT type FROM $table WHERE is_active=1"
          )->fetchAll();
         $filters['type']['title'] = $this->text('type');
         foreach ($types_result as $row) {
             $filters['type']['values'][$row['type']] = $row['type'];
         }
         $categories_result = $this->query(
-            "SELECT DISTINCT (category) FROM $table WHERE is_active=1"
+            "SELECT DISTINCT category FROM $table WHERE is_active=1"
         )->fetchAll();
         $filters['category']['title'] = $this->text('category');
         foreach ($categories_result as $row) {
@@ -171,8 +171,7 @@ class NewsController extends FileController
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['published'] = \filter_var($payload['published'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-                if ($payload['published'] == 1) {
+                if (($payload['published'] ?? 0 ) == 1) {
                     if (!$this->isUserCan('system_content_publish')
                     ) {
                         throw new \Exception($this->text('system-no-permission'), 401);
@@ -180,8 +179,7 @@ class NewsController extends FileController
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
                 }
-                $payload['comment'] = \filter_var($payload['comment'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-                if ($payload['comment'] == 1
+                if (($payload['comment'] ?? 0) == 1
                     && !$this->isUserCan('system_content_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
@@ -205,7 +203,13 @@ class NewsController extends FileController
                 $this->setFolder("/$table/$id");
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
-                    $record = $model->updateById($id, ['photo' => $photo['path']]);
+                    $record = $model->updateById(
+                        $id,
+                        [
+                            'photo' => $photo['path'],
+                            'photo_size' => $photo['size']
+                        ]
+                    );
                 }
                 $this->allowCommonTypes();
                 if (!empty($files) && \is_array($files)) {

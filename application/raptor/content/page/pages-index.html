@@ -130,11 +130,8 @@
         fetch(
             `{{ 'pages-list'|link }}` + window.location.search
         ).then(res => {
-            let contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-                return res.json();
-            }
-            throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
         }).then(data => {
             if (!data.list) {
                 throw new Error(data.message ?? 'Invalid response!');
@@ -199,27 +196,22 @@
             deactivates.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 
-                let questiondel;
-                if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та ({0}) хуудсыг идэвхгүй болгоход итгэлтэй байна уу?</p>';
-                } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to deactivate the page ({0})?</p>';
-                }
-
-                let thisRow = btn.closest('tr');
+                const thisRow = btn.closest('tr');
                 if (!thisRow) {
                     return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
-                let id = btn.value;
-                let title = thisRow.children[3].textContent;
-                let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+                const id = btn.value;
+                const title = thisRow.children[3].textContent.replace(/<\/?[^>]+(>|$)/g, '');
+                let question = document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та (${title}) хуудсыг идэвхгүй болгоход итгэлтэй байна уу?</p>`
+                    : `<p class="text-danger mb-3">Are you sure to deactivate the page (${title})?</p>`;
 
                 let src = '';
                 let photo = thisRow.children[2].querySelector('img');
                 if (photo && photo.src) {
                     src = photo.src;
                 } else {
-                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
+                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
                 }
                 Swal.fire({
                     imageUrl: src,

@@ -323,7 +323,7 @@ class RBACController extends \Raptor\Controller
                 // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
                 $permissions_table = (new Permissions($this->pdo))->getName();
                 $select_modules = $this->prepare(
-                    "SELECT DISTINCT(module) FROM $permissions_table
+                    "SELECT DISTINCT module FROM $permissions_table
                      WHERE alias=:alias AND module<>''"
                 );
                 $select_modules->bindParam(':alias', $alias);
