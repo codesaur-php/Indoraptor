@@ -48,7 +48,7 @@ class MySQLConnectMiddleware implements MiddlewareInterface
         $password  = $_ENV['INDO_DB_PASSWORD']  ?? '';
         $charset   = $_ENV['INDO_DB_CHARSET']   ?? 'utf8mb4';
         $collation = $_ENV['INDO_DB_COLLATION'] ?? 'utf8mb4_unicode_ci';
--
+
         // PDO options
         $options = [
             \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,

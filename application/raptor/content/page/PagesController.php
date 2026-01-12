@@ -19,7 +19,7 @@ class PagesController extends FileController
         // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new PagesModel($this->pdo))->getName();
         $codes_result = $this->query(
-            "SELECT DISTINCT (code) FROM $table WHERE is_active=1"
+            "SELECT DISTINCT code FROM $table WHERE is_active=1"
         )->fetchAll();
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
@@ -27,14 +27,14 @@ class PagesController extends FileController
             $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
         $types_result = $this->query(
-            "SELECT DISTINCT (type) FROM $table WHERE is_active=1"
+            "SELECT DISTINCT type FROM $table WHERE is_active=1"
         )->fetchAll();
         $filters['type']['title'] = $this->text('type');
         foreach ($types_result as $row) {
             $filters['type']['values'][$row['type']] = $row['type'];
         }
         $categories_result = $this->query(
-            "SELECT DISTINCT (category) FROM $table WHERE is_active=1"
+            "SELECT DISTINCT category FROM $table WHERE is_active=1"
         )->fetchAll();
         $filters['category']['title'] = $this->text('category');
         foreach ($categories_result as $row) {

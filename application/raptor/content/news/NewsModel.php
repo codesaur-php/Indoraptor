@@ -15,7 +15,7 @@ use codesaur\DataObject\Column;
  *
  * Үндсэн боломжууд:
  *  - Мэдээний хүснэгтийн багануудыг тодорхойлох
- *    (id, title, description, content, photo, code, type, category, гэх мэт)
+ *    (id, title, description, content, photo, photo_file, photo_size, code, type, category, гэх мэт)
  *  - FK constraint-уудыг анхны тохиргоонд үүсгэх
  *  - Шинэ мэдээ үүсгэх үед created_at талбарыг автоматаар бөглөх
  *  - Мэдээний төрөл (type), ангилал (category) зэрэг талбаруудыг удирдах
@@ -26,7 +26,8 @@ use codesaur\DataObject\Column;
  *  - title (varchar 255) - Мэдээний гарчиг
  *  - description (text) - Мэдээний товч тайлбар
  *  - content (mediumtext) - Мэдээний бүтэн агуулга
- *  - photo (varchar 255) - Мэдээний зураг (файлын зам)
+ *  - photo (varchar 255) - Мэдээний зургын URL path (жишээ: /public/news/1/naruto.jpg)
+ *  - photo_size (int) - Мэдээний зургын файлын хэмжээ (byte)
  *  - code (varchar 2) - Хэлний код (mn, en, гэх мэт)
  *  - type (varchar 32, default: 'common') - Мэдээний төрөл
  *  - category (varchar 32, default: 'general') - Мэдээний ангилал
@@ -92,6 +93,7 @@ class NewsModel extends Model
             new Column('description', 'text'),
             new Column('content', 'mediumtext'),
             new Column('photo', 'varchar', 255),
+            new Column('photo_size', 'int'),
             new Column('code', 'varchar', 2),
            (new Column('type', 'varchar', 32))->default('common'),
            (new Column('category', 'varchar', 32))->default('general'),

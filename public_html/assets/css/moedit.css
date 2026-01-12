@@ -1,0 +1,222 @@
+:root{
+  --mo-border:#dee2e6;
+  --mo-bg:#fff;
+  --mo-soft:#f8f9fa;
+  --mo-text:#212529;
+  --mo-primary:#0d6efd;
+  --mo-primary-hover:#0b5ed7;
+  --mo-shadow:0 0.125rem 0.25rem rgba(0,0,0,.075);
+  --mo-shadow-lg:0 0.5rem 1rem rgba(0,0,0,.15);
+  --mo-radius:0.375rem;
+}
+
+.moedit{
+  border:1px solid var(--mo-border);
+  border-radius:var(--mo-radius);
+  overflow:hidden;
+  background:var(--mo-bg);
+  color:var(--mo-text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  box-shadow:var(--mo-shadow);
+}
+
+.moedit-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.25rem;
+  align-items:center;
+  padding:0.5rem;
+  background:var(--mo-soft);
+  border-bottom:1px solid var(--mo-border);
+}
+
+.moedit-group{ 
+  display:flex; 
+  gap:0.25rem; 
+  align-items:center; 
+}
+
+.moedit-btn{
+  appearance:none;
+  border:1px solid var(--mo-border);
+  background:#fff;
+  padding:0.375rem 0.75rem;
+  border-radius:var(--mo-radius);
+  cursor:pointer;
+  font-size:0.875rem;
+  line-height:1.5;
+  user-select:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:0.375rem;
+  transition:all 0.15s ease-in-out;
+  min-width:2rem;
+  height:2rem;
+}
+.moedit-btn:hover{ 
+  background-color:#e9ecef;
+  border-color:#adb5bd;
+  transform:translateY(-1px);
+  box-shadow:var(--mo-shadow);
+}
+.moedit-btn:active{ 
+  transform:translateY(0);
+  box-shadow:none;
+}
+.moedit-btn[disabled]{ 
+  opacity:0.65; 
+  cursor:not-allowed;
+  pointer-events:none;
+}
+.moedit-btn[aria-pressed="true"]{ 
+  background-color:var(--mo-primary);
+  color:#fff;
+  border-color:var(--mo-primary);
+  box-shadow:0 0 0 0.2rem rgba(13,110,253,.25);
+}
+.moedit-btn[aria-pressed="true"]:hover{
+  background-color:var(--mo-primary-hover);
+  border-color:var(--mo-primary-hover);
+}
+.moedit-btn strong,
+.moedit-btn em,
+.moedit-btn u,
+.moedit-btn s{
+  font-weight:inherit;
+  font-style:inherit;
+  text-decoration:inherit;
+  line-height:inherit;
+}
+.moedit-btn sub,
+.moedit-btn sup{
+  font-size:0.7em;
+  line-height:0;
+  position:relative;
+  vertical-align:baseline;
+}
+.moedit-btn sub{
+  bottom:-0.25em;
+}
+.moedit-btn sup{
+  top:-0.5em;
+}
+
+.moedit-select{
+  border:1px solid var(--mo-border);
+  background:#fff;
+  border-radius:var(--mo-radius);
+  padding:0.375rem 0.75rem;
+  font-size:0.875rem;
+  cursor:pointer;
+  transition:all 0.15s ease-in-out;
+  min-width:4rem;
+  height:2rem;
+}
+.moedit-select:hover{
+  background-color:#e9ecef;
+  border-color:#adb5bd;
+}
+.moedit-color{
+  border:1px solid var(--mo-border);
+  border-radius:var(--mo-radius);
+  padding:0;
+  cursor:pointer;
+  width:2rem;
+  height:2rem;
+  transition:all 0.15s ease-in-out;
+}
+.moedit-color:hover{
+  border-color:#adb5bd;
+  box-shadow:var(--mo-shadow);
+}
+.moedit-select:hover{
+  border-color:#adb5bd;
+}
+.moedit-select:focus{
+  outline:0;
+  border-color:var(--mo-primary);
+  box-shadow:0 0 0 0.2rem rgba(13,110,253,.25);
+}
+
+.moedit-sep{
+  width:1px;
+  height:1.5rem;
+  background:var(--mo-border);
+  margin:0 0.25rem;
+  flex-shrink:0;
+}
+
+.moedit-body{ 
+  position:relative; 
+  min-height:300px;
+  max-height:600px;
+  overflow-y:auto;
+}
+
+.moedit-editor{
+  padding:1rem;
+  min-height:300px;
+  outline:none;
+  line-height:1.6;
+}
+.moedit-editor:focus{
+  outline:none;
+}
+.moedit-editor:empty:before{
+  content:attr(data-placeholder);
+  color:#6c757d;
+  pointer-events:none;
+}
+.moedit-editor img{
+  max-width:100%;
+  height:auto;
+  border-radius:var(--mo-radius);
+}
+.moedit-editor table{
+  width:100%;
+  border-collapse:collapse;
+  margin:1rem 0;
+}
+.moedit-editor table td,
+.moedit-editor table th{
+  padding:0.5rem;
+  border:1px solid var(--mo-border);
+}
+
+.moedit-source{
+  display:none;
+  width:100%;
+  border:0;
+  resize:vertical;
+  padding:1rem;
+  min-height:300px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+  font-size:0.875rem;
+  outline:none;
+  line-height:1.6;
+  background:#f8f9fa;
+}
+.moedit-source:focus{
+  outline:none;
+  background:#fff;
+}
+
+.moedit.is-source .moedit-editor{ display:none; }
+.moedit.is-source .moedit-source{ display:block; }
+
+/* Fullscreen */
+.moedit.is-fullscreen{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  box-shadow:var(--mo-shadow-lg);
+  border-radius:0;
+  margin:0;
+}
+.moedit.is-fullscreen .moedit-body,
+.moedit.is-fullscreen .moedit-editor,
+.moedit.is-fullscreen .moedit-source{
+  min-height:calc(100vh - 60px);
+  max-height:none;
+}

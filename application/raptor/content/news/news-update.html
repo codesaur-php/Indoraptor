@@ -510,23 +510,18 @@
             deleteFile?.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                let questiondel;
-                if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та {0} файлын бичлэгийг устгахдаа итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>';
-                } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the file {0}?</p>';
-                }
-
                 const id = deleteFile.value;
-                const title = row.children[0].textContent;
-                let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+                const title = row.children[0].textContent.replace(/<\/?[^>]+(>|$)/g, '');
+                let question = document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та ${title} файлын бичлэгийг устгахдаа итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>`
+                    : `<p class="text-danger mb-3">Are you sure to delete the file ${title}?</p>`;
 
                 let src = '';
                 let flag = row.children[0].querySelector('img');
                 if (flag) {
                     src = flag.src;
                 } else {
-                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
+                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
                 }
                 Swal.fire({
                     imageUrl: src,
@@ -615,11 +610,8 @@
                         method: this.getAttribute('method') ?? 'PUT'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                    throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
                 }).then(response => {
                     if (response.status !== 'success') {
                         throw new Error(response.message ? response.message : 'Invalid response!');

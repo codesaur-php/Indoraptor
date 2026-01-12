@@ -1,40 +1,50 @@
+<!-- Мэдээний төрлүүдийн тодорхойлолт -->
 {% set types = {
   'common': { 'mn': 'Нийтлэг' },
   'announcement': { 'mn': 'Зар мэдээлэл' },
   'embed': { 'mn': 'Шигтгэсэн' },
   'special': { 'mn': 'Тусгай' }
 } %}
+<!-- Мэдээний ангиллын тодорхойлолт -->
 {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' },
   'hot': { 'mn': 'Халуун' },
   'fun': { 'mn': 'Хөгжилтэй' }
 } %}
+<!-- Mongolian WYSIWYG Editor - текст editor -->
+<link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/js/moedit.js"></script>
+<!-- SweetAlert2 - мэдэгдэл харуулах сан -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Plupload - файл upload хийх сан -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/themes/default.min.css" integrity="sha512-9TfMTQR1fqjvuXo8Vas7DnLUZJr5kGFT6gHaFXG7dAZlzh+kFMDEQvbYxzaWXoFwchYSZCwU++Z24Kv1cSpVZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/sceditor.min.js" integrity="sha512-vTXYqh9aMw9z7j2KaQuGMHFyeIKixbOhsIGfPTNCeGd1EAj+Ju1Gm5z3aAat7N+FWscIdV3BPg9f0IzDGUaifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/formats/xhtml.min.js" integrity="sha512-KqPn4r6fCBEj1ZW6FXn8sD4J84IiGcGj8Onr2yAtrbBm6iT7rTclXbQhS0Nqxc9E2oU0JR8QEc8C+SuRTdh4Bw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/icons/monocons.min.js" integrity="sha512-UQApvlNbeoc7G9i+5A3pT0D/kCmNcX3Nbw0mbh7IxmifLDSXdYpiviDKer0BN2ZNcaXL8wiEClUqYgwUJrR3tQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Fancybox - зураг харуулах lightbox сан -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<!-- Хуудасны толгой хэсэг - гарчиг болон үйлдлийн товчнууд -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-success">
         <i class="bi bi-book"></i> {{ 'add-record'|text }} (news)
     </h3>
     <div class="ms-auto">
+        <!-- Хэрэв хэрэглэгч мэдээ нэмэх эрхтэй бол хадгалах товч харуулах -->
         {% if user.can('system_content_insert') %}
             <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
                 <i class="bi bi-check-lg"></i> {{ 'save'|text }}
             </button>
         {% endif %}
+        <!-- Жагсаалт руу буцах товч -->
         <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'news'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
         </a>
     </div>
 </div>
+<!-- Мэдээ нэмэх форм -->
 <form class="needs-validation" id="news_insert" action="{{ 'news-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
+    <!-- Эхний мөр: Хэл, Төрөл, Ангилал сонгох талбарууд -->
     <div class="row mt-3">
+        <!-- Хэл сонгох талбар -->
         <div class="col-4">
             <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
             <select class="form-select" name="code">
@@ -43,6 +53,7 @@
                 {% endfor %}
             </select>
         </div>
+        <!-- Мэдээний төрөл сонгох талбар (dropdown) -->
         <div class="col-4">
             <label class="form-label">{{ 'type'|text }}</label>
             <div class="input-group">
@@ -55,6 +66,7 @@
                 </ul>
             </div>
         </div>
+        <!-- Мэдээний ангилал сонгох талбар (dropdown) -->
         <div class="col-4">
             <label class="form-label">{{ 'category'|text }}</label>
             <div class="input-group">
@@ -68,7 +80,9 @@
             </div>
         </div>
     </div>
+    <!-- Хоёр дахь мөр: Гарчиг, Тайлбар, Зураг, Агуулга талбарууд -->
     <div class="row mt-3">
+        <!-- Мэдээний гарчиг (заавал бөглөх) - дуугаар бичих боломжтой -->
         <div class="form-group">
             <label class="form-label">{{ 'title'|text }}</label>
             <div class="input-group">
@@ -77,10 +91,12 @@
             </div>
             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
         </div>
+        <!-- Мэдээний товч тайлбар -->
         <div class="form-group mt-3">
             <label class="form-label">{{ 'description'|text }}</label>
             <textarea class="form-control" name="description"></textarea>
         </div>
+        <!-- Мэдээний зураг сонгох, харах талбар -->
         <div class="form-group mt-3">
             <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
             <div class="tab-pane" id="tab-picture" role="tabpanel">
@@ -93,24 +109,105 @@
                         </div>
                     </div>
                 </div>
+                <!-- Сонгосон зургийн урьдчилсан харагдах хэсэг -->
                 <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
             </div>
         </div>
+        <!-- Мэдээний агуулга (WYSIWYG editor ашиглана) -->
         <div class="form-group mt-3">
             <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
-            <textarea class="form-control" id="content" name="content" rows="10"></textarea>
+            <div class="moedit" id="content_editor_wrapper">
+                <div class="moedit-toolbar">
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="bold" title="Bold (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
+                        <button type="button" class="moedit-btn" data-action="italic" title="Italic (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
+                        <button type="button" class="moedit-btn" data-action="underline" title="Underline (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
+                        <button type="button" class="moedit-btn" data-action="strike" title="Strikethrough"><i class="bi bi-type-strikethrough"></i></button>
+                        <button type="button" class="moedit-btn" data-action="subscript" title="Subscript"><i class="bi bi-type"></i><sub>x</sub></button>
+                        <button type="button" class="moedit-btn" data-action="superscript" title="Superscript"><i class="bi bi-type"></i><sup>x</sup></button>
+                        <button type="button" class="moedit-btn" data-action="removeFormat" title="Remove Format"><i class="bi bi-eraser"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <select class="moedit-select" data-action="fontSize" title="Font Size">
+                            <option value="3" selected>Default</option>
+                            <option value="1">1 - Жижиг</option>
+                            <option value="2">2</option>
+                            <option value="3">3 - Хэвийн</option>
+                            <option value="4">4</option>
+                            <option value="5">5 - Том</option>
+                            <option value="6">6</option>
+                            <option value="7">7 - Хамгийн том</option>
+                        </select>
+                        <input type="color" class="moedit-color" data-action="foreColor" title="Font Color" value="#000000">
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="justifyLeft" title="Align Left"><i class="bi bi-text-left"></i></button>
+                        <button type="button" class="moedit-btn" data-action="justifyCenter" title="Align Center"><i class="bi bi-text-center"></i></button>
+                        <button type="button" class="moedit-btn" data-action="justifyRight" title="Align Right"><i class="bi bi-text-right"></i></button>
+                        <button type="button" class="moedit-btn" data-action="justifyFull" title="Justify"><i class="bi bi-justify"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="ul" title="Unordered List"><i class="bi bi-list-ul"></i></button>
+                        <button type="button" class="moedit-btn" data-action="ol" title="Ordered List"><i class="bi bi-list-ol"></i></button>
+                        <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-left"></i></button>
+                        <button type="button" class="moedit-btn" data-action="indent" title="Indent"><i class="bi bi-text-indent-right"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="link" title="Insert Link"><i class="bi bi-link-45deg"></i></button>
+                        <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-image"></i></button>
+                        <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
+                        <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
+                        <button type="button" class="moedit-btn" data-action="email" title="Insert Email"><i class="bi bi-envelope"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
+                        <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="cut" title="Cut (Ctrl+X)"><i class="bi bi-scissors"></i></button>
+                        <button type="button" class="moedit-btn" data-action="copy" title="Copy (Ctrl+C)"><i class="bi bi-clipboard"></i></button>
+                        <button type="button" class="moedit-btn" data-action="paste" title="Paste (Ctrl+V)"><i class="bi bi-clipboard-check"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="undo" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <button type="button" class="moedit-btn" data-action="redo" title="Redo (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
+                        <button type="button" class="moedit-btn" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
+                        <button type="button" class="moedit-btn" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
+                    </div>
+                </div>
+                <div class="moedit-body">
+                    <div class="moedit-editor" contenteditable="true" data-placeholder="Мэдээний агуулга бичнэ үү..."></div>
+                    <textarea class="moedit-source"></textarea>
+                </div>
+            </div>
+            <textarea class="form-control" id="content" name="content" style="display:none;"></textarea>
         </div>
     </div>
+    <!-- Файл хавсаргах хэсэг - Plupload ашиглан олон файл upload хийх -->
     <div class="rounded border mt-3 p-3">
         <div class="row">
             <label class="form-label fw-bolder">{{ 'files'|text }} <i class="bi bi-paperclip"></i></label>
+            <!-- Файл upload-ийн статус харуулах хэсэг -->
             <div class="text-danger mb-2">
                 <div id="filelist">Your browser doesn't have Silverlight or HTML5 support.</div>
             </div>
+            <!-- Файл сонгох, upload хийх товчнууд -->
             <div id="container">
                 <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
                 <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
             </div>
+            <!-- Upload хийсэн файлуудыг харуулах хүснэгт -->
             <table class="table table-striped table-hover" id="news_files">
                 <thead>
                     <tr>
@@ -126,9 +223,11 @@
             </table>
         </div>
     </div>
+    <!-- Хэрэв хэрэглэгч нийтлэх эрхтэй бол нийтлэх болон сэтгэгдэл авах тохиргоо харуулах -->
     {% if user.can('system_content_publish') %}
     <div class="rounded border border-success mt-3 p-3">
         <div class="row">
+            <!-- Нийтлэх эсэх сонголт -->
             <div class="col-6">
                 <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
                 <div class="form-check form-switch">
@@ -136,6 +235,7 @@
                     {{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}
                 </div>
             </div>
+            <!-- Сэтгэгдэл авах эсэх сонголт -->
             <div class="col-6">
                 <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
                 <div class="form-check form-switch">
@@ -147,6 +247,7 @@
     </div>
     {% endif %}
 </form>
+<!-- Формын доорх үйлдлийн товчнууд -->
 <div class="rounded p-2 mt-4 shadow">
     {% if user.can('system_content_insert') %}
         <button class="submit-insert btn btn-success text-uppercase shadow-sm">
@@ -158,10 +259,12 @@
     </a>
 </div>
 <script type="text/javascript">
+    /* Файлын замын байгаа нэр авах функц */
     function getBasename(url) {
         return url.split(/.*[\/|\\]/)[1];
     }
 
+    /* Байтыг хэмжээний нэгж рүү хөрвүүлэх функц (kb, mb, gb, tb) */
     function formatSizeUnits(bytes)
     {
         const thresh = 1024;
@@ -180,8 +283,9 @@
         return bytes.toFixed(1) + units[u];
     }
 
+    /* HTML тусгай тэмдэгтүүдийг escape хийх функц (XSS халдлагаас хамгаалах) */
     function escapeStr(s) {
-        let lookup = {
+        const lookup = {
             '&': "&amp;",
             '"': "&quot;",
             '\'': "&apos;",
@@ -191,24 +295,26 @@
         return s.replace(/[&"'<>]/g, c => lookup[c]);
     }
     
+    /* Мэдээний төрөл сонгох үед editor-ийн горимыг өөрчлөх */
     const content = document.getElementById('content');
     const type = document.querySelector('input[name="type"]');
+    let moeditInstance = null;
     document.getElementById('type_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             type.value = e.target.getAttribute('value');
             
-            let sceditorInstance = sceditor.instance(content);
-            let isInSourceMode = sceditorInstance.sourceMode();
+            /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */
+            if (moeditInstance) {
             if (type.value === 'embed') {
-                if (!isInSourceMode) {
-                    sceditorInstance.sourceMode(true);
+                    moeditInstance.toggleSource(true);
+                } else {
+                    moeditInstance.toggleSource(false);
                 }
-            } else if (isInSourceMode) {
-                sceditorInstance.sourceMode(false);
             }
         }
     });
 
+    /* Мэдээний ангилал сонгох event listener */
     const category = document.querySelector('input[name="category"]');
     document.getElementById('category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
@@ -216,6 +322,7 @@
         }
     });
     
+    /* Зураг сонгох, урьдчилсан харагдах, устгах функц */
     const photoName = document.getElementById('photo_name');
     const photoBrowse = document.querySelector('button.photo-browse');
     const photoPreview = document.getElementById('photo_preview');
@@ -226,15 +333,17 @@
         photo.name = 'photo';
         photoName.value = photo.files[0].name;
         
+        /* Товчны текстийг "Солих" болгож, устгах товч нэмэх */
         photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
         if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
-            let photoClear = document.createElement('button');
+            const photoClear = document.createElement('button');
             photoClear.classList.add('btn', 'btn-danger');
             photoClear.type = 'button';
             photoClear.innerHTML = `{{ 'remove'|text }}`;
             photoClear.addEventListener('click', function (e) {
                 e.preventDefault();
                 
+                /* Зургийг устгах - preview болон input-ийг цэвэрлэх */
                 photoPreview.removeAttribute('src');
                 photoPreview.style.display = 'none';
 
@@ -253,7 +362,8 @@
             }
         }
 
-        let reader = new FileReader();
+        /* Сонгосон зургийг урьдчилсан байдлаар харуулах */
+        const reader = new FileReader();
         reader.onload = function (e) {
             photoPreview.src = e.target.result;
             if (photoPreview.style.display === 'none') {
@@ -263,7 +373,9 @@
         reader.readAsDataURL(photo.files[0]);
     });
     
+    /* DOM ачаалагдсаны дараа бүх JavaScript функцүүдийг идэвхжүүлэх */
     document.addEventListener('DOMContentLoaded', function () {
+        /* Дуугаар текст бичих функц (Speech Recognition API) */
         const micBtn = document.querySelector('button.mic-speech-btn');
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SR && micBtn) {
@@ -272,6 +384,7 @@
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
+            /* Товчны төлөвийг өөрчлөх функц (идэвхтэй/идэвхгүй) */
             const setBtnState = (active) => {
                 micBtn.classList.toggle('text-danger', active);
                 micBtn.classList.toggle('text-primary', !active);
@@ -281,10 +394,11 @@
             recognition.onend = () => setBtnState(false);
             recognition.onerror = () => setBtnState(false);
             
+            /* Дуугаар бичсэн текстийг гарчиг талбарт оруулах */
             recognition.onresult = (e) => {
                 setBtnState(false);
-                let spokenText = e.results[0][0].transcript;
-                let titleInput = document.querySelector('input[name="title"]');
+                const spokenText = e.results[0][0].transcript;
+                const titleInput = document.querySelector('input[name="title"]');
                 if (titleInput) titleInput.value = spokenText;
             };
 
@@ -301,27 +415,133 @@
             console.warn('Speech recognition not supported in this browser.');
         }
 
-        sceditor.create(content, {
-            format: 'xhtml',
-            emoticonsEnabled: false,
-            toolbarExclude: 'emoticon',
-            icons: 'monocons',
-            width: '100%',
-            height: '360px',
-            startInSourceMode: type.value === 'embed',
-            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
+        const editorWrapper = document.getElementById('content_editor_wrapper');
+        moeditInstance = new moedit(editorWrapper, {
+            uploadImage: async function(file) {
+                /* Зураг upload хийх функц */
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('input', 'file');
+                formData.append('table', '{{ table }}');
+                formData.append('id', '0');
+                
+                try {
+                    const response = await fetch(`{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.path) {
+                        return data.path;
+                    } else {
+                        throw new Error(data.message || 'Upload алдаа');
+                    }
+                } catch (err) {
+                    console.error('Image upload error:', err);
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, err.message || 'Зураг upload хийхэд алдаа гарлаа');
+                    return null;
+                }
+            },
+            onChange: function(html) {
+                /* Bootstrap 5 class-уудыг автоматаар нэмэх */
+                const bootstrapHtml = html
+                    .replace(/<img([^>]*)>/gi, function(match, attrs) {
+                        if (!attrs.includes('class=')) {
+                            return '<img class="img-fluid rounded" ' + attrs + '>';
+                        } else if (!attrs.includes('img-fluid')) {
+                            return '<img' + attrs.replace(/class="([^"]*)"/, 'class="$1 img-fluid rounded"') + '>';
+                        }
+                        return match;
+                    })
+                    .replace(/<table([^>]*)>/gi, function(match, attrs) {
+                        if (!attrs.includes('class=')) {
+                            return '<table class="table table-bordered table-striped" ' + attrs + '>';
+                        } else if (!attrs.includes('table')) {
+                            return '<table' + attrs.replace(/class="([^"]*)"/, 'class="$1 table table-bordered table-striped"') + '>';
+                        }
+                        return match;
+                    })
+                    .replace(/<p([^>]*)>/gi, function(match, attrs) {
+                        if (!attrs.includes('class=') && !attrs.includes('mb-')) {
+                            return '<p class="mb-3" ' + attrs + '>';
+                        }
+                        return match;
+                    });
+                content.value = bootstrapHtml;
+            }
         });
         
-        let files = new motable('table#news_files');
+        /* Image button-ийг override хийх - файл upload хийх боломжтой болгох */
+        const imageBtn = editorWrapper.querySelector('[data-action="image"]');
+        if (imageBtn) {
+            imageBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                input.setAttribute('accept', 'image/*');
+                input.click();
+                input.onchange = function() {
+                    const file = input.files[0];
+                    if (file) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('input', 'file');
+                        formData.append('table', '{{ table }}');
+                        formData.append('id', '0');
+                        
+                        fetch(`{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.path) {
+                                const imgHtml = `<img class="img-fluid rounded" src="${data.path}" alt="">`;
+                                moeditInstance._ensureVisualMode();
+                                moeditInstance._focusEditor();
+                                document.execCommand('insertImage', false, data.path);
+                                /* Class-ийг нэмэх */
+                                setTimeout(function() {
+                                    const imgs = moeditInstance.editor.querySelectorAll('img[src="' + data.path + '"]');
+                                    imgs.forEach(function(img) {
+                                        if (!img.classList.contains('img-fluid')) {
+                                            img.classList.add('img-fluid', 'rounded');
+                                        }
+                                    });
+                                    moeditInstance._emitChange();
+                                }, 100);
+                                NotifyTop('success', `{{ 'success'|text|e }}`, 'Зураг амжилттай upload хийгдлээ');
+                            } else {
+                                throw new Error(data.message || 'Upload алдаа');
+                            }
+                        })
+                        .catch(err => {
+                            NotifyTop('danger', `{{ 'error'|text|e }}`, err.message);
+                        });
+                    }
+                };
+            });
+        }
+        
+        /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */
+        if (type.value === 'embed') {
+            moeditInstance.toggleSource(true);
+        }
+        
+        /* Файлуудыг хүснэгтэд харуулах motable объект үүсгэх */
+        const files = new motable('table#news_files');
         files.setReady();
         
-        let fileList = document.getElementById('filelist');
-        let uploadFilesBtn = document.getElementById('uploadfiles');
-        let uploader = new plupload.Uploader({
+        /* Plupload - файл upload хийх объект үүсгэх */
+        const fileList = document.getElementById('filelist');
+        const uploadFilesBtn = document.getElementById('uploadfiles');
+        const uploader = new plupload.Uploader({
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
             container: document.getElementById('container'),
             url: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`,
+            /* Зөвшөөрөгдсөн файлын төрлүүд болон хэмжээний хязгаар */
             filters: {
                 max_file_size: `{{ max_file_size ?? '8mb' }}`,
                 mime_types: [
@@ -336,6 +556,7 @@
             flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
             silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
             init: {
+                /* Uploader идэвхжсэний дараа */
                 PostInit: function () {
                     fileList.innerHTML = '';
                     uploadFilesBtn.onclick = function () {
@@ -343,6 +564,7 @@
                         return false;
                     };
                 },
+                /* Файл сонгогдсоны дараа */
                 FilesAdded: function (up, files) {
                     plupload.each(files, function (file) {
                         fileList.innerHTML += `<div id="${file.id}">${file.name} (${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
@@ -354,32 +576,41 @@
                         uploadFilesBtn.classList.add('btn-info');
                     }
                 },
+                /* Файл upload хийгдэж байгаа үед - явцыг харуулах */
                 UploadProgress: function (up, file) {
                     document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"></i> sending ${file.percent}%`;
                     uploadFilesBtn.setAttribute('disabled', '');
                 },
+                /* Файл амжилттай upload хийгдсэний дараа */
                 FileUploaded: function (up, file, response) {
                     try {
-                        let res = JSON.parse(response.response);
+                        const res = JSON.parse(response.response);
                         if (!res.file) {
                             throw 'Invalid response!';
                         }
                         
-                        let currentFile = document.getElementById(file.id);
+                        /* Амжилттай upload хийгдсэн файлын статусыг шинэчлэх */
+                        const currentFile = document.getElementById(file.id);
                         if (currentFile !== null) {
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
                             currentFile.classList.add('text-success');
                         }
 
+                        /* Файлыг хүснэгтэд нэмэх */
                         files.append(res);
                         
-                        if (res.type === 'image') {
-                            let sceditorInstance = sceditor.instance(content);
-                            sceditorInstance.insert(`<br /><p><img class="img-fluid" src="${res.path}"></p>`);
+                        /* Хэрэв зураг бол editor-д автоматаар оруулах */
+                        if (res.type === 'image' && moeditInstance) {
+                            const imgHtml = `<p><img class="img-fluid rounded" src="${res.path}" alt=""></p>`;
+                            moeditInstance._ensureVisualMode();
+                            moeditInstance._focusEditor();
+                            document.execCommand('insertHTML', false, imgHtml);
+                            moeditInstance._emitChange();
                         }
 
                         NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
                     } catch (err) {
+                        /* Алдаа гарсан тохиолдолд */
                         if (err instanceof SyntaxError) {
                             err = 'Invalid request!';
                         } else if (res && res.error && res.error.message) {
@@ -388,7 +619,7 @@
                             err = 'Unknown error!';
                         }
 
-                        let currentFile = document.getElementById(file.id);
+                        const currentFile = document.getElementById(file.id);
                         if (currentFile !== null) {
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> error';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err;
@@ -397,7 +628,8 @@
                         NotifyTop('danger', `{{ 'error'|text }}`, err);
                     }
 
-                    let list = fileList.children;
+                    /* Бүх файлууд upload хийгдсэн эсэхийг шалгах */
+                    const list = fileList.children;
                     let processedFile = 0;
                     for (let i = 0; i < list.length; i++) {
                         let file = list[i];
@@ -413,9 +645,10 @@
                         uploadFilesBtn.removeAttribute('disabled');
                     }
                 },
+                /* Upload хийхэд алдаа гарсан тохиолдолд */
                 Error: function (up, err) {
                     if (err.file.id !== null) {
-                        let currentFile = document.getElementById(err.file.id);
+                        const currentFile = document.getElementById(err.file.id);
                         if (currentFile !== null) {
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> failed';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
@@ -429,15 +662,19 @@
         });
         uploader.init();
         
+        /* Файлын модал цонхны линк болон хэрэглэгчийн эрхүүд */
         const newsFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
         const userCanUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
         const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
+        /* Файлыг хүснэгтэд нэмэх функц (motable-ийн append функцийг өргөтгөх) */
         motable.prototype.append = function (record) {
+            /* Файлын төрлөөс хамааран icon болон харуулах хэлбэрийг тодорхойлох */
             let fileIcon;
-            let fileName = escapeStr(getBasename(record['path']));
+            const fileName = escapeStr(getBasename(record['path']));
             let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
             let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
             switch (record['type']) {
+                /* Зураг файл - Fancybox ашиглан lightbox харуулах */
                 case 'image':
                     {
                         fileIcon = `<img src="${record['path']}" style="max-height:7.5rem;height:100%">`;
@@ -450,12 +687,15 @@
                         }
                     }
                     break;
+                /* Видео файл */
                 case 'video':
                     fileIcon = `<video style="max-height:15rem;height:100%;max-width:20rem;width:100%" controls><source src="${record['path']}"></video>`;
                     break;
+                /* Аудио файл */
                 case 'audio':
                     fileIcon = `<audio controls><source src="${record['path']}" type="${record['mime_content_type']}"></audio>`;
                     break;
+                /* Бусад файлууд */
                 default:
                     {
                         fileIcon = '<i class="bi bi-hdd"></i>';
@@ -464,36 +704,45 @@
                     break;
             }
            
+            /* Файлын үйлдлийн товчнууд (линк, засах, устгах) */
             fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=location&id=${record['id']}"><i class="bi bi-link"></i></a>${fileAction}`;
             if (userCanUpdate) fileAction += ` <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=files-update&id=${record['id']}"><i class="bi bi-pencil-square"></i></a>`;
             if (userCanDelete) fileAction += ` <button class="delete-file btn btn-sm btn-danger shadow-sm" value="${record['id']}" type="button"><i class="bi bi-trash"></i></button>`;
             
+            /* Файлын дүрслэл үүсгэх */
             let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
             fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
 
-            let row = document.createElement('tr');
+            /* Хүснэгтийн мөр үүсгэх */
+            const row = document.createElement('tr');
             row.id = `file_${record['id']}`;
             row.style.fontSize = '.875rem';
-            let cell1 = document.createElement('td');
+            /* Эхний багана: Файл */
+            const cell1 = document.createElement('td');
             cell1.innerHTML = `<input name="files[]" value="${record['id']}" type="hidden">${fileFigure}`;
             row.appendChild(cell1);
 
-            let cell2 = document.createElement('td');
+            /* Хоёр дахь багана: Файлын шинж чанар (MIME type, хэмжээ) */
+            const cell2 = document.createElement('td');
             cell2.innerHTML = `<p style="max-width:11.25rem;word-wrap:break-all"><u>${record['mime_content_type']}</u></p>${formatSizeUnits(record['size'])}`;
             row.appendChild(cell2);
 
-            let cell3 = document.createElement('td');
+            /* Гурав дахь багана: Тайлбар */
+            const cell3 = document.createElement('td');
             cell3.innerHTML = record['description'] ?? '';
             row.appendChild(cell3);
 
-            let cell4 = document.createElement('td');
+            /* Дөрөв дэх багана: Ангилал */
+            const cell4 = document.createElement('td');
             cell4.innerHTML = record['category'] ?? '';
             row.appendChild(cell4);
 
-            let cell5 = document.createElement('td');
+            /* Тав дахь багана: Түлхүүр үг */
+            const cell5 = document.createElement('td');
             cell5.innerHTML = record['keyword'] ?? '';
             row.appendChild(cell5);
 
+            /* Хүснэгтийн tbody-д мөрийг нэмэх */
             let tBody = this.table.querySelector('tbody');
             if (!tBody) {
                 tBody = document.createElement('tbody');
@@ -506,6 +755,7 @@
             
             this.setReady();
 
+            /* Хэрэв зураг бол Fancybox-ийг идэвхжүүлэх (GIF-ээс бусад) */
             if (record['type'] === 'image'
                 && record['mime_content_type'] !== 'image/gif'
             ) {
@@ -513,35 +763,35 @@
                 Fancybox.bind('[file-data-fancybox]', {groupAll: true});
             }
 
-            let rowModals = row.querySelectorAll('.ajax-modal');
+            /* Модал цонхны event listener-үүдийг нэмэх */
+            const rowModals = row.querySelectorAll('.ajax-modal');
             rowModals?.forEach(a => a.addEventListener('click', function (e) {
                 e.preventDefault();
                 ajaxModal(a);
             }));
 
-            let thisTable = this;
+            /* Файл устгах event listener */
+            const thisTable = this;
             const deleteFile = row.querySelector('.delete-file');
             deleteFile?.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                let questiondel;
-                if (document.documentElement.lang === 'mn') {
-                    questiondel = '<p class="text-danger mb-3">Та {0} файлын бичлэгийг устгахдаа итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>';
-                } else {
-                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the file {0}?</p>';
-                }
-
+                /* Устгах баталгаажуулах мэдэгдэл харуулах */
                 const id = deleteFile.value;
-                const title = row.children[0].textContent;
-                let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+                const title = row.children[0].textContent.replace(/<\/?[^>]+(>|$)/g, '');
+                let question = document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та ${title} файлын бичлэгийг устгахдаа итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>`
+                    : `<p class="text-danger mb-3">Are you sure to delete the file ${title}?</p>`;
 
+                /* Хэрэв зураг бол зургийг мэдэгдэлд харуулах */
                 let src = '';
-                let flag = row.children[0].querySelector('img');
+                const flag = row.children[0].querySelector('img');
                 if (flag) {
                     src = flag.src;
                 } else {
-                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
+                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
                 }
+                /* SweetAlert2 ашиглан баталгаажуулах мэдэгдэл харуулах */
                 Swal.fire({
                     imageUrl: src,
                     imageHeight: 64,
@@ -553,6 +803,7 @@
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
+                    /* Файлыг устгах API дуудах */
                     preConfirm: () => {
                         return fetch(
                             `{{ 'files-deactivate'|link({'table':table}) }}`,
@@ -574,6 +825,7 @@
 
                             NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deactivated`);
 
+                            /* Хүснэгтээс мөрийг устгах */
                             row.remove();
                             thisTable.setReady();
                         }).catch(error => {
@@ -584,10 +836,12 @@
             });
         };
         
+        /* Форм илгээх функц */
         const formInsert = document.querySelector('form#news_insert');
         if (!formInsert) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
+            /* Хадгалах товчнууд дээр дарахад форм илгээх */
             const submitters = document.querySelectorAll('button.submit-insert');
             submitters.forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
@@ -596,22 +850,34 @@
                 });
             });
 
+            /* Форм submit хийхэд */
             formInsert.addEventListener('submit', function (event) {
                 event.preventDefault();
 
-                let datetimes = this.querySelectorAll('input[type="datetime-local"]');
-                datetimes?.forEach(input => { input.type = 'text'; });
+                /* Формын баталгаажуулалт */
                 const _valid = this.checkValidity();
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    datetimes?.forEach(input => { input.type = 'datetime-local'; });
                     return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
+                /* Товчнуудыг disable хийх (spinner харуулах) */
                 submitters.forEach(function (btn) { btn.growNstop(); });
 
+                /* FormData үүсгэж сервер рүү илгээх */
                 const data = new FormData(this);
+                
+                /* Published болон comment checkbox-уудыг normalize хийх (checked = 1, unchecked = 0) */
+                const publishedCheckbox = this.querySelector('input[name="published"]');
+                if (publishedCheckbox) {
+                    data.set('published', publishedCheckbox.checked ? '1' : '0');
+                }
+                const commentCheckbox = this.querySelector('input[name="comment"]');
+                if (commentCheckbox) {
+                    data.set('comment', commentCheckbox.checked ? '1' : '0');
+                }
+                
                 fetch(
                     this.action,
                     {
@@ -619,22 +885,20 @@
                         method: this.getAttribute('method') ?? 'POST'
                     }
                 ).then(res => {
-                    let contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                    throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
                 }).then(response => {
                     if (response.status !== 'success') {
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
+                    /* Амжилттай бол мэдээний жагсаалт руу шилжих */
                     window.location.href = `{{ 'news'|link }}`;
 
                     NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'News created');
                 }).catch(error => {
+                    /* Алдаа гарсан тохиолдолд */
                     NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                    datetimes?.forEach(input => { input.type = 'datetime-local'; });
                     submitters.forEach(function (btn) { btn.growNstop();});
                 });
             });
