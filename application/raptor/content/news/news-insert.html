@@ -125,7 +125,6 @@
                         <button type="button" class="moedit-btn" data-action="strike" title="Strikethrough"><i class="bi bi-type-strikethrough"></i></button>
                         <button type="button" class="moedit-btn" data-action="subscript" title="Subscript"><i class="bi bi-type"></i><sub>x</sub></button>
                         <button type="button" class="moedit-btn" data-action="superscript" title="Superscript"><i class="bi bi-type"></i><sup>x</sup></button>
-                        <button type="button" class="moedit-btn" data-action="removeFormat" title="Remove Format"><i class="bi bi-eraser"></i></button>
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
@@ -150,6 +149,10 @@
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
+                        <button type="button" class="moedit-btn" data-action="removeFormat" title="Remove Format"><i class="bi bi-eraser"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
                         <button type="button" class="moedit-btn" data-action="ul" title="Unordered List"><i class="bi bi-list-ul"></i></button>
                         <button type="button" class="moedit-btn" data-action="ol" title="Ordered List"><i class="bi bi-list-ol"></i></button>
                         <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-left"></i></button>
@@ -157,22 +160,13 @@
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="link" title="Insert Link"><i class="bi bi-link-45deg"></i></button>
+                        <button type="button" class="moedit-btn" data-action="pasteText" title="Paste Text"><i class="bi bi-clipboard-plus"></i></button>
                         <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-image"></i></button>
                         <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
                         <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
-                        <button type="button" class="moedit-btn" data-action="email" title="Insert Email"><i class="bi bi-envelope"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
                         <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
                         <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="cut" title="Cut (Ctrl+X)"><i class="bi bi-scissors"></i></button>
-                        <button type="button" class="moedit-btn" data-action="copy" title="Copy (Ctrl+C)"><i class="bi bi-clipboard"></i></button>
-                        <button type="button" class="moedit-btn" data-action="paste" title="Paste (Ctrl+V)"><i class="bi bi-clipboard-check"></i></button>
+                        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
@@ -187,7 +181,7 @@
                     </div>
                 </div>
                 <div class="moedit-body">
-                    <div class="moedit-editor" contenteditable="true" data-placeholder="Мэдээний агуулга бичнэ үү..."></div>
+                    <div class="moedit-editor" contenteditable="true" data-placeholder="Агуулгаа энд бичнэ үү..."></div>
                     <textarea class="moedit-source"></textarea>
                 </div>
             </div>
@@ -418,14 +412,14 @@
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
         const editorWrapper = document.getElementById('content_editor_wrapper');
         moeditInstance = new moedit(editorWrapper, {
+            /* Зураг upload хийх функц */
             uploadImage: async function(file) {
-                /* Зураг upload хийх функц */
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('input', 'file');
                 formData.append('table', '{{ table }}');
                 formData.append('id', '0');
-                
+
                 try {
                     const response = await fetch(`{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`, {
                         method: 'POST',
@@ -439,91 +433,19 @@
                     }
                 } catch (err) {
                     console.error('Image upload error:', err);
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, err.message || 'Зураг upload хийхэд алдаа гарлаа');
-                    return null;
+                    throw err;
                 }
             },
+            /* Notify функц */
+            notify: function(type, message) {
+                NotifyTop(type, type === 'success' ? `{{ 'success'|text|e }}` : `{{ 'error'|text|e }}`, message);
+            },
+            /* Агуулга өөрчлөгдөхөд */
             onChange: function(html) {
-                /* Bootstrap 5 class-уудыг автоматаар нэмэх */
-                const bootstrapHtml = html
-                    .replace(/<img([^>]*)>/gi, function(match, attrs) {
-                        if (!attrs.includes('class=')) {
-                            return '<img class="img-fluid rounded" ' + attrs + '>';
-                        } else if (!attrs.includes('img-fluid')) {
-                            return '<img' + attrs.replace(/class="([^"]*)"/, 'class="$1 img-fluid rounded"') + '>';
-                        }
-                        return match;
-                    })
-                    .replace(/<table([^>]*)>/gi, function(match, attrs) {
-                        if (!attrs.includes('class=')) {
-                            return '<table class="table table-bordered table-striped" ' + attrs + '>';
-                        } else if (!attrs.includes('table')) {
-                            return '<table' + attrs.replace(/class="([^"]*)"/, 'class="$1 table table-bordered table-striped"') + '>';
-                        }
-                        return match;
-                    })
-                    .replace(/<p([^>]*)>/gi, function(match, attrs) {
-                        if (!attrs.includes('class=') && !attrs.includes('mb-')) {
-                            return '<p class="mb-3" ' + attrs + '>';
-                        }
-                        return match;
-                    });
-                content.value = bootstrapHtml;
+                content.value = html;
             }
         });
-        
-        /* Image button-ийг override хийх - файл upload хийх боломжтой болгох */
-        const imageBtn = editorWrapper.querySelector('[data-action="image"]');
-        if (imageBtn) {
-            imageBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const input = document.createElement('input');
-                input.setAttribute('type', 'file');
-                input.setAttribute('accept', 'image/*');
-                input.click();
-                input.onchange = function() {
-                    const file = input.files[0];
-                    if (file) {
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('input', 'file');
-                        formData.append('table', '{{ table }}');
-                        formData.append('id', '0');
-                        
-                        fetch(`{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`, {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.path) {
-                                const imgHtml = `<img class="img-fluid rounded" src="${data.path}" alt="">`;
-                                moeditInstance._ensureVisualMode();
-                                moeditInstance._focusEditor();
-                                document.execCommand('insertImage', false, data.path);
-                                /* Class-ийг нэмэх */
-                                setTimeout(function() {
-                                    const imgs = moeditInstance.editor.querySelectorAll('img[src="' + data.path + '"]');
-                                    imgs.forEach(function(img) {
-                                        if (!img.classList.contains('img-fluid')) {
-                                            img.classList.add('img-fluid', 'rounded');
-                                        }
-                                    });
-                                    moeditInstance._emitChange();
-                                }, 100);
-                                NotifyTop('success', `{{ 'success'|text|e }}`, 'Зураг амжилттай upload хийгдлээ');
-                            } else {
-                                throw new Error(data.message || 'Upload алдаа');
-                            }
-                        })
-                        .catch(err => {
-                            NotifyTop('danger', `{{ 'error'|text|e }}`, err.message);
-                        });
-                    }
-                };
-            });
-        }
-        
+
         /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */
         if (type.value === 'embed') {
             moeditInstance.toggleSource(true);
@@ -601,7 +523,7 @@
                         
                         /* Хэрэв зураг бол editor-д автоматаар оруулах */
                         if (res.type === 'image' && moeditInstance) {
-                            const imgHtml = `<p><img class="img-fluid rounded" src="${res.path}" alt=""></p>`;
+                            const imgHtml = `<p><img style="max-width:100%;height:auto" src="${res.path}" alt=""></p>`;
                             moeditInstance._ensureVisualMode();
                             moeditInstance._focusEditor();
                             document.execCommand('insertHTML', false, imgHtml);
