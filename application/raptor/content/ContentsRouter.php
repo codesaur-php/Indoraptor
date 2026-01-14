@@ -50,6 +50,9 @@ class ContentsRouter extends Router
         // Файл upload хийх, контентод зураг хавсаргах
         $this->POST('/dashboard/files/{input}/{table}/{uint:id}', [FilesController::class, 'post'])->name('files-post');
 
+        // Контент зураг upload (moedit editor-д зориулсан, auto optimize)
+        $this->POST('/dashboard/content/image/{table}/{uint:id}', [FilesController::class, 'imagePost'])->name('content-image-post');
+
         // Файл сонгох modal UI
         $this->GET('/dashboard/files/modal/{table}', [FilesController::class, 'modal'])->name('files-modal');
 

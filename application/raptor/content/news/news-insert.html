@@ -15,6 +15,7 @@
 <!-- Mongolian WYSIWYG Editor - текст editor -->
 <link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/js/moedit.js"></script>
+<script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
 <!-- SweetAlert2 - мэдэгдэл харуулах сан -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Plupload - файл upload хийх сан -->
@@ -178,6 +179,11 @@
                         <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
                         <button type="button" class="moedit-btn" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
                         <button type="button" class="moedit-btn" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
+                    </div>
+                    <div class="moedit-sep"></div>
+                    <div class="moedit-group">
+                        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - HTML гоёжуулах"><i class="bi bi-stars"></i></button>
+                        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зураг → HTML"><i class="bi bi-image-alt"></i></button>
                     </div>
                 </div>
                 <div class="moedit-body">
@@ -412,38 +418,9 @@
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
         const editorWrapper = document.getElementById('content_editor_wrapper');
         moeditInstance = new moedit(editorWrapper, {
-            /* Зураг upload хийх функц */
-            uploadImage: async function(file) {
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('input', 'file');
-                formData.append('table', '{{ table }}');
-                formData.append('id', '0');
-
-                try {
-                    const response = await fetch(`{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (data.path) {
-                        return data.path;
-                    } else {
-                        throw new Error(data.message || 'Upload алдаа');
-                    }
-                } catch (err) {
-                    console.error('Image upload error:', err);
-                    throw err;
-                }
-            },
-            /* Notify функц */
-            notify: function(type, message) {
-                NotifyTop(type, type === 'success' ? `{{ 'success'|text|e }}` : `{{ 'error'|text|e }}`, message);
-            },
-            /* Агуулга өөрчлөгдөхөд */
-            onChange: function(html) {
-                content.value = html;
-            }
+            onChange: (html) => content.value = html,
+            shineUrl: `{{ 'moedit-ai-shine'|link }}`,
+            uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`
         });
 
         /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */

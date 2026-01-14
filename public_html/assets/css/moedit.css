@@ -481,6 +481,28 @@
   background:var(--mo-btn-hover);
 }
 
+.moedit-modal-btn-success{
+  background:#198754;
+  color:#fff;
+  border-color:#198754;
+}
+
+.moedit-modal-btn-success:hover{
+  background:#157347;
+  border-color:#146c43;
+}
+
+.moedit-modal-btn-info{
+  background:#0dcaf0;
+  color:#000;
+  border-color:#0dcaf0;
+}
+
+.moedit-modal-btn-info:hover{
+  background:#31d2f2;
+  border-color:#25cff2;
+}
+
 .moedit-modal-btn-disabled{
   opacity:0.5;
   cursor:not-allowed;
