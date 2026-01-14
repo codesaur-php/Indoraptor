@@ -317,6 +317,148 @@ class FilesController extends FileController
     }
 
     /**
+     * Контент зураг upload хийх (moedit editor-д зориулсан).
+     *
+     * - Зөвхөн зураг хүлээн авна (jpg, png, gif, webp)
+     * - Том зургийг web-д зориулж optimize хийнэ (max 1920px, 85% quality)
+     * - JSON хариу: { path: '/public/content/123/image.jpg' }
+     *
+     * @param string $table Хүснэгтийн нэр (news, pages гэх мэт)
+     * @param int $id Контентын ID (0 бол temp folder)
+     * @return void
+     */
+    public function imagePost(string $table, int $id)
+    {
+        try {
+            // Хэрэглэгч нэвтэрсэн байх ёстой
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+
+            // Фолдер тохируулах
+            $this->setFolder("\$table" . ($id == 0 ? '' : "/$id"));
+            $this->allowImageOnly();
+
+            // Upload хийх
+            $uploaded = $this->moveUploaded('file');
+            if (!$uploaded) {
+                throw new \InvalidArgumentException('Зураг upload хийхэд алдаа гарлаа', 400);
+            }
+
+            // Зургийг optimize хийх (хэрэв том бол)
+            $optimized = $this->optimizeImage($uploaded['file']);
+            if ($optimized) {
+                $uploaded['size'] = \filesize($uploaded['file']);
+            }
+
+            // moedit-д зөвхөн path хэрэгтэй
+            $this->respondJSON(['path' => $uploaded['path']]);
+
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'error' => [
+                    'code'    => $err->getCode(),
+                    'message' => $err->getMessage()
+                ]
+            ], $err->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Зургийг web-д зориулж optimize хийх.
+     *
+     * - Max өргөн: 1920px
+     * - JPEG quality: 85%
+     * - PNG compression: 6
+     *
+     * @param string $filePath Зургийн физик зам
+     * @return bool Optimize хийгдсэн эсэх
+     */
+    private function optimizeImage(string $filePath): bool
+    {
+        if (!\function_exists('imagecreatefromjpeg')) {
+            return false; // GD library байхгүй
+        }
+
+        $maxWidth = 1920;
+        $quality = 85;
+
+        $imageInfo = @\getimagesize($filePath);
+        if (!$imageInfo) {
+            return false;
+        }
+
+        [$width, $height, $type] = $imageInfo;
+
+        // Хэрэв жижиг зураг бол optimize хийх шаардлагагүй
+        if ($width <= $maxWidth) {
+            return false;
+        }
+
+        // Шинэ хэмжээ тооцоолох
+        $newWidth = $maxWidth;
+        $newHeight = (int) ($height * ($maxWidth / $width));
+
+        // Зураг үүсгэх
+        switch ($type) {
+            case \IMAGETYPE_JPEG:
+                $source = @\imagecreatefromjpeg($filePath);
+                break;
+            case \IMAGETYPE_PNG:
+                $source = @\imagecreatefrompng($filePath);
+                break;
+            case \IMAGETYPE_GIF:
+                $source = @\imagecreatefromgif($filePath);
+                break;
+            case \IMAGETYPE_WEBP:
+                $source = @\imagecreatefromwebp($filePath);
+                break;
+            default:
+                return false;
+        }
+
+        if (!$source) {
+            return false;
+        }
+
+        // Resize хийх
+        $resized = \imagecreatetruecolor($newWidth, $newHeight);
+
+        // PNG болон GIF-ийн transparency хадгалах
+        if ($type === \IMAGETYPE_PNG || $type === \IMAGETYPE_GIF) {
+            \imagealphablending($resized, false);
+            \imagesavealpha($resized, true);
+            $transparent = \imagecolorallocatealpha($resized, 255, 255, 255, 127);
+            \imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+
+        \imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        // Хадгалах
+        switch ($type) {
+            case \IMAGETYPE_JPEG:
+                $result = \imagejpeg($resized, $filePath, $quality);
+                break;
+            case \IMAGETYPE_PNG:
+                $result = \imagepng($resized, $filePath, 6);
+                break;
+            case \IMAGETYPE_GIF:
+                $result = \imagegif($resized, $filePath);
+                break;
+            case \IMAGETYPE_WEBP:
+                $result = \imagewebp($resized, $filePath, $quality);
+                break;
+            default:
+                $result = false;
+        }
+
+        \imagedestroy($source);
+        \imagedestroy($resized);
+
+        return $result;
+    }
+
+    /**
      * Файл сонгоход зориулсан Modal HTML харуулна.
      *
      * - id дугаараар мөрийн мэдээлэл авна

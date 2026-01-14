@@ -270,4 +270,223 @@ trait DashboardTrait
 
         return $sidemenu;
     }
+
+    /**
+     * moedit "shine" товчны API endpoint.
+     *
+     * HTML контентыг OpenAI API ашиглан Bootstrap 5 компонентуудтай
+     * (table, card, accordion, alert, badge гэх мэт) гоё болгон хувиргана.
+     *
+     * Хүсэлт:
+     * ───────────────────────────────────────────────────────────────
+     *   POST /dashboard/shine
+     *   Content-Type: application/json
+     *   Body: { "html": "<p>Контент...</p>" }
+     *
+     * Хариу:
+     * ───────────────────────────────────────────────────────────────
+     *   Амжилттай: { "status": "success", "html": "<div class='card'>..." }
+     *   Алдаа:     { "status": "error", "message": "..." }
+     *
+     * Тохиргоо (.env файлд):
+     * ───────────────────────────────────────────────────────────────
+     *   INDO_OPENAI_API_KEY=sk-...
+     *
+     * @return void
+     */
+    public function AIShine(): void
+    {
+        try {
+            // Хэрэглэгч нэвтэрсэн байх ёстой
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+
+            // API key шалгах ($_ENV эсвэл getenv)
+            $apiKey = $_ENV['INDO_OPENAI_API_KEY'] ?? \getenv('INDO_OPENAI_API_KEY');
+            if (empty($apiKey)) {
+                throw new \Exception(
+                    'OpenAI API key тохируулаагүй байна. ' .
+                    '.env файлд INDO_OPENAI_API_KEY нэмнэ үү.',
+                    500
+                );
+            }
+
+            // JSON body унших (php://input ашиглах - stream нэг л удаа уншигддаг тул)
+            $rawBody = \file_get_contents('php://input');
+            $body = \json_decode($rawBody, true);
+            $html = $body['html'] ?? '';
+            $mode = $body['mode'] ?? 'html'; // 'html' эсвэл 'vision'
+
+            if (empty(\trim($html))) {
+                throw new \InvalidArgumentException(
+                    'Контент хоосон байна.',
+                    400
+                );
+            }
+
+            // Mode-оос хамааран prompt болон API дуудлага ялгаатай
+            if ($mode === 'vision') {
+                // OCR mode: Зураг дээрх текстийг уншиж HTML болгоно
+                $prompt = <<<PROMPT
+Чиний даалгавар: Хавсаргасан ЗУРАГ дээрх текстийг уншаад HTML болгох.
+
+Заавар:
+1. Зөвхөн ЗУРАГ дээрх текстийг унш, энэ prompt-ийн текстийг БУС
+2. Хүснэгт байвал: <table class="table table-striped table-hover table-bordered">
+3. Жагсаалт байвал: <ul> эсвэл <ol>
+4. Гарчиг байвал: <h1>-<h6> ашигла
+5. Зөвхөн контент HTML буцаа (doctype, html, head, body, script TAG ХЭРЭГГҮЙ)
+
+АНХААРУУЛГА: Дээрх заавар бол ЧИ ДАГАХ ЗҮЙЛ, контент биш! Зөвхөн ЗУРАГ дээрх текстийг HTML болго.
+PROMPT;
+                $response = $this->callOpenAI($apiKey, $prompt, $html, true);
+            } else {
+                // HTML mode: Зөвхөн HTML гоёжуулалт, зураг хөндөхгүй
+                $prompt = <<<PROMPT
+Доорх HTML-д Bootstrap 5 class нэм. Агуулгыг өөрчлөхгүй.
+
+Заавар:
+1. table → class="table table-striped table-hover table-bordered", div.table-responsive-т ор
+2. img → class="img-fluid"
+3. Агуулга, текстийг ӨӨРЧЛӨХГҮЙ, зөвхөн class нэм
+4. doctype, html, head, body, script TAG НЭМЭХГҮЙ
+
+---КОНТЕНТ ЭХЛЭЛ---
+$html
+---КОНТЕНТ ТӨГСГӨЛ---
+
+Дээрх КОНТЕНТ хэсгийг л Bootstrap class нэмж буцаа.
+PROMPT;
+                $response = $this->callOpenAI($apiKey, $prompt, $html, false);
+            }
+            $this->respondJSON([
+                'status' => 'success',
+                'html'   => $response
+            ]);
+        } catch (\Throwable $e) {
+            $this->respondJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * OpenAI API дуудах хэлпер функц (Vision дэмжлэгтэй).
+     *
+     * @param string $apiKey OpenAI API түлхүүр
+     * @param string $prompt Хүсэлтийн текст
+     * @param string $html Анхны HTML (зураг илрүүлэхэд)
+     * @param bool $useVision Vision mode идэвхжүүлэх эсэх
+     * @return string AI-ийн хариу
+     * @throws \Exception API алдаа гарвал
+     */
+    private function callOpenAI(string $apiKey, string $prompt, string $html = '', bool $useVision = false): string
+    {
+        // Vision mode байвал зургийн URL-үүд олох
+        $imageUrls = $useVision ? $this->extractImageUrls($html) : [];
+
+        // Vision mode бөгөөд зураг олдвол gpt-4o, үгүй бол gpt-4o-mini
+        $model = ($useVision && !empty($imageUrls)) ? 'gpt-4o' : 'gpt-4o-mini';
+
+        // User message бэлдэх
+        if ($useVision && !empty($imageUrls)) {
+            // Vision API format: text + images
+            $userContent = [
+                ['type' => 'text', 'text' => $prompt]
+            ];
+
+            foreach ($imageUrls as $url) {
+                $userContent[] = [
+                    'type' => 'image_url',
+                    'image_url' => ['url' => $url, 'detail' => 'high']
+                ];
+            }
+        } else {
+            $userContent = $prompt;
+        }
+
+        $ch = \curl_init('https://api.openai.com/v1/chat/completions');
+
+        $payload = [
+            'model'       => $model,
+            'messages'    => [
+                [
+                    'role'    => 'system',
+                    'content' => 'Чи HTML контентыг Bootstrap 5 ашиглан гоёжуулдаг туслах юм. Зөвхөн HTML код буцаа.'
+                ],
+                [
+                    'role'    => 'user',
+                    'content' => $userContent
+                ]
+            ],
+            'temperature' => 0.3,
+            'max_tokens'  => 4096
+        ];
+
+        \curl_setopt_array($ch, [
+            \CURLOPT_RETURNTRANSFER => true,
+            \CURLOPT_POST           => true,
+            \CURLOPT_POSTFIELDS     => \json_encode($payload),
+            \CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey
+            ],
+            \CURLOPT_TIMEOUT        => 120 // Vision илүү удаан байж болно
+        ]);
+
+        $result = \curl_exec($ch);
+        $httpCode = \curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+        $error = \curl_error($ch);
+        \curl_close($ch);
+
+        if ($error) {
+            throw new \Exception('OpenAI холболтын алдаа: ' . $error, 500);
+        }
+
+        $data = \json_decode($result, true);
+
+        if ($httpCode !== 200) {
+            $errorMsg = $data['error']['message'] ?? 'Unknown error';
+            throw new \Exception('OpenAI API алдаа: ' . $errorMsg, $httpCode);
+        }
+
+        $content = $data['choices'][0]['message']['content'] ?? '';
+
+        // Markdown code block байвал арилгах
+        $content = \preg_replace('/^```html?\s*/i', '', $content);
+        $content = \preg_replace('/\s*```$/', '', $content);
+
+        return \trim($content);
+    }
+
+    /**
+     * HTML-ээс зургийн URL-үүд задлах.
+     *
+     * @param string $html HTML контент
+     * @return array Зургийн URL-үүдийн массив
+     */
+    private function extractImageUrls(string $html): array
+    {
+        $urls = [];
+
+        if (empty($html)) {
+            return $urls;
+        }
+
+        // img tag-ийн src attribute олох
+        \preg_match_all('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $html, $matches);
+
+        if (!empty($matches[1])) {
+            foreach ($matches[1] as $url) {
+                // Зөвхөн http/https URL авах (data: эсвэл relative path биш)
+                if (\preg_match('/^https?:\/\//i', $url)) {
+                    $urls[] = $url;
+                }
+            }
+        }
+
+        return $urls;
+    }
 }

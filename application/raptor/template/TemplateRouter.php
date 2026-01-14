@@ -69,5 +69,16 @@ class TemplateRouter extends Router
             '/dashboard/manage/menu/deactivate',
             [TemplateController::class, 'manageMenuDeactivate']
         )->name('manage-menu-deactivate');
+
+        /**
+         * MOEDIT SHINE API
+         *
+         * moedit editor-ийн "shine" товчинд зориулсан API.
+         * HTML контентыг OpenAI ашиглан Bootstrap 5 компонентуудтай болгоно.
+         */
+        $this->POST(
+            '/dashboard/ai/shine',
+            [TemplateController::class, 'AIShine']
+        )->name('moedit-ai-shine');
     }
 }
