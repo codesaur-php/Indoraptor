@@ -135,8 +135,24 @@ class moedit {
         confirmText: 'Хөрвүүлэх',
         cancelText: 'Болих'
       },
+      /* PDF modal тохиргоо */
+      pdfModal: {
+        title: 'PDF → HTML',
+        description: 'PDF файлыг AI ашиглан HTML болгож editor-д оруулна.',
+        placeholder: 'PDF файл сонгоно уу...',
+        browseText: 'Сонгох',
+        processingText: 'PDF боловсруулж байна...',
+        renderingText: 'Хуудас зурж байна...',
+        successMessage: 'PDF амжилттай HTML болгогдлоо!',
+        errorMessage: 'Алдаа гарлаа',
+        confirmText: 'Оруулах',
+        cancelText: 'Болих',
+        pageText: 'хуудас'
+      },
       /* Shine API URL */
       shineUrl: '/dashboard/ai/shine',
+      /* PDF Parse API URL */
+      pdfUrl: '/dashboard/moedit/pdf-parse',
       /* Notify function - optional */
       notify: null, /* function(type, title, message) */
       ...opts,
@@ -160,8 +176,8 @@ class moedit {
 
       ul:        { type: "cmd", cmd: "insertUnorderedList" },
       ol:        { type: "cmd", cmd: "insertOrderedList" },
-      indent:    { type: "cmd", cmd: "indent" },
-      outdent:   { type: "cmd", cmd: "outdent" },
+      indent:    { type: "fn", fn: () => this._indent() },
+      outdent:   { type: "fn", fn: () => this._outdent() },
 
       link:      { type: "fn", fn: () => this._insertLink() },
       insertLink: { type: "fn", fn: () => this._insertLink() },
@@ -187,7 +203,7 @@ class moedit {
       source:     { type: "fn", fn: () => this.toggleSource() },
       fullscreen: { type: "fn", fn: () => this.toggleFullscreen() },
       shine:      { type: "fn", fn: () => this._shine() },
-      ocr:        { type: "fn", fn: () => this._ocr() },
+      pdf:        { type: "fn", fn: () => this._insertPdf() },
     };
 
     this._bind();
@@ -196,12 +212,8 @@ class moedit {
     /* Shine товчийг shineUrl байхгүй бол нуух */
     this._toggleShineButton();
 
-    /* OCR товчийг shineUrl байхгүй бол нуух */
-    this._toggleOcrButton();
-
-    /* Shine болон OCR товчны анхны төлвийг шинэчлэх */
+    /* Shine товчны анхны төлвийг шинэчлэх */
     this._updateShineButtonState();
-    this._updateOcrButtonState();
 
     /** @private */
     this._destroyed = false;
@@ -277,62 +289,6 @@ class moedit {
       shineBtn.style.opacity = '1';
       shineBtn.style.filter = 'none';
       shineBtn.style.cursor = 'pointer';
-    }
-  }
-
-  /**
-   * OCR товчийг shineUrl-ээс хамааран харуулах/нуух
-   * @private
-   */
-  _toggleOcrButton() {
-    const ocrBtn = this.toolbar.querySelector('[data-action="ocr"]');
-    if (!ocrBtn) return;
-
-    /* shineUrl хоосон, null, undefined эсвэл default утгатай бол нуух */
-    const url = this.opts.shineUrl;
-    const isConfigured = url && url.trim() && url !== '/dashboard/ai/shine';
-
-    if (!isConfigured) {
-      ocrBtn.style.display = 'none';
-    }
-  }
-
-  /**
-   * OCR товчийг контентын байдлаас хамааран enable/disable хийх
-   * - Зураг байвал enable, үгүй бол disable
-   * @private
-   */
-  _updateOcrButtonState() {
-    const ocrBtn = this.toolbar.querySelector('[data-action="ocr"]');
-    if (!ocrBtn) return;
-
-    /* shineUrl тохируулаагүй бол товч аль хэдийн нуугдсан байна */
-    const url = this.opts.shineUrl;
-    const isConfigured = url && url.trim() && url !== '/dashboard/ai/shine';
-    if (!isConfigured) return;
-
-    const html = this.getHTML();
-
-    /* HTML-ээс зураг шалгах */
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    const hasImages = tempDiv.querySelectorAll('img').length > 0;
-
-    /* Зураг байвал enable, үгүй бол disable */
-    ocrBtn.disabled = !hasImages;
-    ocrBtn.title = hasImages
-      ? 'AI OCR - Зураг дээрх текстийг HTML болгох'
-      : 'AI OCR: Эхлээд зураг оруулна уу';
-
-    /* Disabled үед бүрэн саарал, ойлгомжтой харагдах */
-    if (!hasImages) {
-      ocrBtn.style.opacity = '0.4';
-      ocrBtn.style.filter = 'grayscale(100%)';
-      ocrBtn.style.cursor = 'not-allowed';
-    } else {
-      ocrBtn.style.opacity = '1';
-      ocrBtn.style.filter = 'none';
-      ocrBtn.style.cursor = 'pointer';
     }
   }
 
@@ -477,6 +433,9 @@ class moedit {
       const sourceLength = this.source.value.length;
       const sourcePos = Math.round(cursorRatio * sourceLength);
       this.source.setSelectionRange(sourcePos, sourcePos);
+
+      /* Cursor байрлал руу scroll хийх */
+      this._scrollTextareaToCursor();
     } else {
       /* Source -> Editor: cursor байрлалыг тооцоолох */
       const sourcePos = this.source.selectionStart;
@@ -491,6 +450,9 @@ class moedit {
       const textLength = this.editor.textContent.length;
       const targetOffset = Math.round(cursorRatio * textLength);
       this._setEditorCursorOffset(targetOffset);
+
+      /* Cursor байрлал руу scroll хийх */
+      this._scrollEditorToCursor();
     }
 
     /* Source товчны toggle state шинэчлэх */
@@ -566,6 +528,55 @@ class moedit {
   }
 
   /**
+   * Textarea дээр cursor байрлал руу scroll хийх
+   * @private
+   */
+  _scrollTextareaToCursor() {
+    const textarea = this.source;
+    const cursorPos = textarea.selectionStart;
+    const text = textarea.value;
+
+    /* Cursor хүртэлх мөрийн тоог тооцоолох */
+    const textBeforeCursor = text.substring(0, cursorPos);
+    const lines = textBeforeCursor.split('\n');
+    const lineNumber = lines.length;
+
+    /* Нэг мөрийн өндрийг тооцоолох */
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
+
+    /* Scroll байрлал тооцоолох (дунд хэсэгт харуулах) */
+    const scrollTop = (lineNumber * lineHeight) - (textarea.clientHeight / 2);
+
+    textarea.scrollTop = Math.max(0, scrollTop);
+  }
+
+  /**
+   * Editor дээр cursor байрлал руу scroll хийх
+   * @private
+   */
+  _scrollEditorToCursor() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+
+    /* Түр element үүсгэж cursor байрлалд оруулах */
+    const tempSpan = document.createElement('span');
+    tempSpan.textContent = '\u200B'; /* Zero-width space */
+    range.insertNode(tempSpan);
+
+    /* Element рүү scroll хийх */
+    tempSpan.scrollIntoView({ behavior: 'instant', block: 'center' });
+
+    /* Түр element устгах */
+    tempSpan.remove();
+
+    /* Selection сэргээх */
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  /**
    * Editor-ийн HTML контент авах
    * @returns {string} HTML контент
    * @example
@@ -620,8 +631,9 @@ class moedit {
     if (heading) {
       heading.addEventListener("change", e => {
         document.execCommand("formatBlock", false, e.target.value);
-        e.target.value = "P";
         this._emitChange();
+        /* Select-ийн утгыг шинэчлэх (cursor байрлалаас хамааран) */
+        this._syncHeadingState();
       });
     }
 
@@ -656,7 +668,8 @@ class moedit {
         }
 
         savedRange = null;
-        /* Сонгосон утгыг харуулсан хэвээр үлдээнэ (reset хийхгүй) */
+        /* Select-ийн утгыг шинэчлэх (cursor байрлалаас хамааран) */
+        this._syncFontSizeState();
       });
     }
 
@@ -712,10 +725,8 @@ class moedit {
       foreColor.addEventListener("change", e => {
         applyColor(e.target.value, true);
         savedColorRange = null;
-        /* Хар өнгө сонгосон бол picker-ийг reset хийх */
-        if (e.target.value.toLowerCase() === '#000000') {
-          e.target.value = '#000000';
-        }
+        /* Picker-ийн утгыг шинэчлэх (cursor байрлалаас хамааран) */
+        this._syncForeColorState();
       });
     }
 
@@ -737,6 +748,13 @@ class moedit {
 
     /* Keyboard shortcuts - Editor */
     this._boundHandlers.editorKeydown = (e) => {
+      /* ESC товч - fullscreen mode-оос гарах */
+      if (e.key === 'Escape' && this.root.classList.contains('is-fullscreen')) {
+        e.preventDefault();
+        this.toggleFullscreen(false);
+        return;
+      }
+
       if (e.ctrlKey || e.metaKey) {
         switch(e.key.toLowerCase()) {
           case 'b':
@@ -771,6 +789,13 @@ class moedit {
 
     /* Keyboard shortcuts - Source */
     this._boundHandlers.sourceKeydown = (e) => {
+      /* ESC товч - fullscreen mode-оос гарах */
+      if (e.key === 'Escape' && this.root.classList.contains('is-fullscreen')) {
+        e.preventDefault();
+        this.toggleFullscreen(false);
+        return;
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         this.toggleSource(false);
@@ -796,6 +821,476 @@ class moedit {
       let on = false;
       try { on = document.queryCommandState(cfg.cmd); } catch {}
       btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    /* Heading select-ийн утгыг cursor байрлалаас хамааран шинэчлэх */
+    this._syncHeadingState();
+
+    /* FontSize select-ийн утгыг cursor байрлалаас хамааран шинэчлэх */
+    this._syncFontSizeState();
+
+    /* ForeColor picker-ийн утгыг cursor байрлалаас хамааран шинэчлэх */
+    this._syncForeColorState();
+
+    /* Justify buttons-ийн төлвийг cursor байрлалаас хамааран шинэчлэх */
+    this._syncJustifyState();
+
+    /* List buttons-ийн төлвийг cursor байрлалаас хамааран шинэчлэх */
+    this._syncListState();
+  }
+
+  /**
+   * FontSize select-ийн утгыг cursor байрлаж буй element-ээс хамааран шинэчлэх
+   * @private
+   */
+  _syncFontSizeState() {
+    const fontSizeSelect = this.toolbar.querySelector('[data-action="fontSize"]');
+    if (!fontSizeSelect) return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    /* Cursor байрлаж буй node-ийг авах */
+    let node = selection.anchorNode;
+    if (!node) return;
+
+    /* Editor дотор байгаа эсэхийг шалгах */
+    if (!this.editor.contains(node)) return;
+
+    /* Element node руу шилжих (text node бол parent авах) */
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    /* Font size-тай element олох */
+    let fontSize = null;
+
+    while (node && node !== this.editor) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        /* <font size="X"> tag шалгах */
+        if (node.nodeName === 'FONT' && node.hasAttribute('size')) {
+          fontSize = node.getAttribute('size');
+          break;
+        }
+        /* style="font-size:..." шалгах */
+        if (node.style && node.style.fontSize) {
+          /* CSS font-size-г execCommand size руу хөрвүүлэх */
+          fontSize = this._cssFontSizeToExecCommand(node.style.fontSize);
+          if (fontSize) break;
+        }
+      }
+      node = node.parentNode;
+    }
+
+    /* FontSize select-ийн утгыг шинэчлэх */
+    if (fontSize) {
+      const option = fontSizeSelect.querySelector(`option[value="${fontSize}"]`);
+      if (option) {
+        fontSizeSelect.value = fontSize;
+      } else {
+        fontSizeSelect.value = '3'; /* Default */
+      }
+    } else {
+      fontSizeSelect.value = '3'; /* Default */
+    }
+  }
+
+  /**
+   * CSS font-size утгыг execCommand fontSize утга руу хөрвүүлэх
+   * @private
+   * @param {string} cssSize - CSS font-size утга (px, pt, em, etc.)
+   * @returns {string|null} execCommand fontSize утга (1-7)
+   */
+  _cssFontSizeToExecCommand(cssSize) {
+    if (!cssSize) return null;
+
+    /* px утгыг тоо болгох */
+    let pxValue = parseFloat(cssSize);
+
+    /* em, rem утгыг px болгох (16px = 1em гэж тооцох) */
+    if (cssSize.includes('em') || cssSize.includes('rem')) {
+      pxValue = pxValue * 16;
+    }
+    /* pt утгыг px болгох (1pt = 1.333px) */
+    else if (cssSize.includes('pt')) {
+      pxValue = pxValue * 1.333;
+    }
+
+    /* execCommand fontSize mapping (browser-ийн standard) */
+    /* 1=10px, 2=13px, 3=16px, 4=18px, 5=24px, 6=32px, 7=48px */
+    if (pxValue <= 10) return '1';
+    if (pxValue <= 13) return '2';
+    if (pxValue <= 16) return '3';
+    if (pxValue <= 18) return '4';
+    if (pxValue <= 24) return '5';
+    if (pxValue <= 32) return '6';
+    return '7';
+  }
+
+  /**
+   * ForeColor picker-ийн утгыг cursor байрлаж буй element-ээс хамааран шинэчлэх
+   * @private
+   */
+  _syncForeColorState() {
+    const foreColorPicker = this.toolbar.querySelector('[data-action="foreColor"]');
+    if (!foreColorPicker) return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    /* Cursor байрлаж буй node-ийг авах */
+    let node = selection.anchorNode;
+    if (!node) return;
+
+    /* Editor дотор байгаа эсэхийг шалгах */
+    if (!this.editor.contains(node)) return;
+
+    /* Element node руу шилжих (text node бол parent авах) */
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    /* Color-тай element олох */
+    let color = null;
+
+    while (node && node !== this.editor) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        /* <font color="X"> tag шалгах */
+        if (node.nodeName === 'FONT' && node.hasAttribute('color')) {
+          color = node.getAttribute('color');
+          break;
+        }
+        /* style="color:..." шалгах */
+        if (node.style && node.style.color) {
+          color = node.style.color;
+          break;
+        }
+      }
+      node = node.parentNode;
+    }
+
+    /* ForeColor picker-ийн утгыг шинэчлэх */
+    if (color) {
+      /* Өнгийг hex format руу хөрвүүлэх */
+      const hexColor = this._colorToHex(color);
+      if (hexColor) {
+        foreColorPicker.value = hexColor;
+      }
+    } else {
+      /* Default хар өнгө */
+      foreColorPicker.value = '#000000';
+    }
+  }
+
+  /**
+   * Өнгийг hex format руу хөрвүүлэх
+   * @private
+   * @param {string} color - Өнгө (hex, rgb, named color)
+   * @returns {string|null} Hex өнгө (#RRGGBB)
+   */
+  _colorToHex(color) {
+    if (!color) return null;
+
+    /* Аль хэдийн hex format байвал шууд буцаах */
+    if (color.startsWith('#')) {
+      /* #RGB -> #RRGGBB */
+      if (color.length === 4) {
+        return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+      }
+      return color.toUpperCase().substring(0, 7);
+    }
+
+    /* rgb(r, g, b) эсвэл rgba(r, g, b, a) format */
+    const rgbMatch = color.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (rgbMatch) {
+      const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+      const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+      const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+      return '#' + r + g + b;
+    }
+
+    /* Named colors - түгээмэл өнгөнүүд */
+    const namedColors = {
+      'black': '#000000', 'white': '#FFFFFF', 'red': '#FF0000',
+      'green': '#008000', 'blue': '#0000FF', 'yellow': '#FFFF00',
+      'cyan': '#00FFFF', 'magenta': '#FF00FF', 'gray': '#808080',
+      'grey': '#808080', 'silver': '#C0C0C0', 'maroon': '#800000',
+      'olive': '#808000', 'lime': '#00FF00', 'aqua': '#00FFFF',
+      'teal': '#008080', 'navy': '#000080', 'fuchsia': '#FF00FF',
+      'purple': '#800080', 'orange': '#FFA500', 'pink': '#FFC0CB'
+    };
+
+    const lowerColor = color.toLowerCase();
+    if (namedColors[lowerColor]) {
+      return namedColors[lowerColor];
+    }
+
+    return null;
+  }
+
+  /**
+   * Justify buttons-ийн төлвийг cursor байрлаж буй element-ээс хамааран шинэчлэх
+   * @private
+   */
+  _syncJustifyState() {
+    const justifyActions = ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'];
+    const justifyBtns = {};
+
+    /* Бүх justify товчнуудыг олох */
+    for (const action of justifyActions) {
+      const btn = this.toolbar.querySelector(`[data-action="${action}"]`);
+      if (btn) {
+        justifyBtns[action] = btn;
+        /* Эхлээд бүгдийг false болгох */
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    /* Хэрэв нэг ч товч байхгүй бол буцах */
+    if (Object.keys(justifyBtns).length === 0) return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    /* Cursor байрлаж буй node-ийг авах */
+    let node = selection.anchorNode;
+    if (!node) return;
+
+    /* Editor дотор байгаа эсэхийг шалгах */
+    if (!this.editor.contains(node)) return;
+
+    /* Element node руу шилжих (text node бол parent авах) */
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    /* Block level element олох */
+    const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV', 'BLOCKQUOTE', 'PRE', 'LI', 'TD', 'TH'];
+    let blockElement = null;
+
+    while (node && node !== this.editor) {
+      if (node.nodeType === Node.ELEMENT_NODE && blockTags.includes(node.tagName)) {
+        blockElement = node;
+        break;
+      }
+      node = node.parentNode;
+    }
+
+    /* Text-align утгыг олох */
+    let textAlign = 'left'; /* Default */
+
+    if (blockElement) {
+      /* Inline style шалгах */
+      if (blockElement.style && blockElement.style.textAlign) {
+        textAlign = blockElement.style.textAlign;
+      }
+      /* Computed style шалгах */
+      else {
+        const computedStyle = window.getComputedStyle(blockElement);
+        textAlign = computedStyle.textAlign || 'left';
+      }
+    }
+
+    /* Text-align утгыг normalize хийх */
+    /* "start" -> "left", "end" -> "right", "justify" -> "full" */
+    const alignMap = {
+      'start': 'left',
+      'end': 'right',
+      'justify': 'full',
+      'left': 'left',
+      'center': 'center',
+      'right': 'right'
+    };
+
+    const normalizedAlign = alignMap[textAlign] || 'left';
+
+    /* Тохирох товчийг идэвхжүүлэх */
+    const actionMap = {
+      'left': 'justifyLeft',
+      'center': 'justifyCenter',
+      'right': 'justifyRight',
+      'full': 'justifyFull'
+    };
+
+    const activeAction = actionMap[normalizedAlign];
+    if (activeAction && justifyBtns[activeAction]) {
+      justifyBtns[activeAction].setAttribute('aria-pressed', 'true');
+    }
+  }
+
+  /**
+   * List buttons-ийн (ul, ol) төлвийг cursor байрлаж буй element-ээс хамааран шинэчлэх
+   * @private
+   */
+  _syncListState() {
+    const ulBtn = this.toolbar.querySelector('[data-action="ul"]');
+    const olBtn = this.toolbar.querySelector('[data-action="ol"]');
+
+    /* Хэрэв нэг ч товч байхгүй бол буцах */
+    if (!ulBtn && !olBtn) return;
+
+    /* Эхлээд бүгдийг false болгох */
+    if (ulBtn) ulBtn.setAttribute('aria-pressed', 'false');
+    if (olBtn) olBtn.setAttribute('aria-pressed', 'false');
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    /* Cursor байрлаж буй node-ийг авах */
+    let node = selection.anchorNode;
+    if (!node) return;
+
+    /* Editor дотор байгаа эсэхийг шалгах */
+    if (!this.editor.contains(node)) return;
+
+    /* Element node руу шилжих (text node бол parent авах) */
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    /* UL эсвэл OL element олох */
+    let listType = null;
+
+    while (node && node !== this.editor) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.tagName === 'UL') {
+          listType = 'ul';
+          break;
+        }
+        if (node.tagName === 'OL') {
+          listType = 'ol';
+          break;
+        }
+      }
+      node = node.parentNode;
+    }
+
+    /* Тохирох товчийг идэвхжүүлэх */
+    if (listType === 'ul' && ulBtn) {
+      ulBtn.setAttribute('aria-pressed', 'true');
+    } else if (listType === 'ol' && olBtn) {
+      olBtn.setAttribute('aria-pressed', 'true');
+    }
+  }
+
+  /**
+   * Догол мөр нэмэх (margin-left ашиглан)
+   * @private
+   */
+  _indent() {
+    const blockElement = this._getBlockElement();
+    if (!blockElement) return;
+
+    /* Одоогийн margin-left авах */
+    const currentMargin = parseInt(blockElement.style.marginLeft) || 0;
+    const step = 40; /* 40px нэгж */
+
+    /* Margin нэмэх */
+    blockElement.style.marginLeft = (currentMargin + step) + 'px';
+    this._emitChange();
+  }
+
+  /**
+   * Догол мөр хасах (margin-left ашиглан)
+   * @private
+   */
+  _outdent() {
+    const blockElement = this._getBlockElement();
+    if (!blockElement) return;
+
+    /* Одоогийн margin-left авах */
+    const currentMargin = parseInt(blockElement.style.marginLeft) || 0;
+    const step = 40; /* 40px нэгж */
+
+    /* Margin хасах (0-ээс бага болохгүй) */
+    const newMargin = Math.max(0, currentMargin - step);
+    if (newMargin > 0) {
+      blockElement.style.marginLeft = newMargin + 'px';
+    } else {
+      blockElement.style.marginLeft = '';
+    }
+    this._emitChange();
+  }
+
+  /**
+   * Cursor байрлаж буй block element авах
+   * @private
+   * @returns {HTMLElement|null}
+   */
+  _getBlockElement() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return null;
+
+    let node = selection.anchorNode;
+    if (!node) return null;
+
+    if (!this.editor.contains(node)) return null;
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV', 'BLOCKQUOTE', 'PRE', 'LI'];
+
+    while (node && node !== this.editor) {
+      if (node.nodeType === Node.ELEMENT_NODE && blockTags.includes(node.tagName)) {
+        return node;
+      }
+      node = node.parentNode;
+    }
+
+    return null;
+  }
+
+  /**
+   * Heading select-ийн утгыг cursor байрлаж буй block element-ээс хамааран шинэчлэх
+   * @private
+   */
+  _syncHeadingState() {
+    const headingSelect = this.toolbar.querySelector('[data-action="heading"]');
+    if (!headingSelect) return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    /* Cursor байрлаж буй node-ийг авах */
+    let node = selection.anchorNode;
+    if (!node) return;
+
+    /* Editor дотор байгаа эсэхийг шалгах */
+    if (!this.editor.contains(node)) return;
+
+    /* Element node руу шилжих (text node бол parent авах) */
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode;
+    }
+
+    /* Block level parent element олох */
+    const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV', 'BLOCKQUOTE', 'PRE'];
+    let blockElement = null;
+
+    while (node && node !== this.editor) {
+      if (node.nodeType === Node.ELEMENT_NODE && blockTags.includes(node.tagName)) {
+        blockElement = node;
+        break;
+      }
+      node = node.parentNode;
+    }
+
+    /* Heading select-ийн утгыг шинэчлэх */
+    if (blockElement) {
+      const tagName = blockElement.tagName.toLowerCase();
+      /* Select-д тухайн option байгаа эсэхийг шалгах */
+      const option = headingSelect.querySelector(`option[value="${tagName}"]`);
+      if (option) {
+        headingSelect.value = tagName;
+      } else {
+        /* Тохирох option байхгүй бол p-д буцаах */
+        headingSelect.value = 'p';
+      }
+    } else {
+      /* Block element олдоогүй бол p */
+      headingSelect.value = 'p';
     }
   }
 
@@ -953,7 +1448,7 @@ class moedit {
       'redo': 'Дахих (Ctrl+Y)',
       'print': 'Хэвлэх',
       'source': 'HTML код харах',
-      'fullscreen': 'Бүтэн дэлгэц'
+      'fullscreen': 'Бүтэн дэлгэц (ESC гарах)'
     };
 
     this.toolbar.querySelectorAll('button[data-action]').forEach(btn => {
@@ -966,9 +1461,8 @@ class moedit {
   }
 
   _emitChange() {
-    /* Shine болон OCR товчний төлвийг шинэчлэх */
+    /* Shine товчний төлвийг шинэчлэх */
     this._updateShineButtonState();
-    this._updateOcrButtonState();
 
     if (typeof this.opts.onChange === "function") {
       this.opts.onChange(this.getHTML());

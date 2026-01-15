@@ -80,5 +80,16 @@ class TemplateRouter extends Router
             '/dashboard/ai/shine',
             [TemplateController::class, 'AIShine']
         )->name('moedit-ai-shine');
+
+        /**
+         * MOEDIT PDF PARSE API
+         *
+         * moedit editor-ийн "pdf" товчинд зориулсан API.
+         * PDF файлыг HTML болгон хөрвүүлнэ.
+         */
+        $this->POST(
+            '/dashboard/moedit/pdf-parse',
+            [TemplateController::class, 'PDFParse']
+        )->name('moedit-pdf-parse');
     }
 }

@@ -19,6 +19,7 @@
         "phpmailer/phpmailer": "^7.0.1",
         "getbrevo/brevo-php": "^2.0.14",
         "firebase/php-jwt": "^7.0.2",
+        "smalot/pdfparser": "^2.12.3",
         "codesaur/http-application": "^6.0.0",
         "codesaur/dataobject": "^9.0.0",
         "codesaur/http-client": "^2.0.1",

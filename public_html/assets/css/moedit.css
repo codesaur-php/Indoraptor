@@ -226,6 +226,27 @@
   padding:0.5rem;
   border:1px solid var(--mo-border);
 }
+.moedit-editor blockquote{
+  margin:1rem 0;
+  padding:0.75rem 1rem;
+  border-left:4px solid var(--mo-primary);
+  background:var(--mo-soft);
+  border-radius:0 var(--mo-radius) var(--mo-radius) 0;
+  font-style:italic;
+  color:var(--mo-text);
+}
+.moedit-editor pre{
+  margin:1rem 0;
+  padding:1rem;
+  background:var(--mo-soft);
+  border:1px solid var(--mo-border);
+  border-radius:var(--mo-radius);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+  font-size:0.875rem;
+  overflow-x:auto;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+}
 
 .moedit-source{
   display:none;
