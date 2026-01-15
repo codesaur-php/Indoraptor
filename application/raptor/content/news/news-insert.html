@@ -129,6 +129,17 @@
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
+                        <select class="moedit-select" data-action="heading" title="Heading">
+                            <option value="p" selected>Paragraph</option>
+                            <option value="h1">H1 - Гарчиг</option>
+                            <option value="h2">H2 - Дэд гарчиг</option>
+                            <option value="h3">H3</option>
+                            <option value="h4">H4</option>
+                            <option value="h5">H5</option>
+                            <option value="h6">H6</option>
+                            <option value="pre">Preformatted</option>
+                            <option value="blockquote">Quote</option>
+                        </select>
                         <select class="moedit-select" data-action="fontSize" title="Font Size">
                             <option value="3" selected>Default</option>
                             <option value="1">1 - Жижиг</option>
@@ -147,6 +158,8 @@
                         <button type="button" class="moedit-btn" data-action="justifyCenter" title="Align Center"><i class="bi bi-text-center"></i></button>
                         <button type="button" class="moedit-btn" data-action="justifyRight" title="Align Right"><i class="bi bi-text-right"></i></button>
                         <button type="button" class="moedit-btn" data-action="justifyFull" title="Justify"><i class="bi bi-justify"></i></button>
+                        <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-right"></i></button>
+                        <button type="button" class="moedit-btn" data-action="indent" title="Indent"><i class="bi bi-text-indent-left"></i></button>
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
@@ -156,8 +169,6 @@
                     <div class="moedit-group">
                         <button type="button" class="moedit-btn" data-action="ul" title="Unordered List"><i class="bi bi-list-ul"></i></button>
                         <button type="button" class="moedit-btn" data-action="ol" title="Ordered List"><i class="bi bi-list-ol"></i></button>
-                        <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-left"></i></button>
-                        <button type="button" class="moedit-btn" data-action="indent" title="Indent"><i class="bi bi-text-indent-right"></i></button>
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
@@ -183,7 +194,7 @@
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
                         <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - HTML гоёжуулах"><i class="bi bi-stars"></i></button>
-                        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зураг → HTML"><i class="bi bi-image-alt"></i></button>
+                        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
                     </div>
                 </div>
                 <div class="moedit-body">
@@ -420,6 +431,7 @@
         moeditInstance = new moedit(editorWrapper, {
             onChange: (html) => content.value = html,
             shineUrl: `{{ 'moedit-ai-shine'|link }}`,
+            pdfUrl: `{{ 'moedit-pdf-parse'|link }}`,
             uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`
         });
 
