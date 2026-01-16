@@ -316,7 +316,7 @@ trait DashboardTrait
             $rawBody = \file_get_contents('php://input');
             $body = \json_decode($rawBody, true);
             $html = $body['html'] ?? '';
-            $mode = $body['mode'] ?? 'html'; // 'html' эсвэл 'vision'
+            $mode = $body['mode'] ?? 'html'; // 'html', 'vision', 'clean'
 
             // Vision mode-д html шалгахгүй (images массив ашиглана)
             if ($mode !== 'vision' && empty(\trim($html))) {
@@ -361,8 +361,30 @@ PROMPT;
                 }
 
                 $response = \implode("\n\n", $results);
+            } elseif ($mode === 'clean') {
+                // Clean mode: Vanilla HTML (framework-гүй, хаана ч ажиллах)
+                $prompt = <<<PROMPT
+Доорх HTML-г цэвэр, семантик HTML болго. Framework class ХЭРЭГЛЭХГҮЙ.
+
+Заавар:
+1. Bootstrap, Tailwind гэх мэт framework class-уудыг БҮГДИЙГ УСТГА
+2. Зөвхөн inline style ашигла (style="...")
+3. Хүснэгтэд: style="width:100%; border-collapse:collapse;" болон cell-д border, padding нэм
+4. Зургийг: style="max-width:100%; height:auto;"
+5. Текст, агуулгыг ӨӨРЧЛӨХГҮЙ
+6. Семантик HTML tag ашигла (article, section, header, footer, nav гэх мэт)
+7. doctype, html, head, body, script TAG НЭМЭХГҮЙ
+8. Зөвхөн контент HTML буцаа
+
+---КОНТЕНТ ЭХЛЭЛ---
+$html
+---КОНТЕНТ ТӨГСГӨЛ---
+
+Дээрх КОНТЕНТ хэсгийг цэвэр vanilla HTML болгож буцаа.
+PROMPT;
+                $response = $this->callOpenAI($apiKey, $prompt, $html, false);
             } else {
-                // HTML mode: Зөвхөн HTML гоёжуулалт, зураг хөндөхгүй
+                // HTML mode: Bootstrap 5 гоёжуулалт
                 $prompt = <<<PROMPT
 Доорх HTML-д Bootstrap 5 class нэм. Агуулгыг өөрчлөхгүй.
 

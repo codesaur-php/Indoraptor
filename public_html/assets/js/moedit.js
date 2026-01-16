@@ -124,6 +124,17 @@ class moedit {
         confirmText: 'Шинэчлэх',
         cancelText: 'Болих'
       },
+      /* Clean modal тохиргоо */
+      cleanModal: {
+        title: 'AI Clean',
+        description: 'Контентыг цэвэр vanilla HTML болгоно. Framework-гүй, хаана ч ажиллана.',
+        processingText: 'Цэвэрлэж байна...',
+        successMessage: 'HTML амжилттай цэвэрлэгдлээ!',
+        errorMessage: 'Алдаа гарлаа',
+        emptyMessage: 'Контент хоосон байна',
+        confirmText: 'Шинэчлэх',
+        cancelText: 'Болих'
+      },
       /* OCR modal тохиргоо */
       ocrModal: {
         title: 'AI OCR',
@@ -151,8 +162,6 @@ class moedit {
       },
       /* Shine API URL */
       shineUrl: '/dashboard/ai/shine',
-      /* PDF Parse API URL */
-      pdfUrl: '/dashboard/moedit/pdf-parse',
       /* Notify function - optional */
       notify: null, /* function(type, title, message) */
       ...opts,
@@ -203,6 +212,7 @@ class moedit {
       source:     { type: "fn", fn: () => this.toggleSource() },
       fullscreen: { type: "fn", fn: () => this.toggleFullscreen() },
       shine:      { type: "fn", fn: () => this._shine() },
+      clean:      { type: "fn", fn: () => this._clean() },
       pdf:        { type: "fn", fn: () => this._insertPdf() },
     };
 
@@ -813,13 +823,22 @@ class moedit {
   }
 
   _syncToggleStates() {
+    /* Selection editor дотор байгаа эсэхийг шалгах */
+    const selection = window.getSelection();
+    const isInsideEditor = selection.rangeCount > 0 &&
+      selection.anchorNode &&
+      this.editor.contains(selection.anchorNode);
+
     for (const [key, cfg] of Object.entries(this.registry)) {
       if (!cfg.toggle) continue;
       const btn = this.toolbar.querySelector(`[data-action="${key}"]`);
       if (!btn) continue;
 
       let on = false;
-      try { on = document.queryCommandState(cfg.cmd); } catch {}
+      /* Зөвхөн editor дотор selection байвал queryCommandState ашиглах */
+      if (isInsideEditor) {
+        try { on = document.queryCommandState(cfg.cmd); } catch {}
+      }
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     }
 

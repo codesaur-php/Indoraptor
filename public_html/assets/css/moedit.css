@@ -524,10 +524,60 @@
   border-color:#25cff2;
 }
 
+.moedit-modal-btn-danger{
+  background:#dc3545;
+  color:#fff;
+  border-color:#dc3545;
+}
+
+.moedit-modal-btn-danger:hover{
+  background:#bb2d3b;
+  border-color:#b02a37;
+}
+
 .moedit-modal-btn-disabled{
   opacity:0.5;
   cursor:not-allowed;
   pointer-events:none;
+}
+
+/* Disabled button states - :disabled псевдо-класс ашиглан */
+.moedit-modal-btn:disabled,
+.moedit-modal-btn[disabled]{
+  opacity:0.5;
+  cursor:not-allowed;
+  pointer-events:none;
+  filter:grayscale(30%);
+}
+
+.moedit-modal-btn-primary:disabled,
+.moedit-modal-btn-primary[disabled]{
+  background:#6c9bd1;
+  border-color:#6c9bd1;
+}
+
+.moedit-modal-btn-secondary:disabled,
+.moedit-modal-btn-secondary[disabled]{
+  background:var(--mo-soft);
+  color:var(--mo-placeholder);
+}
+
+.moedit-modal-btn-success:disabled,
+.moedit-modal-btn-success[disabled]{
+  background:#5cb085;
+  border-color:#5cb085;
+}
+
+.moedit-modal-btn-info:disabled,
+.moedit-modal-btn-info[disabled]{
+  background:#7dd8f3;
+  border-color:#7dd8f3;
+}
+
+.moedit-modal-btn-danger:disabled,
+.moedit-modal-btn-danger[disabled]{
+  background:#dc7c7c;
+  border-color:#dc7c7c;
 }
 
 /* ============================================
