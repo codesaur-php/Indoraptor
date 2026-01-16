@@ -16,6 +16,14 @@
 <link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/js/moedit.js"></script>
 <script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
+<!-- PDF.js - PDF файлыг зураг болгон AI OCR руу илгээхэд шаардлагатай -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+<script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+    window.pdfjsLib = pdfjsLib;
+</script>
+<!-- Tesseract.js хасагдсан - PDF → HTML зөвхөн AI OCR ашиглана -->
 <!-- SweetAlert2 - мэдэгдэл харуулах сан -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Plupload - файл upload хийх сан -->
@@ -193,7 +201,8 @@
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
-                        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - HTML гоёжуулах"><i class="bi bi-stars"></i></button>
+                        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
+                        <button type="button" class="moedit-btn text-info" data-action="clean" title="AI Clean - Vanilla HTML болгох"><i class="bi bi-magic"></i></button>
                         <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
                     </div>
                 </div>
@@ -431,7 +440,6 @@
         moeditInstance = new moedit(editorWrapper, {
             onChange: (html) => content.value = html,
             shineUrl: `{{ 'moedit-ai-shine'|link }}`,
-            pdfUrl: `{{ 'moedit-pdf-parse'|link }}`,
             uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`
         });
 

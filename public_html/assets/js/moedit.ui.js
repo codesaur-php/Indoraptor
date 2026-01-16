@@ -937,6 +937,146 @@ moedit.prototype._shine = async function() {
 };
 
 /* ============================================
+   AI Clean Dialog (Vanilla HTML)
+   ============================================ */
+
+moedit.prototype._clean = async function() {
+  const html = this.getHTML();
+  const cfg = this.opts.cleanModal;
+
+  /* Хоосон контент шалгах */
+  if (!html || !html.trim()) {
+    const emptyMsg = 'AI Clean ашиглахын тулд эхлээд контент бичнэ үү.';
+    if (typeof NotifyTop === 'function') {
+      NotifyTop('warning', cfg.title, emptyMsg);
+    } else if (this.opts.notify) {
+      this.opts.notify('warning', emptyMsg);
+    } else {
+      alert(emptyMsg);
+    }
+    return;
+  }
+
+  /* Modal үүсгэх */
+  const dialogId = 'moedit-clean-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal moedit-modal-lg">
+      <h5 class="moedit-modal-title"><i class="bi bi-magic text-info"></i> ${cfg.title}</h5>
+      <p class="moedit-modal-desc">${cfg.description}</p>
+      <div class="clean-status" style="display:none;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+          <span>${cfg.processingText}</span>
+        </div>
+      </div>
+      <div class="clean-preview" style="display:none; max-height:300px; overflow:auto; border:1px solid var(--mo-border); border-radius:var(--mo-radius); padding:10px; margin-top:10px; background:var(--mo-bg);"></div>
+      <div class="clean-error" style="display:none; color:#dc3545; margin-top:10px; word-wrap:break-word; overflow-wrap:break-word; max-width:100%;"></div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary btn-cancel">${cfg.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-info btn-clean">
+          <i class="bi bi-magic"></i> ${cfg.title}
+        </button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-success btn-confirm" style="display:none;">
+          <i class="bi bi-check-lg"></i> ${cfg.confirmText}
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const statusEl = dialog.querySelector('.clean-status');
+  const previewEl = dialog.querySelector('.clean-preview');
+  const errorEl = dialog.querySelector('.clean-error');
+  const cleanBtn = dialog.querySelector('.btn-clean');
+  const confirmBtn = dialog.querySelector('.btn-confirm');
+  const cancelBtn = dialog.querySelector('.btn-cancel');
+
+  let newHtml = null;
+  let isBusy = false;
+
+  const closeDialog = () => dialog.remove();
+
+  cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
+  dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape' && !isBusy) {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  /* Clean товч дарахад API дуудах */
+  cleanBtn.addEventListener('click', async () => {
+    isBusy = true;
+    cleanBtn.disabled = true;
+    cancelBtn.disabled = true;
+    statusEl.style.display = 'block';
+    errorEl.style.display = 'none';
+    previewEl.style.display = 'none';
+
+    try {
+      const response = await fetch(this.opts.shineUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: html, mode: 'clean' })  /* mode: 'clean' - vanilla HTML */
+      });
+
+      if (!response.ok) {
+        throw new Error(`Сервер алдаа: ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('AI API endpoint тохируулаагүй байна');
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success' && data.html) {
+        newHtml = data.html;
+        previewEl.innerHTML = newHtml;
+        previewEl.style.display = 'block';
+        cleanBtn.style.display = 'none';
+        confirmBtn.style.display = 'inline-block';
+        isBusy = false;
+        cancelBtn.disabled = false;
+
+        if (this.opts.notify) {
+          this.opts.notify('success', cfg.title, cfg.successMessage);
+        }
+      } else {
+        throw new Error(data.message || cfg.errorMessage);
+      }
+    } catch (err) {
+      errorEl.textContent = err.message || cfg.errorMessage;
+      errorEl.style.display = 'block';
+      isBusy = false;
+      cleanBtn.disabled = false;
+      cancelBtn.disabled = false;
+
+      if (this.opts.notify) {
+        this.opts.notify('error', cfg.title, err.message || cfg.errorMessage);
+      }
+    } finally {
+      statusEl.style.display = 'none';
+    }
+  });
+
+  /* Баталгаажуулах товч - контентыг шинэчлэх */
+  confirmBtn.addEventListener('click', () => {
+    if (newHtml) {
+      this.setHTML(newHtml);
+    }
+    closeDialog();
+  });
+};
+
+/* ============================================
    AI OCR Dialog (Зураг → HTML)
    ============================================ */
 
@@ -1771,11 +1911,27 @@ moedit.prototype._insertPdf = async function() {
   }
 
   const config = this.opts.pdfModal;
-  const pdfUrl = this.opts.pdfUrl;
 
-  /* pdfUrl тохируулаагүй бол анхааруулах */
-  if (!pdfUrl || !pdfUrl.trim()) {
-    const msg = 'PDF → HTML ашиглахын тулд pdfUrl тохируулна уу.';
+  /* PDF.js сан ачаалагдсан эсэхийг шалгах */
+  const pdfjsLib = window.pdfjsLib;
+  if (!pdfjsLib) {
+    const msg = 'PDF.js сан ачаалаагүй байна. HTML head-д дараах script-үүдийг нэмнэ үү:\n' +
+      '<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs" type="module"></script>';
+    if (this.opts.notify) {
+      this.opts.notify('warning', config.title, msg);
+    } else {
+      alert(msg);
+    }
+    return;
+  }
+
+  /* AI OCR боломжтой эсэх (shineUrl тохируулсан бол) */
+  const shineUrl = this.opts.shineUrl;
+  const hasAiOcrSupport = shineUrl && shineUrl.trim() && shineUrl !== '/dashboard/ai/shine';
+
+  /* PDF → HTML зөвхөн AI OCR ашиглана */
+  if (!hasAiOcrSupport) {
+    const msg = 'AI OCR тохируулаагүй байна. PDF → HTML ашиглахын тулд shineUrl тохируулна уу.';
     if (this.opts.notify) {
       this.opts.notify('warning', config.title, msg);
     } else {
@@ -1808,7 +1964,10 @@ moedit.prototype._insertPdf = async function() {
       <div class="pdf-status" id="${dialogId}-status" style="display:none;">
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
-          <span>${config.processingText}</span>
+          <span id="${dialogId}-status-text">${config.processingText}</span>
+        </div>
+        <div class="progress mt-2" style="height:4px; display:none;" id="${dialogId}-progress">
+          <div class="progress-bar bg-danger" role="progressbar" style="width:0%"></div>
         </div>
       </div>
       <div class="pdf-result" id="${dialogId}-result" style="display:none; max-height:300px; overflow:auto; border:1px solid var(--mo-border); border-radius:var(--mo-radius); padding:10px; margin-top:10px; background:var(--mo-bg);"></div>
@@ -1831,11 +1990,16 @@ moedit.prototype._insertPdf = async function() {
   const browseBtn = dialog.querySelector(`#${dialogId}-browse`);
   const infoEl = dialog.querySelector(`#${dialogId}-info`);
   const statusEl = dialog.querySelector(`#${dialogId}-status`);
+  const statusTextEl = dialog.querySelector(`#${dialogId}-status-text`);
+  const progressEl = dialog.querySelector(`#${dialogId}-progress`);
+  const progressBar = progressEl.querySelector('.progress-bar');
   const resultEl = dialog.querySelector(`#${dialogId}-result`);
   const errorEl = dialog.querySelector(`#${dialogId}-error`);
   const convertBtn = dialog.querySelector('.btn-convert');
   const confirmBtn = dialog.querySelector('.btn-confirm');
   const cancelBtn = dialog.querySelector('.btn-cancel');
+  /* PDF → HTML зөвхөн AI OCR ашиглана */
+  const getSelectedOcrMethod = () => 'ai';
 
   let selectedFile = null;
   let newHtml = null;
@@ -1876,58 +2040,438 @@ moedit.prototype._insertPdf = async function() {
     convertBtn.classList.remove('moedit-modal-btn-disabled');
   });
 
-  /* Convert товч дарахад PHP API дуудах */
+  /**
+   * PDF.js ашиглан PDF-ийг текст болгох (Frontend)
+   * Монгол Кирилл болон бусад Unicode текстийг зөв задална
+   */
+  const extractTextWithPdfJs = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+
+    /* PDF.js-р PDF ачаалах */
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      /* CMap (Character Map) - Кирилл, Монгол үсгийг зөв хөрвүүлэхэд шаардлагатай */
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/',
+      cMapPacked: true,
+      /* Standard fonts - суулгасан фонт байхгүй үед ашиглана */
+      standardFontDataUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/standard_fonts/'
+    });
+
+    const pdf = await loadingTask.promise;
+    const totalPages = pdf.numPages;
+    const pageTexts = [];
+
+    progressEl.style.display = 'block';
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      /* Progress шинэчлэх */
+      const progress = Math.round((pageNum / totalPages) * 100);
+      progressBar.style.width = progress + '%';
+      statusTextEl.textContent = `${config.renderingText || 'Хуудас уншиж байна...'} (${pageNum}/${totalPages})`;
+
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+
+      /* Текст items-ийг нэгтгэх */
+      let pageText = '';
+      let lastY = null;
+      let lastX = null;
+
+      for (const item of textContent.items) {
+        if (item.str === undefined) continue;
+
+        const currentY = item.transform[5];
+        const currentX = item.transform[4];
+
+        /* Шинэ мөр эсвэл параграф илрүүлэх */
+        if (lastY !== null) {
+          const yDiff = Math.abs(currentY - lastY);
+          /* Y координат өөрчлөгдвөл шинэ мөр */
+          if (yDiff > 5) {
+            /* Их зай байвал параграф, бага бол шинэ мөр */
+            pageText += yDiff > 15 ? '\n\n' : '\n';
+          } else if (lastX !== null && currentX - lastX > 20) {
+            /* X координат их өөрчлөгдвөл tab (хүснэгт) */
+            pageText += '\t';
+          } else if (item.str && !item.str.startsWith(' ') && pageText && !pageText.endsWith(' ') && !pageText.endsWith('\n')) {
+            /* Үгс хооронд зай нэмэх */
+            pageText += ' ';
+          }
+        }
+
+        pageText += item.str;
+        lastY = currentY;
+        lastX = currentX + (item.width || 0);
+      }
+
+      if (pageText.trim()) {
+        pageTexts.push({
+          pageNum: pageNum,
+          text: pageText.trim()
+        });
+      }
+    }
+
+    return {
+      pages: totalPages,
+      content: pageTexts
+    };
+  };
+
+  /**
+   * Текстийг HTML болгох
+   */
+  const textToHtml = (text) => {
+    /* Windows мөр төгсгөлийг нэгтгэх */
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    /* Хоосон мөрүүдээр параграф болгох */
+    const paragraphs = text.split(/\n{2,}/);
+    let html = '';
+
+    for (const para of paragraphs) {
+      const trimmed = para.trim();
+      if (!trimmed) continue;
+
+      /* Tab байвал хүснэгт гэж үзэх */
+      if (trimmed.includes('\t')) {
+        html += tabsToTable(trimmed);
+      } else {
+        /* Нэг мөрөн дотор newline-уудыг <br> болгох */
+        const escaped = escapeHtml(trimmed);
+        const withBr = escaped.replace(/\n/g, '<br>');
+        html += `<p>${withBr}</p>\n`;
+      }
+    }
+
+    return html;
+  };
+
+  /**
+   * Tab-аар тусгаарлагдсан текстийг хүснэгт болгох
+   */
+  const tabsToTable = (text) => {
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length === 0) return '';
+
+    let html = '<div class="table-responsive">\n';
+    html += '<table class="table table-striped table-hover table-bordered">\n';
+
+    lines.forEach((line, idx) => {
+      const cells = line.split(/\t+/).map(c => c.trim());
+
+      if (idx === 0 && lines.length > 1) {
+        /* Эхний мөрийг header болгох */
+        html += '<thead><tr>\n';
+        cells.forEach(cell => {
+          html += `<th>${escapeHtml(cell)}</th>\n`;
+        });
+        html += '</tr></thead>\n<tbody>\n';
+      } else {
+        html += '<tr>\n';
+        cells.forEach(cell => {
+          html += `<td>${escapeHtml(cell)}</td>\n`;
+        });
+        html += '</tr>\n';
+      }
+    });
+
+    if (lines.length > 1) {
+      html += '</tbody>\n';
+    }
+    html += '</table>\n</div>\n';
+
+    return html;
+  };
+
+  /**
+   * HTML escape
+   */
+  const escapeHtml = (text) => {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, c => map[c]);
+  };
+
+  /**
+   * PDF хуудсыг canvas болгох helper функц
+   */
+  const renderPageToCanvas = async (page, scale = 2) => {
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    }).promise;
+
+    return canvas;
+  };
+
+  /**
+   * Tesseract.js ашиглан OCR хийх (Үнэгүй, browser дээр)
+   * Монгол Кирилл дэмждэг
+   */
+  const extractTextWithTesseract = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/',
+      cMapPacked: true
+    });
+
+    const pdf = await loadingTask.promise;
+    const totalPages = pdf.numPages;
+    const pageTexts = [];
+
+    progressEl.style.display = 'block';
+
+    /* Tesseract worker үүсгэх - ЗӨВХӨН Орос/Кирилл */
+    statusTextEl.textContent = 'Tesseract OCR ачаалж байна...';
+
+    const worker = await Tesseract.createWorker('rus', 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pageProgress = Math.round(m.progress * 100);
+          statusTextEl.textContent = `OCR боловсруулж байна... ${pageProgress}%`;
+        }
+      },
+      errorHandler: err => console.error('Tesseract error:', err)
+    });
+
+    /* Кирилл таних тохиргоо - Зөвхөн Кирилл үсэг зөвшөөрөх */
+    const cyrillicChars = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя' +
+                          'ӨҮөү' +  /* Монгол тусгай үсгүүд */
+                          '0123456789' +
+                          '.,;:!?()-–—«»""\'\'/ \n';
+
+    await worker.setParameters({
+      tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+      preserve_interword_spaces: '1',
+      tessedit_char_whitelist: cyrillicChars,  /* Зөвхөн эдгээр тэмдэгт зөвшөөрөх */
+    });
+
+    try {
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const overallProgress = Math.round(((pageNum - 1) / totalPages) * 100);
+        progressBar.style.width = overallProgress + '%';
+        statusTextEl.textContent = `Хуудас ${pageNum}/${totalPages} боловсруулж байна...`;
+
+        const page = await pdf.getPage(pageNum);
+        /* 3x scale - илүү тод зураг, OCR илүү сайн ажиллана */
+        const canvas = await renderPageToCanvas(page, 3);
+
+        /* Зургийг grayscale болгох - OCR илүү сайн ажиллана */
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+          /* Contrast нэмэх */
+          const contrast = 1.2;
+          const adjusted = ((gray - 128) * contrast) + 128;
+          const final = Math.max(0, Math.min(255, adjusted));
+          data[i] = data[i + 1] = data[i + 2] = final;
+        }
+        ctx.putImageData(imageData, 0, 0);
+
+        /* Tesseract OCR */
+        const { data: { text } } = await worker.recognize(canvas);
+
+        if (text && text.trim()) {
+          /* Монгол Ү, Ө засвар - Орос У, О-г Монгол үгсэд солих */
+          const correctedText = fixMongolianCyrillic(text.trim());
+          pageTexts.push({
+            pageNum: pageNum,
+            text: correctedText
+          });
+        }
+      }
+    } finally {
+      await worker.terminate();
+    }
+
+    return {
+      pages: totalPages,
+      content: pageTexts
+    };
+  };
+
+  /**
+   * Монгол Кирилл Ү, Ө засвар
+   * Орос У → Монгол Ү, Орос О → Монгол Ө (түгээмэл үгсэд)
+   */
+  const fixMongolianCyrillic = (text) => {
+    /* Ү агуулсан түгээмэл Монгол үгс/үе (У → Ү) */
+    const uToY = [
+      /* Үйл үг төгсгөлүүд */
+      [/улэх/gi, 'үлэх'], [/улээ/gi, 'үлээ'], [/улсэн/gi, 'үлсэн'],
+      [/у|лж/gi, 'үлж'], [/улдэг/gi, 'үлдэг'], [/улна/gi, 'үлнэ'],
+      /* Нэр үг төгсгөлүүд */
+      [/у|уд/gi, 'үүд'], [/уулэн/gi, 'үүлэн'],
+      /* Түгээмэл үгс */
+      [/\bу|г\b/gi, 'үг'], [/\bуйл\b/gi, 'үйл'], [/уйлдэл/gi, 'үйлдэл'],
+      [/\bун[эе]н/gi, 'үнэн'], [/\bунэ\b/gi, 'үнэ'], [/унэлгээ/gi, 'үнэлгээ'],
+      [/\bуз[эе]/gi, 'үзэ'], [/узуулэ/gi, 'үзүүлэ'], [/узэл/gi, 'үзэл'],
+      [/\bур\b/gi, 'үр'], [/урэ/gi, 'үрэ'], [/ур дун/gi, 'үр дүн'],
+      [/\bус[эе]г/gi, 'үсэг'], [/\bудэс/gi, 'үдэс'], [/\bуед/gi, 'үед'],
+      [/хуртэл/gi, 'хүртэл'], [/хурээ/gi, 'хүрээ'], [/хундэтг/gi, 'хүндэтг'],
+      [/\bхун\b/gi, 'хүн'], [/хумуус/gi, 'хүмүүс'], [/хучин/gi, 'хүчин'],
+      [/\bбут[эе]/gi, 'бүтэ'], [/бурэн/gi, 'бүрэн'], [/бугд/gi, 'бүгд'],
+      [/\bбур/gi, 'бүр'], [/бутээ/gi, 'бүтээ'],
+      [/тухай/gi, 'түхай'], [/тувшин/gi, 'түвшин'], [/турул/gi, 'түрүүл'],
+      [/тургэн/gi, 'түргэн'],
+      [/нухцэл/gi, 'нөхцөл'], [/нуур/gi, 'нүүр'],
+      [/суул/gi, 'сүүл'], [/сулжээ/gi, 'сүлжээ'],
+      [/\bзуй\b/gi, 'зүй'], [/зуйл/gi, 'зүйл'],
+      [/оноодор/gi, 'өнөөдөр'], [/онгорсон/gi, 'өнгөрсөн'],
+      [/дуурэн/gi, 'дүүрэн'], [/\bдун\b/gi, 'дүн'],
+      [/гуйцэт/gi, 'гүйцэт'], [/гунзгий/gi, 'гүнзгий'],
+      [/муний/gi, 'мүний'], [/мунгу/gi, 'мөнгө'],
+      [/шуу\b/gi, 'шүү'], [/шууд/gi, 'шүүд'],
+      [/эруул/gi, 'эрүүл'],
+    ];
+
+    /* Ө агуулсан түгээмэл Монгол үгс (О → Ө) */
+    const oToO = [
+      /* Түгээмэл үгс */
+      [/\bор\b/gi, 'өр'], [/оргоо/gi, 'өргөө'], [/оргон/gi, 'өргөн'],
+      [/оргож/gi, 'өргөж'], [/оргох/gi, 'өргөх'],
+      [/\bомно/gi, 'өмнө'], [/\bондор/gi, 'өндөр'], [/\bонго/gi, 'өнгө'],
+      [/оноо\b/gi, 'өнөө'], [/онгорс/gi, 'өнгөрс'],
+      [/\bоор\b/gi, 'өөр'], [/оорчло/gi, 'өөрчлө'], [/\bоортоо/gi, 'өөртөө'],
+      [/орсолд/gi, 'өрсөлд'], [/осгох/gi, 'өсгөх'], [/осолт/gi, 'өсөлт'],
+      [/отгон/gi, 'өтгөн'], [/одор/gi, 'өдөр'], [/одоо/gi, 'өдөө'],
+      [/\bогох/gi, 'өгөх'], [/\bогсон/gi, 'өгсөн'], [/\bогно/gi, 'өгнө'],
+      [/голбор/gi, 'гөлбөр'],
+      [/толбор/gi, 'төлбөр'], [/толов/gi, 'төлөв'], [/торол/gi, 'төрөл'],
+      [/\bтов\b/gi, 'төв'], [/товлор/gi, 'төвлөр'],
+      [/болон\b/gi, 'болон'], /* энийг хэвээр үлдээх */
+      [/\bмонго/gi, 'мөнгө'], [/монгол/gi, 'Монгол'], /* Монгол хэвээр */
+      [/хоног/gi, 'хоног'], /* хэвээр */
+      [/нохцол/gi, 'нөхцөл'], [/ноло/gi, 'нөлө'], [/ногоо/gi, 'ногоо'],
+      [/соним/gi, 'сөним'], [/\bсо\b/gi, 'сө'],
+      [/хоорон/gi, 'хооронд'], /* хэвээр */
+      [/хогжил/gi, 'хөгжил'], [/хотолбор/gi, 'хөтөлбөр'],
+      [/зохион/gi, 'зохион'], /* хэвээр */
+      [/зовшоор/gi, 'зөвшөөр'], [/зовлол/gi, 'зөвлөл'], [/зовлогоо/gi, 'зөвлөгөө'],
+    ];
+
+    let result = text;
+
+    /* У → Ү солих */
+    for (const [pattern, replacement] of uToY) {
+      result = result.replace(pattern, replacement);
+    }
+
+    /* О → Ө солих */
+    for (const [pattern, replacement] of oToO) {
+      result = result.replace(pattern, replacement);
+    }
+
+    return result;
+  };
+
+  /**
+   * AI OCR ашиглан текст задлах (OpenAI Vision)
+   */
+  const extractTextWithAiOcr = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/',
+      cMapPacked: true
+    });
+
+    const pdf = await loadingTask.promise;
+    const totalPages = pdf.numPages;
+    const htmlParts = [];
+
+    progressEl.style.display = 'block';
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      const progress = Math.round((pageNum / totalPages) * 100);
+      progressBar.style.width = progress + '%';
+      statusTextEl.textContent = `AI OCR боловсруулж байна... (${pageNum}/${totalPages})`;
+
+      const page = await pdf.getPage(pageNum);
+      const canvas = await renderPageToCanvas(page, 2);
+      const base64Image = canvas.toDataURL('image/png');
+
+      const response = await fetch(shineUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'vision',
+          images: [base64Image]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI OCR алдаа: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success' && data.html) {
+        if (totalPages > 1) {
+          htmlParts.push(`<!-- Хуудас ${pageNum} -->\n${data.html}`);
+        } else {
+          htmlParts.push(data.html);
+        }
+      } else if (data.status === 'error') {
+        throw new Error(data.message || 'AI OCR алдаа');
+      }
+    }
+
+    return {
+      pages: totalPages,
+      html: htmlParts.join('\n\n<hr class="my-4">\n\n')
+    };
+  };
+
+  /* Convert товч дарахад */
   convertBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
+
+    const ocrMethod = getSelectedOcrMethod();
 
     isBusy = true;
     convertBtn.disabled = true;
     cancelBtn.disabled = true;
     browseBtn.disabled = true;
     statusEl.style.display = 'block';
+    progressBar.style.width = '0%';
     errorEl.style.display = 'none';
     resultEl.style.display = 'none';
 
+    statusTextEl.textContent = 'AI OCR ашиглан боловсруулж байна...';
+
     try {
-      /* FormData ашиглан файл илгээх */
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      /* AI OCR - OpenAI Vision (зөвхөн энэ арга ашиглана) */
+      const result = await extractTextWithAiOcr(selectedFile);
+      const pageCount = result.pages;
+      newHtml = result.html;
 
-      const response = await fetch(pdfUrl, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Сервер алдаа: ${response.status} ${response.statusText}`);
+      if (!newHtml || !newHtml.trim()) {
+        throw new Error('AI OCR текст олдсонгүй.');
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('PDF API endpoint тохируулаагүй байна');
-      }
+      infoEl.querySelector('small').textContent += ` • ${pageCount} ${config.pageText} (AI OCR)`;
 
-      const data = await response.json();
+      resultEl.innerHTML = newHtml;
+      resultEl.style.display = 'block';
+      convertBtn.style.display = 'none';
+      confirmBtn.style.display = 'inline-block';
+      isBusy = false;
+      cancelBtn.disabled = false;
 
-      if (data.status === 'success' && data.html) {
-        newHtml = data.html;
-        resultEl.innerHTML = newHtml;
-        resultEl.style.display = 'block';
-        convertBtn.style.display = 'none';
-        confirmBtn.style.display = 'inline-block';
-        isBusy = false;
-        cancelBtn.disabled = false;
-
-        /* Хуудасны тоог харуулах */
-        if (data.pages) {
-          infoEl.querySelector('small').textContent += ` • ${data.pages} ${config.pageText}`;
-        }
-
-        if (this.opts.notify) {
-          this.opts.notify('success', config.title, config.successMessage);
-        }
-      } else {
-        throw new Error(data.message || config.errorMessage);
+      if (this.opts.notify) {
+        this.opts.notify('success', config.title, config.successMessage);
       }
     } catch (err) {
       errorEl.textContent = err.message || config.errorMessage;
@@ -1938,10 +2482,11 @@ moedit.prototype._insertPdf = async function() {
       browseBtn.disabled = false;
 
       if (this.opts.notify) {
-        this.opts.notify('error', config.title, err.message || config.errorMessage);
+        this.opts.notify('danger', config.title, err.message || config.errorMessage);
       }
     } finally {
       statusEl.style.display = 'none';
+      progressEl.style.display = 'none';
     }
   });
 
