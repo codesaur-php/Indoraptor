@@ -2066,67 +2066,291 @@ moedit.prototype._insertEmail = function() {
 };
 
 moedit.prototype._insertYouTube = function() {
-  const url = this.opts.prompt("YouTube video URL оруул", "https://www.youtube.com/watch?v=");
-  if (url && url.trim()) {
-    let videoId = '';
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-    if (match) {
-      videoId = match[1];
-    } else {
-      videoId = url.trim().split('/').pop().split('?')[0];
-    }
-    if (videoId) {
-      /* Responsive wrapper div үүсгэх */
-      const wrapper = document.createElement('div');
-      wrapper.style.position = 'relative';
-      wrapper.style.width = '100%';
-      wrapper.style.maxWidth = '560px';
-      wrapper.style.paddingBottom = '56.25%'; /* 16:9 ratio */
-      wrapper.style.margin = '10px 0';
-      wrapper.style.height = '0';
-      wrapper.style.overflow = 'hidden';
-
-      const iframe = document.createElement('iframe');
-      iframe.src = 'https://www.youtube.com/embed/' + videoId;
-      iframe.style.position = 'absolute';
-      iframe.style.top = '0';
-      iframe.style.left = '0';
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-      iframe.allowFullscreen = true;
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
-      iframe.setAttribute('loading', 'lazy');
-      iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-      wrapper.appendChild(iframe);
-
-      const selection = window.getSelection();
-      if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        range.insertNode(wrapper);
-        this._emitChange();
-      }
-    }
+  /* Selection хадгалах */
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
   }
-};
 
-moedit.prototype._insertFacebook = function() {
-  const url = this.opts.prompt("Facebook video URL оруул", "https://www.facebook.com/");
-  if (url && url.trim()) {
+  const config = this.opts.youtubeModal;
+  const dialogId = 'moedit-youtube-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="bi bi-youtube"></i> ${config.title}</h5>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${config.urlLabel}</label>
+        <input type="text" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.placeholder}">
+        <div class="moedit-modal-hint" style="margin-top: 6px; font-size: 12px; color: #888;">${config.hint}</div>
+      </div>
+      <div class="moedit-modal-preview" id="${dialogId}-preview" style="display: none; margin-top: 12px;">
+        <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 6px; overflow: hidden;">
+          <iframe id="${dialogId}-iframe" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="moedit-modal-error" id="${dialogId}-error" style="display: none; margin-top: 8px; color: #dc3545; font-size: 13px;"></div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok">${config.okText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDiv = document.getElementById(`${dialogId}-preview`);
+  const previewIframe = document.getElementById(`${dialogId}-iframe`);
+  const errorDiv = document.getElementById(`${dialogId}-error`);
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  urlInput.focus();
+
+  /* YouTube видео ID задлах */
+  const extractYouTubeId = (url) => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      /^([a-zA-Z0-9_-]{11})$/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  /* URL өөрчлөгдөхөд preview харуулах */
+  let debounceTimer;
+  urlInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const url = urlInput.value.trim();
+      const videoId = extractYouTubeId(url);
+      if (videoId) {
+        previewIframe.src = 'https://www.youtube.com/embed/' + videoId;
+        previewDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+      } else if (url) {
+        previewDiv.style.display = 'none';
+        errorDiv.textContent = config.invalidUrl;
+        errorDiv.style.display = 'block';
+      } else {
+        previewDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+      }
+    }, 300);
+  });
+
+  const closeDialog = () => {
+    previewIframe.src = '';
+    dialog.remove();
+  };
+
+  cancelBtn.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  /* Enter дарахад OK */
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      okBtn.click();
+    }
+  });
+
+  /* OK товч */
+  okBtn.addEventListener('click', () => {
+    const url = urlInput.value.trim();
+    const videoId = extractYouTubeId(url);
+
+    if (!videoId) {
+      errorDiv.textContent = config.invalidUrl;
+      errorDiv.style.display = 'block';
+      urlInput.focus();
+      return;
+    }
+
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+
+    /* Selection сэргээх */
+    this._ensureVisualMode();
+    this._focusEditor();
+    if (savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+
     /* Responsive wrapper div үүсгэх */
     const wrapper = document.createElement('div');
     wrapper.style.position = 'relative';
     wrapper.style.width = '100%';
     wrapper.style.maxWidth = '560px';
-    wrapper.style.paddingBottom = '56.25%'; /* 16:9 ratio */
+    wrapper.style.paddingBottom = '56.25%';
     wrapper.style.margin = '10px 0';
     wrapper.style.height = '0';
     wrapper.style.overflow = 'hidden';
 
     const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url.trim()) + '&show_text=0&width=560';
+    iframe.src = 'https://www.youtube.com/embed/' + videoId;
+    iframe.style.position = 'absolute';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+    wrapper.appendChild(iframe);
+
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      range.insertNode(wrapper);
+      range.setStartAfter(wrapper);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    this._emitChange();
+  });
+};
+
+moedit.prototype._insertFacebook = function() {
+  /* Selection хадгалах */
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  const config = this.opts.facebookModal;
+  const dialogId = 'moedit-facebook-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="bi bi-facebook"></i> ${config.title}</h5>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${config.urlLabel}</label>
+        <input type="text" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.placeholder}">
+        <div class="moedit-modal-hint" style="margin-top: 6px; font-size: 12px; color: #888;">${config.hint}</div>
+      </div>
+      <div class="moedit-modal-preview" id="${dialogId}-preview" style="display: none; margin-top: 12px;">
+        <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: #f0f2f5; border-radius: 6px; overflow: hidden;">
+          <iframe id="${dialogId}-iframe" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" scrolling="no" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok">${config.okText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDiv = document.getElementById(`${dialogId}-preview`);
+  const previewIframe = document.getElementById(`${dialogId}-iframe`);
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  urlInput.focus();
+
+  /* Facebook URL зөв эсэхийг шалгах */
+  const isValidFacebookUrl = (url) => {
+    return url.includes('facebook.com') || url.includes('fb.watch');
+  };
+
+  /* URL өөрчлөгдөхөд preview харуулах */
+  let debounceTimer;
+  urlInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const url = urlInput.value.trim();
+      if (url && isValidFacebookUrl(url)) {
+        previewIframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&show_text=0&width=500';
+        previewDiv.style.display = 'block';
+      } else {
+        previewDiv.style.display = 'none';
+      }
+    }, 500);
+  });
+
+  const closeDialog = () => {
+    previewIframe.src = '';
+    dialog.remove();
+  };
+
+  cancelBtn.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  /* Enter дарахад OK */
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      okBtn.click();
+    }
+  });
+
+  /* OK товч */
+  okBtn.addEventListener('click', () => {
+    const url = urlInput.value.trim();
+
+    if (!url) {
+      urlInput.focus();
+      return;
+    }
+
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+
+    /* Selection сэргээх */
+    this._ensureVisualMode();
+    this._focusEditor();
+    if (savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+
+    /* Responsive wrapper div үүсгэх */
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    wrapper.style.maxWidth = '560px';
+    wrapper.style.paddingBottom = '56.25%';
+    wrapper.style.margin = '10px 0';
+    wrapper.style.height = '0';
+    wrapper.style.overflow = 'hidden';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&show_text=0&width=560';
     iframe.style.position = 'absolute';
     iframe.style.top = '0';
     iframe.style.left = '0';
@@ -2141,13 +2365,18 @@ moedit.prototype._insertFacebook = function() {
 
     wrapper.appendChild(iframe);
 
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
       range.insertNode(wrapper);
-      this._emitChange();
+      range.setStartAfter(wrapper);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
-  }
+
+    this._emitChange();
+  });
 };
 
 moedit.prototype._paste = function() {

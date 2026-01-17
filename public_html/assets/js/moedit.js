@@ -113,6 +113,25 @@ class moedit {
         cancelText: 'Болих',
         okText: 'OK'
       },
+      /* YouTube modal тохиргоо */
+      youtubeModal: {
+        title: 'YouTube видео оруулах',
+        urlLabel: 'YouTube URL',
+        placeholder: 'https://www.youtube.com/watch?v=...',
+        hint: 'Жишээ: https://www.youtube.com/watch?v=dQw4w9WgXcQ эсвэл https://youtu.be/dQw4w9WgXcQ',
+        invalidUrl: 'YouTube видео ID олдсонгүй. URL зөв эсэхийг шалгана уу.',
+        cancelText: 'Болих',
+        okText: 'Оруулах'
+      },
+      /* Facebook modal тохиргоо */
+      facebookModal: {
+        title: 'Facebook видео оруулах',
+        urlLabel: 'Facebook видео URL',
+        placeholder: 'https://www.facebook.com/...',
+        hint: 'Facebook видео эсвэл reel-ийн URL хуулж буулгана уу',
+        cancelText: 'Болих',
+        okText: 'Оруулах'
+      },
       /* Shine modal тохиргоо */
       shineModal: {
         title: 'AI Shine',
