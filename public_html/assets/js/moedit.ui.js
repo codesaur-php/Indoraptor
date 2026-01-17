@@ -1077,6 +1077,430 @@ moedit.prototype._clean = async function() {
 };
 
 /* ============================================
+   Offline Clean & Beautify (Vanilla HTML)
+   AI ашиглахгүй, зөвхөн JavaScript-ээр локал цэвэрлэнэ
+   ============================================ */
+
+moedit.prototype._vanilla = function() {
+  const html = this.getHTML();
+  const cfg = this.opts.vanillaModal;
+
+  /* Хоосон контент шалгах */
+  if (!html || !html.trim()) {
+    const emptyMsg = cfg.emptyMessage;
+    if (typeof NotifyTop === 'function') {
+      NotifyTop('warning', cfg.title, emptyMsg);
+    } else if (this.opts.notify) {
+      this.opts.notify('warning', cfg.title, emptyMsg);
+    } else {
+      alert(emptyMsg);
+    }
+    return;
+  }
+
+  /* HTML цэвэрлэх функц */
+  const cleanedHtml = this._cleanToVanillaHTML(html);
+
+  /* Modal үүсгэх */
+  const dialogId = 'moedit-vanilla-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal moedit-modal-lg">
+      <h5 class="moedit-modal-title"><i class="bi bi-brush text-success"></i> ${cfg.title}</h5>
+      <p class="moedit-modal-desc">${cfg.description}</p>
+      <div class="vanilla-preview" style="max-height:300px; overflow:auto; border:1px solid var(--mo-border); border-radius:var(--mo-radius); padding:10px; margin-top:10px; background:var(--mo-bg);"></div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary btn-cancel">${cfg.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-success btn-confirm">
+          <i class="bi bi-check-lg"></i> ${cfg.confirmText}
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const previewEl = dialog.querySelector('.vanilla-preview');
+  const confirmBtn = dialog.querySelector('.btn-confirm');
+  const cancelBtn = dialog.querySelector('.btn-cancel');
+
+  /* Preview харуулах */
+  previewEl.innerHTML = cleanedHtml;
+
+  const closeDialog = () => dialog.remove();
+
+  cancelBtn.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  /* Баталгаажуулах товч */
+  confirmBtn.addEventListener('click', () => {
+    this.setHTML(cleanedHtml);
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+
+    if (this.opts.notify) {
+      this.opts.notify('success', cfg.title, cfg.successMessage);
+    }
+  });
+};
+
+/**
+ * HTML-ийг vanilla HTML болгон цэвэрлэх (offline)
+ * - БҮХ class, style устгана (зөвхөн шаардлагатай inline style нэмнэ)
+ * - Шаардлагагүй wrapper tag-уудыг unwrap хийнэ
+ * - Хамгийн энгийн, нүцгэн HTML болгоно
+ * @private
+ * @param {string} html - Цэвэрлэх HTML
+ * @returns {string} Цэвэрлэгдсэн HTML
+ */
+moedit.prototype._cleanToVanillaHTML = function(html) {
+  if (!html || !html.trim()) return '';
+
+  /* Түр div үүсгэж HTML parse хийх */
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  /* HTML биш plain text эсэхийг шалгах */
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(html);
+  if (!hasHtmlTags) {
+    const lines = html.split(/\n+/).filter(line => line.trim());
+    if (lines.length === 0) return '';
+    return lines.map(line => `<p>${this._escapeHtml(line.trim())}</p>`).join('\n');
+  }
+
+  /* ============================================
+     1. Facebook emoji зургийг жинхэнэ emoji болгох
+     ============================================ */
+  tempDiv.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    const alt = img.getAttribute('alt') || '';
+    /* Facebook emoji зураг эсэхийг шалгах */
+    if ((src.includes('fbcdn.net') || src.includes('facebook.com')) &&
+        src.includes('emoji') && alt) {
+      /* Зургийг emoji текстээр солих */
+      const textNode = document.createTextNode(alt);
+      img.parentNode.replaceChild(textNode, img);
+    }
+  });
+
+  /* ============================================
+     2. Facebook tracking URL цэвэрлэх
+     ============================================ */
+  tempDiv.querySelectorAll('a').forEach(a => {
+    let href = a.getAttribute('href') || '';
+
+    /* Facebook redirect URL */
+    if (href.includes('l.facebook.com/l.php') || href.includes('lm.facebook.com')) {
+      try {
+        const url = new URL(href);
+        const realUrl = url.searchParams.get('u');
+        if (realUrl) {
+          href = decodeURIComponent(realUrl.split('?')[0]);
+        }
+      } catch (e) { /* URL parse алдаа */ }
+    }
+
+    /* Facebook tracking параметрүүд устгах */
+    const fbTrackingParams = ['__cft__', '__tn__', '__eep__', 'fbclid', '__cft__[0]', '__xts__', 'ref', 'fref', 'hc_ref'];
+    try {
+      const url = new URL(href, 'https://example.com');
+      let hasTracking = false;
+      fbTrackingParams.forEach(param => {
+        /* [0], [1] гэх мэт indexed параметрүүдийг устгах */
+        Array.from(url.searchParams.keys()).forEach(key => {
+          if (key === param || key.startsWith(param + '[')) {
+            url.searchParams.delete(key);
+            hasTracking = true;
+          }
+        });
+      });
+      if (hasTracking) {
+        /* Query string хоосон болсон бол зөвхөн pathname буцаах */
+        href = url.searchParams.toString() ? url.origin + url.pathname + '?' + url.searchParams.toString() : url.origin + url.pathname;
+        /* Hashtag хадгалах */
+        if (url.hash) href += url.hash;
+      }
+    } catch (e) { /* URL parse алдаа */ }
+
+    a.setAttribute('href', href);
+  });
+
+  /* ============================================
+     3. Nested div flatten хийх (зөвхөн нэг div child-тай div-үүдийг unwrap)
+     ============================================ */
+  const flattenNestedDivs = () => {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      tempDiv.querySelectorAll('div').forEach(div => {
+        /* Зөвхөн нэг element child байгаа бөгөөд тэр нь div бол */
+        const children = Array.from(div.childNodes).filter(n =>
+          n.nodeType === Node.ELEMENT_NODE ||
+          (n.nodeType === Node.TEXT_NODE && n.textContent.trim())
+        );
+        if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE && children[0].tagName === 'DIV') {
+          /* Гадна div-ийг unwrap хийх */
+          const parent = div.parentNode;
+          if (parent) {
+            while (div.firstChild) {
+              parent.insertBefore(div.firstChild, div);
+            }
+            parent.removeChild(div);
+            changed = true;
+          }
+        }
+      });
+    }
+  };
+  flattenNestedDivs();
+
+  /* Бүрэн устгах tag-ууд */
+  const removeTags = ['SCRIPT', 'STYLE', 'LINK', 'META', 'NOSCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'APPLET', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'LABEL'];
+
+  /* Unwrap хийх tag-ууд (контентыг хадгалж, tag-ийг устгах) */
+  const unwrapTags = ['SPAN', 'FONT', 'ASIDE', 'HEADER', 'FOOTER', 'NAV', 'MAIN', 'FIGURE', 'FIGCAPTION', 'CENTER', 'MARK', 'INS', 'DEL', 'S', 'SMALL', 'BIG', 'ABBR', 'ACRONYM', 'CITE', 'DFN', 'KBD', 'SAMP', 'VAR', 'TIME', 'ADDRESS', 'DETAILS', 'SUMMARY', 'DIALOG', 'MENU', 'MENUITEM'];
+
+  /* Хадгалах tag-ууд (semantic, essential) */
+  const keepTags = ['P', 'DIV', 'ARTICLE', 'SECTION', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BR', 'HR', 'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD', 'CAPTION', 'COLGROUP', 'COL', 'A', 'IMG', 'STRONG', 'B', 'EM', 'I', 'U', 'BLOCKQUOTE', 'PRE', 'CODE', 'SUB', 'SUP', 'VIDEO', 'AUDIO', 'SOURCE', 'PICTURE'];
+
+  /**
+   * Бүх attribute-уудыг устгах (зөвхөн зөвшөөрөгдсөнийг хадгалах)
+   */
+  const cleanAttributes = (el) => {
+    const allowedAttrs = {
+      'A': ['href', 'target', 'rel'],
+      'IMG': ['src', 'alt', 'width', 'height'],
+      'VIDEO': ['src', 'controls', 'width', 'height'],
+      'AUDIO': ['src', 'controls'],
+      'SOURCE': ['src', 'type'],
+      'TABLE': ['style'],
+      'TH': ['style', 'colspan', 'rowspan'],
+      'TD': ['style', 'colspan', 'rowspan'],
+      'COL': ['span'],
+      'COLGROUP': ['span'],
+      'BLOCKQUOTE': ['style'],
+      'PRE': ['style'],
+      'CODE': ['style'],
+      'OL': ['start', 'type', 'style'],
+      'UL': ['style'],
+      'LI': ['style']
+    };
+
+    const allowed = allowedAttrs[el.tagName] || [];
+    const attrsToRemove = [];
+
+    for (const attr of el.attributes) {
+      if (!allowed.includes(attr.name)) {
+        attrsToRemove.push(attr.name);
+      }
+    }
+    attrsToRemove.forEach(attr => el.removeAttribute(attr));
+  };
+
+  /**
+   * Element-ийг unwrap хийх (контентыг хадгалж tag-ийг устгах)
+   */
+  const unwrapElement = (el) => {
+    const parent = el.parentNode;
+    if (!parent) return;
+    while (el.firstChild) {
+      parent.insertBefore(el.firstChild, el);
+    }
+    parent.removeChild(el);
+  };
+
+  /**
+   * Recursive цэвэрлэгч
+   */
+  const processNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) return;
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      node.remove();
+      return;
+    }
+
+    const tagName = node.tagName;
+
+    /* Word/Office namespace tag устгах */
+    if (tagName.includes(':')) {
+      unwrapElement(node);
+      return;
+    }
+
+    /* Бүрэн устгах */
+    if (removeTags.includes(tagName)) {
+      node.remove();
+      return;
+    }
+
+    /* Эхлээд хүүхдүүдийг процесслох */
+    Array.from(node.childNodes).forEach(child => processNode(child));
+
+    /* Unwrap хийх tag-ууд */
+    if (unwrapTags.includes(tagName)) {
+      unwrapElement(node);
+      return;
+    }
+
+    /* Хадгалах tag биш бол unwrap */
+    if (!keepTags.includes(tagName)) {
+      unwrapElement(node);
+      return;
+    }
+
+    /* Attribute цэвэрлэх */
+    cleanAttributes(node);
+
+    /* Тусгай tag-уудад minimal style нэмэх */
+    switch (tagName) {
+      case 'TABLE':
+        node.setAttribute('style', 'width:100%;border-collapse:collapse;');
+        break;
+      case 'TH':
+        node.setAttribute('style', 'border:1px solid #ddd;padding:8px;background:#f5f5f5;font-weight:bold;text-align:left;');
+        break;
+      case 'TD':
+        node.setAttribute('style', 'border:1px solid #ddd;padding:8px;');
+        break;
+      case 'IMG':
+        node.setAttribute('style', 'max-width:100%;height:auto;');
+        if (!node.hasAttribute('alt')) node.setAttribute('alt', '');
+        break;
+      case 'A':
+        if (!node.hasAttribute('target')) node.setAttribute('target', '_blank');
+        if (!node.hasAttribute('rel')) node.setAttribute('rel', 'noopener noreferrer');
+        break;
+      case 'BLOCKQUOTE':
+        node.setAttribute('style', 'border-left:3px solid #ccc;padding-left:15px;margin:10px 0;color:#666;');
+        break;
+      case 'PRE':
+        node.setAttribute('style', 'background:#f5f5f5;padding:10px;overflow-x:auto;');
+        break;
+      case 'CODE':
+        node.setAttribute('style', 'background:#f5f5f5;padding:2px 5px;');
+        break;
+      case 'UL':
+      case 'OL':
+        node.setAttribute('style', 'padding-left:20px;');
+        break;
+    }
+  };
+
+  /* Процесслох */
+  Array.from(tempDiv.childNodes).forEach(child => processNode(child));
+
+  /**
+   * Хоосон элементүүдийг устгах
+   */
+  const removeEmpty = (el) => {
+    Array.from(el.children).forEach(child => removeEmpty(child));
+
+    const emptyable = ['P', 'SPAN', 'DIV', 'ARTICLE', 'SECTION', 'B', 'I', 'U', 'STRONG', 'EM', 'LI'];
+    if (emptyable.includes(el.tagName) && !el.textContent.trim() && !el.querySelector('img, table, video, audio, br, hr')) {
+      el.remove();
+    }
+  };
+  removeEmpty(tempDiv);
+
+  /**
+   * DIV-ийг P болгох (зөвхөн inline content агуулсан div)
+   */
+  const convertDivToP = (el) => {
+    Array.from(el.children).forEach(child => convertDivToP(child));
+
+    if (el.tagName === 'DIV') {
+      /* DIV дотор block element байгаа эсэхийг шалгах */
+      const blockTags = ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'ARTICLE', 'SECTION'];
+      const hasBlockChild = Array.from(el.children).some(child => blockTags.includes(child.tagName));
+
+      /* Block child байхгүй бол P болгох */
+      if (!hasBlockChild && el.textContent.trim()) {
+        const p = document.createElement('p');
+        while (el.firstChild) {
+          p.appendChild(el.firstChild);
+        }
+        el.parentNode.replaceChild(p, el);
+      }
+    }
+  };
+  convertDivToP(tempDiv);
+
+  /**
+   * Inline text-ийг p tag-д оруулах
+   */
+  const wrapTextNodes = () => {
+    const children = Array.from(tempDiv.childNodes);
+    let inlineGroup = [];
+
+    const flushGroup = () => {
+      if (inlineGroup.length === 0) return;
+      const hasContent = inlineGroup.some(n => n.nodeType === Node.TEXT_NODE ? n.textContent.trim() : true);
+      if (hasContent) {
+        const p = document.createElement('p');
+        /* p tag-д style нэмэхгүй */
+        inlineGroup.forEach(n => p.appendChild(n.cloneNode(true)));
+        tempDiv.insertBefore(p, inlineGroup[0]);
+      }
+      inlineGroup.forEach(n => n.remove());
+      inlineGroup = [];
+    };
+
+    const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR'];
+
+    children.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent.trim()) inlineGroup.push(node);
+        else node.remove();
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (blockTags.includes(node.tagName)) {
+          flushGroup();
+        } else {
+          inlineGroup.push(node);
+        }
+      }
+    });
+    flushGroup();
+  };
+  wrapTextNodes();
+
+  /**
+   * Давхар BR-ийг p болгох
+   */
+  let result = tempDiv.innerHTML;
+  result = result.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>');
+  result = result.replace(/(<p[^>]*>)\s*<br\s*\/?>/gi, '$1');
+  result = result.replace(/<br\s*\/?>\s*(<\/p>)/gi, '$1');
+
+  /* &nbsp; устгах */
+  result = result.replace(/&nbsp;/gi, ' ');
+  result = result.replace(/\u00A0/g, ' ');
+
+  /* Хоосон tag устгах (space, tab агуулсан ч устгана, newline агуулсан бол үлдээнэ) */
+  const emptyTags = ['span', 'font', 'b', 'i', 'u', 'strong', 'em', 'div', 'article', 'section', 'a'];
+  let prevResult;
+  do {
+    prevResult = result;
+    emptyTags.forEach(tag => {
+      /* Хоосон эсвэл зөвхөн space/tab агуулсан tag устгах */
+      result = result.replace(new RegExp(`<${tag}[^>]*>[ \\t]*<\\/${tag}>`, 'gi'), '');
+    });
+    /* P tag: хоосон эсвэл зөвхөн space/tab агуулсан бол устгах, newline агуулсан бол үлдээх */
+    result = result.replace(/<p[^>]*>[ \t]*<\/p>/gi, '');
+  } while (result !== prevResult);
+
+  return result.trim();
+};
+
+/* ============================================
    AI OCR Dialog (Зураг → HTML)
    ============================================ */
 
