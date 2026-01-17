@@ -146,6 +146,17 @@ class moedit {
         confirmText: 'Хөрвүүлэх',
         cancelText: 'Болих'
       },
+      /* Vanilla HTML modal тохиргоо (offline clean & beautify) */
+      vanillaModal: {
+        title: 'Clean HTML',
+        description: 'Контентыг цэвэр vanilla HTML болгоно. Framework class устгаж, inline style ашиглана. AI ашиглахгүй, локал ажиллана.',
+        processingText: 'Цэвэрлэж байна...',
+        successMessage: 'HTML амжилттай цэвэрлэгдлээ!',
+        errorMessage: 'Алдаа гарлаа',
+        emptyMessage: 'Контент хоосон байна',
+        confirmText: 'Шинэчлэх',
+        cancelText: 'Болих'
+      },
       /* PDF modal тохиргоо */
       pdfModal: {
         title: 'PDF → HTML',
@@ -213,6 +224,7 @@ class moedit {
       fullscreen: { type: "fn", fn: () => this.toggleFullscreen() },
       shine:      { type: "fn", fn: () => this._shine() },
       clean:      { type: "fn", fn: () => this._clean() },
+      vanilla:    { type: "fn", fn: () => this._vanilla() },
       pdf:        { type: "fn", fn: () => this._insertPdf() },
     };
 
@@ -1467,7 +1479,8 @@ class moedit {
       'redo': 'Дахих (Ctrl+Y)',
       'print': 'Хэвлэх',
       'source': 'HTML код харах',
-      'fullscreen': 'Бүтэн дэлгэц (ESC гарах)'
+      'fullscreen': 'Бүтэн дэлгэц (ESC гарах)',
+      'vanilla': 'Clean HTML - Цэвэр HTML болгох (offline)'
     };
 
     this.toolbar.querySelectorAll('button[data-action]').forEach(btn => {

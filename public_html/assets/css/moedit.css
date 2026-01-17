@@ -278,11 +278,22 @@
   box-shadow:var(--mo-shadow-lg);
   border-radius:0;
   margin:0;
+  display:flex;
+  flex-direction:column;
 }
-.moedit.is-fullscreen .moedit-body,
+.moedit.is-fullscreen .moedit-toolbar{
+  flex-shrink:0;
+}
+.moedit.is-fullscreen .moedit-body{
+  flex:1;
+  min-height:0;
+  max-height:none;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
 .moedit.is-fullscreen .moedit-editor,
 .moedit.is-fullscreen .moedit-source{
-  min-height:calc(100vh - 60px);
+  min-height:100%;
   max-height:none;
 }
 
@@ -666,12 +677,7 @@
     overflow-x:auto;
     flex-wrap:nowrap;
     -webkit-overflow-scrolling:touch;
-  }
-
-  .moedit.is-fullscreen .moedit-body,
-  .moedit.is-fullscreen .moedit-editor,
-  .moedit.is-fullscreen .moedit-source{
-    min-height:calc(100vh - 50px);
+    flex-shrink:0;
   }
 }
 
