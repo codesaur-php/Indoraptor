@@ -125,90 +125,7 @@
         <!-- Мэдээний агуулга (WYSIWYG editor ашиглана) -->
         <div class="form-group mt-3">
             <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
-            <div class="moedit" id="content_editor_wrapper">
-                <div class="moedit-toolbar">
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="bold" title="Bold (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
-                        <button type="button" class="moedit-btn" data-action="italic" title="Italic (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
-                        <button type="button" class="moedit-btn" data-action="underline" title="Underline (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
-                        <button type="button" class="moedit-btn" data-action="strike" title="Strikethrough"><i class="bi bi-type-strikethrough"></i></button>
-                        <button type="button" class="moedit-btn" data-action="subscript" title="Subscript"><i class="bi bi-type"></i><sub>x</sub></button>
-                        <button type="button" class="moedit-btn" data-action="superscript" title="Superscript"><i class="bi bi-type"></i><sup>x</sup></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <select class="moedit-select" data-action="heading" title="Heading">
-                            <option value="p" selected>Paragraph</option>
-                            <option value="h1">H1 - Гарчиг</option>
-                            <option value="h2">H2 - Дэд гарчиг</option>
-                            <option value="h3">H3</option>
-                            <option value="h4">H4</option>
-                            <option value="h5">H5</option>
-                            <option value="h6">H6</option>
-                            <option value="pre">Preformatted</option>
-                            <option value="blockquote">Quote</option>
-                        </select>
-                        <select class="moedit-select" data-action="fontSize" title="Font Size">
-                            <option value="3" selected>Default</option>
-                            <option value="1">1 - Жижиг</option>
-                            <option value="2">2</option>
-                            <option value="3">3 - Хэвийн</option>
-                            <option value="4">4</option>
-                            <option value="5">5 - Том</option>
-                            <option value="6">6</option>
-                            <option value="7">7 - Хамгийн том</option>
-                        </select>
-                        <input type="color" class="moedit-color" data-action="foreColor" title="Font Color" value="#000000">
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="justifyLeft" title="Align Left"><i class="bi bi-text-left"></i></button>
-                        <button type="button" class="moedit-btn" data-action="justifyCenter" title="Align Center"><i class="bi bi-text-center"></i></button>
-                        <button type="button" class="moedit-btn" data-action="justifyRight" title="Align Right"><i class="bi bi-text-right"></i></button>
-                        <button type="button" class="moedit-btn" data-action="justifyFull" title="Justify"><i class="bi bi-justify"></i></button>
-                        <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-right"></i></button>
-                        <button type="button" class="moedit-btn" data-action="indent" title="Indent"><i class="bi bi-text-indent-left"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="removeFormat" title="Remove Format"><i class="bi bi-eraser"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="ul" title="Unordered List"><i class="bi bi-list-ul"></i></button>
-                        <button type="button" class="moedit-btn" data-action="ol" title="Ordered List"><i class="bi bi-list-ol"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="pasteText" title="Paste Text"><i class="bi bi-clipboard-plus"></i></button>
-                        <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-image"></i></button>
-                        <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
-                        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
-                        <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
-                        <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
-                        <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
-                        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зургийг HTML болгох"><i class="bi bi-file-text"></i></button>
-                        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
-                        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="undo" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
-                        <button type="button" class="moedit-btn" data-action="redo" title="Redo (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
-                        <button type="button" class="moedit-btn" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
-                        <button type="button" class="moedit-btn" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
-                    </div>
-                </div>
-                <div class="moedit-body">
-                    <div class="moedit-editor" contenteditable="true" data-placeholder="Агуулгаа энд бичнэ үү..."></div>
-                    <textarea class="moedit-source"></textarea>
-                </div>
-            </div>
-            <textarea class="form-control" id="content" name="content" style="display:none;"></textarea>
+            <textarea class="form-control" id="content" name="content" placeholder="Агуулгаа энд бичнэ үү..."></textarea>
         </div>
     </div>
     <!-- Файл хавсаргах хэсэг - Plupload ашиглан олон файл upload хийх -->
@@ -433,9 +350,7 @@
         }
 
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
-        const editorWrapper = document.getElementById('content_editor_wrapper');
-        moeditInstance = new moedit(editorWrapper, {
-            onChange: (html) => content.value = html,
+        moeditInstance = new moedit(content, {
             shineUrl: `{{ 'moedit-ai-shine'|link }}`,
             hasOpenAI: {{ hasOpenAI ? 'true' : 'false' }},
             uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`
