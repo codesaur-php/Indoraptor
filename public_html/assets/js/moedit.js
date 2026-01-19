@@ -78,8 +78,8 @@ class moedit {
       onUploadError: null, /* Upload алдаа гарсан үед дуудагдах callback */
       /* Paste text modal тохиргоо */
       pasteTextModal: {
-        title: 'Текст буулгах',
-        description: 'Доорх талбарт текстээ буулгана уу (Ctrl+V). Word, Excel-ээс хуулсан текст автоматаар цэвэрлэгдэнэ.',
+        title: 'Цэвэр текст буулгах',
+        description: 'Энд буулгасан бүх контент ЦЭВЭР ТЕКСТ болно. Ямар ч HTML tag, formatting үлдэхгүй - зөвхөн текст.',
         placeholder: 'Энд текстээ буулгана уу...',
         cancelText: 'Болих',
         okText: 'OK'
@@ -135,7 +135,7 @@ class moedit {
       /* Shine modal тохиргоо */
       shineModal: {
         title: 'AI Shine',
-        description: 'HTML контентыг Bootstrap 5 компонентуудаар гоёжуулна. Зургийг хөндөхгүй.',
+        description: 'Контентын бүтцийг шинжилж table, card, accordion зэрэг Bootstrap 5 компонент болгоно.',
         processingText: 'Боловсруулж байна...',
         successMessage: 'Контент амжилттай гоёжууллаа!',
         errorMessage: 'Алдаа гарлаа',
@@ -157,7 +157,7 @@ class moedit {
       /* OCR modal тохиргоо */
       ocrModal: {
         title: 'AI OCR',
-        description: 'Зураг дээрх текстийг уншиж HTML болгоно. Зургийг устгаад оронд нь текст контент орно.',
+        description: 'Зураг дээрх текстийг уншиж HTML болгоод editor-д оруулна.',
         processingText: 'Зураг уншиж байна...',
         successMessage: 'Зургаас текст амжилттай задлагдлаа!',
         errorMessage: 'Алдаа гарлаа',
@@ -192,6 +192,8 @@ class moedit {
       },
       /* Shine API URL */
       shineUrl: '/dashboard/ai/shine',
+      /* OpenAI API key тохируулсан эсэх - false бол AI товчнууд disable */
+      hasOpenAI: false,
       /* Notify function - optional */
       notify: null, /* function(type, title, message) */
       ...opts,
@@ -244,6 +246,7 @@ class moedit {
       shine:      { type: "fn", fn: () => this._shine() },
       clean:      { type: "fn", fn: () => this._clean() },
       vanilla:    { type: "fn", fn: () => this._vanilla() },
+      ocr:        { type: "fn", fn: () => this._insertOcr() },
       pdf:        { type: "fn", fn: () => this._insertPdf() },
     };
 
@@ -261,29 +264,40 @@ class moedit {
   }
 
   /**
-   * Shine товчийг shineUrl-ээс хамааран харуулах/нуух
+   * AI товчнуудыг hasOpenAI тохиргооноос хамааран тохируулах
+   * - hasOpenAI: false бол ocr, shine, pdf товчнуудыг disable болгоно
    * @private
    */
   _toggleShineButton() {
     const shineBtn = this.toolbar.querySelector('[data-action="shine"]');
-    if (!shineBtn) return;
+    const pdfBtn = this.toolbar.querySelector('[data-action="pdf"]');
+    const ocrBtn = this.toolbar.querySelector('[data-action="ocr"]');
+    const hasOpenAI = this.opts.hasOpenAI;
 
-    /* shineUrl хоосон, null, undefined эсвэл default утгатай бол нуух */
+    /* shineUrl хоосон бол бүх AI товчнуудыг нуух */
     const url = this.opts.shineUrl;
-    const isConfigured = url && url.trim() && url !== '/dashboard/ai/shine';
+    const isConfigured = url && url.trim();
 
     if (!isConfigured) {
-      /* Товч болон түүний өмнөх separator-ийг нуух */
-      const group = shineBtn.closest('.moedit-group');
-      if (group) {
-        const prevSep = group.previousElementSibling;
-        if (prevSep && prevSep.classList.contains('moedit-sep')) {
-          prevSep.style.display = 'none';
-        }
-        group.style.display = 'none';
-      } else {
-        shineBtn.style.display = 'none';
-      }
+      if (shineBtn) shineBtn.style.display = 'none';
+      if (pdfBtn) pdfBtn.style.display = 'none';
+      if (ocrBtn) ocrBtn.style.display = 'none';
+      return;
+    }
+
+    /* hasOpenAI false бол: ocr, shine, pdf товчнуудыг disable болгох */
+    if (!hasOpenAI) {
+      const disableBtn = (btn, title) => {
+        if (!btn) return;
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+        btn.title = title + ' (OpenAI API key тохируулаагүй)';
+      };
+
+      disableBtn(ocrBtn, 'AI OCR');
+      disableBtn(shineBtn, 'AI Shine');
+      disableBtn(pdfBtn, 'PDF → HTML');
     }
   }
 
@@ -293,44 +307,7 @@ class moedit {
    * @private
    */
   _updateShineButtonState() {
-    const shineBtn = this.toolbar.querySelector('[data-action="shine"]');
-    if (!shineBtn) return;
-
-    /* shineUrl тохируулаагүй бол товч аль хэдийн нуугдсан байна */
-    const url = this.opts.shineUrl;
-    const isConfigured = url && url.trim() && url !== '/dashboard/ai/shine';
-    if (!isConfigured) return;
-
-    const html = this.getHTML();
-
-    /* HTML tag-үүдийг арилгаж цэвэр текст авах */
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    const textContent = tempDiv.textContent || tempDiv.innerText || '';
-    const hasText = !!textContent.trim();
-
-    /* Зураг байгаа эсэхийг шалгах */
-    const hasImages = tempDiv.querySelectorAll('img').length > 0;
-
-    /* Текст эсвэл зураг байвал хоосон биш */
-    const isEmpty = !hasText && !hasImages;
-
-    /* Контент хоосон бол disable */
-    shineBtn.disabled = isEmpty;
-    shineBtn.title = isEmpty
-      ? 'AI Shine: Эхлээд контент бичнэ үү'
-      : 'AI Shine - Контентыг Bootstrap 5-аар гоёжуулах';
-
-    /* Disabled үед бүрэн саарал, ойлгомжтой харагдах */
-    if (isEmpty) {
-      shineBtn.style.opacity = '0.4';
-      shineBtn.style.filter = 'grayscale(100%)';
-      shineBtn.style.cursor = 'not-allowed';
-    } else {
-      shineBtn.style.opacity = '1';
-      shineBtn.style.filter = 'none';
-      shineBtn.style.cursor = 'pointer';
-    }
+    /* Товчийг үргэлж идэвхтэй байлгах - контент хоосон эсэхийг _shine функц шалгана */
   }
 
   /**
@@ -465,9 +442,13 @@ class moedit {
       const textLength = this.editor.textContent.length;
       const cursorRatio = textLength > 0 ? cursorOffset / textLength : 0;
 
+      /* HTML контентыг авах */
       const html = this.editor.innerHTML;
-      this.source.value = this._formatHTML(html);
+      const formattedHtml = this._formatHTML(html);
+
+      /* Эхлээд textarea-г харуулах, дараа нь утга оноох (зарим browser-д шаардлагатай) */
       this.root.classList.add("is-source");
+      this.source.value = formattedHtml;
       this.source.focus();
 
       /* Source textarea дээр cursor байрлуулах */
@@ -483,7 +464,9 @@ class moedit {
       const sourceLength = this.source.value.length;
       const cursorRatio = sourceLength > 0 ? sourcePos / sourceLength : 0;
 
-      this.editor.innerHTML = this.source.value;
+      /* Source утгыг editor-т оноох (хоосон бол хоосон string) */
+      const sourceValue = this.source.value || '';
+      this.editor.innerHTML = sourceValue;
       this.root.classList.remove("is-source");
       this._focusEditor();
 
@@ -1539,7 +1522,7 @@ class moedit {
   }
 
   _formatHTML(html) {
-    if (!html || !html.trim()) return html;
+    if (!html || !html.trim()) return html || '';
 
     /* HTML-ийг indented format-тай болгох */
     let formatted = '';

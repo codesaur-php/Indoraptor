@@ -8,6 +8,124 @@
  */
 
 /* ============================================
+   Paste Handler - Clean HTML автоматаар
+   ============================================ */
+
+/**
+ * Paste event handler
+ * Clipboard-аас буулгахад HTML-ийг автоматаар цэвэрлэнэ
+ * @param {ClipboardEvent} e - Paste event
+ */
+moedit.prototype._handlePaste = function(e) {
+  const clipboardData = e.clipboardData || window.clipboardData;
+  if (!clipboardData) return;
+
+  /* Зураг байгаа эсэхийг шалгах */
+  const items = clipboardData.items;
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        /* Зураг байвал default paste-г зөвшөөрөх (upload хийгдэнэ) */
+        return;
+      }
+    }
+  }
+
+  /* HTML контент авах */
+  const html = clipboardData.getData('text/html');
+  const plainText = clipboardData.getData('text/plain');
+
+  /* HTML байвал цэвэрлэж оруулах */
+  if (html && html.trim()) {
+    e.preventDefault();
+
+    /* Clean HTML функц ашиглах */
+    const cleanedHtml = this._cleanToVanillaHTML(html);
+
+    /* Selection-д оруулах */
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+
+      /* Цэвэрлэсэн HTML оруулах */
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = cleanedHtml;
+
+      const fragment = document.createDocumentFragment();
+      let lastNode = null;
+      while (tempDiv.firstChild) {
+        lastNode = fragment.appendChild(tempDiv.firstChild);
+      }
+
+      range.insertNode(fragment);
+
+      /* Cursor-ийг төгсгөлд байрлуулах */
+      if (lastNode) {
+        const newRange = document.createRange();
+        newRange.setStartAfter(lastNode);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+
+      /* onChange дуудах */
+      if (typeof this.opts.onChange === 'function') {
+        this.opts.onChange(this.getHTML());
+      }
+    }
+    return;
+  }
+
+  /* Plain text байвал paragraph болгон оруулах */
+  if (plainText && plainText.trim()) {
+    e.preventDefault();
+
+    /* Мөр мөрөөр салгаж paragraph болгох */
+    const lines = plainText.split(/\r?\n/).filter(line => line.trim());
+    let resultHtml = '';
+
+    if (lines.length === 1) {
+      /* Нэг мөр бол text node болгох */
+      resultHtml = this._escapeHtml(lines[0]);
+    } else {
+      /* Олон мөр бол paragraph болгох */
+      resultHtml = lines.map(line => `<p>${this._escapeHtml(line)}</p>`).join('');
+    }
+
+    /* Selection-д оруулах */
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = resultHtml;
+
+      const fragment = document.createDocumentFragment();
+      let lastNode = null;
+      while (tempDiv.firstChild) {
+        lastNode = fragment.appendChild(tempDiv.firstChild);
+      }
+
+      range.insertNode(fragment);
+
+      if (lastNode) {
+        const newRange = document.createRange();
+        newRange.setStartAfter(lastNode);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+
+      if (typeof this.opts.onChange === 'function') {
+        this.opts.onChange(this.getHTML());
+      }
+    }
+  }
+};
+
+/* ============================================
    Link Dialog
    ============================================ */
 
@@ -278,15 +396,10 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
 
 moedit.prototype._showImageUploadDialog = function(savedRange) {
   const config = this.opts.imageUploadModal;
-  const ocrConfig = this.opts.ocrModal;
   const dialogId = 'moedit-image-dialog-' + Date.now();
   const dialog = document.createElement('div');
   dialog.id = dialogId;
   dialog.className = 'moedit-modal-overlay';
-
-  /* AI OCR товч харуулах эсэх (shineUrl тохируулсан бол) */
-  const shineUrl = this.opts.shineUrl;
-  const showOcrBtn = shineUrl && shineUrl.trim() && shineUrl !== '/dashboard/ai/shine';
 
   dialog.innerHTML = `
     <div class="moedit-modal">
@@ -305,9 +418,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
       </div>
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
-        ${showOcrBtn ? `<button type="button" class="moedit-modal-btn moedit-modal-btn-info moedit-modal-btn-disabled" id="${dialogId}-ocr" disabled>
-          <i class="bi bi-file-text"></i> AI OCR
-        </button>` : ''}
         <button type="button" class="moedit-modal-btn moedit-modal-btn-primary moedit-modal-btn-disabled" id="${dialogId}-ok" disabled>
           <i class="bi bi-upload"></i> ${config.uploadText}
         </button>
@@ -322,7 +432,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   const previewDiv = document.getElementById(`${dialogId}-preview`);
   const previewImg = document.getElementById(`${dialogId}-preview-img`);
   const okBtn = document.getElementById(`${dialogId}-ok`);
-  const ocrBtn = document.getElementById(`${dialogId}-ocr`);
   const cancelBtn = document.getElementById(`${dialogId}-cancel`);
 
   let selectedFile = null;
@@ -348,11 +457,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
 
       okBtn.disabled = false;
       okBtn.classList.remove('moedit-modal-btn-disabled');
-
-      if (ocrBtn) {
-        ocrBtn.disabled = false;
-        ocrBtn.classList.remove('moedit-modal-btn-disabled');
-      }
     }
   });
 
@@ -367,78 +471,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   };
   document.addEventListener('keydown', escHandler);
 
-  /* AI OCR товч */
-  if (ocrBtn) {
-    ocrBtn.addEventListener('click', async () => {
-      if (!base64Image) return;
-
-      /* Бүх товчнуудыг disable хийх */
-      isBusy = true;
-      ocrBtn.disabled = true;
-      okBtn.disabled = true;
-      cancelBtn.disabled = true;
-      browseBtn.disabled = true;
-      ocrBtn.innerHTML = `<i class="bi bi-hourglass-split"></i> ${ocrConfig.processingText}`;
-
-      try {
-        const response = await fetch(shineUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images: [base64Image], mode: 'vision' })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Сервер алдаа: ${response.status} ${response.statusText}`);
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('OCR API endpoint тохируулаагүй байна');
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success' && data.html) {
-          closeDialog();
-          document.removeEventListener('keydown', escHandler);
-
-          /* HTML контент оруулах */
-          this._ensureVisualMode();
-          this._focusEditor();
-
-          if (savedRange) {
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(savedRange);
-          }
-
-          document.execCommand('insertHTML', false, data.html);
-          this._emitChange();
-
-          if (this.opts.notify) {
-            this.opts.notify('success', ocrConfig.title, ocrConfig.successMessage);
-          }
-        } else {
-          throw new Error(data.message || ocrConfig.errorMessage);
-        }
-      } catch (err) {
-        /* Бүх товчнуудыг enable хийх */
-        isBusy = false;
-        ocrBtn.disabled = false;
-        okBtn.disabled = false;
-        cancelBtn.disabled = false;
-        browseBtn.disabled = false;
-        ocrBtn.innerHTML = `<i class="bi bi-file-text"></i> AI OCR`;
-
-        if (this.opts.notify) {
-          this.opts.notify('danger', ocrConfig.title, err.message || ocrConfig.errorMessage);
-        } else {
-          alert(err.message || ocrConfig.errorMessage);
-        }
-      }
-    });
-  }
-
   /* Upload товч */
   okBtn.addEventListener('click', () => {
     if (!selectedFile) return;
@@ -448,7 +480,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
     okBtn.disabled = true;
     cancelBtn.disabled = true;
     browseBtn.disabled = true;
-    if (ocrBtn) ocrBtn.disabled = true;
     okBtn.innerHTML = `<i class="bi bi-hourglass-split"></i> ${config.uploadingText}`;
 
     /* uploadImage функц эсвэл uploadUrl ашиглах */
@@ -479,7 +510,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
         okBtn.disabled = false;
         cancelBtn.disabled = false;
         browseBtn.disabled = false;
-        if (ocrBtn) ocrBtn.disabled = false;
         okBtn.classList.remove('moedit-modal-btn-disabled');
         okBtn.innerHTML = `<i class="bi bi-upload"></i> ${config.uploadText}`;
         if (this.opts.onUploadError) {
@@ -754,24 +784,6 @@ moedit.prototype._pasteText = function() {
     const cleanText = textarea.value.trim();
 
     if (cleanText) {
-      /* Текстийг HTML болгох (line break -> <br> эсвэл <p>) */
-      const paragraphs = cleanText.split(/\n\n+/);
-      let html = '';
-
-      if (paragraphs.length > 1) {
-        /* Олон paragraph байвал <p> tag ашиглах */
-        html = paragraphs.map(p => {
-          /* XSS-ээс хамгаалах: HTML escape хийх */
-          const escapedP = this._escapeHtml(p);
-          const lines = escapedP.split(/\n/).join('<br>');
-          return `<p style="margin-bottom:1rem">${lines}</p>`;
-        }).join('');
-      } else {
-        /* Ганц paragraph байвал <br> ашиглах */
-        /* XSS-ээс хамгаалах: HTML escape хийх */
-        html = this._escapeHtml(cleanText).split(/\n/).join('<br>');
-      }
-
       /* Editor-д focus хийж, selection сэргээх */
       this._focusEditor();
 
@@ -781,8 +793,8 @@ moedit.prototype._pasteText = function() {
         sel.addRange(savedRange);
       }
 
-      /* HTML оруулах */
-      document.execCommand('insertHTML', false, html);
+      /* Цэвэр текст оруулах - ямар ч HTML tag үүсгэхгүй */
+      document.execCommand('insertText', false, cleanText);
       this._emitChange();
     }
 
@@ -2552,6 +2564,211 @@ moedit.prototype._cleanNode = function(tempDiv) {
 };
 
 /* ============================================
+   AI OCR - Зураг → HTML Dialog
+   ============================================ */
+
+moedit.prototype._insertOcr = async function() {
+  /* Selection хадгалах */
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  const config = this.opts.ocrModal;
+  const shineUrl = this.opts.shineUrl;
+
+  /* Modal үүсгэх */
+  const dialogId = 'moedit-ocr-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal moedit-modal-lg">
+      <h5 class="moedit-modal-title"><i class="bi bi-file-text text-info"></i> ${config.title}</h5>
+      <p class="moedit-modal-desc">${config.description}</p>
+      <div class="moedit-modal-field">
+        <div class="moedit-modal-file-input">
+          <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="Зураг сонгоно уу...">
+          <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
+            <i class="bi bi-folder2-open"></i> Сонгох
+          </button>
+        </div>
+        <input type="file" id="${dialogId}-file" accept="image/*" style="display:none;">
+      </div>
+      <div class="ocr-preview" id="${dialogId}-preview" style="display:none; margin:10px 0; text-align:center;">
+        <img id="${dialogId}-preview-img" src="" style="max-width:100%; max-height:200px; border:1px solid var(--mo-border); border-radius:var(--mo-radius);">
+      </div>
+      <div class="ocr-status" id="${dialogId}-status" style="display:none;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+          <span id="${dialogId}-status-text">${config.processingText}</span>
+        </div>
+      </div>
+      <div class="ocr-result" id="${dialogId}-result" style="display:none; max-height:300px; overflow:auto; border:1px solid var(--mo-border); border-radius:var(--mo-radius); padding:10px; margin-top:10px; background:var(--mo-bg);"></div>
+      <div class="ocr-error" id="${dialogId}-error" style="display:none; color:#dc3545; margin-top:10px;"></div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary btn-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-info moedit-modal-btn-disabled btn-convert" disabled>
+          <i class="bi bi-file-text"></i> ${config.confirmText}
+        </button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-success btn-confirm" style="display:none;">
+          <i class="bi bi-check-lg"></i> Оруулах
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const fileInput = dialog.querySelector(`#${dialogId}-file`);
+  const filenameInput = dialog.querySelector(`#${dialogId}-filename`);
+  const browseBtn = dialog.querySelector(`#${dialogId}-browse`);
+  const previewEl = dialog.querySelector(`#${dialogId}-preview`);
+  const previewImg = dialog.querySelector(`#${dialogId}-preview-img`);
+  const statusEl = dialog.querySelector(`#${dialogId}-status`);
+  const statusTextEl = dialog.querySelector(`#${dialogId}-status-text`);
+  const resultEl = dialog.querySelector(`#${dialogId}-result`);
+  const errorEl = dialog.querySelector(`#${dialogId}-error`);
+  const convertBtn = dialog.querySelector('.btn-convert');
+  const confirmBtn = dialog.querySelector('.btn-confirm');
+  const cancelBtn = dialog.querySelector('.btn-cancel');
+
+  let selectedFile = null;
+  let newHtml = null;
+  let isBusy = false;
+
+  const closeDialog = () => dialog.remove();
+
+  cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
+  dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape' && !isBusy) {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+
+  /* Зураг файл сонгоход */
+  fileInput.addEventListener('change', function() {
+    if (!this.files || !this.files[0]) return;
+
+    selectedFile = this.files[0];
+    filenameInput.value = selectedFile.name;
+    errorEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    convertBtn.style.display = 'inline-block';
+    confirmBtn.style.display = 'none';
+
+    /* Preview харуулах */
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      previewEl.style.display = 'block';
+    };
+    reader.readAsDataURL(selectedFile);
+
+    /* Convert товч идэвхжүүлэх */
+    convertBtn.disabled = false;
+    convertBtn.classList.remove('moedit-modal-btn-disabled');
+  });
+
+  /* Convert товч дарахад */
+  convertBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    isBusy = true;
+    convertBtn.disabled = true;
+    cancelBtn.disabled = true;
+    browseBtn.disabled = true;
+    statusEl.style.display = 'block';
+    errorEl.style.display = 'none';
+    resultEl.style.display = 'none';
+
+    try {
+      /* Зургийг base64 болгох */
+      const base64Image = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(selectedFile);
+      });
+
+      /* OpenAI Vision API руу илгээх */
+      const response = await fetch(shineUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'vision',
+          images: [base64Image]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI OCR алдаа: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success' && data.html) {
+        newHtml = data.html;
+
+        resultEl.innerHTML = newHtml;
+        resultEl.style.display = 'block';
+        previewEl.style.display = 'none';
+        convertBtn.style.display = 'none';
+        confirmBtn.style.display = 'inline-block';
+        isBusy = false;
+        cancelBtn.disabled = false;
+
+        if (this.opts.notify) {
+          this.opts.notify('success', config.title, config.successMessage);
+        }
+      } else if (data.status === 'error') {
+        throw new Error(data.message || 'AI OCR алдаа');
+      } else {
+        throw new Error('Хүлээгдээгүй хариу ирлээ');
+      }
+    } catch (err) {
+      errorEl.textContent = err.message || config.errorMessage;
+      errorEl.style.display = 'block';
+      isBusy = false;
+      convertBtn.disabled = false;
+      cancelBtn.disabled = false;
+      browseBtn.disabled = false;
+
+      if (this.opts.notify) {
+        this.opts.notify('danger', config.title, err.message || config.errorMessage);
+      }
+    } finally {
+      statusEl.style.display = 'none';
+    }
+  });
+
+  /* Confirm товч - HTML оруулах */
+  confirmBtn.addEventListener('click', () => {
+    if (newHtml) {
+      this._ensureVisualMode();
+      this._focusEditor();
+
+      if (savedRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+
+      document.execCommand('insertHTML', false, newHtml);
+      this._emitChange();
+    }
+
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+  });
+};
+
+/* ============================================
    PDF to HTML Dialog
    ============================================ */
 
@@ -2580,7 +2797,7 @@ moedit.prototype._insertPdf = async function() {
 
   /* AI OCR боломжтой эсэх (shineUrl тохируулсан бол) */
   const shineUrl = this.opts.shineUrl;
-  const hasAiOcrSupport = shineUrl && shineUrl.trim() && shineUrl !== '/dashboard/ai/shine';
+  const hasAiOcrSupport = shineUrl && shineUrl.trim() && shineUrl.trim();
 
   /* PDF → HTML зөвхөн AI OCR ашиглана */
   if (!hasAiOcrSupport) {
@@ -2614,6 +2831,20 @@ moedit.prototype._insertPdf = async function() {
       <div class="pdf-info" id="${dialogId}-info" style="display:none; margin:10px 0; padding:10px; background:var(--mo-bg); border:1px solid var(--mo-border); border-radius:var(--mo-radius);">
         <small class="text-muted"></small>
       </div>
+      <div class="pdf-pages-container" id="${dialogId}-pages-container" style="display:none; margin:10px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <small class="text-muted">Хуудас сонгох:</small>
+          <div>
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-sm moedit-modal-btn-secondary" id="${dialogId}-select-all">Бүгдийг</button>
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-sm moedit-modal-btn-secondary" id="${dialogId}-select-none">Арилгах</button>
+          </div>
+        </div>
+        <div class="pdf-pages-grid" id="${dialogId}-pages" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; max-height:300px; overflow-y:auto; padding:5px;"></div>
+        <div class="pdf-pages-loading" id="${dialogId}-pages-loading" style="display:none; text-align:center; padding:20px;">
+          <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+          <span class="ms-2">Хуудсуудыг ачаалж байна...</span>
+        </div>
+      </div>
       <div class="pdf-status" id="${dialogId}-status" style="display:none;">
         <div style="display:flex; align-items:center; gap:0.5rem;">
           <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
@@ -2642,6 +2873,11 @@ moedit.prototype._insertPdf = async function() {
   const filenameInput = dialog.querySelector(`#${dialogId}-filename`);
   const browseBtn = dialog.querySelector(`#${dialogId}-browse`);
   const infoEl = dialog.querySelector(`#${dialogId}-info`);
+  const pagesContainerEl = dialog.querySelector(`#${dialogId}-pages-container`);
+  const pagesGridEl = dialog.querySelector(`#${dialogId}-pages`);
+  const pagesLoadingEl = dialog.querySelector(`#${dialogId}-pages-loading`);
+  const selectAllBtn = dialog.querySelector(`#${dialogId}-select-all`);
+  const selectNoneBtn = dialog.querySelector(`#${dialogId}-select-none`);
   const statusEl = dialog.querySelector(`#${dialogId}-status`);
   const statusTextEl = dialog.querySelector(`#${dialogId}-status-text`);
   const progressEl = dialog.querySelector(`#${dialogId}-progress`);
@@ -2657,6 +2893,8 @@ moedit.prototype._insertPdf = async function() {
   let selectedFile = null;
   let newHtml = null;
   let isBusy = false;
+  let pdfDoc = null;  /* Ачаалсан PDF document */
+  let selectedPages = new Set();  /* Сонгосон хуудсууд */
 
   const closeDialog = () => dialog.remove();
 
@@ -2673,13 +2911,150 @@ moedit.prototype._insertPdf = async function() {
 
   browseBtn.addEventListener('click', () => fileInput.click());
 
+  /**
+   * Хуудасны thumbnail үүсгэх
+   */
+  const renderPageThumbnail = async (page, pageNum) => {
+    const scale = 0.3;  /* Жижиг thumbnail */
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    }).promise;
+
+    return canvas.toDataURL('image/jpeg', 0.7);
+  };
+
+  /**
+   * Хуудсуудын preview харуулах
+   */
+  const loadPdfPages = async (file) => {
+    pagesContainerEl.style.display = 'block';
+    pagesLoadingEl.style.display = 'block';
+    pagesGridEl.innerHTML = '';
+    selectedPages.clear();
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/',
+        cMapPacked: true
+      });
+
+      pdfDoc = await loadingTask.promise;
+      const totalPages = pdfDoc.numPages;
+
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const thumbnail = await renderPageThumbnail(page, pageNum);
+
+        /* Хуудасны card үүсгэх */
+        const pageCard = document.createElement('div');
+        pageCard.className = 'pdf-page-card';
+        pageCard.dataset.page = pageNum;
+        pageCard.style.cssText = 'position:relative; border:2px solid var(--mo-border); border-radius:var(--mo-radius); overflow:hidden; cursor:pointer; transition:all 0.2s;';
+        pageCard.innerHTML = `
+          <img src="${thumbnail}" alt="Хуудас ${pageNum}" style="width:100%; display:block;">
+          <div class="pdf-page-overlay" style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(220,53,69,0.3); display:none;"></div>
+          <div class="pdf-page-check" style="position:absolute; top:5px; right:5px; width:20px; height:20px; background:#dc3545; border-radius:50%; display:none; align-items:center; justify-content:center;">
+            <i class="bi bi-check" style="color:white; font-size:14px;"></i>
+          </div>
+          <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:white; text-align:center; padding:2px; font-size:11px;">
+            ${pageNum}
+          </div>
+        `;
+
+        /* Click event - сонгох/сонголт цуцлах */
+        pageCard.addEventListener('click', () => {
+          const isSelected = selectedPages.has(pageNum);
+          if (isSelected) {
+            selectedPages.delete(pageNum);
+            pageCard.querySelector('.pdf-page-overlay').style.display = 'none';
+            pageCard.querySelector('.pdf-page-check').style.display = 'none';
+            pageCard.style.borderColor = 'var(--mo-border)';
+          } else {
+            selectedPages.add(pageNum);
+            pageCard.querySelector('.pdf-page-overlay').style.display = 'block';
+            pageCard.querySelector('.pdf-page-check').style.display = 'flex';
+            pageCard.style.borderColor = '#dc3545';
+          }
+          updateConvertButton();
+        });
+
+        pagesGridEl.appendChild(pageCard);
+
+        /* Бүх хуудсыг анхнаасаа сонгох */
+        selectedPages.add(pageNum);
+        pageCard.querySelector('.pdf-page-overlay').style.display = 'block';
+        pageCard.querySelector('.pdf-page-check').style.display = 'flex';
+        pageCard.style.borderColor = '#dc3545';
+      }
+
+      updateConvertButton();
+    } catch (err) {
+      errorEl.textContent = 'PDF ачаалахад алдаа: ' + err.message;
+      errorEl.style.display = 'block';
+    } finally {
+      pagesLoadingEl.style.display = 'none';
+    }
+  };
+
+  /**
+   * Convert товчны төлөв шинэчлэх
+   */
+  const updateConvertButton = () => {
+    if (selectedPages.size > 0) {
+      convertBtn.disabled = false;
+      convertBtn.classList.remove('moedit-modal-btn-disabled');
+      convertBtn.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> ${config.title} (${selectedPages.size} хуудас)`;
+    } else {
+      convertBtn.disabled = true;
+      convertBtn.classList.add('moedit-modal-btn-disabled');
+      convertBtn.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> ${config.title}`;
+    }
+  };
+
+  /**
+   * Бүх хуудсыг сонгох/цуцлах
+   */
+  const selectAllPages = (select) => {
+    const cards = pagesGridEl.querySelectorAll('.pdf-page-card');
+    cards.forEach(card => {
+      const pageNum = parseInt(card.dataset.page);
+      if (select) {
+        selectedPages.add(pageNum);
+        card.querySelector('.pdf-page-overlay').style.display = 'block';
+        card.querySelector('.pdf-page-check').style.display = 'flex';
+        card.style.borderColor = '#dc3545';
+      } else {
+        selectedPages.delete(pageNum);
+        card.querySelector('.pdf-page-overlay').style.display = 'none';
+        card.querySelector('.pdf-page-check').style.display = 'none';
+        card.style.borderColor = 'var(--mo-border)';
+      }
+    });
+    updateConvertButton();
+  };
+
+  selectAllBtn.addEventListener('click', () => selectAllPages(true));
+  selectNoneBtn.addEventListener('click', () => selectAllPages(false));
+
   /* PDF файл сонгоход */
-  fileInput.addEventListener('change', function() {
+  fileInput.addEventListener('change', async function() {
     if (!this.files || !this.files[0]) return;
 
     selectedFile = this.files[0];
     filenameInput.value = selectedFile.name;
     errorEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    convertBtn.style.display = 'inline-block';
+    confirmBtn.style.display = 'none';
 
     /* Файлын хэмжээг харуулах */
     const sizeKB = (selectedFile.size / 1024).toFixed(1);
@@ -2688,9 +3063,8 @@ moedit.prototype._insertPdf = async function() {
     infoEl.querySelector('small').textContent = `${selectedFile.name} (${sizeText})`;
     infoEl.style.display = 'block';
 
-    /* Convert товч идэвхжүүлэх */
-    convertBtn.disabled = false;
-    convertBtn.classList.remove('moedit-modal-btn-disabled');
+    /* Хуудсуудыг preview харуулах */
+    await loadPdfPages(selectedFile);
   });
 
   /**
@@ -3030,28 +3404,27 @@ moedit.prototype._insertPdf = async function() {
 
   /**
    * AI OCR ашиглан текст задлах (OpenAI Vision)
+   * Зөвхөн сонгосон хуудсуудыг боловсруулна
    */
-  const extractTextWithAiOcr = async (file) => {
-    const arrayBuffer = await file.arrayBuffer();
+  const extractTextWithAiOcr = async () => {
+    if (!pdfDoc) {
+      throw new Error('PDF ачаалаагүй байна');
+    }
 
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/cmaps/',
-      cMapPacked: true
-    });
-
-    const pdf = await loadingTask.promise;
-    const totalPages = pdf.numPages;
+    /* Сонгосон хуудсуудыг эрэмбэлэх */
+    const pagesToProcess = Array.from(selectedPages).sort((a, b) => a - b);
+    const totalSelected = pagesToProcess.length;
     const htmlParts = [];
 
     progressEl.style.display = 'block';
 
-    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-      const progress = Math.round((pageNum / totalPages) * 100);
+    for (let i = 0; i < totalSelected; i++) {
+      const pageNum = pagesToProcess[i];
+      const progress = Math.round(((i + 1) / totalSelected) * 100);
       progressBar.style.width = progress + '%';
-      statusTextEl.textContent = `AI OCR боловсруулж байна... (${pageNum}/${totalPages})`;
+      statusTextEl.textContent = `AI OCR боловсруулж байна... (${i + 1}/${totalSelected} - хуудас ${pageNum})`;
 
-      const page = await pdf.getPage(pageNum);
+      const page = await pdfDoc.getPage(pageNum);
       const canvas = await renderPageToCanvas(page, 2);
       const base64Image = canvas.toDataURL('image/png');
 
@@ -3071,7 +3444,7 @@ moedit.prototype._insertPdf = async function() {
       const data = await response.json();
 
       if (data.status === 'success' && data.html) {
-        if (totalPages > 1) {
+        if (totalSelected > 1) {
           htmlParts.push(`<!-- Хуудас ${pageNum} -->\n${data.html}`);
         } else {
           htmlParts.push(data.html);
@@ -3082,7 +3455,7 @@ moedit.prototype._insertPdf = async function() {
     }
 
     return {
-      pages: totalPages,
+      pages: totalSelected,
       html: htmlParts.join('\n\n<hr class="my-4">\n\n')
     };
   };
@@ -3103,10 +3476,11 @@ moedit.prototype._insertPdf = async function() {
     resultEl.style.display = 'none';
 
     statusTextEl.textContent = 'AI OCR ашиглан боловсруулж байна...';
+    pagesContainerEl.style.display = 'none';  /* Хуудасны сонголтыг нуух */
 
     try {
-      /* AI OCR - OpenAI Vision (зөвхөн энэ арга ашиглана) */
-      const result = await extractTextWithAiOcr(selectedFile);
+      /* AI OCR - OpenAI Vision (зөвхөн сонгосон хуудсуудыг) */
+      const result = await extractTextWithAiOcr();
       const pageCount = result.pages;
       newHtml = result.html;
 
@@ -3129,10 +3503,12 @@ moedit.prototype._insertPdf = async function() {
     } catch (err) {
       errorEl.textContent = err.message || config.errorMessage;
       errorEl.style.display = 'block';
+      pagesContainerEl.style.display = 'block';  /* Хуудасны сонголтыг дахин харуулах */
       isBusy = false;
       convertBtn.disabled = false;
       cancelBtn.disabled = false;
       browseBtn.disabled = false;
+      updateConvertButton();
 
       if (this.opts.notify) {
         this.opts.notify('danger', config.title, err.message || config.errorMessage);

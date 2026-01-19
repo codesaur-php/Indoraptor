@@ -386,19 +386,27 @@ PROMPT;
             } else {
                 // HTML mode: Bootstrap 5 гоёжуулалт
                 $prompt = <<<PROMPT
-Доорх HTML-д Bootstrap 5 class нэм. Агуулгыг өөрчлөхгүй.
+Доорх HTML контентыг Bootstrap 5 компонентууд ашиглан илүү гоё, мэргэжлийн түвшинд харагдуулах болгож өгнө үү.
 
 Заавар:
-1. table → class="table table-striped table-hover table-bordered", div.table-responsive-т ор
-2. img → class="img-fluid"
-3. Агуулга, текстийг ӨӨРЧЛӨХГҮЙ, зөвхөн class нэм
+1. Контентын бүтэц, агуулгыг шинжилж, тохирох Bootstrap компонент болго:
+   - Жагсаалт мэдээлэл → card эсвэл list-group
+   - Харьцуулалт, олон багана мэдээлэл → table (table-striped table-hover table-bordered, div.table-responsive-т ор)
+   - Асуулт-хариулт, FAQ → accordion
+   - Алхам алхмаар заавар → list-group эсвэл card
+   - Онцлох мэдээлэл → alert эсвэл callout
+   - Холбоотой зүйлсийн жагсаалт → row/col grid
+2. img → class="img-fluid rounded"
+3. Текст агуулгыг ӨӨРЧЛӨХГҮЙ, зөвхөн HTML бүтцийг сайжруул
 4. doctype, html, head, body, script TAG НЭМЭХГҮЙ
+5. Хэт их биш, зөвхөн тохирох хэсэгт компонент ашигла
+6. Хэрэв контент энгийн текст бол class нэмэхээс өөр юм хийхгүй
 
 ---КОНТЕНТ ЭХЛЭЛ---
 $html
 ---КОНТЕНТ ТӨГСГӨЛ---
 
-Дээрх КОНТЕНТ хэсгийг л Bootstrap class нэмж буцаа.
+Дээрх КОНТЕНТ хэсгийг Bootstrap 5-аар гоёжуулж буцаа. Зөвхөн HTML буцаа, тайлбар бичихгүй.
 PROMPT;
                 $response = $this->callOpenAI($apiKey, $prompt, $html, false);
             }

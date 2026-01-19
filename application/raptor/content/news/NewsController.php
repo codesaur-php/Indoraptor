@@ -241,7 +241,11 @@ class NewsController extends FileController
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/news-insert.html',
-                    ['table' => $table, 'max_file_size' => $this->getMaximumFileUploadSize()]
+                    [
+                        'table' => $table,
+                        'max_file_size' => $this->getMaximumFileUploadSize(),
+                        'hasOpenAI' => !empty($_ENV['INDO_OPENAI_API_KEY'] ?? \getenv('INDO_OPENAI_API_KEY'))
+                    ]
                 );
                 $dashboard->set('title', $this->text('add-record') . ' | News');
                 $dashboard->render();

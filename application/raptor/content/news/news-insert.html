@@ -183,10 +183,13 @@
                         <button type="button" class="moedit-btn" data-action="pasteText" title="Paste Text"><i class="bi bi-clipboard-plus"></i></button>
                         <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-image"></i></button>
                         <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
+                        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
                         <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
                         <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
                         <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
-                        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
+                        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зургийг HTML болгох"><i class="bi bi-file-text"></i></button>
+                        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
+                        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
                     </div>
                     <div class="moedit-sep"></div>
                     <div class="moedit-group">
@@ -198,13 +201,6 @@
                         <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
                         <button type="button" class="moedit-btn" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
                         <button type="button" class="moedit-btn" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
-                    </div>
-                    <div class="moedit-sep"></div>
-                    <div class="moedit-group">
-                        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
-                        <button type="button" class="moedit-btn text-info" data-action="clean" title="AI Clean - Vanilla HTML болгох"><i class="bi bi-magic"></i></button>
-                        <button type="button" class="moedit-btn text-success" data-action="vanilla" title="Clean HTML - Цэвэр HTML болгох (offline)"><i class="bi bi-brush"></i></button>
-                        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
                     </div>
                 </div>
                 <div class="moedit-body">
@@ -441,6 +437,7 @@
         moeditInstance = new moedit(editorWrapper, {
             onChange: (html) => content.value = html,
             shineUrl: `{{ 'moedit-ai-shine'|link }}`,
+            hasOpenAI: {{ hasOpenAI ? 'true' : 'false' }},
             uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`
         });
 
