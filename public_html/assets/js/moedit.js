@@ -59,13 +59,27 @@ class moedit {
   constructor(root, opts = {}) {
     if (!root) throw new Error("moedit: root element is required");
 
-    this.root = root;
-
     /** @private */
     this._boundHandlers = {};
-    this.editor = root.querySelector(".moedit-editor");
-    this.source = root.querySelector(".moedit-source");
-    this.toolbar = root.querySelector(".moedit-toolbar");
+
+    /* Хэрэв textarea дамжуулсан бол бүтэц автоматаар үүсгэх */
+    if (root.tagName === 'TEXTAREA') {
+      this._targetTextarea = root;
+      this.root = this._createWrapper(root, opts);
+    } else {
+      this.root = root;
+      this._targetTextarea = null;
+    }
+
+    this.editor = this.root.querySelector(".moedit-editor");
+    this.source = this.root.querySelector(".moedit-source");
+    this.toolbar = this.root.querySelector(".moedit-toolbar");
+
+    /* Toolbar байхгүй бол автоматаар үүсгэх */
+    if (!this.toolbar) {
+      this._createToolbar();
+      this.toolbar = this.root.querySelector(".moedit-toolbar");
+    }
 
     this.isSource = false;
 
@@ -143,17 +157,6 @@ class moedit {
         confirmText: 'Шинэчлэх',
         cancelText: 'Болих'
       },
-      /* Clean modal тохиргоо */
-      cleanModal: {
-        title: 'AI Clean',
-        description: 'Контентыг цэвэр vanilla HTML болгоно. Framework-гүй, хаана ч ажиллана.',
-        processingText: 'Цэвэрлэж байна...',
-        successMessage: 'HTML амжилттай цэвэрлэгдлээ!',
-        errorMessage: 'Алдаа гарлаа',
-        emptyMessage: 'Контент хоосон байна',
-        confirmText: 'Шинэчлэх',
-        cancelText: 'Болих'
-      },
       /* OCR modal тохиргоо */
       ocrModal: {
         title: 'AI OCR',
@@ -163,17 +166,6 @@ class moedit {
         errorMessage: 'Алдаа гарлаа',
         noImageMessage: 'Зураг олдсонгүй. OCR ашиглахын тулд зураг оруулна уу.',
         confirmText: 'Хөрвүүлэх',
-        cancelText: 'Болих'
-      },
-      /* Vanilla HTML modal тохиргоо (offline clean & beautify) */
-      vanillaModal: {
-        title: 'Clean HTML',
-        description: 'Контентыг цэвэр vanilla HTML болгоно. Framework class устгаж, inline style ашиглана. AI ашиглахгүй, локал ажиллана.',
-        processingText: 'Цэвэрлэж байна...',
-        successMessage: 'HTML амжилттай цэвэрлэгдлээ!',
-        errorMessage: 'Алдаа гарлаа',
-        emptyMessage: 'Контент хоосон байна',
-        confirmText: 'Шинэчлэх',
         cancelText: 'Болих'
       },
       /* PDF modal тохиргоо */
@@ -240,13 +232,11 @@ class moedit {
 
       removeFormat: { type: "cmd", cmd: "removeFormat" },
 
-      print:     { type: "fn", fn: () => this._print() },
+      print:      { type: "fn", fn: () => this._print() },
       source:     { type: "fn", fn: () => this.toggleSource() },
       fullscreen: { type: "fn", fn: () => this.toggleFullscreen() },
       shine:      { type: "fn", fn: () => this._shine() },
-      clean:      { type: "fn", fn: () => this._clean() },
-      vanilla:    { type: "fn", fn: () => this._vanilla() },
-      ocr:        { type: "fn", fn: () => this._insertOcr() },
+      ocr:        { type: "fn", fn: () => this._ocr() },
       pdf:        { type: "fn", fn: () => this._insertPdf() },
     };
 
@@ -627,6 +617,143 @@ class moedit {
   }
 
   /* ---------------- internals ---------------- */
+
+  /**
+   * Textarea-аас editor wrapper бүтэц үүсгэх
+   * @private
+   * @param {HTMLTextAreaElement} textarea - Эх textarea element
+   * @param {Object} opts - Тохиргоо
+   * @returns {HTMLElement} Үүсгэсэн wrapper element
+   */
+  _createWrapper(textarea, opts) {
+    /* Placeholder авах */
+    const placeholder = opts.placeholder || textarea.placeholder || 'Агуулгаа энд бичнэ үү...';
+
+    /* Анхны утга авах */
+    const initialContent = textarea.value || '';
+
+    /* Wrapper үүсгэх */
+    const wrapper = document.createElement('div');
+    wrapper.className = 'moedit';
+
+    /* ID хуулах (хэрэв байвал) */
+    if (textarea.id) {
+      wrapper.id = textarea.id + '_wrapper';
+    }
+
+    wrapper.innerHTML = `
+      <div class="moedit-body">
+        <div class="moedit-editor" contenteditable="true" data-placeholder="${this._escapeAttr(placeholder)}">${initialContent}</div>
+        <textarea class="moedit-source">${this._escapeHtml(initialContent)}</textarea>
+      </div>
+    `;
+
+    /* Textarea-г нууж, wrapper-ийн дараа байрлуулах */
+    textarea.style.display = 'none';
+    textarea.parentNode.insertBefore(wrapper, textarea);
+
+    return wrapper;
+  }
+
+  /**
+   * HTML attribute escape хийх
+   * @private
+   * @param {string} text - Escape хийх текст
+   * @returns {string} Escaped текст
+   */
+  _escapeAttr(text) {
+    if (!text) return '';
+    return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Toolbar автоматаар үүсгэх
+   * @private
+   */
+  _createToolbar() {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'moedit-toolbar';
+    toolbar.innerHTML = `
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="bold" title="Bold (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
+        <button type="button" class="moedit-btn" data-action="italic" title="Italic (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
+        <button type="button" class="moedit-btn" data-action="underline" title="Underline (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
+        <button type="button" class="moedit-btn" data-action="strike" title="Strikethrough"><i class="bi bi-type-strikethrough"></i></button>
+        <button type="button" class="moedit-btn" data-action="subscript" title="Subscript"><i class="bi bi-type"></i><sub>x</sub></button>
+        <button type="button" class="moedit-btn" data-action="superscript" title="Superscript"><i class="bi bi-type"></i><sup>x</sup></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <select class="moedit-select" data-action="heading" title="Heading">
+          <option value="p" selected>Paragraph</option>
+          <option value="h1">H1 - Гарчиг</option>
+          <option value="h2">H2 - Дэд гарчиг</option>
+          <option value="h3">H3</option>
+          <option value="h4">H4</option>
+          <option value="h5">H5</option>
+          <option value="h6">H6</option>
+          <option value="pre">Preformatted</option>
+          <option value="blockquote">Quote</option>
+        </select>
+        <select class="moedit-select" data-action="fontSize" title="Font Size">
+          <option value="3" selected>Default</option>
+          <option value="1">1 - Жижиг</option>
+          <option value="2">2</option>
+          <option value="3">3 - Хэвийн</option>
+          <option value="4">4</option>
+          <option value="5">5 - Том</option>
+          <option value="6">6</option>
+          <option value="7">7 - Хамгийн том</option>
+        </select>
+        <input type="color" class="moedit-color" data-action="foreColor" title="Font Color" value="#000000">
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="justifyLeft" title="Align Left"><i class="bi bi-text-left"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyCenter" title="Align Center"><i class="bi bi-text-center"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyRight" title="Align Right"><i class="bi bi-text-right"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyFull" title="Justify"><i class="bi bi-justify"></i></button>
+        <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-right"></i></button>
+        <button type="button" class="moedit-btn" data-action="indent" title="Indent"><i class="bi bi-text-indent-left"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="removeFormat" title="Remove Format"><i class="bi bi-eraser"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="ul" title="Unordered List"><i class="bi bi-list-ul"></i></button>
+        <button type="button" class="moedit-btn" data-action="ol" title="Ordered List"><i class="bi bi-list-ol"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="pasteText" title="Paste Text"><i class="bi bi-clipboard-plus"></i></button>
+        <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-image"></i></button>
+        <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
+        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
+        <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
+        <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
+        <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
+        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зургийг HTML болгох"><i class="bi bi-file-text"></i></button>
+        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
+        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="undo" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
+        <button type="button" class="moedit-btn" data-action="redo" title="Redo (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
+        <button type="button" class="moedit-btn" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
+        <button type="button" class="moedit-btn" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
+      </div>
+    `;
+
+    /* Toolbar-ийг root element-ийн эхэнд нэмэх */
+    this.root.insertBefore(toolbar, this.root.firstChild);
+  }
 
   /**
    * Event listener-үүдийг холбох
@@ -1498,8 +1625,15 @@ class moedit {
     /* Shine товчний төлвийг шинэчлэх */
     this._updateShineButtonState();
 
+    const html = this.getHTML();
+
+    /* Target textarea-г sync хийх */
+    if (this._targetTextarea) {
+      this._targetTextarea.value = html;
+    }
+
     if (typeof this.opts.onChange === "function") {
-      this.opts.onChange(this.getHTML());
+      this.opts.onChange(html);
     }
   }
 

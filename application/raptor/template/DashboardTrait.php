@@ -339,16 +339,18 @@ trait DashboardTrait
                 }
 
                 $prompt = <<<PROMPT
-Чиний даалгавар: Хавсаргасан ЗУРАГ дээрх текстийг уншаад HTML болгох.
+Чиний даалгавар: Хавсаргасан ЗУРАГ дээрх текстийг уншаад ЦЭВЭР HTML болгох.
 
 Заавар:
 1. Зөвхөн ЗУРАГ дээрх текстийг унш, энэ prompt-ийн текстийг БУС
-2. Хүснэгт байвал: <table class="table table-striped table-hover table-bordered">
+2. Хүснэгт байвал: <table border="1"> ашигла (CSS class ХЭРЭГЛЭХГҮЙ)
 3. Жагсаалт байвал: <ul> эсвэл <ol>
 4. Гарчиг байвал: <h1>-<h6> ашигла
-5. Зөвхөн контент HTML буцаа (doctype, html, head, body, script TAG ХЭРЭГГҮЙ)
+5. Параграф: <p> tag ашигла
+6. CSS class, style attribute ОГТХОН ХЭРЭГЛЭХГҮЙ - зөвхөн цэвэр семантик HTML
+7. doctype, html, head, body, script TAG ХЭРЭГГҮЙ
 
-АНХААРУУЛГА: Дээрх заавар бол ЧИ ДАГАХ ЗҮЙЛ, контент биш! Зөвхөн ЗУРАГ дээрх текстийг HTML болго.
+АНХААРУУЛГА: Дээрх заавар бол ЧИ ДАГАХ ЗҮЙЛ, контент биш! Зөвхөн ЗУРАГ дээрх текстийг ЦЭВЭР HTML болго.
 PROMPT;
 
                 // Зураг тус бүрийг тусад нь боловсруулж, үр дүнг нэгтгэх
@@ -361,28 +363,6 @@ PROMPT;
                 }
 
                 $response = \implode("\n\n", $results);
-            } elseif ($mode === 'clean') {
-                // Clean mode: Vanilla HTML (framework-гүй, хаана ч ажиллах)
-                $prompt = <<<PROMPT
-Доорх HTML-г цэвэр, семантик HTML болго. Framework class ХЭРЭГЛЭХГҮЙ.
-
-Заавар:
-1. Bootstrap, Tailwind гэх мэт framework class-уудыг БҮГДИЙГ УСТГА
-2. Зөвхөн inline style ашигла (style="...")
-3. Хүснэгтэд: style="width:100%; border-collapse:collapse;" болон cell-д border, padding нэм
-4. Зургийг: style="max-width:100%; height:auto;"
-5. Текст, агуулгыг ӨӨРЧЛӨХГҮЙ
-6. Семантик HTML tag ашигла (article, section, header, footer, nav гэх мэт)
-7. doctype, html, head, body, script TAG НЭМЭХГҮЙ
-8. Зөвхөн контент HTML буцаа
-
----КОНТЕНТ ЭХЛЭЛ---
-$html
----КОНТЕНТ ТӨГСГӨЛ---
-
-Дээрх КОНТЕНТ хэсгийг цэвэр vanilla HTML болгож буцаа.
-PROMPT;
-                $response = $this->callOpenAI($apiKey, $prompt, $html, false);
             } else {
                 // HTML mode: Bootstrap 5 гоёжуулалт
                 $prompt = <<<PROMPT
@@ -391,7 +371,7 @@ PROMPT;
 Заавар:
 1. Контентын бүтэц, агуулгыг шинжилж, тохирох Bootstrap компонент болго:
    - Жагсаалт мэдээлэл → card эсвэл list-group
-   - Харьцуулалт, олон багана мэдээлэл → table (table-striped table-hover table-bordered, div.table-responsive-т ор)
+   - Харьцуулалт, олон багана мэдээлэл → table (table-striped table-hover table-bordered)
    - Асуулт-хариулт, FAQ → accordion
    - Алхам алхмаар заавар → list-group эсвэл card
    - Онцлох мэдээлэл → alert эсвэл callout
@@ -408,7 +388,7 @@ $html
 
 Дээрх КОНТЕНТ хэсгийг Bootstrap 5-аар гоёжуулж буцаа. Зөвхөн HTML буцаа, тайлбар бичихгүй.
 PROMPT;
-                $response = $this->callOpenAI($apiKey, $prompt, $html, false);
+                $response = $this->callOpenAI($apiKey, $prompt);
             }
             $this->respondJSON([
                 'status' => 'success',
@@ -423,44 +403,19 @@ PROMPT;
     }
 
     /**
-     * OpenAI API дуудах хэлпер функц (Vision дэмжлэгтэй).
+     * OpenAI API дуудах хэлпер функц.
      *
      * @param string $apiKey OpenAI API түлхүүр
      * @param string $prompt Хүсэлтийн текст
-     * @param string $html Анхны HTML (зураг илрүүлэхэд)
-     * @param bool $useVision Vision mode идэвхжүүлэх эсэх
      * @return string AI-ийн хариу
      * @throws \Exception API алдаа гарвал
      */
-    private function callOpenAI(string $apiKey, string $prompt, string $html = '', bool $useVision = false): string
+    private function callOpenAI(string $apiKey, string $prompt): string
     {
-        // Vision mode байвал зургийн URL-үүд олох
-        $imageUrls = $useVision ? $this->extractImageUrls($html) : [];
-
-        // Vision mode бөгөөд зураг олдвол gpt-4o, үгүй бол gpt-4o-mini
-        $model = ($useVision && !empty($imageUrls)) ? 'gpt-4o' : 'gpt-4o-mini';
-
-        // User message бэлдэх
-        if ($useVision && !empty($imageUrls)) {
-            // Vision API format: text + images
-            $userContent = [
-                ['type' => 'text', 'text' => $prompt]
-            ];
-
-            foreach ($imageUrls as $url) {
-                $userContent[] = [
-                    'type' => 'image_url',
-                    'image_url' => ['url' => $url, 'detail' => 'high']
-                ];
-            }
-        } else {
-            $userContent = $prompt;
-        }
-
         $ch = \curl_init('https://api.openai.com/v1/chat/completions');
 
         $payload = [
-            'model'       => $model,
+            'model'       => 'gpt-4o-mini',
             'messages'    => [
                 [
                     'role'    => 'system',
@@ -468,7 +423,7 @@ PROMPT;
                 ],
                 [
                     'role'    => 'user',
-                    'content' => $userContent
+                    'content' => $prompt
                 ]
             ],
             'temperature' => 0.3,
@@ -483,7 +438,7 @@ PROMPT;
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $apiKey
             ],
-            \CURLOPT_TIMEOUT        => 120 // Vision илүү удаан байж болно
+            \CURLOPT_TIMEOUT        => 60
         ]);
 
         $result = \curl_exec($ch);
@@ -509,35 +464,6 @@ PROMPT;
         $content = \preg_replace('/\s*```$/', '', $content);
 
         return \trim($content);
-    }
-
-    /**
-     * HTML-ээс зургийн URL-үүд задлах.
-     *
-     * @param string $html HTML контент
-     * @return array Зургийн URL-үүдийн массив
-     */
-    private function extractImageUrls(string $html): array
-    {
-        $urls = [];
-
-        if (empty($html)) {
-            return $urls;
-        }
-
-        // img tag-ийн src attribute олох
-        \preg_match_all('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $html, $matches);
-
-        if (!empty($matches[1])) {
-            foreach ($matches[1] as $url) {
-                // Зөвхөн http/https URL авах (data: эсвэл relative path биш)
-                if (\preg_match('/^https?:\/\//i', $url)) {
-                    $urls[] = $url;
-                }
-            }
-        }
-
-        return $urls;
     }
 
     /**
@@ -611,324 +537,4 @@ PROMPT;
         return \trim($content);
     }
 
-    /**
-     * PDF файлыг HTML болгож буцаах API endpoint.
-     *
-     * smalot/pdfparser сан ашиглан PDF-ийн текстийг задлаж,
-     * HTML формат руу хөрвүүлнэ.
-     *
-     * Хэрэглээ:
-     * ───────────────────────────────────────────────────────────────
-     *   POST /dashboard/moedit/pdf-parse
-     *   Content-Type: multipart/form-data
-     *   Body: file (PDF файл)
-     *
-     * Хариу:
-     * ───────────────────────────────────────────────────────────────
-     *   { "status": "success", "html": "<p>...</p>" }
-     *
-     * Суулгах:
-     * ───────────────────────────────────────────────────────────────
-     *   composer require smalot/pdfparser
-     *
-     * @return void
-     */
-    public function PDFParse(): void
-    {
-        try {
-            // Хэрэглэгч нэвтэрсэн байх ёстой
-            if (!$this->isUserAuthorized()) {
-                throw new \Exception('Unauthorized', 401);
-            }
-
-            // smalot/pdfparser сан байгаа эсэх
-            if (!\class_exists(\Smalot\PdfParser\Parser::class)) {
-                throw new \Exception(
-                    'PDF Parser сан суулгаагүй байна. ' .
-                    'Терминалд: composer require smalot/pdfparser',
-                    500
-                );
-            }
-
-            // Файл upload шалгах
-            $uploadedFiles = $this->getRequest()->getUploadedFiles();
-            $pdfFile = $uploadedFiles['file'] ?? null;
-
-            if (!$pdfFile || $pdfFile->getError() !== \UPLOAD_ERR_OK) {
-                throw new \InvalidArgumentException('PDF файл олдсонгүй', 400);
-            }
-
-            // MIME type шалгах
-            $mimeType = $pdfFile->getClientMediaType();
-            if ($mimeType !== 'application/pdf') {
-                throw new \InvalidArgumentException(
-                    'Зөвхөн PDF файл зөвшөөрөгдөнө. Таны файл: ' . $mimeType,
-                    400
-                );
-            }
-
-            // Түр файл үүсгэх
-            $tempFile = \sys_get_temp_dir() . '/' . \uniqid('pdf_') . '.pdf';
-            $pdfFile->moveTo($tempFile);
-
-            try {
-                // PDF parse хийх - Кирилл үсэгт тохируулсан тохиргоо
-                $config = new \Smalot\PdfParser\Config();
-                $config->setRetainImageContent(false);
-                $config->setDecodeMemoryLimit(0); // Санах ойн хязгааргүй
-
-                $parser = new \Smalot\PdfParser\Parser([], $config);
-                $pdf = $parser->parseFile($tempFile);
-
-                $htmlParts = [];
-                $pages = $pdf->getPages();
-                $pageCount = \count($pages);
-                $hasReadableText = false;
-
-                foreach ($pages as $pageNum => $page) {
-                    $text = $page->getText();
-
-                    if (!empty(\trim($text))) {
-                        // Encoding засах оролдлого
-                        $text = $this->fixPdfEncoding($text);
-
-                        // Текст уншигдаж байгаа эсэхийг шалгах
-                        if ($this->isReadableText($text)) {
-                            $hasReadableText = true;
-                        }
-
-                        // Текстийг HTML болгох
-                        $pageHtml = $this->textToHtml($text);
-
-                        // Хэрэв олон хуудастай бол хуудас тусгаарлагч нэмэх
-                        if ($pageCount > 1) {
-                            $htmlParts[] = "<!-- Хуудас " . ($pageNum + 1) . " -->\n" . $pageHtml;
-                        } else {
-                            $htmlParts[] = $pageHtml;
-                        }
-                    }
-                }
-
-                $html = \implode("\n\n<hr class=\"my-4\">\n\n", $htmlParts);
-
-                // Текст олдсонгүй эсвэл уншигдахгүй байвал
-                if (empty(\trim($html))) {
-                    throw new \Exception(
-                        'PDF файлаас текст олдсонгүй. ' .
-                        'Зураг PDF эсвэл сканнердсан баримт бол AI OCR ашиглана уу.',
-                        400
-                    );
-                }
-
-                // Текст олдсон боловч уншигдахгүй байвал анхааруулга нэмэх
-                if (!$hasReadableText) {
-                    $html = '<div class="alert alert-warning mb-3">' .
-                        '<i class="bi bi-exclamation-triangle"></i> ' .
-                        'PDF-ийн текст encoding асуудалтай байж магадгүй. ' .
-                        'Хэрэв текст буруу харагдаж байвал AI OCR ашиглана уу.' .
-                        '</div>' . $html;
-                }
-
-                $this->respondJSON([
-                    'status' => 'success',
-                    'html'   => $html,
-                    'pages'  => $pageCount
-                ]);
-            } finally {
-                // Түр файл устгах
-                if (\file_exists($tempFile)) {
-                    \unlink($tempFile);
-                }
-            }
-        } catch (\Throwable $e) {
-            $this->respondJSON([
-                'status'  => 'error',
-                'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
-        }
-    }
-
-    /**
-     * Энгийн текстийг HTML формат руу хөрвүүлэх.
-     *
-     * @param string $text Текст
-     * @return string HTML
-     */
-    private function textToHtml(string $text): string
-    {
-        // Windows мөр төгсгөлийг нэгтгэх
-        $text = \str_replace("\r\n", "\n", $text);
-        $text = \str_replace("\r", "\n", $text);
-
-        // Хоосон мөрүүдээр параграф болгох
-        $paragraphs = \preg_split('/\n{2,}/', $text);
-
-        $html = '';
-        foreach ($paragraphs as $para) {
-            $para = \trim($para);
-            if (empty($para)) {
-                continue;
-            }
-
-            // Нэг мөрөн дотор newline-уудыг <br> болгох
-            $para = \nl2br(\htmlspecialchars($para, \ENT_QUOTES, 'UTF-8'));
-
-            // Хүснэгт мэт харагдаж байвал (tab-аар тусгаарлагдсан)
-            if (\preg_match('/\t/', $para)) {
-                $html .= $this->tabsToTable($para);
-            } else {
-                $html .= "<p>$para</p>\n";
-            }
-        }
-
-        return $html;
-    }
-
-    /**
-     * Tab-аар тусгаарлагдсан текстийг хүснэгт болгох.
-     *
-     * @param string $text Tab-тай текст
-     * @return string HTML хүснэгт
-     */
-    private function tabsToTable(string $text): string
-    {
-        // <br> тэмдэгтийг буцааж newline болгох
-        $text = \str_replace(['<br />', '<br>'], "\n", $text);
-        $text = \html_entity_decode($text, \ENT_QUOTES, 'UTF-8');
-
-        $lines = \explode("\n", $text);
-        $rows = [];
-
-        foreach ($lines as $line) {
-            $line = \trim($line);
-            if (empty($line)) {
-                continue;
-            }
-
-            $cells = \preg_split('/\t+/', $line);
-            $rows[] = $cells;
-        }
-
-        if (empty($rows)) {
-            return '';
-        }
-
-        $html = "<div class=\"table-responsive\">\n";
-        $html .= "<table class=\"table table-striped table-hover table-bordered\">\n";
-
-        // Эхний мөрийг header гэж үзэх (2+ мөр байвал)
-        $isFirst = true;
-        foreach ($rows as $row) {
-            if ($isFirst && \count($rows) > 1) {
-                $html .= "<thead><tr>\n";
-                foreach ($row as $cell) {
-                    $cell = \htmlspecialchars(\trim($cell), \ENT_QUOTES, 'UTF-8');
-                    $html .= "<th>$cell</th>\n";
-                }
-                $html .= "</tr></thead>\n<tbody>\n";
-                $isFirst = false;
-            } else {
-                $html .= "<tr>\n";
-                foreach ($row as $cell) {
-                    $cell = \htmlspecialchars(\trim($cell), \ENT_QUOTES, 'UTF-8');
-                    $html .= "<td>$cell</td>\n";
-                }
-                $html .= "</tr>\n";
-            }
-        }
-
-        if (\count($rows) > 1) {
-            $html .= "</tbody>\n";
-        }
-
-        $html .= "</table>\n</div>\n";
-
-        return $html;
-    }
-
-    /**
-     * PDF-ээс задалсан текстийн encoding-ийг засах.
-     *
-     * Кирилл болон бусад Unicode текстүүдийг зөв харуулахын тулд
-     * encoding илрүүлж хөрвүүлэх оролдлого хийнэ.
-     *
-     * @param string $text PDF-ээс задалсан текст
-     * @return string Encoding засагдсан текст
-     */
-    private function fixPdfEncoding(string $text): string
-    {
-        // Аль хэдийн UTF-8 бол буцаах
-        if (\mb_check_encoding($text, 'UTF-8') && $this->isReadableText($text)) {
-            return $text;
-        }
-
-        // Түгээмэл encoding-үүдийг туршиж үзэх
-        $encodings = [
-            'UTF-8',
-            'Windows-1251',  // Кирилл
-            'KOI8-R',        // Орос Кирилл
-            'ISO-8859-5',    // Кирилл
-            'CP866',         // DOS Кирилл
-            'UTF-16BE',
-            'UTF-16LE',
-            'Windows-1252',  // Latin
-            'ISO-8859-1',
-        ];
-
-        foreach ($encodings as $encoding) {
-            if ($encoding === 'UTF-8') {
-                continue;
-            }
-
-            $converted = @\mb_convert_encoding($text, 'UTF-8', $encoding);
-            if ($converted !== false && $this->isReadableText($converted)) {
-                return $converted;
-            }
-        }
-
-        // Detected encoding ашиглах оролдлого
-        $detected = \mb_detect_encoding($text, $encodings, true);
-        if ($detected && $detected !== 'UTF-8') {
-            $converted = \mb_convert_encoding($text, 'UTF-8', $detected);
-            if ($converted !== false) {
-                return $converted;
-            }
-        }
-
-        // Хэрэв юу ч болохгүй бол хуучин текстээ буцаах
-        return $text;
-    }
-
-    /**
-     * Текст уншигдаж болох эсэхийг шалгах.
-     *
-     * Кирилл, Латин, тоо, түгээмэл тэмдэгтүүд байгаа эсэхийг шалгана.
-     * Хэрэв ихэнх тэмдэгт нь уншигдахгүй бол false буцаана.
-     *
-     * @param string $text Шалгах текст
-     * @return bool Уншигдаж болох эсэх
-     */
-    private function isReadableText(string $text): bool
-    {
-        if (empty(\trim($text))) {
-            return false;
-        }
-
-        // Уншигдах тэмдэгтүүдийн тоог тоолох
-        // Латин, Кирилл, тоо, хоосон зай, түгээмэл цэг тэмдэгтүүд
-        $readablePattern = '/[\p{L}\p{N}\s\.\,\!\?\;\:\-\(\)\[\]\{\}\"\'\/\\\@\#\$\%\^\&\*\+\=\_\~\`]/u';
-
-        \preg_match_all($readablePattern, $text, $matches);
-        $readableCount = isset($matches[0]) ? \count($matches[0]) : 0;
-        $totalLength = \mb_strlen($text, 'UTF-8');
-
-        if ($totalLength === 0) {
-            return false;
-        }
-
-        // 50%-аас дээш уншигдах тэмдэгт байвал OK
-        $readableRatio = $readableCount / $totalLength;
-
-        return $readableRatio > 0.5;
-    }
 }
