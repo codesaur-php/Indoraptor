@@ -246,9 +246,6 @@ class moedit {
     /* Shine товчийг shineUrl байхгүй бол нуух */
     this._toggleShineButton();
 
-    /* Shine товчны анхны төлвийг шинэчлэх */
-    this._updateShineButtonState();
-
     /** @private */
     this._destroyed = false;
   }
@@ -289,15 +286,6 @@ class moedit {
       disableBtn(shineBtn, 'AI Shine');
       disableBtn(pdfBtn, 'PDF → HTML');
     }
-  }
-
-  /**
-   * Shine товчийг контентын байдлаас хамааран enable/disable хийх
-   * - Контент хоосон эсвэл зөвхөн whitespace бол disable
-   * @private
-   */
-  _updateShineButtonState() {
-    /* Товчийг үргэлж идэвхтэй байлгах - контент хоосон эсэхийг _shine функц шалгана */
   }
 
   /**
@@ -1608,8 +1596,7 @@ class moedit {
       'redo': 'Дахих (Ctrl+Y)',
       'print': 'Хэвлэх',
       'source': 'HTML код харах',
-      'fullscreen': 'Бүтэн дэлгэц (ESC гарах)',
-      'vanilla': 'Clean HTML - Цэвэр HTML болгох (offline)'
+      'fullscreen': 'Бүтэн дэлгэц (ESC гарах)'
     };
 
     this.toolbar.querySelectorAll('button[data-action]').forEach(btn => {
@@ -1622,9 +1609,6 @@ class moedit {
   }
 
   _emitChange() {
-    /* Shine товчний төлвийг шинэчлэх */
-    this._updateShineButtonState();
-
     const html = this.getHTML();
 
     /* Target textarea-г sync хийх */
