@@ -243,8 +243,7 @@ class NewsController extends FileController
                     __DIR__ . '/news-insert.html',
                     [
                         'table' => $table,
-                        'max_file_size' => $this->getMaximumFileUploadSize(),
-                        'hasOpenAI' => !empty($_ENV['INDO_OPENAI_API_KEY'] ?? \getenv('INDO_OPENAI_API_KEY'))
+                        'max_file_size' => $this->getMaximumFileUploadSize()
                     ]
                 );
                 $dashboard->set('title', $this->text('add-record') . ' | News');

@@ -15,22 +15,22 @@ use codesaur\DataObject\Column;
  *
  * Үндсэн боломжууд:
  *  - Мэдээний хүснэгтийн багануудыг тодорхойлох
- *    (id, title, description, content, photo, photo_file, photo_size, code, type, category, гэх мэт)
  *  - FK constraint-уудыг анхны тохиргоонд үүсгэх
- *  - Шинэ мэдээ үүсгэх үед created_at талбарыг автоматаар бөглөх
+ *  - Шинэ мэдээ үүсгэх үед created_at, slug талбаруудыг автоматаар бөглөх
  *  - Мэдээний төрөл (type), ангилал (category) зэрэг талбаруудыг удирдах
  *  - Хэлний код (code) ашиглан олон хэл дээрх мэдээний удирдлага
  *
  * Хүснэгтийн талбарууд:
  *  - id (bigint, primary) - Мэдээний өвөрмөц дугаар
+ *  - slug (varchar 255, unique, nullable) - SEO-friendly URL (жишээ: mongol-uls-2025)
  *  - title (varchar 255) - Мэдээний гарчиг
- *  - description (text) - Мэдээний товч тайлбар
  *  - content (mediumtext) - Мэдээний бүтэн агуулга
- *  - photo (varchar 255) - Мэдээний зургын URL path (жишээ: /public/news/1/naruto.jpg)
+ *  - photo (varchar 255) - Мэдээний зургын URL path
  *  - photo_size (int) - Мэдээний зургын файлын хэмжээ (byte)
  *  - code (varchar 2) - Хэлний код (mn, en, гэх мэт)
- *  - type (varchar 32, default: 'common') - Мэдээний төрөл
+ *  - type (varchar 32, default: 'article') - Мэдээний төрөл
  *  - category (varchar 32, default: 'general') - Мэдээний ангилал
+ *  - is_featured (tinyint, default: 0) - Онцлох мэдээ эсэх
  *  - comment (tinyint, default: 1) - Сэтгэгдэл идэвхтэй эсэх
  *  - read_count (bigint, default: 0) - Уншсан тоо
  *  - is_active (tinyint, default: 1) - Идэвхтэй эсэх
@@ -89,14 +89,15 @@ class NewsModel extends Model
         
         $this->setColumns([
            (new Column('id', 'bigint'))->primary(),
+           (new Column('slug', 'varchar', 255))->unique(),
             new Column('title', 'varchar', 255),
-            new Column('description', 'text'),
             new Column('content', 'mediumtext'),
             new Column('photo', 'varchar', 255),
             new Column('photo_size', 'int'),
             new Column('code', 'varchar', 2),
-           (new Column('type', 'varchar', 32))->default('common'),
+           (new Column('type', 'varchar', 32))->default('article'),
            (new Column('category', 'varchar', 32))->default('general'),
+           (new Column('is_featured', 'tinyint'))->default(0),
            (new Column('comment', 'tinyint'))->default(1),
            (new Column('read_count', 'bigint'))->default(0),
            (new Column('is_active', 'tinyint'))->default(1),
@@ -161,15 +162,84 @@ class NewsModel extends Model
     /**
      * Шинэ мэдээ үүсгэх.
      *
-     * Мэдээний бичлэг үүсгэх үед created_at талбарыг автоматаар
-     * одоогийн огноо цагаар бөглөнө (хэрэв өгөгдөөгүй бол).
+     * Мэдээний бичлэг үүсгэх үед created_at болон slug талбаруудыг
+     * автоматаар бөглөнө (хэрэв өгөгдөөгүй бол).
      *
-     * @param array $record Мэдээний мэдээлэл (title, description, content, гэх мэт)
+     * @param array $record Мэдээний мэдээлэл (title, content, гэх мэт)
      * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
      */
     public function insert(array $record): array|false
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
+
+        // Slug автоматаар үүсгэх (title-аас)
+        if (empty($record['slug']) && !empty($record['title'])) {
+            $record['slug'] = $this->generateSlug($record['title']);
+        }
+
         return parent::insert($record);
+    }
+
+    /**
+     * Гарчигаас SEO-friendly slug үүсгэх.
+     *
+     * Кирилл үсгийг латин руу хөрвүүлж, тусгай тэмдэгтүүдийг
+     * хасаж, зөвхөн үсэг, тоо, зураас үлдээнэ.
+     * Давхардсан slug байвал дугаар нэмнэ (жишээ: my-slug-2).
+     *
+     * @param string $title Мэдээний гарчиг
+     * @return string SEO-friendly slug (жишээ: mongol-uls-2025-ond)
+     */
+    public function generateSlug(string $title): string
+    {
+        // Кирилл -> Латин хөрвүүлэх
+        $slug = \transliterator_transliterate('Any-Latin; Latin-ASCII', $title);
+        // Жижиг үсэг болгох
+        $slug = \mb_strtolower($slug);
+        // Зөвхөн үсэг, тоо, зураас үлдээх
+        $slug = \preg_replace('/[^a-z0-9]+/', '-', $slug);
+        // Эхний болон сүүлийн зураас хасах
+        $slug = \trim($slug, '-');
+
+        // Давхардал шалгах
+        $original = $slug;
+        $count = 1;
+        while ($this->getBySlug($slug)) {
+            $slug = $original . '-' . $count++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Slug-аар мэдээ хайх.
+     *
+     * @param string $slug Мэдээний slug
+     * @return array|false Мэдээний мэдээлэл эсвэл false
+     */
+    public function getBySlug(string $slug): array|false
+    {
+        return $this->getRowBy(['slug' => $slug]);
+    }
+
+    /**
+     * Content-оос товч тайлбар (excerpt) үүсгэх.
+     *
+     * HTML tag-уудыг хасаж, эхний $length тэмдэгтийг буцаана.
+     *
+     * @param string $content Мэдээний агуулга (HTML)
+     * @param int $length Тэмдэгтийн урт (default: 200)
+     * @return string Товч тайлбар
+     */
+    public function getExcerpt(string $content, int $length = 200): string
+    {
+        $text = \strip_tags($content);
+        $text = \trim($text);
+
+        if (\mb_strlen($text) <= $length) {
+            return $text;
+        }
+
+        return \mb_substr($text, 0, $length) . '...';
     }
 }

@@ -336,7 +336,7 @@ class FilesController extends FileController
             }
 
             // Фолдер тохируулах
-            $this->setFolder("\$table" . ($id == 0 ? '' : "/$id"));
+            $this->setFolder("/$table" . ($id == 0 ? '' : "/$id"));
             $this->allowImageOnly();
 
             // Upload хийх
@@ -367,21 +367,37 @@ class FilesController extends FileController
     /**
      * Зургийг web-д зориулж optimize хийх.
      *
-     * - Max өргөн: 1920px
-     * - JPEG quality: 85%
-     * - PNG compression: 6
+     * Том зургийг тохируулсан хэмжээнд багасгаж, чанарыг тохируулна.
+     * JPEG, PNG, GIF, WebP форматуудыг дэмждэг.
+     * PNG/GIF-ийн transparency хадгалагдана.
+     *
+     * Тохиргоо (.env):
+     *   - INDO_CONTENT_IMG_MAX_WIDTH: Хамгийн их өргөн (default: 1920)
+     *   - INDO_CONTENT_IMG_QUALITY: JPEG/WebP чанар 1-100 (default: 85)
      *
      * @param string $filePath Зургийн физик зам
-     * @return bool Optimize хийгдсэн эсэх
+     *
+     * @return bool Optimize хийгдсэн эсэх:
+     *   - true: Зураг амжилттай optimize хийгдсэн
+     *   - false: Optimize хийгдээгүй (жижиг зураг, алдаа, эсвэл дэмжигдээгүй формат)
+     *
+     * @requires ext-gd GD extension шаардлагатай
      */
     private function optimizeImage(string $filePath): bool
     {
-        if (!\function_exists('imagecreatefromjpeg')) {
-            return false; // GD library байхгүй
+        // GD сан суусан эсэхийг шалгах
+        if (!\extension_loaded('gd')) {
+            \error_log('optimizeImage: GD extension суугаагүй байна');
+            return false;
         }
 
-        $maxWidth = 1920;
-        $quality = 85;
+        // Файл байгаа эсэхийг шалгах
+        if (!\file_exists($filePath) || !\is_readable($filePath)) {
+            return false;
+        }
+
+        $maxWidth = (int) (\getenv('INDO_CONTENT_IMG_MAX_WIDTH') ?: ($_ENV['INDO_CONTENT_IMG_MAX_WIDTH'] ?? 1920));
+        $quality = (int) (\getenv('INDO_CONTENT_IMG_QUALITY') ?: ($_ENV['INDO_CONTENT_IMG_QUALITY'] ?? 85));
 
         $imageInfo = @\getimagesize($filePath);
         if (!$imageInfo) {
@@ -400,6 +416,7 @@ class FilesController extends FileController
         $newHeight = (int) ($height * ($maxWidth / $width));
 
         // Зураг үүсгэх
+        $source = null;
         switch ($type) {
             case \IMAGETYPE_JPEG:
                 $source = @\imagecreatefromjpeg($filePath);
@@ -411,9 +428,12 @@ class FilesController extends FileController
                 $source = @\imagecreatefromgif($filePath);
                 break;
             case \IMAGETYPE_WEBP:
-                $source = @\imagecreatefromwebp($filePath);
+                if (\function_exists('imagecreatefromwebp')) {
+                    $source = @\imagecreatefromwebp($filePath);
+                }
                 break;
             default:
+                \error_log("optimizeImage: Дэмжигдээгүй зургийн төрөл: $type");
                 return false;
         }
 
@@ -423,6 +443,10 @@ class FilesController extends FileController
 
         // Resize хийх
         $resized = \imagecreatetruecolor($newWidth, $newHeight);
+        if (!$resized) {
+            \imagedestroy($source);
+            return false;
+        }
 
         // PNG болон GIF-ийн transparency хадгалах
         if ($type === \IMAGETYPE_PNG || $type === \IMAGETYPE_GIF) {
@@ -435,21 +459,22 @@ class FilesController extends FileController
         \imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
         // Хадгалах
+        $result = false;
         switch ($type) {
             case \IMAGETYPE_JPEG:
-                $result = \imagejpeg($resized, $filePath, $quality);
+                $result = @\imagejpeg($resized, $filePath, $quality);
                 break;
             case \IMAGETYPE_PNG:
-                $result = \imagepng($resized, $filePath, 6);
+                $result = @\imagepng($resized, $filePath, 6);
                 break;
             case \IMAGETYPE_GIF:
-                $result = \imagegif($resized, $filePath);
+                $result = @\imagegif($resized, $filePath);
                 break;
             case \IMAGETYPE_WEBP:
-                $result = \imagewebp($resized, $filePath, $quality);
+                if (\function_exists('imagewebp')) {
+                    $result = @\imagewebp($resized, $filePath, $quality);
+                }
                 break;
-            default:
-                $result = false;
         }
 
         \imagedestroy($source);

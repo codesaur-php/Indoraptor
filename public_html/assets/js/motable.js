@@ -306,7 +306,7 @@ function motable(
 
                 const ascending = this.dataset.sort === 'asc';
 
-                const sorting = false;
+                let sorting = false;
                 const sorted = rows.sort((a, b) => {
                     const atext = a.cells[i]?.textContent ?? '';
                     const btext = b.cells[i]?.textContent ?? '';

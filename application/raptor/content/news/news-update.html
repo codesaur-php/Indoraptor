@@ -1,14 +1,22 @@
+<!-- Мэдээний төрлүүдийн тодорхойлолт -->
 {% set types = {
-  'common': { 'mn': 'Нийтлэг' },
-  'announcement': { 'mn': 'Зар мэдээлэл' },
-  'embed': { 'mn': 'Шигтгэсэн' },
-  'special': { 'mn': 'Тусгай' }
+    'article': { 'mn': 'Мэдээ' },
+    'announcement': { 'mn': 'Зарлал' },
+    'embed': { 'mn': 'Шигтгэсэн' },
+    'gallery': { 'mn': 'Цомог' },
+    'video': { 'mn': 'Видео' },
+    'audio': { 'mn': 'Аудио' },
+    'live': { 'mn': 'Шууд' }
 } %}
+<!-- Мэдээний ангиллын тодорхойлолт -->
 {% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
-  'featured': { 'mn': 'Онцолсон' },
-  'hot': { 'mn': 'Халуун' },
-  'fun': { 'mn': 'Хөгжилтэй' }
+    'general': { 'mn': 'Ерөнхий' },
+    'activity': { 'mn': 'Үйл ажиллагаа' },
+    'press': { 'mn': 'Хэвлэлийн мэдээ' },
+    'event': { 'mn': 'Арга хэмжээ' },
+    'report': { 'mn': 'Тайлан' },
+    'policy': { 'mn': 'Бодлого, дүрэм' },
+    'fun': { 'mn': 'Хөгжилтэй' }
 } %}
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -68,17 +76,13 @@
             </div>
         </div>
     </div>
+    <div class="mt-3">
+        <label class="form-label">{{ 'title'|text }}</label>
+        <input class="form-control" name="title" value="{{ record['title']|e }}" maxlength="255" type="text" autocomplete="off">
+        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+    </div>
     <div class="row mt-3">
         <div class="form-group">
-            <label class="form-label">{{ 'title'|text }}</label>
-            <input class="form-control" name="title" value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
-            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-        </div>
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'description'|text }}</label>
-            <textarea class="form-control" name="description">{{ record['description']|e }}</textarea>
-        </div>
-        <div class="form-group mt-3">
             <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
             <div class="input-group">
                 <input class="form-control" type="text" id="photo_name" disabled value="{{ record['photo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
@@ -126,17 +130,27 @@
     {% if user.can('system_content_publish') %}
     <div class="rounded border border-success mt-3 p-3">
         <div class="row">
-            <div class="col-6">
+            <!-- Нийтлэх эсэх сонголт -->
+            <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
-                    {{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}
+                    {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
                 </div>
             </div>
-            <div class="col-6">
+            <!-- Онцлох мэдээ эсэх сонголт -->
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }}</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
+                    {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+                </div>
+            </div>
+            <!-- Сэтгэгдэл авах эсэх сонголт -->
+            <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" name="comment" {{ record['comment'] > 0 ? 'checked ' :  '' }}type="checkbox" role="switch">
+                    <input class="form-check-input" name="comment"{{ record['comment'] > 0 ? ' checked' : '' }} type="checkbox" role="switch">
                     {{ 'can-comment'|text }}
                 </div>
             </div>
@@ -598,6 +612,10 @@
                 const publishedSwitch = formUpdate.querySelector('input[name="published"]');
                 if (publishedSwitch) {
                     data.set('published', publishedSwitch.checked ? 1 : 0);
+                }
+                const isFeaturedSwitch = formUpdate.querySelector('input[name="is_featured"]');
+                if (isFeaturedSwitch) {
+                    data.set('is_featured', isFeaturedSwitch.checked ? 1 : 0);
                 }
                 const commentSwitch = formUpdate.querySelector('input[name="comment"]');
                 if (commentSwitch) {
