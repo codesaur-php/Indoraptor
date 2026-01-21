@@ -1,19 +1,27 @@
+<!-- Мэдээний төрлүүдийн тодорхойлолт -->
 {% set types = {
-  'common': { 'mn': 'Нийтлэг' },
-  'announcement': { 'mn': 'Зар мэдээлэл' },
-  'embed': { 'mn': 'Шигтгэсэн' },
-  'special': { 'mn': 'Тусгай' }
+    'article': { 'mn': 'Мэдээ' },
+    'announcement': { 'mn': 'Зарлал' },
+    'embed': { 'mn': 'Шигтгэсэн' },
+    'gallery': { 'mn': 'Цомог' },
+    'video': { 'mn': 'Видео' },
+    'audio': { 'mn': 'Аудио' },
+    'live': { 'mn': 'Шууд' }
 } %}
+<!-- Мэдээний ангиллын тодорхойлолт -->
 {% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
-  'featured': { 'mn': 'Онцолсон' },
-  'hot': { 'mn': 'Халуун' },
-  'fun': { 'mn': 'Хөгжилтэй' }
+    'general': { 'mn': 'Ерөнхий' },
+    'activity': { 'mn': 'Үйл ажиллагаа' },
+    'press': { 'mn': 'Хэвлэлийн мэдээ' },
+    'event': { 'mn': 'Арга хэмжээ' },
+    'report': { 'mn': 'Тайлан' },
+    'policy': { 'mn': 'Бодлого, дүрэм' },
+    'fun': { 'mn': 'Хөгжилтэй' }
 } %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/themes/default.min.css" integrity="sha512-9TfMTQR1fqjvuXo8Vas7DnLUZJr5kGFT6gHaFXG7dAZlzh+kFMDEQvbYxzaWXoFwchYSZCwU++Z24Kv1cSpVZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/sceditor.min.js" integrity="sha512-vTXYqh9aMw9z7j2KaQuGMHFyeIKixbOhsIGfPTNCeGd1EAj+Ju1Gm5z3aAat7N+FWscIdV3BPg9f0IzDGUaifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/formats/xhtml.min.js" integrity="sha512-KqPn4r6fCBEj1ZW6FXn8sD4J84IiGcGj8Onr2yAtrbBm6iT7rTclXbQhS0Nqxc9E2oU0JR8QEc8C+SuRTdh4Bw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/icons/monocons.min.js" integrity="sha512-UQApvlNbeoc7G9i+5A3pT0D/kCmNcX3Nbw0mbh7IxmifLDSXdYpiviDKer0BN2ZNcaXL8wiEClUqYgwUJrR3tQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Mongolian WYSIWYG Editor - текст editor -->
+<link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/js/moedit.js"></script>
+<script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
@@ -45,15 +53,11 @@
         <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
     </div>
 </div>
+<div class="mt-3">
+    <label class="form-label">{{ 'title'|text }}</label>
+    <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
+</div>
 <div class="row mt-3">
-    <div class="form-group">
-        <label class="form-label">{{ 'title'|text }}</label>
-        <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
-    </div>
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'description'|text }}</label>
-        <textarea class="form-control" name="description" readonly>{{ record['description']|e }}</textarea>
-    </div>
     {% if record['photo'] is not empty %}
     <div class="form-group mt-3">
         <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
@@ -82,14 +86,24 @@
 </div>
 <div class="rounded border border-success mt-4 p-3">
     <div class="row">
-        <div class="col-6">
+        <!-- Нийтлэх эсэх -->
+        <div class="col-4">
             <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
             <div class="form-check form-switch">
                 <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}
+                {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
             </div>
         </div>
-        <div class="col-6">
+        <!-- Онцлох мэдээ эсэх -->
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }}</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+            </div>
+        </div>
+        <!-- Сэтгэгдэл авах эсэх -->
+        <div class="col-4">
             <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
             <div class="form-check form-switch">
                 <input class="form-check-input" name="comment"{{ record['comment'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
@@ -146,19 +160,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        let content = document.getElementById('content');
         {% if record['type'] != 'embed' %}
-        sceditor.create(content, {
-            format: 'xhtml',
-            emoticonsEnabled: false,
-            toolbar: 'maximize,source,print',
-            icons: 'monocons',
-            colors: '#ffff00,#ff00ff,#00ffff|#ff0000,#00ff00,#0000ff',
-            readOnly: true,
-            width: '100%',
-            height: '360px',
-            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
-        });
+        let content = document.getElementById('content');
+        new moedit(content, { readonly: true});
         {% endif %}
         
         let newsFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;

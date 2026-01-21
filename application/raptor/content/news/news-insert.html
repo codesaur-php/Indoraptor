@@ -1,29 +1,27 @@
 <!-- Мэдээний төрлүүдийн тодорхойлолт -->
 {% set types = {
-  'common': { 'mn': 'Нийтлэг' },
-  'announcement': { 'mn': 'Зар мэдээлэл' },
-  'embed': { 'mn': 'Шигтгэсэн' },
-  'special': { 'mn': 'Тусгай' }
+    'article': { 'mn': 'Мэдээ' },
+    'announcement': { 'mn': 'Зарлал' },
+    'embed': { 'mn': 'Шигтгэсэн' },
+    'gallery': { 'mn': 'Цомог' },
+    'video': { 'mn': 'Видео' },
+    'audio': { 'mn': 'Аудио' },
+    'live': { 'mn': 'Шууд' }
 } %}
 <!-- Мэдээний ангиллын тодорхойлолт -->
 {% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
-  'featured': { 'mn': 'Онцолсон' },
-  'hot': { 'mn': 'Халуун' },
-  'fun': { 'mn': 'Хөгжилтэй' }
+    'general': { 'mn': 'Ерөнхий' },
+    'activity': { 'mn': 'Үйл ажиллагаа' },
+    'press': { 'mn': 'Хэвлэлийн мэдээ' },
+    'event': { 'mn': 'Арга хэмжээ' },
+    'report': { 'mn': 'Тайлан' },
+    'policy': { 'mn': 'Бодлого, дүрэм' },
+    'fun': { 'mn': 'Хөгжилтэй' }
 } %}
 <!-- Mongolian WYSIWYG Editor - текст editor -->
 <link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/js/moedit.js"></script>
 <script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
-<!-- PDF.js - PDF файлыг зураг болгон AI OCR руу илгээхэд шаардлагатай -->
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
-<script type="module">
-    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-    window.pdfjsLib = pdfjsLib;
-</script>
-<!-- Tesseract.js хасагдсан - PDF → HTML зөвхөн AI OCR ашиглана -->
 <!-- SweetAlert2 - мэдэгдэл харуулах сан -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Plupload - файл upload хийх сан -->
@@ -89,55 +87,38 @@
             </div>
         </div>
     </div>
-    <!-- Хоёр дахь мөр: Гарчиг, Тайлбар, Зураг, Агуулга талбарууд -->
-    <div class="row mt-3">
-        <!-- Мэдээний гарчиг (заавал бөглөх) - дуугаар бичих боломжтой -->
-        <div class="form-group">
-            <label class="form-label">{{ 'title'|text }}</label>
-            <div class="input-group">
-                <input class="form-control" name="title" required value="" maxlength="255" placeholder="" type="text" autocomplete="off">
-                <button class="input-group-text text-primary mic-speech-btn" type="button"><i class="bi bi-mic-fill"></i></button>
-            </div>
-            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-        </div>
-        <!-- Мэдээний товч тайлбар -->
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'description'|text }}</label>
-            <textarea class="form-control" name="description"></textarea>
-        </div>
-        <!-- Мэдээний зураг сонгох, харах талбар -->
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
-            <div class="tab-pane" id="tab-picture" role="tabpanel">
-                <div class="input-group">
-                    <input class="form-control" type="text" id="photo_name" disabled value="" placeholder="{{ 'select-an-image'|text|e }}">
-                    <div class="input-group-append">
-                        <div class="btn-group">
-                            <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
-                            <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Сонгосон зургийн урьдчилсан харагдах хэсэг -->
-                <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
-            </div>
-        </div>
-        <!-- Мэдээний агуулга (WYSIWYG editor ашиглана) -->
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
+    <!-- Мэдээний гарчиг -->
+    <div class="mt-3">
+        <label class="form-label">{{ 'title'|text }}</label>
+        <input class="form-control" name="title" required value="" maxlength="255" type="text" autocomplete="off">
+        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+    </div>
+    <!-- Агуулга болон Файлууд tab-ууд -->
+    <ul class="nav nav-tabs mt-3" id="contentFilesTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content-pane" type="button" role="tab" aria-controls="content-pane" aria-selected="true">
+                <i class="bi bi-text-paragraph"></i> {{ 'content'|text }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="files-tab" data-bs-toggle="tab" data-bs-target="#files-pane" type="button" role="tab" aria-controls="files-pane" aria-selected="false">
+                <i class="bi bi-paperclip"></i> {{ 'files'|text }} <span class="badge bg-secondary" id="files-count">0</span>
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content border border-top-0 rounded-bottom p-3" id="contentFilesTabContent">
+        <!-- Агуулга tab (WYSIWYG editor) -->
+        <div class="tab-pane fade show active" id="content-pane" role="tabpanel" aria-labelledby="content-tab">
             <textarea class="form-control" id="content" name="content" placeholder="Агуулгаа энд бичнэ үү..."></textarea>
         </div>
-    </div>
-    <!-- Файл хавсаргах хэсэг - Plupload ашиглан олон файл upload хийх -->
-    <div class="rounded border mt-3 p-3">
-        <div class="row">
-            <label class="form-label fw-bolder">{{ 'files'|text }} <i class="bi bi-paperclip"></i></label>
+        <!-- Файлууд tab -->
+        <div class="tab-pane fade" id="files-pane" role="tabpanel" aria-labelledby="files-tab">
             <!-- Файл upload-ийн статус харуулах хэсэг -->
             <div class="text-danger mb-2">
                 <div id="filelist">Your browser doesn't have Silverlight or HTML5 support.</div>
             </div>
             <!-- Файл сонгох, upload хийх товчнууд -->
-            <div id="container">
+            <div id="container" class="mb-3">
                 <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
                 <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
             </div>
@@ -162,15 +143,23 @@
     <div class="rounded border border-success mt-3 p-3">
         <div class="row">
             <!-- Нийтлэх эсэх сонголт -->
-            <div class="col-6">
+            <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="published" type="checkbox" role="switch">
-                    {{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}
+                    {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
+                </div>
+            </div>
+            <!-- Онцлох мэдээ эсэх сонголт -->
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }}</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="is_featured" type="checkbox" role="switch">
+                    {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
                 </div>
             </div>
             <!-- Сэтгэгдэл авах эсэх сонголт -->
-            <div class="col-6">
+            <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="comment" type="checkbox" role="switch">
@@ -256,104 +245,27 @@
         }
     });
     
-    /* Зураг сонгох, урьдчилсан харагдах, устгах функц */
-    const photoName = document.getElementById('photo_name');
-    const photoBrowse = document.querySelector('button.photo-browse');
-    const photoPreview = document.getElementById('photo_preview');
-    const photo = document.querySelector('input[name="photo"]');
-    photo.addEventListener('change', function (e) {
-        e.preventDefault();
-        
-        photo.name = 'photo';
-        photoName.value = photo.files[0].name;
-        
-        /* Товчны текстийг "Солих" болгож, устгах товч нэмэх */
-        photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
-        if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
-            const photoClear = document.createElement('button');
-            photoClear.classList.add('btn', 'btn-danger');
-            photoClear.type = 'button';
-            photoClear.innerHTML = `{{ 'remove'|text }}`;
-            photoClear.addEventListener('click', function (e) {
-                e.preventDefault();
-                
-                /* Зургийг устгах - preview болон input-ийг цэвэрлэх */
-                photoPreview.removeAttribute('src');
-                photoPreview.style.display = 'none';
+    /* Header image файл хадгалах хувьсагч */
+    let headerImageFile = null;
 
-                photoName.value = '';
-                photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
-
-                photo.value = '';
-                photo.removeAttribute('name');
-
-                photoClear.remove();
-            });
-            if (photoBrowse.nextSibling) {
-                photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
-            } else {
-                photoBrowse.parentNode.appendChild(photoClear);
-            }
-        }
-
-        /* Сонгосон зургийг урьдчилсан байдлаар харуулах */
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            photoPreview.src = e.target.result;
-            if (photoPreview.style.display === 'none') {
-                photoPreview.style.display = 'block';
-            }
-        };
-        reader.readAsDataURL(photo.files[0]);
-    });
-    
     /* DOM ачаалагдсаны дараа бүх JavaScript функцүүдийг идэвхжүүлэх */
     document.addEventListener('DOMContentLoaded', function () {
-        /* Дуугаар текст бичих функц (Speech Recognition API) */
-        const micBtn = document.querySelector('button.mic-speech-btn');
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SR && micBtn) {
-            const recognition = new SR();
-            recognition.lang = '{{ localization.language[localization.code]["locale"] ?? "en-US" }}';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            /* Товчны төлөвийг өөрчлөх функц (идэвхтэй/идэвхгүй) */
-            const setBtnState = (active) => {
-                micBtn.classList.toggle('text-danger', active);
-                micBtn.classList.toggle('text-primary', !active);
-            };
-
-            recognition.onstart = () => setBtnState(true);
-            recognition.onend = () => setBtnState(false);
-            recognition.onerror = () => setBtnState(false);
-            
-            /* Дуугаар бичсэн текстийг гарчиг талбарт оруулах */
-            recognition.onresult = (e) => {
-                setBtnState(false);
-                const spokenText = e.results[0][0].transcript;
-                const titleInput = document.querySelector('input[name="title"]');
-                if (titleInput) titleInput.value = spokenText;
-            };
-
-            micBtn.addEventListener('click', () => {
-                try {
-                    recognition.start();
-                } catch (err) {
-                    console.warn('Recognition already started, restarting...');
-                    recognition.stop();
-                    setTimeout(() => recognition.start(), 300);
-                }
-            });
-        } else {
-            console.warn('Speech recognition not supported in this browser.');
-        }
-
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
         moeditInstance = new moedit(content, {
-            shineUrl: `{{ 'moedit-ai-shine'|link }}`,
-            hasOpenAI: {{ hasOpenAI ? 'true' : 'false' }},
-            uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`
+            shineUrl: `{{ 'moedit-ai'|link }}`,
+            uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`,
+            toolbarPosition: 'right',
+            headerImage: true,
+            headerImageModal: {
+                title: `{{ 'photo'|text|e }}`,
+                placeholder: `{{ 'select-an-image'|text|e }}`,
+                browseText: `{{ 'choose'|text|e }}`,
+                removeText: `{{ 'remove'|text|e }}`,
+                changeText: `{{ 'change'|text|e }}`
+            },
+            onHeaderImageChange: function (file, preview) {
+                headerImageFile = file;
+            }
         });
 
         /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */
@@ -364,7 +276,15 @@
         /* Файлуудыг хүснэгтэд харуулах motable объект үүсгэх */
         const files = new motable('table#news_files');
         files.setReady();
-        
+
+        /* Файлын тоог badge дээр харуулах функц */
+        const filesCountBadge = document.getElementById('files-count');
+        const updateFilesCount = () => {
+            const count = document.querySelectorAll('#news_files tbody tr').length;
+            filesCountBadge.textContent = count;
+            filesCountBadge.className = count > 0 ? 'badge bg-primary' : 'badge bg-secondary';
+        };
+
         /* Plupload - файл upload хийх объект үүсгэх */
         const fileList = document.getElementById('filelist');
         const uploadFilesBtn = document.getElementById('uploadfiles');
@@ -430,15 +350,9 @@
 
                         /* Файлыг хүснэгтэд нэмэх */
                         files.append(res);
-                        
-                        /* Хэрэв зураг бол editor-д автоматаар оруулах */
-                        if (res.type === 'image' && moeditInstance) {
-                            const imgHtml = `<p><img style="max-width:100%;height:auto" src="${res.path}" alt=""></p>`;
-                            moeditInstance._ensureVisualMode();
-                            moeditInstance._focusEditor();
-                            document.execCommand('insertHTML', false, imgHtml);
-                            moeditInstance._emitChange();
-                        }
+
+                        /* Файлын тоог шинэчлэх */
+                        updateFilesCount();
 
                         NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
                     } catch (err) {
@@ -660,6 +574,7 @@
                             /* Хүснэгтээс мөрийг устгах */
                             row.remove();
                             thisTable.setReady();
+                            updateFilesCount();
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });
@@ -699,11 +614,20 @@
 
                 /* FormData үүсгэж сервер рүү илгээх */
                 const data = new FormData(this);
-                
-                /* Published болон comment checkbox-уудыг normalize хийх (checked = 1, unchecked = 0) */
+
+                /* Header image файлыг FormData-д нэмэх */
+                if (headerImageFile) {
+                    data.append('photo', headerImageFile);
+                }
+
+                /* Checkbox-уудыг normalize хийх (checked = 1, unchecked = 0) */
                 const publishedCheckbox = this.querySelector('input[name="published"]');
                 if (publishedCheckbox) {
                     data.set('published', publishedCheckbox.checked ? '1' : '0');
+                }
+                const isFeaturedCheckbox = this.querySelector('input[name="is_featured"]');
+                if (isFeaturedCheckbox) {
+                    data.set('is_featured', isFeaturedCheckbox.checked ? '1' : '0');
                 }
                 const commentCheckbox = this.querySelector('input[name="comment"]');
                 if (commentCheckbox) {

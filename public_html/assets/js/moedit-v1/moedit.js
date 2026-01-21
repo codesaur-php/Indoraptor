@@ -227,8 +227,6 @@ class moedit {
       },
       /* Header image callback - зураг сонгогдох/устгагдах үед дуудагдана */
       onHeaderImageChange: null, /* function(file, preview) - file: File object эсвэл null */
-      /* Toolbar position - 'top' эсвэл 'right' (right бол desktop-д баруун талд, mobile-д дээр) */
-      toolbarPosition: 'top',
       ...opts,
     };
 
@@ -776,7 +774,7 @@ class moedit {
 
     /* Wrapper үүсгэх */
     const wrapper = document.createElement('div');
-    wrapper.className = opts.toolbarPosition === 'right' ? 'moedit moedit-toolbar-right' : 'moedit';
+    wrapper.className = 'moedit';
 
     /* ID хуулах (хэрэв байвал) */
     if (textarea.id) {
@@ -794,18 +792,7 @@ class moedit {
       </div>
     ` : '';
 
-    /* Right toolbar бол content wrapper нэмэх */
-    const isRightToolbar = opts.toolbarPosition === 'right';
-
-    wrapper.innerHTML = isRightToolbar ? `
-      <div class="moedit-content">
-        ${headerImageHtml}
-        <div class="moedit-body">
-          <div class="moedit-editor" contenteditable="true" data-placeholder="${this._escapeAttr(placeholder)}">${initialContent}</div>
-          <textarea class="moedit-source">${this._escapeHtml(initialContent)}</textarea>
-        </div>
-      </div>
-    ` : `
+    wrapper.innerHTML = `
       ${headerImageHtml}
       <div class="moedit-body">
         <div class="moedit-editor" contenteditable="true" data-placeholder="${this._escapeAttr(placeholder)}">${initialContent}</div>
@@ -840,27 +827,9 @@ class moedit {
     toolbar.className = 'moedit-toolbar';
     toolbar.innerHTML = `
       <div class="moedit-group moedit-group-header-image" style="display:none;">
-        <button type="button" class="moedit-btn text-primary" data-action="headerImage" title="Толгой зураг"><i class="bi bi-image"></i></button>
+        <button type="button" class="moedit-btn text-primary" data-action="headerImage" title="Толгой зураг"><i class="bi bi-card-image"></i></button>
       </div>
       <div class="moedit-sep moedit-sep-header-image" style="display:none;"></div>
-      <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-camera"></i></button>
-        <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
-        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
-        <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
-        <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
-        <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
-        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зургийг HTML болгох"><i class="bi bi-file-text"></i></button>
-        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
-        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
-      </div>
-      <div class="moedit-sep"></div>
-      <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
-        <button type="button" class="moedit-btn text-success" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
-        <button type="button" class="moedit-btn text-primary" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
-      </div>
-      <div class="moedit-sep"></div>
       <div class="moedit-group">
         <button type="button" class="moedit-btn" data-action="bold" title="Bold (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
         <button type="button" class="moedit-btn" data-action="italic" title="Italic (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
@@ -870,7 +839,7 @@ class moedit {
         <button type="button" class="moedit-btn" data-action="superscript" title="Superscript"><i class="bi bi-type"></i><sup>x</sup></button>
       </div>
       <div class="moedit-sep"></div>
-      <div class="moedit-group moedit-group-selects">
+      <div class="moedit-group">
         <select class="moedit-select" data-action="heading" title="Heading">
           <option value="p" selected>Paragraph</option>
           <option value="h1">H1 - Гарчиг</option>
@@ -893,28 +862,6 @@ class moedit {
           <option value="7">7 - Хамгийн том</option>
         </select>
         <input type="color" class="moedit-color" data-action="foreColor" title="Font Color" value="#000000">
-        <div class="moedit-list-select" data-action="heading">
-          <div class="moedit-list-label">Paragraph</div>
-          <button type="button" class="moedit-btn is-active is-default" data-value="p" title="Paragraph">P</button>
-          <button type="button" class="moedit-btn" data-value="h1" title="H1 - Гарчиг">H1</button>
-          <button type="button" class="moedit-btn" data-value="h2" title="H2 - Дэд гарчиг">H2</button>
-          <button type="button" class="moedit-btn" data-value="h3" title="H3">H3</button>
-          <button type="button" class="moedit-btn" data-value="h4" title="H4">H4</button>
-          <button type="button" class="moedit-btn" data-value="h5" title="H5">H5</button>
-          <button type="button" class="moedit-btn" data-value="h6" title="H6">H6</button>
-          <button type="button" class="moedit-btn" data-value="pre" title="Preformatted"><i class="bi bi-code"></i></button>
-          <button type="button" class="moedit-btn" data-value="blockquote" title="Quote"><i class="bi bi-quote"></i></button>
-        </div>
-        <div class="moedit-list-select" data-action="fontSize">
-          <div class="moedit-list-label">Font Size</div>
-          <button type="button" class="moedit-btn" data-value="1" title="1 - Жижиг">1</button>
-          <button type="button" class="moedit-btn" data-value="2" title="2">2</button>
-          <button type="button" class="moedit-btn is-active is-default" data-value="3" title="3 - Хэвийн">3</button>
-          <button type="button" class="moedit-btn" data-value="4" title="4">4</button>
-          <button type="button" class="moedit-btn" data-value="5" title="5 - Том">5</button>
-          <button type="button" class="moedit-btn" data-value="6" title="6">6</button>
-          <button type="button" class="moedit-btn" data-value="7" title="7 - Хамгийн том">7</button>
-        </div>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
@@ -936,8 +883,26 @@ class moedit {
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-image"></i></button>
+        <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
+        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
+        <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
+        <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
+        <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
+        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зургийг HTML болгох"><i class="bi bi-file-text"></i></button>
+        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
+        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
         <button type="button" class="moedit-btn" data-action="undo" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
         <button type="button" class="moedit-btn" data-action="redo" title="Redo (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="moedit-sep"></div>
+      <div class="moedit-group">
+        <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
+        <button type="button" class="moedit-btn" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
+        <button type="button" class="moedit-btn" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
       </div>
     `;
 
@@ -977,19 +942,17 @@ class moedit {
     /* Toolbar keyboard navigation */
     this._setupToolbarKeyboardNav();
 
-    const heading = this.toolbar.querySelector('select[data-action="heading"]');
+    const heading = this.toolbar.querySelector('[data-action="heading"]');
     if (heading) {
       heading.addEventListener("change", e => {
         document.execCommand("formatBlock", false, e.target.value);
         this._emitChange();
         /* Select-ийн утгыг шинэчлэх (cursor байрлалаас хамааран) */
         this._syncHeadingState();
-        /* List select sync хийх */
-        this._syncListSelect('heading', e.target.value);
       });
     }
 
-    const fontSize = this.toolbar.querySelector('select[data-action="fontSize"]');
+    const fontSize = this.toolbar.querySelector('[data-action="fontSize"]');
     if (fontSize) {
       let savedRange = null;
 
@@ -1022,8 +985,6 @@ class moedit {
         savedRange = null;
         /* Select-ийн утгыг шинэчлэх (cursor байрлалаас хамааран) */
         this._syncFontSizeState();
-        /* List select sync хийх */
-        this._syncListSelect('fontSize', selectedValue);
       });
     }
 
@@ -1081,44 +1042,6 @@ class moedit {
         savedColorRange = null;
         /* Picker-ийн утгыг шинэчлэх (cursor байрлалаас хамааран) */
         this._syncForeColorState();
-      });
-    }
-
-    /* List select handlers (right toolbar mode) */
-    const headingListSelect = this.toolbar.querySelector('.moedit-list-select[data-action="heading"]');
-    if (headingListSelect) {
-      headingListSelect.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-value]');
-        if (!btn) return;
-        const value = btn.dataset.value;
-        document.execCommand("formatBlock", false, value);
-        this._emitChange();
-        /* Active state шинэчлэх */
-        headingListSelect.querySelectorAll('.moedit-btn').forEach(b => b.classList.remove('is-active'));
-        btn.classList.add('is-active');
-        headingListSelect.querySelector('.moedit-list-label').textContent = btn.title || value.toUpperCase();
-        /* Dropdown-г sync хийх */
-        if (heading) heading.value = value;
-      });
-    }
-
-    const fontSizeListSelect = this.toolbar.querySelector('.moedit-list-select[data-action="fontSize"]');
-    if (fontSizeListSelect) {
-      fontSizeListSelect.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-value]');
-        if (!btn) return;
-        const value = btn.dataset.value;
-        if (value === "3") {
-          this._removeFontSize();
-        } else {
-          this.exec("fontSize", value);
-        }
-        /* Active state шинэчлэх */
-        fontSizeListSelect.querySelectorAll('.moedit-btn').forEach(b => b.classList.remove('is-active'));
-        btn.classList.add('is-active');
-        fontSizeListSelect.querySelector('.moedit-list-label').textContent = btn.title || `Size ${value}`;
-        /* Dropdown-г sync хийх */
-        if (fontSize) fontSize.value = value;
       });
     }
 
@@ -1418,8 +1341,6 @@ class moedit {
     } else {
       fontSizeSelect.value = '3'; /* Default */
     }
-    /* List select-ийг бас sync хийх */
-    this._syncListSelect('fontSize', fontSizeSelect.value);
   }
 
   /**
@@ -1818,32 +1739,6 @@ class moedit {
     } else {
       /* Block element олдоогүй бол p */
       headingSelect.value = 'p';
-    }
-    /* List select-ийг бас sync хийх */
-    this._syncListSelect('heading', headingSelect.value);
-  }
-
-  /**
-   * List select-ийн active state шинэчлэх (right toolbar mode)
-   * @param {string} action - heading эсвэл fontSize
-   * @param {string} value - сонгосон утга
-   * @private
-   */
-  _syncListSelect(action, value) {
-    const listSelect = this.toolbar.querySelector(`.moedit-list-select[data-action="${action}"]`);
-    if (!listSelect) return;
-
-    /* Бүх товчны active state арилгах */
-    listSelect.querySelectorAll('.moedit-btn').forEach(btn => btn.classList.remove('is-active'));
-
-    /* Тохирох товч олж active болгох */
-    const activeBtn = listSelect.querySelector(`button[data-value="${value}"]`);
-    if (activeBtn) {
-      activeBtn.classList.add('is-active');
-      const label = listSelect.querySelector('.moedit-list-label');
-      if (label) {
-        label.textContent = activeBtn.title || value.toUpperCase();
-      }
     }
   }
 

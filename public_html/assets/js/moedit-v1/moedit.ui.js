@@ -410,7 +410,7 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
   dialog.className = 'moedit-modal-overlay';
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-camera"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="bi bi-image"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <label class="moedit-modal-label">Зургийн URL хаяг</label>
         <input type="url" class="moedit-modal-input" id="${dialogId}-url" placeholder="https://example.com/image.jpg">
@@ -497,7 +497,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
 
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-camera"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="bi bi-image"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <div class="moedit-modal-file-input">
           <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">

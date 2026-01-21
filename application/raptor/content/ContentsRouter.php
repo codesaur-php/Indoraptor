@@ -150,5 +150,13 @@ class ContentsRouter extends Router
 
         // Тохиргооны файл upload хийх
         $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
+        
+        
+        /**
+         * MOEDIT AI API
+         *
+         * moedit editor-ийн AI товчинд зориулсан API.
+         */
+        $this->POST('/dashboard/content/moedit/ai', [AIHelper::class, 'moeditAI'])->name('moedit-ai');
     }
 }
