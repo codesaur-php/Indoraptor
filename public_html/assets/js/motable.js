@@ -1,5 +1,5 @@
 /**
- * motable v2.4
+ * motable v2.5
  * ------------------------------------------------------------------
  * Энэ script нь ямар ч HTML <table>-ийг дэвшилтэт боломжтой болгож өгнө:
  *  ✔ Sticky header (толгой мөр гацдаг)
@@ -11,170 +11,6 @@
  *  ✔ Монгол / Англи хэлний label-тэй
  *  ✔ lightweight ба external dependencyгүй.
  */
-
-/* CSS-г динамикаар head рүү inject хийж байна */
-const mostyle = document.createElement('style');
-mostyle.innerHTML = `
-@keyframes l1{to{clip-path:inset(0 -34% 0 0)}}
-.threedots{
-  display:inline-block;
-  width:.5rem;
-  aspect-ratio:4;
-  background:radial-gradient(circle closest-side,currentcolor 90%,#0000) 0/calc(100%/3) 100% space;
-  clip-path:inset(0 100% 0 0);
-  animation:l1 1s steps(4) infinite
-}
-
-/* Header sticky + sorting icon */
-.motable thead th{
-  position:sticky;
-  top:0;
-  cursor:pointer;
-  background-color:#f8f9fa;
-}
-
-/* Sort icon - default arrow */
-.motable thead th::after{
-  content:'';
-  float:right;
-  margin-top:.2rem;
-  margin-right:.5rem;
-  border-width:0 .275rem .275rem;
-  border-style:solid;
-  border-color:#404040 transparent;
-  visibility:hidden;
-  user-select:none
-}
-.motable thead th:hover::after{visibility:visible}
-.motable thead th[data-sort]::after{visibility:visible}
-
-/* Sort desc үед сумыг доош харуулна */
-.motable thead th[data-sort=desc]::after{
-  border-bottom:none;
-  border-width:.275rem .275rem 0
-}
-
-/* Scroll wrapper - horizontal scroll бүхий сав */
-.mowrapper{
-  width:100%;
-  max-width:100%;
-  overflow-x:auto;
-  overflow-y:visible;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:thin;
-  position:relative;
-  border-radius:.25rem;
-}
-
-/* Scrollbar загвар */
-.mowrapper::-webkit-scrollbar{
-  height:6px;
-}
-.mowrapper::-webkit-scrollbar-thumb{
-  background:rgba(0,0,0,0.15);
-  border-radius:4px;
-}
-
-/* Scroll fade-shadow (баруун талын градиент) */
-.mowrapper::after{
-  content:"";
-  position:absolute;
-  right:0;
-  top:0;
-  width:24px;
-  height:100%;
-  pointer-events:none;
-  background:linear-gradient(to left,rgba(255,255,255,0.9),transparent);
-  opacity:0;
-  transition:opacity .3s ease;
-}
-.mowrapper.scrollable::after{
-  opacity:1;
-}
-
-.motable{
-  width:100%;
-  border-collapse:collapse;
-  min-width:100%;
-}
-
-/* Freeze column - sticky left */
-.motable .freeze-col {
-  position: sticky;
-  left: 0;
-  background-color: #fff;
-  color: #212529;
-  border-color: #dee2e6;
-}
-
-/* Header дахь freeze column */
-.motable thead .freeze-col {
-  z-index: 10;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-}
-
-/* Mobile / small screen optimization */
-@media (max-width:768px){
-  .motable{
-    min-width:720px;
-  }
-  .motable th,
-  .motable td{
-    font-size:.85rem;
-    padding:.3rem .4rem;
-    white-space:nowrap;
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme:dark){
-  .motable thead th{
-    background-color:#343a40;
-    color:#e9ecef;
-  }
-  .motable thead th::after{
-    border-color:#e9ecef transparent;
-  }
-  .motable .freeze-col{
-    background-color:#212529;
-    color:#e9ecef;
-    border-color:#495057;
-  }
-  .motable thead .freeze-col{
-    background-color:#343a40;
-    border-bottom-color:#495057;
-  }
-  .mowrapper::after{
-    background:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
-  }
-}
-[data-bs-theme="dark"] .motable thead th,
-[data-theme="dark"] .motable thead th{
-  background-color:#343a40;
-  color:#e9ecef;
-}
-[data-bs-theme="dark"] .motable thead th::after,
-[data-theme="dark"] .motable thead th::after{
-  border-color:#e9ecef transparent;
-}
-[data-bs-theme="dark"] .motable .freeze-col,
-[data-theme="dark"] .motable .freeze-col{
-  background-color:#212529;
-  color:#e9ecef;
-  border-color:#495057;
-}
-[data-bs-theme="dark"] .motable thead .freeze-col,
-[data-theme="dark"] .motable thead .freeze-col{
-  background-color:#343a40;
-  border-bottom-color:#495057;
-}
-[data-bs-theme="dark"] .mowrapper::after,
-[data-theme="dark"] .mowrapper::after{
-  background:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
-}
-`;
-document.head.appendChild(mostyle);
 
 /**
  * motable(<table>, options) - үндсэн Constructor функц
@@ -479,15 +315,15 @@ motable.prototype.getDefaults = function (options) {
         if (!options.label.notfound) options.label.notfound = '<span style="color:gray">No results were found matching your search criteria</span>';
     }
 
-    /* Style defaults */
+    /* Style defaults - CSS class ашиглаж байгаа тул inline style багасгав */
     if (!options.style) options.style = {};
-    if (!options.style.tools) options.style.tools = 'display:flex;flex-wrap:wrap;margin:0 0 .375rem;';
-    if (!options.style.info) options.style.info = 'flex-basis:65%;margin:auto 0;padding-right:1rem;';
-    if (!options.style.search) options.style.search = 'flex-basis:35%;margin:auto 0;display:block;width:100%;padding:.275rem;border:1px solid;border-radius:.2rem;';
-    if (!options.style.container)
-        options.style.container = 'overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;';
-    if (!options.style.table) options.style.table = 'margin-bottom:0;';
-    if (!options.style.tbody) options.style.tbody = 'border-top:0.1rem solid currentcolor';
+    /* Доорх style-үүд нь хоосон байж болно, CSS class-аар удирдагдана */
+    if (!options.style.tools) options.style.tools = '';
+    if (!options.style.info) options.style.info = '';
+    if (!options.style.search) options.style.search = '';
+    if (!options.style.container) options.style.container = '';
+    if (!options.style.table) options.style.table = '';
+    if (!options.style.tbody) options.style.tbody = '';
 
     if (!options.freezeColumns) options.freezeColumns = [];
 

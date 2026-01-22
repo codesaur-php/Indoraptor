@@ -20,6 +20,7 @@
 } %}
 <!-- Mongolian WYSIWYG Editor - текст editor -->
 <link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
+<link href="{{ index }}/assets/css/moedit-icons.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/js/moedit.js"></script>
 <script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
 <!-- SweetAlert2 - мэдэгдэл харуулах сан -->
@@ -109,7 +110,7 @@
     <div class="tab-content border border-top-0 rounded-bottom p-3" id="contentFilesTabContent">
         <!-- Агуулга tab (WYSIWYG editor) -->
         <div class="tab-pane fade show active" id="content-pane" role="tabpanel" aria-labelledby="content-tab">
-            <textarea class="form-control" id="content" name="content" placeholder="Агуулгаа энд бичнэ үү..."></textarea>
+            <textarea class="form-control" id="content" name="content"></textarea>
         </div>
         <!-- Файлууд tab -->
         <div class="tab-pane fade" id="files-pane" role="tabpanel" aria-labelledby="files-tab">

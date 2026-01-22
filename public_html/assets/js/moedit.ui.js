@@ -1,5 +1,5 @@
 /**
- * moedit UI Components
+ * moedit UI Components v1
  *
  * Dialog, Modal болон UI холбоотой функцуудыг агуулна.
  * moedit.js файлын дараа ачаалах шаардлагатай.
@@ -77,7 +77,9 @@ moedit.prototype._handlePaste = function(e) {
 
     /* Word-ын local зураг байсан бол мэдэгдэл өгөх */
     if (hasWordImages) {
-      this._notify('warning', 'Зураг орсонгүй!', 'Текст амжилттай орлоо. Гэхдээ Word доторх зураг хуулагдахгүй. Зургийг тусад нь хуулж оруулна уу.');
+      this._notify('warning',
+        this._isMn ? 'Зураг орсонгүй!' : 'Images not included!',
+        this._isMn ? 'Текст амжилттай орлоо. Гэхдээ Word доторх зураг хуулагдахгүй. Зургийг тусад нь хуулж оруулна уу.' : 'Text pasted successfully. However, images from Word cannot be copied. Please insert images separately.');
     }
 
     /* Selection-д оруулах */
@@ -174,14 +176,16 @@ moedit.prototype._handlePaste = function(e) {
 moedit.prototype._uploadAndInsertImage = function(file) {
   /* uploadUrl эсвэл uploadImage тохируулаагүй бол анхааруулга өгөх */
   if (!this.opts.uploadUrl && !this.opts.uploadImage) {
-    this._notify('warning', 'Зураг upload хийх боломжгүй', 'Зургийн upload тохиргоо хийгдээгүй байна.');
+    this._notify('warning',
+      this._isMn ? 'Зураг upload хийх боломжгүй' : 'Cannot upload image',
+      this._isMn ? 'Зургийн upload тохиргоо хийгдээгүй байна.' : 'Image upload is not configured.');
     return;
   }
 
   const config = this.opts.imageUploadModal;
 
   /* Upload хийж байгаа мэдэгдэл харуулах */
-  this._notify('info', config.uploadingText || 'Uploading...');
+  this._notify('info', config.uploadingText);
 
   /* Selection хадгалах */
   let savedRange = null;
@@ -205,16 +209,16 @@ moedit.prototype._uploadAndInsertImage = function(file) {
         if (this.opts.onUploadSuccess) {
           this.opts.onUploadSuccess({ path });
         }
-        this._notify('success', 'Зураг амжилттай оруулагдлаа');
+        this._notify('success', this._isMn ? 'Зураг амжилттай оруулагдлаа' : 'Image uploaded successfully');
       } else {
-        throw new Error(config.errorMessage || 'Upload failed');
+        throw new Error(config.errorMessage);
       }
     })
     .catch(err => {
       if (this.opts.onUploadError) {
         this.opts.onUploadError(err);
       } else {
-        this._notify('danger', err.message || config.errorMessage || 'Upload алдаа');
+        this._notify('danger', err.message || config.errorMessage);
       }
     });
 };
@@ -239,14 +243,14 @@ moedit.prototype._insertLink = function() {
   dialog.className = 'moedit-modal-overlay';
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-link-45deg"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-link-45deg"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <div class="moedit-modal-radio-group">
           <label class="moedit-modal-radio">
-            <input type="radio" name="${dialogId}-type" value="url" checked> <i class="bi bi-globe"></i> URL
+            <input type="radio" name="${dialogId}-type" value="url" checked> <i class="mi-globe"></i> URL
           </label>
           <label class="moedit-modal-radio">
-            <input type="radio" name="${dialogId}-type" value="email"> <i class="bi bi-envelope"></i> Email
+            <input type="radio" name="${dialogId}-type" value="email"> <i class="mi-envelope"></i> Email
           </label>
         </div>
       </div>
@@ -410,9 +414,9 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
   dialog.className = 'moedit-modal-overlay';
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-camera"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-camera"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
-        <label class="moedit-modal-label">Зургийн URL хаяг</label>
+        <label class="moedit-modal-label">${this._isMn ? 'Зургийн URL хаяг' : 'Image URL'}</label>
         <input type="url" class="moedit-modal-input" id="${dialogId}-url" placeholder="https://example.com/image.jpg">
       </div>
       <div class="moedit-modal-preview" id="${dialogId}-preview" style="display:none;">
@@ -421,7 +425,7 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok">
-          <i class="bi bi-check-lg"></i> OK
+          <i class="mi-check-lg"></i> OK
         </button>
       </div>
     </div>
@@ -497,12 +501,12 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
 
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-camera"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-camera"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <div class="moedit-modal-file-input">
           <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">
           <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
-            <i class="bi bi-folder2-open"></i> ${config.browseText}
+            <i class="mi-folder2-open"></i> ${config.browseText}
           </button>
         </div>
         <input type="file" id="${dialogId}-file" accept="image/*" style="display:none;">
@@ -513,7 +517,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-primary moedit-modal-btn-disabled" id="${dialogId}-ok" disabled>
-          <i class="bi bi-upload"></i> ${config.uploadText}
+          <i class="mi-upload"></i> ${config.uploadText}
         </button>
       </div>
     </div>
@@ -574,7 +578,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
     okBtn.disabled = true;
     cancelBtn.disabled = true;
     browseBtn.disabled = true;
-    okBtn.innerHTML = `<i class="bi bi-hourglass-split"></i> ${config.uploadingText}`;
+    okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
     /* uploadImage функц эсвэл uploadUrl ашиглах */
     const uploadPromise = this.opts.uploadImage
@@ -605,7 +609,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
         cancelBtn.disabled = false;
         browseBtn.disabled = false;
         okBtn.classList.remove('moedit-modal-btn-disabled');
-        okBtn.innerHTML = `<i class="bi bi-upload"></i> ${config.uploadText}`;
+        okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
         if (this.opts.onUploadError) {
           this.opts.onUploadError(err);
         } else {
@@ -669,7 +673,7 @@ moedit.prototype._insertTable = function() {
   dialog.className = 'moedit-modal-overlay';
   dialog.innerHTML = `
     <div class="moedit-modal moedit-modal-sm">
-      <h5 class="moedit-modal-title"><i class="bi bi-table"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-table"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <label class="moedit-modal-label">${config.typeLabel}</label>
         <select class="moedit-modal-input" id="${dialogId}-type">
@@ -847,25 +851,25 @@ moedit.prototype._showAiConfigNotice = function(title, feature) {
       <h5 class="moedit-modal-title"><i class="bi ${iconClass}"></i> ${title}</h5>
       <div style="padding: 15px 0;">
         <div style="text-align: center; margin-bottom: 15px;">
-          <i class="bi bi-info-circle" style="font-size: 48px; color: var(--mo-primary, #0d6efd);"></i>
+          <i class="mi-info-circle" style="font-size: 48px; color: var(--mo-primary, #0d6efd);"></i>
         </div>
         <p style="margin-bottom: 12px; color: var(--mo-text, #333);">
-          <strong>AI функц идэвхжүүлээгүй байна.</strong>
+          <strong>${this._isMn ? 'AI функц идэвхжүүлээгүй байна.' : 'AI function is not enabled.'}</strong>
         </p>
         <p style="margin-bottom: 12px; color: var(--mo-text-muted, #666); font-size: 14px;">
-          Энэ функцийг ашиглахын тулд системийн администратор дараах тохиргоог хийсэн байх шаардлагатай:
+          ${this._isMn ? 'Энэ функцийг ашиглахын тулд системийн администратор дараах тохиргоог хийсэн байх шаардлагатай:' : 'To use this function, the system administrator must configure the following:'}
         </p>
         <ul style="margin-bottom: 15px; padding-left: 20px; color: var(--mo-text-muted, #666); font-size: 13px;">
-          <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">shineUrl</code> - AI endpoint URL тохируулах</li>
-          <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">INDO_OPENAI_API_KEY</code> - Backend дээр OpenAI API key тохируулах</li>
+          <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">shineUrl</code> - ${this._isMn ? 'AI endpoint URL тохируулах' : 'Set AI endpoint URL'}</li>
+          <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">INDO_OPENAI_API_KEY</code> - ${this._isMn ? 'Backend дээр OpenAI API key тохируулах' : 'Set OpenAI API key on backend'}</li>
         </ul>
         <p style="margin: 0; color: var(--mo-text-muted, #666); font-size: 13px; font-style: italic;">
-          Тохиргоо хийгдсэн бол энэ функц автоматаар идэвхжинэ.
+          ${this._isMn ? 'Тохиргоо хийгдсэн бол энэ функц автоматаар идэвхжинэ.' : 'Once configured, this function will be enabled automatically.'}
         </p>
       </div>
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-primary btn-close-notice">
-          <i class="bi bi-check-lg"></i> Ойлголоо
+          <i class="mi-check-lg"></i> ${this._isMn ? 'Ойлголоо' : 'Got it'}
         </button>
       </div>
     </div>
@@ -904,7 +908,7 @@ moedit.prototype._shine = async function() {
 
   /* Хоосон контент шалгах */
   if (!html || !html.trim()) {
-    this._notify('warning', cfg.title, 'AI Shine ашиглахын тулд эхлээд контент бичнэ үү.');
+    this._notify('warning', cfg.title, this._isMn ? 'AI Shine ашиглахын тулд эхлээд контент бичнэ үү.' : 'Please write some content first to use AI Shine.');
     return;
   }
 
@@ -914,19 +918,20 @@ moedit.prototype._shine = async function() {
   dialog.id = dialogId;
   dialog.className = 'moedit-modal-overlay';
   const defaultPrompt = cfg.defaultPrompt || '';
+  const resetLabel = this._isMn ? 'Анхны утга' : 'Reset';
   dialog.innerHTML = `
     <div class="moedit-modal moedit-modal-lg">
-      <h5 class="moedit-modal-title"><i class="bi bi-stars"></i> ${cfg.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-stars"></i> ${cfg.title}</h5>
       <p class="moedit-modal-desc">${cfg.description}</p>
       <div style="background: linear-gradient(135deg, #7952b3 0%, #563d7c 100%); color: white; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 13px;">
-        <i class="bi bi-bootstrap" style="margin-right: 6px;"></i>
-        <strong>Анхааруулга:</strong> Энэ функцээр сайжруулсан контент нь зөвхөн <strong>Bootstrap</strong> сан ашиглаж буй HTML хуудас дотор гоё харагдана.
+        <i class="mi-bootstrap" style="margin-right: 6px;"></i>
+        <strong>${this._isMn ? 'Анхааруулга:' : 'Note:'}</strong> ${this._isMn ? 'Энэ функцээр сайжруулсан контент нь зөвхөн <strong>Bootstrap</strong> сан ашиглаж буй HTML хуудас дотор гоё харагдана.' : 'Content beautified with this function will only look good on HTML pages using the <strong>Bootstrap</strong> library.'}
       </div>
       <div class="moedit-modal-field shine-prompt-field">
         <label class="moedit-modal-label">
-          <i class="bi bi-chat-square-text"></i> ${cfg.promptLabel || 'AI-д өгөх заавар'}
+          <i class="mi-chat-square-text"></i> ${cfg.promptLabel}
           <button type="button" class="btn-reset-prompt" style="float:right; background:none; border:none; color:var(--mo-primary, #0d6efd); cursor:pointer; font-size:12px; padding:0;">
-            <i class="bi bi-arrow-counterclockwise"></i> Анхны утга
+            <i class="mi-arrow-counterclockwise"></i> ${resetLabel}
           </button>
         </label>
         <textarea class="moedit-modal-textarea shine-prompt" rows="6" style="font-size:13px; font-family:monospace;">${defaultPrompt}</textarea>
@@ -942,10 +947,10 @@ moedit.prototype._shine = async function() {
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary btn-cancel">${cfg.cancelText}</button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-primary btn-shine">
-          <i class="bi bi-stars"></i> ${cfg.title}
+          <i class="mi-stars"></i> ${cfg.title}
         </button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-success btn-confirm" style="display:none;">
-          <i class="bi bi-check-lg"></i> ${cfg.confirmText}
+          <i class="mi-check-lg"></i> ${cfg.confirmText}
         </button>
       </div>
     </div>
@@ -1006,13 +1011,13 @@ moedit.prototype._shine = async function() {
 
       /* HTTP алдаа шалгах */
       if (!response.ok) {
-        throw new Error(`Сервер алдаа: ${response.status} ${response.statusText}`);
+        throw new Error(this._isMn ? `Сервер алдаа: ${response.status} ${response.statusText}` : `Server error: ${response.status} ${response.statusText}`);
       }
 
       /* JSON эсэхийг шалгах */
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Shine API endpoint тохируулаагүй байна');
+        throw new Error(this._isMn ? 'Shine API endpoint тохируулаагүй байна' : 'Shine API endpoint is not configured');
       }
 
       const data = await response.json();
@@ -1456,15 +1461,19 @@ moedit.prototype._ocr = async function() {
   dialog.id = dialogId;
   dialog.className = 'moedit-modal-overlay';
   const defaultPrompt = cfg.defaultPrompt || '';
+  const resetLabel = this._isMn ? 'Анхны утга' : 'Reset';
+  const selectImageText = this._isMn ? 'Зураг сонгоно уу...' : 'Select image...';
+  const browseText = this._isMn ? 'Сонгох' : 'Browse';
+  const insertText = this._isMn ? 'Оруулах' : 'Insert';
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-file-text text-info"></i> ${cfg.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-file-text text-info"></i> ${cfg.title}</h5>
       <p class="moedit-modal-desc">${cfg.description}</p>
       <div class="moedit-modal-field">
         <div class="moedit-modal-file-input">
-          <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="Зураг сонгоно уу...">
+          <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${selectImageText}">
           <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
-            <i class="bi bi-folder2-open"></i> Сонгох
+            <i class="mi-folder2-open"></i> ${browseText}
           </button>
         </div>
         <input type="file" id="${dialogId}-file" accept="image/*" style="display:none;">
@@ -1474,9 +1483,9 @@ moedit.prototype._ocr = async function() {
       </div>
       <div class="moedit-modal-field ocr-prompt-field" style="display:none;">
         <label class="moedit-modal-label">
-          <i class="bi bi-chat-square-text"></i> ${cfg.promptLabel || 'AI-д өгөх заавар'}
+          <i class="mi-chat-square-text"></i> ${cfg.promptLabel}
           <button type="button" class="btn-reset-prompt" style="float:right; background:none; border:none; color:var(--mo-primary, #0d6efd); cursor:pointer; font-size:12px; padding:0;">
-            <i class="bi bi-arrow-counterclockwise"></i> Анхны утга
+            <i class="mi-arrow-counterclockwise"></i> ${resetLabel}
           </button>
         </label>
         <textarea class="moedit-modal-textarea ocr-prompt" rows="5" style="font-size:13px; font-family:monospace;">${defaultPrompt}</textarea>
@@ -1492,10 +1501,10 @@ moedit.prototype._ocr = async function() {
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary btn-cancel">${cfg.cancelText}</button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-info moedit-modal-btn-disabled btn-convert" disabled>
-          <i class="bi bi-file-text"></i> ${cfg.confirmText}
+          <i class="mi-file-text"></i> ${cfg.confirmText}
         </button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-success btn-confirm" style="display:none;">
-          <i class="bi bi-check-lg"></i> Оруулах
+          <i class="mi-check-lg"></i> ${insertText}
         </button>
       </div>
     </div>
@@ -1602,7 +1611,7 @@ moedit.prototype._ocr = async function() {
       });
 
       if (!response.ok) {
-        throw new Error(`AI OCR алдаа: ${response.status} ${response.statusText}`);
+        throw new Error(this._isMn ? `AI OCR алдаа: ${response.status} ${response.statusText}` : `AI OCR error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -1620,9 +1629,9 @@ moedit.prototype._ocr = async function() {
 
         this._notify('success', cfg.successMessage);
       } else if (data.status === 'error') {
-        throw new Error(data.message || 'AI OCR алдаа');
+        throw new Error(data.message || cfg.errorMessage);
       } else {
-        throw new Error('Хүлээгдээгүй хариу ирлээ');
+        throw new Error(this._isMn ? 'Хүлээгдээгүй хариу ирлээ' : 'Unexpected response');
       }
     } catch (err) {
       errorEl.textContent = err.message || cfg.errorMessage;
@@ -1997,7 +2006,7 @@ moedit.prototype._insertHR = function() {
 };
 
 moedit.prototype._insertEmail = function() {
-  const email = this.opts.prompt("Email хаяг оруул", "example@domain.com");
+  const email = this.opts.prompt(this._isMn ? "Email хаяг оруулна уу" : "Enter email address", "example@domain.com");
   if (email && email.trim()) {
     const link = document.createElement('a');
     link.href = 'mailto:' + email.trim();
@@ -2027,7 +2036,7 @@ moedit.prototype._insertYouTube = function() {
   dialog.className = 'moedit-modal-overlay';
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-youtube"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-youtube"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <label class="moedit-modal-label">${config.urlLabel}</label>
         <input type="text" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.placeholder}">
@@ -2194,7 +2203,7 @@ moedit.prototype._insertFacebook = function() {
   dialog.className = 'moedit-modal-overlay';
   dialog.innerHTML = `
     <div class="moedit-modal">
-      <h5 class="moedit-modal-title"><i class="bi bi-facebook"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-facebook"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <label class="moedit-modal-label">${config.urlLabel}</label>
         <input type="text" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.placeholder}">
@@ -2356,6 +2365,7 @@ moedit.prototype._paste = function() {
  * @returns {Promise<Object>} pdfjsLib объект
  */
 moedit.prototype._loadPdfJs = function() {
+  const isMn = this._isMn;
   return new Promise((resolve, reject) => {
     /* Аль хэдийн ачаалагдсан бол шууд буцаах */
     if (window.pdfjsLib) {
@@ -2382,7 +2392,7 @@ moedit.prototype._loadPdfJs = function() {
       if (window.pdfjsLib) {
         resolve(window.pdfjsLib);
       } else {
-        reject(new Error('PDF.js ачаалж чадсангүй'));
+        reject(new Error(isMn ? 'PDF.js ачаалж чадсангүй' : 'Failed to load PDF.js'));
       }
     };
 
@@ -2392,7 +2402,7 @@ moedit.prototype._loadPdfJs = function() {
     setTimeout(() => {
       window.removeEventListener('pdfjsLoaded', onLoaded);
       if (!window.pdfjsLib) {
-        reject(new Error('PDF.js ачаалах хугацаа хэтэрлээ'));
+        reject(new Error(isMn ? 'PDF.js ачаалах хугацаа хэтэрлээ' : 'PDF.js loading timeout'));
       }
     }, 15000);
 
@@ -2432,15 +2442,20 @@ moedit.prototype._insertPdf = async function() {
   dialog.id = dialogId;
   dialog.className = 'moedit-modal-overlay';
   const defaultPrompt = config.defaultPrompt || '';
+  const resetLabel = this._isMn ? 'Анхны утга' : 'Reset';
+  const selectPagesText = this._isMn ? 'Хуудас сонгох:' : 'Select pages:';
+  const selectAllText = this._isMn ? 'Бүгдийг' : 'Select All';
+  const clearText = this._isMn ? 'Арилгах' : 'Clear';
+  const loadingPagesText = this._isMn ? 'Хуудсуудыг ачаалж байна...' : 'Loading pages...';
   dialog.innerHTML = `
     <div class="moedit-modal moedit-modal-lg">
-      <h5 class="moedit-modal-title"><i class="bi bi-file-earmark-pdf text-danger"></i> ${config.title}</h5>
+      <h5 class="moedit-modal-title"><i class="mi-file-earmark-pdf text-danger"></i> ${config.title}</h5>
       <p class="moedit-modal-desc">${config.description}</p>
       <div class="moedit-modal-field">
         <div class="moedit-modal-file-input">
           <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">
           <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
-            <i class="bi bi-folder2-open"></i> ${config.browseText}
+            <i class="mi-folder2-open"></i> ${config.browseText}
           </button>
         </div>
         <input type="file" id="${dialogId}-file" accept=".pdf,application/pdf" style="display:none;">
@@ -2450,23 +2465,23 @@ moedit.prototype._insertPdf = async function() {
       </div>
       <div class="pdf-pages-container" id="${dialogId}-pages-container" style="display:none; margin:10px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <small class="text-muted">Хуудас сонгох:</small>
+          <small class="text-muted">${selectPagesText}</small>
           <div>
-            <button type="button" class="moedit-modal-btn moedit-modal-btn-sm moedit-modal-btn-secondary" id="${dialogId}-select-all">Бүгдийг</button>
-            <button type="button" class="moedit-modal-btn moedit-modal-btn-sm moedit-modal-btn-secondary" id="${dialogId}-select-none">Арилгах</button>
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-sm moedit-modal-btn-secondary" id="${dialogId}-select-all">${selectAllText}</button>
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-sm moedit-modal-btn-secondary" id="${dialogId}-select-none">${clearText}</button>
           </div>
         </div>
         <div class="pdf-pages-grid" id="${dialogId}-pages" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; max-height:300px; overflow-y:auto; padding:5px;"></div>
         <div class="pdf-pages-loading" id="${dialogId}-pages-loading" style="display:none; text-align:center; padding:20px;">
           <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
-          <span class="ms-2">Хуудсуудыг ачаалж байна...</span>
+          <span class="ms-2">${loadingPagesText}</span>
         </div>
       </div>
       <div class="moedit-modal-field pdf-prompt-field" style="display:none;">
         <label class="moedit-modal-label">
-          <i class="bi bi-chat-square-text"></i> ${config.promptLabel || 'AI-д өгөх заавар'}
+          <i class="mi-chat-square-text"></i> ${config.promptLabel}
           <button type="button" class="btn-reset-prompt" style="float:right; background:none; border:none; color:var(--mo-primary, #0d6efd); cursor:pointer; font-size:12px; padding:0;">
-            <i class="bi bi-arrow-counterclockwise"></i> Анхны утга
+            <i class="mi-arrow-counterclockwise"></i> ${resetLabel}
           </button>
         </label>
         <textarea class="moedit-modal-textarea pdf-prompt" rows="5" style="font-size:13px; font-family:monospace;">${defaultPrompt}</textarea>
@@ -2485,10 +2500,10 @@ moedit.prototype._insertPdf = async function() {
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary btn-cancel">${config.cancelText}</button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-danger moedit-modal-btn-disabled btn-convert" disabled>
-          <i class="bi bi-file-earmark-pdf"></i> ${config.title}
+          <i class="mi-file-earmark-pdf"></i> ${config.title}
         </button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-success btn-confirm" style="display:none;">
-          <i class="bi bi-check-lg"></i> ${config.confirmText}
+          <i class="mi-check-lg"></i> ${config.confirmText}
         </button>
       </div>
     </div>
@@ -2591,11 +2606,12 @@ moedit.prototype._insertPdf = async function() {
         pageCard.className = 'pdf-page-card';
         pageCard.dataset.page = pageNum;
         pageCard.style.cssText = 'position:relative; border:2px solid var(--mo-border); border-radius:var(--mo-radius); overflow:hidden; cursor:pointer; transition:all 0.2s;';
+        const pageAltText = this._isMn ? `Хуудас ${pageNum}` : `Page ${pageNum}`;
         pageCard.innerHTML = `
-          <img src="${thumbnail}" alt="Хуудас ${pageNum}" style="width:100%; display:block;">
+          <img src="${thumbnail}" alt="${pageAltText}" style="width:100%; display:block;">
           <div class="pdf-page-overlay" style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(220,53,69,0.3); display:none;"></div>
           <div class="pdf-page-check" style="position:absolute; top:5px; right:5px; width:20px; height:20px; background:#dc3545; border-radius:50%; display:none; align-items:center; justify-content:center;">
-            <i class="bi bi-check" style="color:white; font-size:14px;"></i>
+            <i class="mi-check" style="color:white; font-size:14px;"></i>
           </div>
           <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:white; text-align:center; padding:2px; font-size:11px;">
             ${pageNum}
@@ -2630,7 +2646,7 @@ moedit.prototype._insertPdf = async function() {
 
       updateConvertButton();
     } catch (err) {
-      errorEl.textContent = 'PDF ачаалахад алдаа: ' + err.message;
+      errorEl.textContent = (this._isMn ? 'PDF ачаалахад алдаа: ' : 'Error loading PDF: ') + err.message;
       errorEl.style.display = 'block';
     } finally {
       pagesLoadingEl.style.display = 'none';
@@ -2641,14 +2657,15 @@ moedit.prototype._insertPdf = async function() {
    * Convert товчны төлөв шинэчлэх
    */
   const updateConvertButton = () => {
+    const pageText = this._isMn ? 'хуудас' : (selectedPages.size === 1 ? 'page' : 'pages');
     if (selectedPages.size > 0) {
       convertBtn.disabled = false;
       convertBtn.classList.remove('moedit-modal-btn-disabled');
-      convertBtn.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> ${config.title} (${selectedPages.size} хуудас)`;
+      convertBtn.innerHTML = `<i class="mi-file-earmark-pdf"></i> ${config.title} (${selectedPages.size} ${pageText})`;
     } else {
       convertBtn.disabled = true;
       convertBtn.classList.add('moedit-modal-btn-disabled');
-      convertBtn.innerHTML = `<i class="bi bi-file-earmark-pdf"></i> ${config.title}`;
+      convertBtn.innerHTML = `<i class="mi-file-earmark-pdf"></i> ${config.title}`;
     }
   };
 
@@ -2725,7 +2742,7 @@ moedit.prototype._insertPdf = async function() {
    */
   const extractTextWithAiOcr = async (customPrompt) => {
     if (!pdfDoc) {
-      throw new Error('PDF ачаалаагүй байна');
+      throw new Error(this._isMn ? 'PDF ачаалаагүй байна' : 'PDF not loaded');
     }
 
     /* Сонгосон хуудсуудыг эрэмбэлэх */
@@ -2739,7 +2756,10 @@ moedit.prototype._insertPdf = async function() {
       const pageNum = pagesToProcess[i];
       const progress = Math.round(((i + 1) / totalSelected) * 100);
       progressBar.style.width = progress + '%';
-      statusTextEl.textContent = `AI OCR боловсруулж байна... (${i + 1}/${totalSelected} - хуудас ${pageNum})`;
+      const pageLabel = this._isMn ? 'хуудас' : 'page';
+      statusTextEl.textContent = this._isMn
+        ? `AI OCR боловсруулж байна... (${i + 1}/${totalSelected} - хуудас ${pageNum})`
+        : `Processing AI OCR... (${i + 1}/${totalSelected} - page ${pageNum})`;
 
       const page = await pdfDoc.getPage(pageNum);
       const canvas = await renderPageToCanvas(page, 2);
@@ -2756,19 +2776,20 @@ moedit.prototype._insertPdf = async function() {
       });
 
       if (!response.ok) {
-        throw new Error(`AI OCR алдаа: ${response.status} ${response.statusText}`);
+        throw new Error(this._isMn ? `AI OCR алдаа: ${response.status} ${response.statusText}` : `AI OCR error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
 
       if (data.status === 'success' && data.html) {
         if (totalSelected > 1) {
-          htmlParts.push(`<!-- Хуудас ${pageNum} -->\n${data.html}`);
+          const pageComment = this._isMn ? `Хуудас ${pageNum}` : `Page ${pageNum}`;
+          htmlParts.push(`<!-- ${pageComment} -->\n${data.html}`);
         } else {
           htmlParts.push(data.html);
         }
       } else if (data.status === 'error') {
-        throw new Error(data.message || 'AI OCR алдаа');
+        throw new Error(data.message || config.errorMessage);
       }
     }
 
@@ -2795,7 +2816,7 @@ moedit.prototype._insertPdf = async function() {
     /* Хэрэглэгчийн оруулсан prompt авах */
     const customPrompt = promptTextarea.value.trim();
 
-    statusTextEl.textContent = 'AI OCR ашиглан боловсруулж байна...';
+    statusTextEl.textContent = this._isMn ? 'AI OCR ашиглан боловсруулж байна...' : 'Processing with AI OCR...';
     pagesContainerEl.style.display = 'none';  /* Хуудасны сонголтыг нуух */
 
     try {
@@ -2805,7 +2826,7 @@ moedit.prototype._insertPdf = async function() {
       newHtml = result.html;
 
       if (!newHtml || !newHtml.trim()) {
-        throw new Error('AI OCR текст олдсонгүй.');
+        throw new Error(this._isMn ? 'AI OCR текст олдсонгүй.' : 'AI OCR found no text.');
       }
 
       infoEl.querySelector('small').textContent += ` • ${pageCount} ${config.pageText} (AI OCR)`;
@@ -2894,7 +2915,7 @@ moedit.prototype._selectHeaderImage = function() {
           this.opts.onHeaderImageChange(file, preview);
         }
 
-        this._notify('success', 'Толгой зураг сонгогдлоо');
+        this._notify('success', this._isMn ? 'Толгой зураг сонгогдлоо' : 'Header image selected');
       };
       reader.readAsDataURL(file);
     }
