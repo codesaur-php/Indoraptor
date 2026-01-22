@@ -1,0 +1,332 @@
+/**
+ * motable v2.5 CSS
+ * ------------------------------------------------------------------
+ * Bootstrap шаардлагагүй, бие даан ажиллах боломжтой.
+ */
+
+/* ============================================
+   CSS Variables - Өнгөний тохиргоо
+   ============================================ */
+:root{
+  --mo-bg:#fff;
+  --mo-text:#212529;
+  --mo-border:#dee2e6;
+  --mo-header-bg:#f8f9fa;
+  --mo-hover-bg:#f5f5f5;
+  --mo-stripe-bg:#f9f9f9;
+  --mo-input-bg:#fff;
+  --mo-input-border:#ced4da;
+  --mo-input-focus:#86b7fe;
+  --mo-primary:#0d6efd;
+  --mo-shadow:linear-gradient(to left,rgba(255,255,255,0.9),transparent);
+}
+
+/* Dark mode variables */
+@media (prefers-color-scheme:dark){
+  :root{
+    --mo-bg:#212529;
+    --mo-text:#e9ecef;
+    --mo-border:#495057;
+    --mo-header-bg:#343a40;
+    --mo-hover-bg:#2c3136;
+    --mo-stripe-bg:#2a2e32;
+    --mo-input-bg:#343a40;
+    --mo-input-border:#495057;
+    --mo-input-focus:#6ea8fe;
+    --mo-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
+  }
+}
+[data-bs-theme="dark"],
+[data-theme="dark"]{
+  --mo-bg:#212529;
+  --mo-text:#e9ecef;
+  --mo-border:#495057;
+  --mo-header-bg:#343a40;
+  --mo-hover-bg:#2c3136;
+  --mo-stripe-bg:#2a2e32;
+  --mo-input-bg:#343a40;
+  --mo-input-border:#495057;
+  --mo-input-focus:#6ea8fe;
+  --mo-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
+}
+
+/* ============================================
+   Loading animation
+   ============================================ */
+@keyframes l1{to{clip-path:inset(0 -34% 0 0)}}
+.threedots{
+  display:inline-block;
+  width:.5rem;
+  aspect-ratio:4;
+  background:radial-gradient(circle closest-side,currentcolor 90%,#0000) 0/calc(100%/3) 100% space;
+  clip-path:inset(0 100% 0 0);
+  animation:l1 1s steps(4) infinite;
+}
+
+/* ============================================
+   Tools bar - Info + Search
+   ============================================ */
+.motools{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+  margin-bottom:.5rem;
+  align-items:center;
+}
+.motools p{
+  flex:1;
+  margin:0;
+  font-size:.875rem;
+  color:var(--mo-text);
+  min-width:200px;
+}
+
+/* Search input - Bootstrap-ээс хамааралгүй */
+.mosearch{
+  flex:0 0 auto;
+  width:100%;
+  max-width:280px;
+  padding:.5rem .75rem;
+  font-size:.875rem;
+  font-family:inherit;
+  line-height:1.5;
+  color:var(--mo-text);
+  background-color:var(--mo-input-bg);
+  border:1px solid var(--mo-input-border);
+  border-radius:.375rem;
+  outline:none;
+  transition:border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.mosearch:focus{
+  border-color:var(--mo-input-focus);
+  box-shadow:0 0 0 .2rem rgba(13,110,253,.25);
+}
+.mosearch:disabled{
+  background-color:var(--mo-header-bg);
+  opacity:.65;
+  cursor:not-allowed;
+}
+.mosearch::placeholder{
+  color:#6c757d;
+  opacity:1;
+}
+/* Search icon (x) button */
+.mosearch::-webkit-search-cancel-button{
+  -webkit-appearance:none;
+  appearance:none;
+  width:1rem;
+  height:1rem;
+  background:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%236c757d'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/contain no-repeat;
+  cursor:pointer;
+}
+
+/* ============================================
+   Wrapper + Container
+   ============================================ */
+.mocontainer{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.mowrapper{
+  width:100%;
+  max-width:100%;
+  position:relative;
+  border-radius:.375rem;
+  background:var(--mo-bg);
+}
+
+/* Scrollbar загвар */
+.mocontainer::-webkit-scrollbar{
+  height:8px;
+}
+.mocontainer::-webkit-scrollbar-track{
+  background:var(--mo-header-bg);
+  border-radius:4px;
+}
+.mocontainer::-webkit-scrollbar-thumb{
+  background:var(--mo-border);
+  border-radius:4px;
+}
+.mocontainer::-webkit-scrollbar-thumb:hover{
+  background:#adb5bd;
+}
+
+/* Scroll fade-shadow (баруун талын градиент) */
+.mowrapper::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  width:24px;
+  height:100%;
+  pointer-events:none;
+  background:var(--mo-shadow);
+  opacity:0;
+  transition:opacity .3s ease;
+}
+.mowrapper.scrollable::after{
+  opacity:1;
+}
+
+/* ============================================
+   Table base styles - Bootstrap шаардлагагүй
+   ============================================ */
+.motable{
+  width:100%;
+  border-collapse:collapse;
+  min-width:100%;
+  color:var(--mo-text);
+  background-color:var(--mo-bg);
+  font-size:.875rem;
+}
+
+/* Cell padding and borders */
+.motable th,
+.motable td{
+  padding:.4rem .5rem;
+  vertical-align:middle;
+  border-bottom:1px solid var(--mo-border);
+  text-align:left;
+}
+
+/* Header sticky + sorting icon */
+.motable thead th{
+  position:sticky;
+  top:0;
+  z-index:5;
+  cursor:pointer;
+  background-color:var(--mo-header-bg);
+  font-weight:600;
+  white-space:nowrap;
+  border-bottom:2px solid var(--mo-border);
+  user-select:none;
+}
+
+/* Row hover effect */
+.motable tbody tr:hover{
+  background-color:var(--mo-hover-bg);
+}
+
+/* Striped rows (optional class) */
+.motable.motable-striped tbody tr:nth-child(odd){
+  background-color:var(--mo-stripe-bg);
+}
+.motable.motable-striped tbody tr:nth-child(odd):hover{
+  background-color:var(--mo-hover-bg);
+}
+
+/* Bordered table (optional class) */
+.motable.motable-bordered th,
+.motable.motable-bordered td{
+  border:1px solid var(--mo-border);
+}
+
+/* Compact table (optional class) */
+.motable.motable-sm th,
+.motable.motable-sm td{
+  padding:.375rem .5rem;
+  font-size:.8125rem;
+}
+
+/* Sort icon - default arrow */
+.motable thead th::after{
+  content:'';
+  display:inline-block;
+  vertical-align:middle;
+  margin-left:.5rem;
+  border-width:0 .275rem .275rem;
+  border-style:solid;
+  border-color:currentColor transparent;
+  opacity:0;
+  transition:opacity .15s ease;
+}
+.motable thead th:hover::after{
+  opacity:.4;
+}
+.motable thead th[data-sort]::after{
+  opacity:1;
+}
+
+/* Sort desc үед сумыг доош харуулна */
+.motable thead th[data-sort=desc]::after{
+  border-bottom:none;
+  border-width:.275rem .275rem 0;
+}
+
+/* ============================================
+   Freeze column - sticky left (Google Sheets style)
+   ============================================ */
+.motable .freeze-col{
+  position:sticky;
+  left:0;
+  background-color:var(--mo-bg);
+  z-index:2;
+}
+.motable thead .freeze-col{
+  z-index:10;
+  background-color:var(--mo-header-bg);
+}
+/* Shadow on last frozen column - Google Sheets style */
+.motable .freeze-col-shadow{
+  border-right:1px solid var(--mo-border);
+}
+.motable .freeze-col-shadow::before{
+  content:"";
+  position:absolute;
+  top:0;
+  right:-6px;
+  width:6px;
+  height:100%;
+  background:linear-gradient(to right,rgba(0,0,0,.08),transparent);
+  pointer-events:none;
+}
+/* Dark mode shadow */
+[data-bs-theme="dark"] .motable .freeze-col-shadow::before,
+[data-theme="dark"] .motable .freeze-col-shadow::before{
+  background:linear-gradient(to right,rgba(0,0,0,.25),transparent);
+}
+@media (prefers-color-scheme:dark){
+  .motable .freeze-col-shadow::before{
+    background:linear-gradient(to right,rgba(0,0,0,.25),transparent);
+  }
+}
+
+/* ============================================
+   Mobile / small screen optimization
+   ============================================ */
+@media (max-width:768px){
+  .motools{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .motools p{
+    min-width:auto;
+    text-align:center;
+  }
+  .mosearch{
+    max-width:100%;
+  }
+  .motable{
+    min-width:600px;
+  }
+  .motable th,
+  .motable td{
+    font-size:.8125rem;
+    padding:.375rem .5rem;
+    white-space:nowrap;
+  }
+}
+
+/* ============================================
+   Empty state
+   ============================================ */
+.motable tbody:empty::after{
+  content:'No data available';
+  display:block;
+  padding:2rem;
+  text-align:center;
+  color:#6c757d;
+}

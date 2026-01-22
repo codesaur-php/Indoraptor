@@ -1,7 +1,7 @@
 /**
- * moedit - Mongolian WYSIWYG Editor
+ * moedit - Mongolian WYSIWYG Editor v1
  *
- * Контент засварлах rich text editor. Bootstrap 5 dark mode дэмждэг.
+ * Контент засварлах rich text editor.
  *
  * @example
  * // Энгийн ашиглалт
@@ -61,6 +61,11 @@ class moedit {
     /** @private */
     this._boundHandlers = {};
 
+    /* Language detection - stored as instance property for UI methods */
+    /** @private */
+    this._isMn = document.documentElement.lang === 'mn';
+    const isMn = this._isMn;
+
     /* Хэрэв textarea дамжуулсан бол бүтэц автоматаар үүсгэх */
     if (root.tagName === 'TEXTAREA') {
       this._targetTextarea = root;
@@ -76,7 +81,7 @@ class moedit {
 
     /* Toolbar байхгүй бол автоматаар үүсгэх */
     if (!this.toolbar) {
-      this._createToolbar();
+      this._createToolbar(isMn);
       this.toolbar = this.root.querySelector(".moedit-toolbar");
     }
 
@@ -85,74 +90,74 @@ class moedit {
     this.opts = {
       onChange: null,
       prompt: (label, def = "") => window.prompt(label, def),
-      readonly: false, /* Readonly mode - зөвхөн харах, засах боломжгүй */
-      uploadUrl: null, /* Image upload URL - null бол URL prompt ашиглана */
-      uploadImage: null, /* async function(file) -> url, зураг upload хийх функц */
-      onUploadSuccess: null, /* Upload амжилттай болсны дараа дуудагдах callback */
-      onUploadError: null, /* Upload алдаа гарсан үед дуудагдах callback */
-      /* Image upload modal тохиргоо */
+      readonly: false,
+      uploadUrl: null,
+      uploadImage: null,
+      onUploadSuccess: null,
+      onUploadError: null,
+      /* Image upload modal */
       imageUploadModal: {
-        title: 'Зураг оруулах',
-        placeholder: 'Зураг сонгоогүй байна...',
-        browseText: 'Сонгох',
-        cancelText: 'Болих',
+        title: isMn ? 'Зураг оруулах' : 'Insert Image',
+        placeholder: isMn ? 'Зураг сонгоогүй байна...' : 'No image selected...',
+        browseText: isMn ? 'Сонгох' : 'Browse',
+        cancelText: isMn ? 'Болих' : 'Cancel',
         uploadText: 'Upload',
-        uploadingText: 'Уншиж байна...',
-        successMessage: 'Зураг амжилттай орлоо. Та хүсвэл source mode руу шилжүүлж img tag-ийг засах боломжтой.',
-        errorMessage: 'Зураг upload хийхэд алдаа гарлаа'
+        uploadingText: isMn ? 'Уншиж байна...' : 'Uploading...',
+        successMessage: isMn ? 'Зураг амжилттай орлоо.' : 'Image uploaded successfully.',
+        errorMessage: isMn ? 'Зураг upload хийхэд алдаа гарлаа' : 'Error uploading image'
       },
-      /* Link modal тохиргоо */
+      /* Link modal */
       linkModal: {
-        title: 'Холбоос оруулах',
-        urlLabel: 'URL хаяг',
-        emailLabel: 'Email хаяг',
-        textLabel: 'Харуулах текст',
-        textHint: '(хоосон бол URL/Email харуулна)',
-        cancelText: 'Болих',
+        title: isMn ? 'Холбоос оруулах' : 'Insert Link',
+        urlLabel: isMn ? 'URL хаяг' : 'URL',
+        emailLabel: isMn ? 'Email хаяг' : 'Email',
+        textLabel: isMn ? 'Харуулах текст' : 'Display text',
+        textHint: isMn ? '(хоосон бол URL/Email харуулна)' : '(if empty, URL/Email will be shown)',
+        cancelText: isMn ? 'Болих' : 'Cancel',
         okText: 'OK'
       },
-      /* Table modal тохиргоо */
+      /* Table modal */
       tableModal: {
-        title: 'Хүснэгт оруулах',
-        rowsLabel: 'Мөрийн тоо',
-        colsLabel: 'Баганы тоо',
-        typeLabel: 'Хүснэгтийн төрөл',
+        title: isMn ? 'Хүснэгт оруулах' : 'Insert Table',
+        rowsLabel: isMn ? 'Мөрийн тоо' : 'Rows',
+        colsLabel: isMn ? 'Баганы тоо' : 'Columns',
+        typeLabel: isMn ? 'Хүснэгтийн төрөл' : 'Table type',
         typeVanilla: 'Vanilla Table',
         typeBootstrap: 'Bootstrap Table',
-        cancelText: 'Болих',
+        cancelText: isMn ? 'Болих' : 'Cancel',
         okText: 'OK'
       },
-      /* YouTube modal тохиргоо */
+      /* YouTube modal */
       youtubeModal: {
-        title: 'YouTube видео оруулах',
+        title: isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video',
         urlLabel: 'YouTube URL',
         placeholder: 'https://www.youtube.com/watch?v=...',
-        hint: 'Жишээ: https://www.youtube.com/watch?v=dQw4w9WgXcQ эсвэл https://youtu.be/dQw4w9WgXcQ',
-        invalidUrl: 'YouTube видео ID олдсонгүй. URL зөв эсэхийг шалгана уу.',
-        cancelText: 'Болих',
-        okText: 'Оруулах'
+        hint: isMn ? 'Жишээ: https://www.youtube.com/watch?v=dQw4w9WgXcQ эсвэл https://youtu.be/dQw4w9WgXcQ' : 'Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ or https://youtu.be/dQw4w9WgXcQ',
+        invalidUrl: isMn ? 'YouTube видео ID олдсонгүй. URL зөв эсэхийг шалгана уу.' : 'YouTube video ID not found. Please check the URL.',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        okText: isMn ? 'Оруулах' : 'Insert'
       },
-      /* Facebook modal тохиргоо */
+      /* Facebook modal */
       facebookModal: {
-        title: 'Facebook видео оруулах',
-        urlLabel: 'Facebook видео URL',
+        title: isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video',
+        urlLabel: isMn ? 'Facebook видео URL' : 'Facebook Video URL',
         placeholder: 'https://www.facebook.com/...',
-        hint: 'Facebook видео эсвэл reel-ийн URL хуулж буулгана уу',
-        cancelText: 'Болих',
-        okText: 'Оруулах'
+        hint: isMn ? 'Facebook видео эсвэл reel-ийн URL хуулж буулгана уу' : 'Paste Facebook video or reel URL',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        okText: isMn ? 'Оруулах' : 'Insert'
       },
-      /* Shine modal тохиргоо */
+      /* Shine modal */
       shineModal: {
         title: 'AI Shine',
-        description: 'Контентын бүтцийг шинжилж table, card, accordion зэрэг Bootstrap 5 компонент болгоно.',
-        processingText: 'Боловсруулж байна...',
-        successMessage: 'Контент амжилттай гоёжууллаа!',
-        errorMessage: 'Алдаа гарлаа',
-        emptyMessage: 'Контент хоосон байна',
-        confirmText: 'Шинэчлэх',
-        cancelText: 'Болих',
-        promptLabel: 'AI-д өгөх заавар',
-        defaultPrompt: `Доорх HTML контентыг Bootstrap 5 компонентууд ашиглан илүү гоё, мэргэжлийн түвшинд харагдуулах болгож өгнө үү.
+        description: isMn ? 'Контентын бүтцийг шинжилж table, card, accordion зэрэг Bootstrap 5 компонент болгоно.' : 'Analyzes content structure and converts to Bootstrap 5 components like table, card, accordion.',
+        processingText: isMn ? 'Боловсруулж байна...' : 'Processing...',
+        successMessage: isMn ? 'Контент амжилттай гоёжууллаа!' : 'Content beautified successfully!',
+        errorMessage: isMn ? 'Алдаа гарлаа' : 'An error occurred',
+        emptyMessage: isMn ? 'Контент хоосон байна' : 'Content is empty',
+        confirmText: isMn ? 'Шинэчлэх' : 'Apply',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        promptLabel: isMn ? 'AI-д өгөх заавар' : 'Instructions for AI',
+        defaultPrompt: isMn ? `Доорх HTML контентыг Bootstrap 5 компонентууд ашиглан илүү гоё, мэргэжлийн түвшинд харагдуулах болгож өгнө үү.
 
 Заавар:
 1. Контентын бүтэц, агуулгыг шинжилж, тохирох Bootstrap компонент болго:
@@ -166,64 +171,92 @@ class moedit {
 3. Текст агуулгыг ӨӨРЧЛӨХГҮЙ, зөвхөн HTML бүтцийг сайжруул
 4. Хэт их биш, зөвхөн тохирох хэсэгт компонент ашигла
 5. Хэрэв контент энгийн текст бол хүний нүдээр уншихад эвтэйхэн болгон форматлах
-6. <div class="container">...</div> wrapper БҮҮ ашигла - вэб хуудас өөрөө container-тэй`
+6. <div class="container">...</div> wrapper БҮҮ ашигла - вэб хуудас өөрөө container-тэй` : `Transform the HTML content below into a more professional look using Bootstrap 5 components.
+
+Instructions:
+1. Analyze content structure and convert to appropriate Bootstrap components:
+   - List information → card or list-group
+   - Comparisons, multi-column data → table (table-striped table-hover table-bordered)
+   - Q&A, FAQ → accordion
+   - Step-by-step instructions → list-group or card
+   - Highlighted information → alert or callout
+   - Related items list → row/col grid
+2. img → class="img-fluid rounded"
+3. DO NOT change text content, only improve HTML structure
+4. Use components sparingly, only where appropriate
+5. If content is plain text, format it for easy reading
+6. DO NOT use <div class="container">...</div> wrapper - the page already has a container`
       },
-      /* OCR modal тохиргоо */
+      /* OCR modal */
       ocrModal: {
         title: 'AI OCR',
-        description: 'Зураг дээрх текстийг уншиж HTML болгоод editor-д оруулна.',
-        processingText: 'Зураг уншиж байна...',
-        successMessage: 'Зургаас текст амжилттай задлагдлаа!',
-        errorMessage: 'Алдаа гарлаа',
-        noImageMessage: 'Зураг олдсонгүй. OCR ашиглахын тулд зураг оруулна уу.',
-        confirmText: 'Хөрвүүлэх',
-        cancelText: 'Болих',
-        promptLabel: 'AI-д өгөх заавар',
-        defaultPrompt: `Хавсаргасан ЗУРАГ дээрх текстийг уншаад HTML болго.
+        description: isMn ? 'Зураг дээрх текстийг уншиж HTML болгоод editor-д оруулна.' : 'Reads text from image and converts to HTML.',
+        processingText: isMn ? 'Зураг уншиж байна...' : 'Reading image...',
+        successMessage: isMn ? 'Зургаас текст амжилттай задлагдлаа!' : 'Text extracted successfully!',
+        errorMessage: isMn ? 'Алдаа гарлаа' : 'An error occurred',
+        noImageMessage: isMn ? 'Зураг олдсонгүй. OCR ашиглахын тулд зураг оруулна уу.' : 'No image found. Please insert an image to use OCR.',
+        confirmText: isMn ? 'Хөрвүүлэх' : 'Convert',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        promptLabel: isMn ? 'AI-д өгөх заавар' : 'Instructions for AI',
+        defaultPrompt: isMn ? `Хавсаргасан ЗУРАГ дээрх текстийг уншаад HTML болго.
 
 Заавар:
 1. Зөвхөн ЗУРАГ дээрх текстийг унш
 2. Хүснэгт байвал <table> ашигла (inline style-тай)
 3. Жагсаалт байвал <ul> эсвэл <ol>
 4. Гарчиг байвал <h1>-<h6> ашигла
-5. Параграф <p> tag ашигла`
+5. Параграф <p> tag ашигла` : `Read the text from the attached IMAGE and convert to HTML.
+
+Instructions:
+1. Read only the text from the IMAGE
+2. Use <table> for tables (with inline styles)
+3. Use <ul> or <ol> for lists
+4. Use <h1>-<h6> for headings
+5. Use <p> tag for paragraphs`
       },
-      /* PDF modal тохиргоо */
+      /* PDF modal */
       pdfModal: {
         title: 'PDF → HTML',
-        description: 'PDF файлыг AI ашиглан HTML болгож editor-д оруулна.',
-        placeholder: 'PDF файл сонгоно уу...',
-        browseText: 'Сонгох',
-        processingText: 'PDF боловсруулж байна...',
-        renderingText: 'Хуудас зурж байна...',
-        successMessage: 'PDF амжилттай HTML болгогдлоо!',
-        errorMessage: 'Алдаа гарлаа',
-        confirmText: 'Оруулах',
-        cancelText: 'Болих',
-        pageText: 'хуудас',
-        promptLabel: 'AI-д өгөх заавар',
-        defaultPrompt: `Хавсаргасан PDF ЗУРАГ дээрх текстийг уншаад HTML болго.
+        description: isMn ? 'PDF файлыг AI ашиглан HTML болгож editor-д оруулна.' : 'Converts PDF to HTML using AI.',
+        placeholder: isMn ? 'PDF файл сонгоно уу...' : 'Select PDF file...',
+        browseText: isMn ? 'Сонгох' : 'Browse',
+        processingText: isMn ? 'PDF боловсруулж байна...' : 'Processing PDF...',
+        renderingText: isMn ? 'Хуудас зурж байна...' : 'Rendering page...',
+        successMessage: isMn ? 'PDF амжилттай HTML болгогдлоо!' : 'PDF converted successfully!',
+        errorMessage: isMn ? 'Алдаа гарлаа' : 'An error occurred',
+        confirmText: isMn ? 'Оруулах' : 'Insert',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        pageText: isMn ? 'хуудас' : 'page',
+        promptLabel: isMn ? 'AI-д өгөх заавар' : 'Instructions for AI',
+        defaultPrompt: isMn ? `Хавсаргасан PDF ЗУРАГ дээрх текстийг уншаад HTML болго.
 
 Заавар:
 1. Зөвхөн ЗУРАГ дээрх текстийг унш
 2. Хүснэгт байвал <table> ашигла (inline style-тай)
 3. Жагсаалт байвал <ul> эсвэл <ol>
 4. Гарчиг байвал <h1>-<h6> ашигла
-5. Параграф <p> tag ашигла`
+5. Параграф <p> tag ашигла` : `Read the text from the attached PDF IMAGE and convert to HTML.
+
+Instructions:
+1. Read only the text from the IMAGE
+2. Use <table> for tables (with inline styles)
+3. Use <ul> or <ol> for lists
+4. Use <h1>-<h6> for headings
+5. Use <p> tag for paragraphs`
       },
-      /* Shine API URL - AI товчнууд энэ URL руу хүсэлт илгээнэ. null бол AI товчнууд нуугдана */
+      /* Shine API URL */
       shineUrl: null,
       /* Notify function - optional */
-      notify: null, /* function(type, title, message) */
-      /* Header image - толгой зураг сонгох боломжтой болгох */
-      headerImage: false, /* true бол toolbar-д толгой зураг товч гарна */
-      /* Header image modal тохиргоо */
+      notify: null,
+      /* Header image */
+      headerImage: false,
+      /* Header image modal */
       headerImageModal: {
-        title: 'Толгой зураг',
-        placeholder: 'Зураг сонгоогүй байна...',
-        browseText: 'Сонгох',
-        removeText: 'Устгах',
-        changeText: 'Солих'
+        title: isMn ? 'Толгой зураг' : 'Header Image',
+        placeholder: isMn ? 'Зураг сонгоогүй байна...' : 'No image selected...',
+        browseText: isMn ? 'Сонгох' : 'Browse',
+        removeText: isMn ? 'Устгах' : 'Remove',
+        changeText: isMn ? 'Солих' : 'Change'
       },
       /* Header image callback - зураг сонгогдох/устгагдах үед дуудагдана */
       onHeaderImageChange: null, /* function(file, preview) - file: File object эсвэл null */
@@ -768,8 +801,12 @@ class moedit {
    * @returns {HTMLElement} Үүсгэсэн wrapper element
    */
   _createWrapper(textarea, opts) {
+    /* Language detection */
+    const isMn = document.documentElement.lang === 'mn';
+
     /* Placeholder авах */
-    const placeholder = opts.placeholder || textarea.placeholder || 'Агуулгаа энд бичнэ үү...';
+    const defaultPlaceholder = isMn ? 'Агуулгаа энд бичнэ үү...' : 'Write your content here...';
+    const placeholder = opts.placeholder || textarea.placeholder || defaultPlaceholder;
 
     /* Анхны утга авах */
     const initialContent = textarea.value || '';
@@ -788,8 +825,8 @@ class moedit {
       <div class="moedit-header-image" style="display:none;">
         <img class="moedit-header-image-preview" src="" alt="">
         <div class="moedit-header-image-overlay">
-          <button type="button" class="moedit-header-image-change" title="Солих"><i class="bi bi-pencil"></i></button>
-          <button type="button" class="moedit-header-image-remove" title="Устгах"><i class="bi bi-trash"></i></button>
+          <button type="button" class="moedit-header-image-change" title="${isMn ? 'Солих' : 'Change'}"><i class="mi-pencil"></i></button>
+          <button type="button" class="moedit-header-image-remove" title="${isMn ? 'Устгах' : 'Remove'}"><i class="mi-trash"></i></button>
         </div>
       </div>
     ` : '';
@@ -834,110 +871,111 @@ class moedit {
   /**
    * Toolbar автоматаар үүсгэх
    * @private
+   * @param {boolean} isMn - Mongolian language flag
    */
-  _createToolbar() {
+  _createToolbar(isMn) {
     const toolbar = document.createElement('div');
     toolbar.className = 'moedit-toolbar';
     toolbar.innerHTML = `
       <div class="moedit-group moedit-group-header-image" style="display:none;">
-        <button type="button" class="moedit-btn text-primary" data-action="headerImage" title="Толгой зураг"><i class="bi bi-image"></i></button>
+        <button type="button" class="moedit-btn" data-action="headerImage" title="${isMn ? 'Толгой зураг' : 'Header Image'}"><i class="mi-photo"></i></button>
       </div>
       <div class="moedit-sep moedit-sep-header-image" style="display:none;"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="image" title="Insert Image"><i class="bi bi-camera"></i></button>
-        <button type="button" class="moedit-btn" data-action="table" title="Insert Table"><i class="bi bi-table"></i></button>
-        <button type="button" class="moedit-btn" data-action="insertLink" title="Insert Link / Email"><i class="bi bi-link-45deg"></i></button>
-        <button type="button" class="moedit-btn" data-action="hr" title="Insert Horizontal Rule"><i class="bi bi-dash-lg"></i></button>
-        <button type="button" class="moedit-btn" data-action="youtube" title="Insert YouTube Video"><i class="bi bi-youtube"></i></button>
-        <button type="button" class="moedit-btn" data-action="facebook" title="Insert Facebook Video"><i class="bi bi-facebook"></i></button>
-        <button type="button" class="moedit-btn text-info" data-action="ocr" title="AI OCR - Зургийг HTML болгох"><i class="bi bi-file-text"></i></button>
-        <button type="button" class="moedit-btn text-danger" data-action="pdf" title="PDF → HTML"><i class="bi bi-file-earmark-pdf"></i></button>
-        <button type="button" class="moedit-btn text-warning" data-action="shine" title="AI Shine - Bootstrap 5 гоёжуулах"><i class="bi bi-stars"></i></button>
+        <button type="button" class="moedit-btn" data-action="image" title="${isMn ? 'Зураг оруулах' : 'Insert Image'}"><i class="mi-image"></i></button>
+        <button type="button" class="moedit-btn" data-action="table" title="${isMn ? 'Хүснэгт оруулах' : 'Insert Table'}"><i class="mi-table"></i></button>
+        <button type="button" class="moedit-btn" data-action="insertLink" title="${isMn ? 'Холбоос / Имэйл оруулах' : 'Insert Link / Email'}"><i class="mi-link-45deg"></i></button>
+        <button type="button" class="moedit-btn" data-action="hr" title="${isMn ? 'Хэвтээ зураас оруулах' : 'Insert Horizontal Rule'}"><i class="mi-dash-lg"></i></button>
+        <button type="button" class="moedit-btn" data-action="youtube" title="${isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video'}"><i class="mi-youtube"></i></button>
+        <button type="button" class="moedit-btn" data-action="facebook" title="${isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video'}"><i class="mi-facebook"></i></button>
+        <button type="button" class="moedit-btn mo-info" data-action="ocr" title="${isMn ? 'AI OCR - Зургийг HTML болгох' : 'AI OCR - Convert Image to HTML'}"><i class="mi-file-text"></i></button>
+        <button type="button" class="moedit-btn mo-danger" data-action="pdf" title="PDF → HTML"><i class="mi-file-earmark-pdf"></i></button>
+        <button type="button" class="moedit-btn mo-warning" data-action="shine" title="${isMn ? 'AI Shine - Bootstrap 5 гоёжуулах' : 'AI Shine - Beautify with Bootstrap 5'}"><i class="mi-stars"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="print" title="Print"><i class="bi bi-printer"></i></button>
-        <button type="button" class="moedit-btn text-success" data-action="source" title="Source Code"><i class="bi bi-code-slash"></i></button>
-        <button type="button" class="moedit-btn text-primary" data-action="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
+        <button type="button" class="moedit-btn" data-action="print" title="${isMn ? 'Хэвлэх' : 'Print'}"><i class="mi-printer"></i></button>
+        <button type="button" class="moedit-btn mo-success" data-action="source" title="${isMn ? 'Эх код' : 'Source Code'}"><i class="mi-code-slash"></i></button>
+        <button type="button" class="moedit-btn mo-primary" data-action="fullscreen" title="${isMn ? 'Бүтэн дэлгэц' : 'Fullscreen'}"><i class="mi-arrows-fullscreen"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="bold" title="Bold (Ctrl+B)"><i class="bi bi-type-bold"></i></button>
-        <button type="button" class="moedit-btn" data-action="italic" title="Italic (Ctrl+I)"><i class="bi bi-type-italic"></i></button>
-        <button type="button" class="moedit-btn" data-action="underline" title="Underline (Ctrl+U)"><i class="bi bi-type-underline"></i></button>
-        <button type="button" class="moedit-btn" data-action="strike" title="Strikethrough"><i class="bi bi-type-strikethrough"></i></button>
-        <button type="button" class="moedit-btn" data-action="subscript" title="Subscript"><i class="bi bi-type"></i><sub>x</sub></button>
-        <button type="button" class="moedit-btn" data-action="superscript" title="Superscript"><i class="bi bi-type"></i><sup>x</sup></button>
+        <button type="button" class="moedit-btn" data-action="bold" title="${isMn ? 'Тод (Ctrl+B)' : 'Bold (Ctrl+B)'}"><i class="mi-type-bold"></i></button>
+        <button type="button" class="moedit-btn" data-action="italic" title="${isMn ? 'Налуу (Ctrl+I)' : 'Italic (Ctrl+I)'}"><i class="mi-type-italic"></i></button>
+        <button type="button" class="moedit-btn" data-action="underline" title="${isMn ? 'Доогуур зураас (Ctrl+U)' : 'Underline (Ctrl+U)'}"><i class="mi-type-underline"></i></button>
+        <button type="button" class="moedit-btn" data-action="strike" title="${isMn ? 'Дундуур зураас' : 'Strikethrough'}"><i class="mi-type-strikethrough"></i></button>
+        <button type="button" class="moedit-btn" data-action="subscript" title="${isMn ? 'Доод индекс' : 'Subscript'}"><i class="mi-type"></i><sub>x</sub></button>
+        <button type="button" class="moedit-btn" data-action="superscript" title="${isMn ? 'Дээд индекс' : 'Superscript'}"><i class="mi-type"></i><sup>x</sup></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group moedit-group-selects">
-        <select class="moedit-select" data-action="heading" title="Heading">
-          <option value="p" selected>Paragraph</option>
-          <option value="h1">H1 - Гарчиг</option>
-          <option value="h2">H2 - Дэд гарчиг</option>
+        <select class="moedit-select" data-action="heading" title="${isMn ? 'Гарчиг' : 'Heading'}">
+          <option value="p" selected>${isMn ? 'Параграф' : 'Paragraph'}</option>
+          <option value="h1">${isMn ? 'H1 - Гарчиг' : 'H1 - Heading'}</option>
+          <option value="h2">${isMn ? 'H2 - Дэд гарчиг' : 'H2 - Subheading'}</option>
           <option value="h3">H3</option>
           <option value="h4">H4</option>
           <option value="h5">H5</option>
           <option value="h6">H6</option>
-          <option value="pre">Preformatted</option>
-          <option value="blockquote">Quote</option>
+          <option value="pre">${isMn ? 'Форматтай' : 'Preformatted'}</option>
+          <option value="blockquote">${isMn ? 'Иш татах' : 'Quote'}</option>
         </select>
-        <select class="moedit-select" data-action="fontSize" title="Font Size">
-          <option value="3" selected>Default</option>
-          <option value="1">1 - Жижиг</option>
+        <select class="moedit-select" data-action="fontSize" title="${isMn ? 'Үсгийн хэмжээ' : 'Font Size'}">
+          <option value="3" selected>${isMn ? 'Хэвийн' : 'Default'}</option>
+          <option value="1">${isMn ? '1 - Жижиг' : '1 - Small'}</option>
           <option value="2">2</option>
-          <option value="3">3 - Хэвийн</option>
+          <option value="3">${isMn ? '3 - Хэвийн' : '3 - Normal'}</option>
           <option value="4">4</option>
-          <option value="5">5 - Том</option>
+          <option value="5">${isMn ? '5 - Том' : '5 - Large'}</option>
           <option value="6">6</option>
-          <option value="7">7 - Хамгийн том</option>
+          <option value="7">${isMn ? '7 - Хамгийн том' : '7 - Largest'}</option>
         </select>
-        <input type="color" class="moedit-color" data-action="foreColor" title="Font Color" value="#000000">
+        <input type="color" class="moedit-color" data-action="foreColor" title="${isMn ? 'Үсгийн өнгө' : 'Font Color'}" value="#000000">
         <div class="moedit-list-select" data-action="heading">
-          <div class="moedit-list-label">Paragraph</div>
-          <button type="button" class="moedit-btn is-active is-default" data-value="p" title="Paragraph">P</button>
-          <button type="button" class="moedit-btn" data-value="h1" title="H1 - Гарчиг">H1</button>
-          <button type="button" class="moedit-btn" data-value="h2" title="H2 - Дэд гарчиг">H2</button>
+          <div class="moedit-list-label">${isMn ? 'Параграф' : 'Paragraph'}</div>
+          <button type="button" class="moedit-btn is-active is-default" data-value="p" title="${isMn ? 'Параграф' : 'Paragraph'}">P</button>
+          <button type="button" class="moedit-btn" data-value="h1" title="${isMn ? 'H1 - Гарчиг' : 'H1 - Heading'}">H1</button>
+          <button type="button" class="moedit-btn" data-value="h2" title="${isMn ? 'H2 - Дэд гарчиг' : 'H2 - Subheading'}">H2</button>
           <button type="button" class="moedit-btn" data-value="h3" title="H3">H3</button>
           <button type="button" class="moedit-btn" data-value="h4" title="H4">H4</button>
           <button type="button" class="moedit-btn" data-value="h5" title="H5">H5</button>
           <button type="button" class="moedit-btn" data-value="h6" title="H6">H6</button>
-          <button type="button" class="moedit-btn" data-value="pre" title="Preformatted"><i class="bi bi-code"></i></button>
-          <button type="button" class="moedit-btn" data-value="blockquote" title="Quote"><i class="bi bi-quote"></i></button>
+          <button type="button" class="moedit-btn" data-value="pre" title="${isMn ? 'Форматтай' : 'Preformatted'}"><i class="mi-code"></i></button>
+          <button type="button" class="moedit-btn" data-value="blockquote" title="${isMn ? 'Иш татах' : 'Quote'}"><i class="mi-quote"></i></button>
         </div>
         <div class="moedit-list-select" data-action="fontSize">
-          <div class="moedit-list-label">Font Size</div>
-          <button type="button" class="moedit-btn" data-value="1" title="1 - Жижиг">1</button>
+          <div class="moedit-list-label">${isMn ? 'Үсгийн хэмжээ' : 'Font Size'}</div>
+          <button type="button" class="moedit-btn" data-value="1" title="${isMn ? '1 - Жижиг' : '1 - Small'}">1</button>
           <button type="button" class="moedit-btn" data-value="2" title="2">2</button>
-          <button type="button" class="moedit-btn is-active is-default" data-value="3" title="3 - Хэвийн">3</button>
+          <button type="button" class="moedit-btn is-active is-default" data-value="3" title="${isMn ? '3 - Хэвийн' : '3 - Normal'}">3</button>
           <button type="button" class="moedit-btn" data-value="4" title="4">4</button>
-          <button type="button" class="moedit-btn" data-value="5" title="5 - Том">5</button>
+          <button type="button" class="moedit-btn" data-value="5" title="${isMn ? '5 - Том' : '5 - Large'}">5</button>
           <button type="button" class="moedit-btn" data-value="6" title="6">6</button>
-          <button type="button" class="moedit-btn" data-value="7" title="7 - Хамгийн том">7</button>
+          <button type="button" class="moedit-btn" data-value="7" title="${isMn ? '7 - Хамгийн том' : '7 - Largest'}">7</button>
         </div>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="justifyLeft" title="Align Left"><i class="bi bi-text-left"></i></button>
-        <button type="button" class="moedit-btn" data-action="justifyCenter" title="Align Center"><i class="bi bi-text-center"></i></button>
-        <button type="button" class="moedit-btn" data-action="justifyRight" title="Align Right"><i class="bi bi-text-right"></i></button>
-        <button type="button" class="moedit-btn" data-action="justifyFull" title="Justify"><i class="bi bi-justify"></i></button>
-        <button type="button" class="moedit-btn" data-action="outdent" title="Outdent"><i class="bi bi-text-indent-right"></i></button>
-        <button type="button" class="moedit-btn" data-action="indent" title="Indent"><i class="bi bi-text-indent-left"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyLeft" title="${isMn ? 'Зүүн тийш' : 'Align Left'}"><i class="mi-text-left"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyCenter" title="${isMn ? 'Голлуулах' : 'Align Center'}"><i class="mi-text-center"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyRight" title="${isMn ? 'Баруун тийш' : 'Align Right'}"><i class="mi-text-right"></i></button>
+        <button type="button" class="moedit-btn" data-action="justifyFull" title="${isMn ? 'Тэгшлэх' : 'Justify'}"><i class="mi-justify"></i></button>
+        <button type="button" class="moedit-btn" data-action="outdent" title="${isMn ? 'Догол мөр хасах' : 'Outdent'}"><i class="mi-text-indent-right"></i></button>
+        <button type="button" class="moedit-btn" data-action="indent" title="${isMn ? 'Догол мөр нэмэх' : 'Indent'}"><i class="mi-text-indent-left"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="removeFormat" title="Remove Format"><i class="bi bi-eraser"></i></button>
+        <button type="button" class="moedit-btn" data-action="removeFormat" title="${isMn ? 'Формат арилгах' : 'Remove Format'}"><i class="mi-eraser"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="ul" title="Unordered List"><i class="bi bi-list-ul"></i></button>
-        <button type="button" class="moedit-btn" data-action="ol" title="Ordered List"><i class="bi bi-list-ol"></i></button>
+        <button type="button" class="moedit-btn" data-action="ul" title="${isMn ? 'Тэмдэгттэй жагсаалт' : 'Unordered List'}"><i class="mi-list-ul"></i></button>
+        <button type="button" class="moedit-btn" data-action="ol" title="${isMn ? 'Дугаартай жагсаалт' : 'Ordered List'}"><i class="mi-list-ol"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="undo" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
-        <button type="button" class="moedit-btn" data-action="redo" title="Redo (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
+        <button type="button" class="moedit-btn" data-action="undo" title="${isMn ? 'Буцаах (Ctrl+Z)' : 'Undo (Ctrl+Z)'}"><i class="mi-arrow-counterclockwise"></i></button>
+        <button type="button" class="moedit-btn" data-action="redo" title="${isMn ? 'Дахих (Ctrl+Y)' : 'Redo (Ctrl+Y)'}"><i class="mi-arrow-clockwise"></i></button>
       </div>
     `;
 
@@ -1864,7 +1902,7 @@ class moedit {
   _setupToolbarKeyboardNav() {
     /* Toolbar-д ARIA role нэмэх */
     this.toolbar.setAttribute('role', 'toolbar');
-    this.toolbar.setAttribute('aria-label', 'Текст форматлах хэрэгслүүд');
+    this.toolbar.setAttribute('aria-label', this._isMn ? 'Текст форматлах хэрэгслүүд' : 'Text formatting tools');
 
     /* Бүх focusable элементүүдийг авах */
     const getFocusableElements = () => {
@@ -1972,8 +2010,8 @@ class moedit {
       group.setAttribute('role', 'group');
     });
 
-    /* Button-үүдэд tooltip нэмэх */
-    const buttonLabels = {
+    /* Button-үүдэд aria-label нэмэх (title аль хэдийн _createToolbar-д тохируулагдсан) */
+    const buttonLabels = this._isMn ? {
       'bold': 'Тод (Ctrl+B)',
       'italic': 'Налуу (Ctrl+I)',
       'underline': 'Доогуур зураас (Ctrl+U)',
@@ -1981,33 +2019,60 @@ class moedit {
       'subscript': 'Доод индекс',
       'superscript': 'Дээд индекс',
       'justifyLeft': 'Зүүн тийш',
-      'justifyCenter': 'Төвд',
+      'justifyCenter': 'Голлуулах',
       'justifyRight': 'Баруун тийш',
       'justifyFull': 'Тэгшлэх',
       'removeFormat': 'Формат арилгах',
-      'ul': 'Жагсаалт',
-      'ol': 'Дугаарласан жагсаалт',
-      'indent': 'Догол нэмэх',
-      'outdent': 'Догол хасах',
+      'ul': 'Тэмдэгттэй жагсаалт',
+      'ol': 'Дугаартай жагсаалт',
+      'indent': 'Догол мөр нэмэх',
+      'outdent': 'Догол мөр хасах',
       'image': 'Зураг оруулах',
       'table': 'Хүснэгт оруулах',
-      'hr': 'Хэвтээ зураас',
-      'youtube': 'YouTube видео',
-      'facebook': 'Facebook видео',
-      'insertLink': 'Холбоос оруулах',
-      'link': 'Холбоос оруулах',
+      'hr': 'Хэвтээ зураас оруулах',
+      'youtube': 'YouTube видео оруулах',
+      'facebook': 'Facebook видео оруулах',
+      'insertLink': 'Холбоос / Имэйл оруулах',
+      'link': 'Холбоос / Имэйл оруулах',
       'undo': 'Буцаах (Ctrl+Z)',
       'redo': 'Дахих (Ctrl+Y)',
       'print': 'Хэвлэх',
-      'source': 'HTML код харах',
-      'fullscreen': 'Бүтэн дэлгэц (ESC гарах)'
+      'source': 'Эх код',
+      'fullscreen': 'Бүтэн дэлгэц'
+    } : {
+      'bold': 'Bold (Ctrl+B)',
+      'italic': 'Italic (Ctrl+I)',
+      'underline': 'Underline (Ctrl+U)',
+      'strike': 'Strikethrough',
+      'subscript': 'Subscript',
+      'superscript': 'Superscript',
+      'justifyLeft': 'Align Left',
+      'justifyCenter': 'Align Center',
+      'justifyRight': 'Align Right',
+      'justifyFull': 'Justify',
+      'removeFormat': 'Remove Format',
+      'ul': 'Unordered List',
+      'ol': 'Ordered List',
+      'indent': 'Indent',
+      'outdent': 'Outdent',
+      'image': 'Insert Image',
+      'table': 'Insert Table',
+      'hr': 'Insert Horizontal Rule',
+      'youtube': 'Insert YouTube Video',
+      'facebook': 'Insert Facebook Video',
+      'insertLink': 'Insert Link / Email',
+      'link': 'Insert Link / Email',
+      'undo': 'Undo (Ctrl+Z)',
+      'redo': 'Redo (Ctrl+Y)',
+      'print': 'Print',
+      'source': 'Source Code',
+      'fullscreen': 'Fullscreen'
     };
 
     this.toolbar.querySelectorAll('button[data-action]').forEach(btn => {
       const action = btn.dataset.action;
       if (buttonLabels[action]) {
         btn.setAttribute('aria-label', buttonLabels[action]);
-        btn.setAttribute('title', buttonLabels[action]);
       }
     });
   }

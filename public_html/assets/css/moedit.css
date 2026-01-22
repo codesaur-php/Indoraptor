@@ -1,3 +1,9 @@
+/**
+ * moedit CSS v1
+ * -----------------------------------
+ * Dark mode: prefers-color-scheme, data-theme, data-bs-theme дэмжинэ.
+ */
+
 :root{
   --mo-border:#dee2e6;
   --mo-bg:#fff;
@@ -13,16 +19,45 @@
   --mo-source-bg:#f8f9fa;
   --mo-source-focus:#fff;
   --mo-placeholder:#6c757d;
+  /* Color utilities */
+  --mo-success:#198754;
+  --mo-danger:#dc3545;
+  --mo-warning:#ffc107;
+  --mo-info:#0dcaf0;
 }
 
-/* Bootstrap 5.3+ dark mode support */
-[data-bs-theme="dark"]{
+/* Dark mode - system preference */
+@media (prefers-color-scheme:dark){
+  :root{
+    --mo-border:#495057;
+    --mo-bg:#212529;
+    --mo-soft:#343a40;
+    --mo-text:#e9ecef;
+    --mo-primary:#3d8bfd;
+    --mo-primary-hover:#6ea8fe;
+    --mo-shadow:0 0.125rem 0.25rem rgba(0,0,0,.25);
+    --mo-shadow-lg:0 0.5rem 1rem rgba(0,0,0,.35);
+    --mo-btn-bg:#343a40;
+    --mo-btn-hover:#495057;
+    --mo-source-bg:#2b3035;
+    --mo-source-focus:#343a40;
+    --mo-placeholder:#adb5bd;
+    --mo-success:#75b798;
+    --mo-danger:#ea868f;
+    --mo-warning:#ffda6a;
+    --mo-info:#6edff6;
+  }
+}
+
+/* Dark mode - data attribute */
+[data-bs-theme="dark"],
+[data-theme="dark"]{
   --mo-border:#495057;
   --mo-bg:#212529;
   --mo-soft:#343a40;
   --mo-text:#e9ecef;
-  --mo-primary:#0d6efd;
-  --mo-primary-hover:#3d8bfd;
+  --mo-primary:#3d8bfd;
+  --mo-primary-hover:#6ea8fe;
   --mo-shadow:0 0.125rem 0.25rem rgba(0,0,0,.25);
   --mo-shadow-lg:0 0.5rem 1rem rgba(0,0,0,.35);
   --mo-btn-bg:#343a40;
@@ -30,7 +65,18 @@
   --mo-source-bg:#2b3035;
   --mo-source-focus:#343a40;
   --mo-placeholder:#adb5bd;
+  --mo-success:#75b798;
+  --mo-danger:#ea868f;
+  --mo-warning:#ffda6a;
+  --mo-info:#6edff6;
 }
+
+/* Color utility classes for buttons */
+.moedit-btn.mo-primary{ color:var(--mo-primary); }
+.moedit-btn.mo-success{ color:var(--mo-success); }
+.moedit-btn.mo-danger{ color:var(--mo-danger); }
+.moedit-btn.mo-warning{ color:var(--mo-warning); }
+.moedit-btn.mo-info{ color:var(--mo-info); }
 
 .moedit{
   border:1px solid var(--mo-border);
@@ -101,6 +147,10 @@
 .moedit-btn[aria-pressed="true"]:hover{
   background-color:var(--mo-primary-hover);
   border-color:var(--mo-primary-hover);
+}
+.moedit-btn[aria-pressed="true"] i,
+.moedit-btn[aria-pressed="true"] .bi{
+  color:#fff !important;
 }
 
 /* Keyboard focus styles */
