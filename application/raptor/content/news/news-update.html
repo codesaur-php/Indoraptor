@@ -18,14 +18,20 @@
     'policy': { 'mn': 'Бодлого, дүрэм' },
     'fun': { 'mn': 'Хөгжилтэй' }
 } %}
+<!-- Mongolian WYSIWYG Editor - текст editor -->
+<link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
+<link href="{{ index }}/assets/css/moedit-icons.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/js/moedit.js"></script>
+<script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
+<!-- SweetAlert2 - мэдэгдэл харуулах сан -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Plupload - файл upload хийх сан -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/themes/default.min.css" integrity="sha512-9TfMTQR1fqjvuXo8Vas7DnLUZJr5kGFT6gHaFXG7dAZlzh+kFMDEQvbYxzaWXoFwchYSZCwU++Z24Kv1cSpVZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/sceditor.min.js" integrity="sha512-vTXYqh9aMw9z7j2KaQuGMHFyeIKixbOhsIGfPTNCeGd1EAj+Ju1Gm5z3aAat7N+FWscIdV3BPg9f0IzDGUaifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/formats/xhtml.min.js" integrity="sha512-KqPn4r6fCBEj1ZW6FXn8sD4J84IiGcGj8Onr2yAtrbBm6iT7rTclXbQhS0Nqxc9E2oU0JR8QEc8C+SuRTdh4Bw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/icons/monocons.min.js" integrity="sha512-UQApvlNbeoc7G9i+5A3pT0D/kCmNcX3Nbw0mbh7IxmifLDSXdYpiviDKer0BN2ZNcaXL8wiEClUqYgwUJrR3tQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Fancybox - зураг харуулах lightbox сан -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<!-- mofiles - файл upload хүснэгт -->
+<script defer src="{{ index }}/assets/js/mofiles.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
@@ -81,36 +87,32 @@
         <input class="form-control" name="title" value="{{ record['title']|e }}" maxlength="255" type="text" autocomplete="off">
         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
     </div>
-    <div class="row mt-3">
-        <div class="form-group">
-            <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
-            <div class="input-group">
-                <input class="form-control" type="text" id="photo_name" disabled value="{{ record['photo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
-                <div class="input-group-append">
-                    <div class="btn-group">
-                        <input type="file" name="photo" id="photo" accept="image/*" maxlength="256" style="display:none;" onchange="onFileInput(this);">
-                        <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
-                        <button class="btn btn-danger" type="button" onclick="onFileClear(this);" style="{% if record['photo'] is empty %}display:none;{% endif %}">{{ 'remove'|text }}</button>
-                        <input type="hidden" name="photo_removed" value="0">
-                    </div>
-                </div>
-            </div>
-            <img class="img-thumbnail img-fluid" id="photo_preview" src="{{ record['photo']|e }}" style="{% if record['photo'] is empty %}display:none;{% endif %}">
-        </div>
-        <div class="form-group mt-3">
-            <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
+    <!-- Агуулга болон Файлууд tab-ууд -->
+    <ul class="nav nav-tabs mt-3" id="contentFilesTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content-pane" type="button" role="tab" aria-controls="content-pane" aria-selected="true">
+                <i class="bi bi-text-paragraph"></i> {{ 'content'|text }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="files-tab" data-bs-toggle="tab" data-bs-target="#files-pane" type="button" role="tab" aria-controls="files-pane" aria-selected="false">
+                <i class="bi bi-paperclip"></i> {{ 'files'|text }} <span class="badge bg-secondary" id="files-count">0</span>
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content border border-top-0 rounded-bottom p-3" id="contentFilesTabContent">
+        <!-- Агуулга tab (WYSIWYG editor) -->
+        <div class="tab-pane fade show active" id="content-pane" role="tabpanel" aria-labelledby="content-tab">
             <textarea class="form-control" id="content" name="content" rows="10">{{ record['content']|e }}</textarea>
         </div>
-    </div>
-    <div class="rounded border mt-3 p-3">
-        <div class="row">
-            <label class="form-label fw-bolder">{{ 'files'|text }} <i class="bi bi-paperclip"></i></label>
+        <!-- Файлууд tab -->
+        <div class="tab-pane fade" id="files-pane" role="tabpanel" aria-labelledby="files-tab">
             <div class="text-danger mb-2">
-                <div id="filelist">Your browser doesn't have Silverlight or HTML5 support.</div>
+                <div id="mofiles-list"></div>
             </div>
-            <div id="container">
-                <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
-                <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
+            <div id="mofiles-container" class="mb-3">
+                <button class="btn btn-sm btn-warning shadow-sm" id="mofiles-pick" type="button">{{ 'select-files'|text }}</button>
+                <button class="btn btn-sm btn-secondary shadow-sm" id="mofiles-upload" disabled type="button">{{ 'upload-files'|text }}</button>
             </div>
             <table class="table table-striped table-hover" id="news_files">
                 <thead>
@@ -182,53 +184,17 @@
 </div>
 {% endif %}
 <script type="text/javascript">
-    function getBasename(url) {
-        return url.split(/.*[\/|\\]/)[1];
-    }
-
-    function formatSizeUnits(bytes)
-    {
-        const thresh = 1024;
-        if (Math.abs(bytes) < thresh) {
-            return bytes + 'b';
-        }
-
-        const units = ['kb', 'mb', 'gb', 'tb'];
-        let u = -1;
-        const r = 10 ** 1;
-        do {
-            bytes /= thresh;
-            ++u;
-        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
-        return bytes.toFixed(1) + units[u];
-    }
-    
-    function escapeStr(s) {
-        let lookup = {
-            '&': "&amp;",
-            '"': "&quot;",
-            '\'': "&apos;",
-            '<': "&lt;",
-            '>': "&gt;"
-        };
-        return s.replace(/[&"'<>]/g, c => lookup[c]);
-    }
-    
     const content = document.getElementById('content');
     const type = document.querySelector('input[name="type"]');
+    let moeditInstance;
+    let headerImageFile = null;
+    let headerImageRemoved = false;
+
     document.getElementById('type_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             type.value = e.target.getAttribute('value');
-            
-            let sceditorInstance = sceditor.instance(content);
-            let isInSourceMode = sceditorInstance.sourceMode();
-            if (type.value === 'embed') {
-                if (!isInSourceMode) {
-                    sceditorInstance.sourceMode(true);
-                }
-            } else if (isInSourceMode) {
-                sceditorInstance.sourceMode(false);
+            if (moeditInstance) {
+                moeditInstance.toggleSource(type.value === 'embed');
             }
         }
     });
@@ -239,346 +205,45 @@
             category.value = e.target.getAttribute('value');
         }
     });
-    
-    const onFileInput = function (fileInput) {
-        let id = fileInput.id;
-        if (!id) {
-            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
-        }
-        
-        let nameInput = document.getElementById(id + '_name');
-        if (nameInput) {
-            nameInput.value = fileInput.files[0].name;
-        }
 
-        let browseBtn = fileInput.nextElementSibling;
-        if (browseBtn) {
-            browseBtn.textContent = `{{ 'change'|text|e }}`;
-        }
-
-        let removeBtn = browseBtn.nextElementSibling;
-        if (removeBtn && removeBtn.style.display === 'none') {
-            removeBtn.style.display = 'block';
-        }
-        let fileDeletedInput = removeBtn.nextElementSibling;
-        if (fileDeletedInput) fileDeletedInput.value = 0;
-
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let previewImg = document.getElementById(id + '_preview');
-            if (previewImg) {
-                previewImg.src = e.target.result;
-                if (previewImg.style.display === 'none') {
-                    previewImg.style.display = 'block';
-                }
-            }
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    };
-
-    const onFileClear = function (removeBtn) {
-        let fileInput = removeBtn?.previousElementSibling?.previousElementSibling;
-        if (fileInput?.tagName === 'INPUT' && fileInput.type === 'file') {
-            let previewImg = document.getElementById(fileInput.id + '_preview');
-            if (previewImg) {
-                previewImg.removeAttribute('src');
-            }
-            let nameInput = document.getElementById(fileInput.id + '_name');
-            if (nameInput) {
-                nameInput.value = '';
-            }
-
-            let browseBtn = fileInput.nextElementSibling;
-            if (browseBtn) {
-                browseBtn.textContent = `{{ 'choose'|text|e }}`;
-            }
-
-            removeBtn.style.display = 'none';
-
-            fileInput.value = '';
-            
-            let fileDeletedInput = removeBtn.nextElementSibling;
-            if (fileDeletedInput) fileDeletedInput.value = 1;
-        }
-    };
-    
     document.addEventListener('DOMContentLoaded', function () {
-        sceditor.create(content, {
-            format: 'xhtml',
-            emoticonsEnabled: false,
-            toolbarExclude: 'emoticon',
-            icons: 'monocons',
-            width: '100%',
-            height: '360px',
-            startInSourceMode: type.value === 'embed',
-            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
-        });
-            
-        let files = new motable('table#news_files');
-        files.setReady();
+        /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
+        moeditInstance = new moedit(content, {
+            shineUrl: `{{ 'moedit-ai'|link }}`,
+            uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': record['id']}) }}`,
+            {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
 
-        let fileList = document.getElementById('filelist');
-        let uploadFilesBtn = document.getElementById('uploadfiles');
-        let uploader = new plupload.Uploader({
-            runtimes: 'html5,flash,silverlight,html4',
-            browse_button: 'pickfiles',
-            container: document.getElementById('container'),
-            url: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':record['id']}) }}`,
-            filters: {
-                max_file_size: `{{ max_file_size ?? '8mb' }}`,
-                mime_types: [
-                    {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico,webp'},
-                    {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
-                    {title: 'Audio', extensions: 'mp3,m4a,ogg,wav'},
-                    {title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2'},
-                    {title: 'Text files', extensions: 'txt,xml,json'},
-                    {title: 'Archives', extensions: 'zip,rar'}
-                ]
+            onHeaderImageChange: function (file) {
+                headerImageFile = file;
+                headerImageRemoved = (file === null);
+            }
+        });
+
+        /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */
+        if (type.value === 'embed') {
+            moeditInstance.toggleSource(true);
+        }
+
+        /* mofiles - файл upload хүснэгт */
+        const files = new mofiles('#news_files', {
+            uploadUrl: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':record['id']}) }}`,
+            deleteUrl: `{{ 'files-deactivate'|link({'table':table}) }}`,
+            modalUrl: `{{ 'files-modal'|link({'table':table}) }}`,
+            maxFileSize: `{{ max_file_size ?? '8mb' }}`,
+            permissions: {
+                update: {{ user.can('system_content_update') ? 'true' : 'false' }},
+                delete: {{ user.can('system_content_delete') ? 'true' : 'false' }}
             },
-            flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
-            silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
-            init: {
-                PostInit: function () {
-                    fileList.innerHTML = '';
-                    uploadFilesBtn.onclick = function () {
-                        uploader.start();
-                        return false;
-                    };
-                },
-                FilesAdded: function (up, files) {
-                    plupload.each(files, function (file) {
-                        fileList.innerHTML += `<div id="${file.id}">${file.name} (${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
-                    });
-
-                    if (uploadFilesBtn.disabled) {
-                        uploadFilesBtn.removeAttribute('disabled');
-                        uploadFilesBtn.classList.remove('btn-secondary');
-                        uploadFilesBtn.classList.add('btn-info');
-                    }
-                },
-                UploadProgress: function (up, file) {
-                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"></i> sending ${file.percent}%`;
-                    uploadFilesBtn.setAttribute('disabled', '');
-                },
-                FileUploaded: function (up, file, response) {
-                    try {
-                        let res = JSON.parse(response.response);
-                        if (!res.file) {
-                            throw 'Invalid response!';
-                        }
-                        
-                        let currentFile = document.getElementById(file.id);
-                        if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
-                            currentFile.classList.add('text-success');
-                        }
-                        
-                        files.append(res);
-                        
-                        if (res.type === 'image') {
-                            let sceditorInstance = sceditor.instance(content);
-                            sceditorInstance.insert(`<br /><p><img class="img-fluid" src="${res.path}"></p>`);
-                        }
-                        
-                        NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
-                    } catch (err) {
-                        if (err instanceof SyntaxError) {
-                            err = 'Invalid request!';
-                        } else if (res && res.error && res.error.message) {
-                            err = res.error.message;
-                        } else {
-                            err = 'Unknown error!';
-                        }
-
-                        let currentFile = document.getElementById(file.id);
-                        if (currentFile) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> error';
-                            currentFile.getElementsByTagName('em')[0].innerHTML = err;
-                            currentFile.classList.add('text-danger');
-                        }
-                        NotifyTop('danger', `{{ 'error'|text }}`, err);
-                    }
-
-                    let list = fileList.children;
-                    let processedFile = 0;
-                    for (let i = 0; i < list.length; i++) {
-                        let file = list[i];
-                        if (file.getElementsByTagName('b')[0].innerHTML !== '') {
-                            processedFile++;
-                        }
-                    }
-                    if (processedFile === list.length) {
-                        uploadFilesBtn.classList.remove('btn-info');
-                        uploadFilesBtn.classList.add('btn-secondary');
-                        uploadFilesBtn.setAttribute('disabled', '');
-                    } else {
-                        uploadFilesBtn.removeAttribute('disabled');
-                    }
-                },
-                Error: function (up, err) {
-                    if (err.file.id !== null) {
-                        let currentFile = document.getElementById(err.file.id);
-                        if (currentFile !== null) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> failed';
-                            currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
-                            currentFile.classList.add('text-danger');
-                        }
-                    }
-
-                    NotifyTop('danger', `{{ 'error'|text }} ${err.code.toString().replace(/\D/g, '')}`, err.message);
-                }
-            }
+            countBadge: '#files-count'
         });
-        uploader.init();
-        
-        const newsFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
-        const userCanUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
-        const userCanDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
-        motable.prototype.append = function (record) {
-            let fileIcon;
-            let fileName = escapeStr(getBasename(record['path']));
-            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
-            let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
-            switch (record['type']) {
-                case 'image':
-                    {
-                        fileIcon = `<img src="${record['path']}" style="max-height:120px;height:100%">`;
-                        if (record['mime_content_type'] !== 'image/gif') {
-                            if (record['description']) {
-                                fileLinkAttr = `file-data-fancybox data-caption="${escapeStr(record['description'])}"`;
-                            } else {
-                                fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
-                            }
-                        }
-                    }
-                    break;
-                case 'video':
-                    fileIcon = `<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="${record['path']}"></video>`;
-                    break;
-                case 'audio':
-                    fileIcon = `<audio controls><source src="${record['path']}" type="${record['mime_content_type']}"></audio>`;
-                    break;
-                default: 
-                    {
-                        fileIcon = '<i class="bi bi-hdd"></i>';
-                        fileAction = '';
-                    }
-                    break;
-            }
-            fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=location&id=${record['id']}"><i class="bi bi-link"></i></a>${fileAction}`;
-            if (userCanUpdate) fileAction += ` <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=files-update&id=${record['id']}"><i class="bi bi-pencil-square"></i></a>`;
-            if (userCanDelete) fileAction += ` <button class="delete-file btn btn-sm btn-danger shadow-sm" value="${record['id']}" type="button"><i class="bi bi-trash"></i></button>`;
-            
-            let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
-            fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
-            let row = document.createElement('tr');
-            row.id = `file_${record['id']}`;
-            row.style.fontSize = '.875rem';
-            let cell1 = document.createElement('td');
-            cell1.innerHTML = fileFigure;
-            row.appendChild(cell1);
 
-            let cell2 = document.createElement('td');
-            cell2.innerHTML = `<p style="max-width:180px;word-wrap:break-all"><u>${record['mime_content_type']}</u></p>${formatSizeUnits(record['size'])}`;
-            row.appendChild(cell2);
+        /* Байгаа файлуудыг ачаалах */
+        files.load([
+            {% for file in files %}
+            JSON.parse(`{{ file|json_encode|e('js') }}`),
+            {% endfor %}
+        ]);
 
-            let cell3 = document.createElement('td');
-            cell3.innerHTML = record['description'] ?? '';
-            row.appendChild(cell3);
-
-            let cell4 = document.createElement('td');
-            cell4.innerHTML = record['category'] ?? '';
-            row.appendChild(cell4);
-
-            let cell5 = document.createElement('td');
-            cell5.innerHTML = record['keyword'] ?? '';
-            row.appendChild(cell5);
-
-            let tBody = this.table.querySelector('tbody');
-            if (!tBody) {
-                tBody = document.createElement('tbody');
-                this.table.appendChild(tBody);
-
-                if (this.options.style.tbody)
-                    tBody.style.cssText = this.options.style.tbody;
-            }
-            tBody.appendChild(row);
-
-            this.setReady();
-
-            if (record['type'] === 'image'
-                && record['mime_content_type'] !== 'image/gif'
-            ) {
-                Fancybox.close();
-                Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-            }
-
-            let rowModals = row.querySelectorAll('.ajax-modal');
-            rowModals?.forEach(a => a.addEventListener('click', function (e) {
-                e.preventDefault();
-                ajaxModal(a);
-            }));
-            
-            let thisTable = this;
-            const deleteFile = row.querySelector('.delete-file');
-            deleteFile?.addEventListener('click', function (e) {
-                e.preventDefault();
-
-                const id = deleteFile.value;
-                const title = row.children[0].textContent.replace(/<\/?[^>]+(>|$)/g, '');
-                let question = document.documentElement.lang === 'mn'
-                    ? `<p class="text-danger mb-3">Та ${title} файлын бичлэгийг устгахдаа итгэлтэй байна уу?<br/><br/>Бодит файл нь устахгүй бөгөөд оршсоор байх болно.</p>`
-                    : `<p class="text-danger mb-3">Are you sure to delete the file ${title}?</p>`;
-
-                let src = '';
-                let flag = row.children[0].querySelector('img');
-                if (flag) {
-                    src = flag.src;
-                } else {
-                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
-                }
-                Swal.fire({
-                    imageUrl: src,
-                    imageHeight: 64,
-                    html: question,
-                    showCancelButton: true,
-                    cancelButtonText: `{{ 'cancel'|text|e }}`,
-                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
-                    confirmButtonColor: '#df4759',
-                    showLoaderOnConfirm: true,
-                    allowOutsideClick: () => !Swal.isLoading(),
-                    backdrop: true,
-                    preConfirm: () => {
-                        return fetch(
-                            `{{ 'files-deactivate'|link({'table':table}) }}`,
-                            {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({id, title})
-                            }
-                        ).then(res => {
-                            return res.json();
-                        }).then(response => {
-                            if (response.status !== 'success') {
-                                throw new Error(response.message ?? 'Invalid response!');
-                            }
-
-                            Swal.close();
-
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deactivated`);
-
-                            row.remove();
-                            thisTable.setReady();
-                        }).catch(error => {
-                            Swal.showValidationMessage(error.message);
-                        });
-                    }
-                });
-            });
-        };
-    
         const formUpdate = document.querySelector('form#news_update');
         if (!formUpdate) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -607,6 +272,15 @@
                 submitters.forEach(function (btn) { btn.growNstop(); });
 
                 const data = new FormData(this);
+
+                /* Header image файлыг FormData-д нэмэх */
+                if (headerImageFile) {
+                    data.append('photo', headerImageFile);
+                }
+                /* Header image устгагдсан эсэхийг илгээх */
+                if (headerImageRemoved) {
+                    data.append('photo_removed', '1');
+                }
 
                 /* Ensure switches are always sent as 1/0, even when unchecked */
                 const publishedSwitch = formUpdate.querySelector('input[name="published"]');
@@ -645,12 +319,7 @@
                 });
             });
         }
-        
-        {% for file in files %}
-        files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
-        {% endfor %}
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-        
+
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;

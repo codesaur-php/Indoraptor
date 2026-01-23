@@ -25,6 +25,8 @@
 <script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<!-- mofiles - файл хүснэгт -->
+<script defer src="{{ index }}/assets/js/mofiles.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
         <i class="bi bi-eye"></i> {{ record['title']|e }}
@@ -58,32 +60,38 @@
     <label class="form-label">{{ 'title'|text }}</label>
     <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
 </div>
-<div class="row mt-3">
-    {% if record['photo'] is not empty %}
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
-        <br/>
-        <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}">
-    </div>
-    {% endif %}
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
+<!-- Агуулга болон Файлууд tab-ууд -->
+<ul class="nav nav-tabs mt-3" id="contentFilesTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content-pane" type="button" role="tab" aria-controls="content-pane" aria-selected="true">
+            <i class="bi bi-text-paragraph"></i> {{ 'content'|text }}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="files-tab" data-bs-toggle="tab" data-bs-target="#files-pane" type="button" role="tab" aria-controls="files-pane" aria-selected="false">
+            <i class="bi bi-paperclip"></i> {{ 'files'|text }} <span class="badge bg-secondary" id="files-count">0</span>
+        </button>
+    </li>
+</ul>
+<div class="tab-content border border-top-0 rounded-bottom p-3" id="contentFilesTabContent">
+    <!-- Агуулга tab (WYSIWYG editor) -->
+    <div class="tab-pane fade show active" id="content-pane" role="tabpanel" aria-labelledby="content-tab">
         <textarea class="form-control" id="content" name="content" readonly rows="10">{{ record['content']|e }}</textarea>
     </div>
-</div>
-<div class="row mt-4">
-    <label class="form-label fw-bolder">{{ 'files'|text }} <i class="bi bi-paperclip"></i></label>
-    <table class="table table-striped table-hover" id="news_files">
-        <thead>
-            <tr>
-                <th>{{ 'file'|text }}</th>
-                <th>{{ 'properties'|text }}</th>
-                <th>{{ 'description'|text }}</th>
-                <th>{{ 'category'|text }}</th>
-                <th>{{ 'keyword'|text }}</th>
-            </tr>
-        </thead>
-    </table>
+    <!-- Файлууд tab -->
+    <div class="tab-pane fade" id="files-pane" role="tabpanel" aria-labelledby="files-tab">
+        <table class="table table-striped table-hover" id="news_files">
+            <thead>
+                <tr>
+                    <th>{{ 'file'|text }}</th>
+                    <th>{{ 'properties'|text }}</th>
+                    <th>{{ 'description'|text }}</th>
+                    <th>{{ 'category'|text }}</th>
+                    <th>{{ 'keyword'|text }}</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
 </div>
 <div class="rounded border border-success mt-4 p-3">
     <div class="row">
@@ -127,125 +135,26 @@
 </div>
 {% endif %}
 <script type="text/javascript">
-    function getBasename(url) {
-        return url.split(/.*[\/|\\]/)[1];
-    }
-
-    function formatSizeUnits(bytes)
-    {
-        const thresh = 1024;
-        if (Math.abs(bytes) < thresh) {
-            return bytes + 'b';
-        }
-
-        const units = ['kb', 'mb', 'gb', 'tb'];
-        let u = -1;
-        const r = 10 ** 1;
-        do {
-            bytes /= thresh;
-            ++u;
-        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
-        return bytes.toFixed(1) + units[u];
-    }
-    
-    function escapeStr(s) {
-        let lookup = {
-            '&': "&amp;",
-            '"': "&quot;",
-            '\'': "&apos;",
-            '<': "&lt;",
-            '>': "&gt;"
-        };
-        return s.replace(/[&"'<>]/g, c => lookup[c]);
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
         {% if record['type'] != 'embed' %}
-        let content = document.getElementById('content');
-        new moedit(content, { readonly: true});
+        const content = document.getElementById('content');
+        new moedit(content, { readonly: true{% if record['photo'] is not empty %}, headerImage: '{{ record['photo']|e }}'{% endif %} });
         {% endif %}
-        
-        let newsFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
-        motable.prototype.append = function (record) {
-            let fileIcon;
-            let fileName = escapeStr(getBasename(record['path']));
-            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
-            let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
-            switch (record['type']) {
-                case 'image':
-                    {
-                        fileIcon = `<img src="${record['path']}" style="max-height:7.5rem;height:100%">`;
-                        if (record['mime_content_type'] !== 'image/gif') {
-                            if (record['description']) {
-                                fileLinkAttr = `file-data-fancybox data-caption="${escapeStr(record['description'])}"`;
-                            } else {
-                                fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
-                            }
-                        }
-                    }
-                    break;
-                case 'video':
-                    fileIcon = `<video style="max-height:15rem;height:100%;max-width:20rem;width:100%" controls><source src="${record['path']}"></video>`;
-                    break;
-                case 'audio':
-                    fileIcon = `<audio controls><source src="${record['path']}" type="${record['mime_content_type']}"></audio>`;
-                    break;
-                default:
-                    {
-                        fileIcon = '<i class="bi bi-hdd"></i>';
-                        fileAction = '';
-                    }
-                    break;
-            }        
-            fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=location&id=${record['id']}"><i class="bi bi-link"></i></a>${fileAction}`;
 
-            let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
-            fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
+        /* mofiles - readonly файл хүснэгт */
+        const files = new mofiles('#news_files', {
+            modalUrl: `{{ 'files-modal'|link({'table':table}) }}`,
+            readonly: true,
+            countBadge: '#files-count'
+        });
 
-            let row = document.createElement('tr');
-            row.id = `file_${record['id']}`;
-            row.style.fontSize = '.875rem';
-            let cell1 = document.createElement('td');
-            cell1.innerHTML = fileFigure;
-            row.appendChild(cell1);
+        /* Байгаа файлуудыг ачаалах */
+        files.load([
+            {% for file in files %}
+            JSON.parse(`{{ file|json_encode|e('js') }}`),
+            {% endfor %}
+        ]);
 
-            let cell2 = document.createElement('td');
-            cell2.innerHTML = `<p style="max-width:11.25rem;word-wrap:break-all"><u>${record['mime_content_type']}</u></p>${formatSizeUnits(record['size'])}`;
-            row.appendChild(cell2);
-
-            let cell3 = document.createElement('td');
-            cell3.innerHTML = record['description'] ?? '';
-            row.appendChild(cell3);
-
-            let cell4 = document.createElement('td');
-            cell4.innerHTML = record['category'] ?? '';
-            row.appendChild(cell4);
-
-            let cell5 = document.createElement('td');
-            cell5.innerHTML = record['keyword'] ?? '';
-            row.appendChild(cell5);
-
-            let tBody = this.table.querySelector('tbody');
-            if (!tBody) {
-                tBody = document.createElement('tbody');
-                this.table.appendChild(tBody);
-
-                if (this.options.style.tbody)
-                    tBody.style.cssText = this.options.style.tbody;
-            }
-            tBody.appendChild(row);
-
-            this.setReady();
-        };
-        
-        let files = new motable('table#news_files');
-        files.setReady();
-        {% for file in files %}
-        files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
-        {% endfor %}        
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-        
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;

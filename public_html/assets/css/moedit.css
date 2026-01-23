@@ -245,6 +245,10 @@
   flex-shrink:0;
   box-sizing:border-box;
 }
+/* Readonly горимд бүх separator нуух */
+.moedit.moedit-readonly .moedit-sep{
+  display:none !important;
+}
 
 .moedit-body{ 
   position:relative; 
@@ -760,6 +764,7 @@
 .moedit-header-image{
   position:relative;
   width:100%;
+  min-height:80px;
   background:var(--mo-bg);
   border:1px solid var(--mo-border);
   border-bottom:none;
@@ -770,7 +775,7 @@
 .moedit-header-image-preview{
   display:block;
   width:100%;
-  max-height:400px;
+  max-height:360px;
   object-fit:cover;
 }
 
@@ -785,6 +790,23 @@
 }
 
 .moedit-header-image:hover .moedit-header-image-overlay{
+  opacity:1;
+}
+
+/* Зураг алдаатай (404) үед */
+.moedit-header-image-error{
+  background:repeating-linear-gradient(
+    45deg,
+    var(--mo-bg),
+    var(--mo-bg) 10px,
+    var(--mo-border) 10px,
+    var(--mo-border) 20px
+  );
+}
+.moedit-header-image-error .moedit-header-image-preview{
+  visibility:hidden;
+}
+.moedit-header-image-error .moedit-header-image-overlay{
   opacity:1;
 }
 
@@ -967,5 +989,10 @@
   }
   .moedit.moedit-toolbar-right .moedit-sep-header-image{
     display:block !important;
+  }
+  /* Readonly горимд header image group болон separator нуух */
+  .moedit.moedit-readonly.moedit-toolbar-right .moedit-group-header-image,
+  .moedit.moedit-readonly.moedit-toolbar-right .moedit-sep-header-image{
+    display:none !important;
   }
 }
