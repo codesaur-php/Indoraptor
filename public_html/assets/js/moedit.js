@@ -66,6 +66,12 @@ class moedit {
     this._isMn = document.documentElement.lang === 'mn';
     const isMn = this._isMn;
 
+    /* toolbarPosition default утга - _createWrapper дуудахаас ӨМНӨ тохируулах */
+    if (!opts.toolbarPosition) opts.toolbarPosition = 'right';
+
+    /* onHeaderImageChange заасан бол headerImage автоматаар идэвхжүүлэх */
+    if (opts.onHeaderImageChange && !opts.headerImage) opts.headerImage = true;
+
     /* Хэрэв textarea дамжуулсан бол бүтэц автоматаар үүсгэх */
     if (root.tagName === 'TEXTAREA') {
       this._targetTextarea = root;
@@ -160,7 +166,7 @@ class moedit {
         defaultPrompt: isMn ? `Доорх HTML контентыг Bootstrap 5 компонентууд ашиглан илүү гоё, мэргэжлийн түвшинд харагдуулах болгож өгнө үү.
 
 Заавар:
-1. Контентын бүтэц, агуулгыг шинжилж, тохирох Bootstrap компонент болго:
+1. Контентын бүтэц, агуулгыг шинжилж, тохирох Bootstrap 5 компонент болго:
    - Жагсаалт мэдээлэл → card эсвэл list-group
    - Харьцуулалт, олон багана мэдээлэл → table (table-striped table-hover table-bordered)
    - Асуулт-хариулт, FAQ → accordion
@@ -261,7 +267,7 @@ Instructions:
       /* Header image callback - зураг сонгогдох/устгагдах үед дуудагдана */
       onHeaderImageChange: null, /* function(file, preview) - file: File object эсвэл null */
       /* Toolbar position - 'top' эсвэл 'right' (right бол desktop-д баруун талд, mobile-д дээр) */
-      toolbarPosition: 'top',
+      toolbarPosition: 'right',
       ...opts,
     };
 
@@ -353,14 +359,35 @@ Instructions:
     if (this.headerImageArea) {
       /* Change товч */
       const changeBtn = this.headerImageArea.querySelector('.moedit-header-image-change');
-      if (changeBtn) {
-        changeBtn.addEventListener('click', () => this._selectHeaderImage());
-      }
-
       /* Remove товч */
       const removeBtn = this.headerImageArea.querySelector('.moedit-header-image-remove');
-      if (removeBtn) {
-        removeBtn.addEventListener('click', () => this._removeHeaderImage());
+
+      /* Readonly горимд товчуудыг нуух */
+      if (this.opts.readonly) {
+        if (changeBtn) changeBtn.style.display = 'none';
+        if (removeBtn) removeBtn.style.display = 'none';
+      } else {
+        if (changeBtn) {
+          changeBtn.addEventListener('click', () => this._selectHeaderImage());
+        }
+        if (removeBtn) {
+          removeBtn.addEventListener('click', () => this._removeHeaderImage());
+        }
+      }
+
+      /* headerImage нь URL string бол анхны зургийг харуулах */
+      if (typeof this.opts.headerImage === 'string' && this.opts.headerImage) {
+        this.headerImagePreview.src = this.opts.headerImage;
+        this.headerImageArea.style.display = 'block';
+
+        /* Зураг алдаатай (404) үед overlay-г байнга харуулах */
+        if (!this.opts.readonly) {
+          const overlay = this.headerImageArea.querySelector('.moedit-header-image-overlay');
+          this.headerImagePreview.addEventListener('error', () => {
+            if (overlay) overlay.style.opacity = '1';
+            this.headerImageArea.classList.add('moedit-header-image-error');
+          });
+        }
       }
     }
 
@@ -894,9 +921,9 @@ Instructions:
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="print" title="${isMn ? 'Хэвлэх' : 'Print'}"><i class="mi-printer"></i></button>
-        <button type="button" class="moedit-btn mo-success" data-action="source" title="${isMn ? 'Эх код' : 'Source Code'}"><i class="mi-code-slash"></i></button>
         <button type="button" class="moedit-btn mo-primary" data-action="fullscreen" title="${isMn ? 'Бүтэн дэлгэц' : 'Fullscreen'}"><i class="mi-arrows-fullscreen"></i></button>
+        <button type="button" class="moedit-btn mo-success" data-action="source" title="${isMn ? 'Эх код' : 'Source Code'}"><i class="mi-code-slash"></i></button>
+        <button type="button" class="moedit-btn" data-action="print" title="${isMn ? 'Хэвлэх' : 'Print'}"><i class="mi-printer"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">

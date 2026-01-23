@@ -196,7 +196,8 @@ motable.prototype.setBody = function (html) {
     if (this.options.style.tbody) tBody.style.cssText = this.options.style.tbody;
     if (html) tBody.innerHTML = html;
 
-    if (tBody.querySelector('tr')) this.setReady();
+    /* Хоосон эсвэл мөртэй ч байсан setReady дуудах */
+    this.setReady();
 };
 
 /* setReady() - хүснэгт бүрэн ачаалсны дараах ажилбар */
