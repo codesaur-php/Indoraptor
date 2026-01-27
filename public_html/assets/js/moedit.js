@@ -818,6 +818,86 @@ Instructions:
     this._emitChange();
   }
 
+  /**
+   * HTML-г cursor-ийн байрлалд оруулах эсвэл төгсгөлд нэмэх
+   * @param {string} html - Оруулах HTML
+   * @returns {void}
+   * @example
+   * editor.insertHtml('<img src="image.jpg" alt="Image">');
+   */
+  insertHtml(html) {
+    if (!html) return;
+
+    if (this.isSource) {
+      /* Source mode: textarea-д cursor байрлалд оруулах */
+      const start = this.source.selectionStart;
+      const end = this.source.selectionEnd;
+      const value = this.source.value;
+      this.source.value = value.slice(0, start) + html + value.slice(end);
+      this.source.selectionStart = this.source.selectionEnd = start + html.length;
+      this.editor.innerHTML = this.source.value;
+    } else {
+      /* Editor mode */
+      this.editor.focus();
+      const sel = window.getSelection();
+
+      /* Block элемент эсэхийг шалгах */
+      const isBlockContent = /^<(video|audio|iframe|figure|table|div|blockquote)/i.test(html.trim());
+
+      /* Editor хоосон эсвэл зөвхөн <br> эсвэл хоосон <p> байгаа эсэх */
+      const isEmpty = !this.editor.textContent.trim() &&
+        !this.editor.querySelector('img, video, audio, iframe, table');
+
+      /* Selection editor дотор байгаа эсэхийг шалгах */
+      let isInsideEditor = false;
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        isInsideEditor = this.editor.contains(range.commonAncestorContainer);
+      }
+
+      if (isInsideEditor && !isEmpty) {
+        /* Selection editor дотор байвал тэнд оруулах */
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const frag = document.createDocumentFragment();
+        let lastNode;
+        while (temp.firstChild) {
+          lastNode = frag.appendChild(temp.firstChild);
+        }
+        range.insertNode(frag);
+        if (lastNode) {
+          range.setStartAfter(lastNode);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      } else {
+        /* Editor хоосон эсвэл selection гадна байвал */
+        if (isBlockContent) {
+          /* Block элемент бол өмнө/хойно paragraph нэмж cursor байрлах зай гаргах */
+          this.editor.innerHTML = '<p><br></p>' + html + '<p><br></p>';
+        } else {
+          this.editor.innerHTML = html;
+        }
+      }
+
+      /* Cursor-г зөв байрлалд тавих */
+      const lastP = this.editor.querySelector('p:last-of-type');
+      if (lastP) {
+        const range = document.createRange();
+        range.selectNodeContents(lastP);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+
+      this.source.value = this.editor.innerHTML;
+    }
+    this._emitChange();
+  }
+
   /* ---------------- internals ---------------- */
 
   /**
@@ -905,11 +985,11 @@ Instructions:
     toolbar.className = 'moedit-toolbar';
     toolbar.innerHTML = `
       <div class="moedit-group moedit-group-header-image" style="display:none;">
-        <button type="button" class="moedit-btn" data-action="headerImage" title="${isMn ? 'Толгой зураг' : 'Header Image'}"><i class="mi-photo"></i></button>
+        <button type="button" class="moedit-btn mo-primary" data-action="headerImage" title="${isMn ? 'Толгой зураг' : 'Header Image'}"><i class="mi-photo"></i></button>
       </div>
       <div class="moedit-sep moedit-sep-header-image" style="display:none;"></div>
       <div class="moedit-group">
-        <button type="button" class="moedit-btn" data-action="image" title="${isMn ? 'Зураг оруулах' : 'Insert Image'}"><i class="mi-image"></i></button>
+        <button type="button" class="moedit-btn mo-danger" data-action="image" title="${isMn ? 'Зураг оруулах' : 'Insert Image'}"><i class="mi-image"></i></button>
         <button type="button" class="moedit-btn" data-action="table" title="${isMn ? 'Хүснэгт оруулах' : 'Insert Table'}"><i class="mi-table"></i></button>
         <button type="button" class="moedit-btn" data-action="insertLink" title="${isMn ? 'Холбоос / Имэйл оруулах' : 'Insert Link / Email'}"><i class="mi-link-45deg"></i></button>
         <button type="button" class="moedit-btn" data-action="hr" title="${isMn ? 'Хэвтээ зураас оруулах' : 'Insert Horizontal Rule'}"><i class="mi-dash-lg"></i></button>

@@ -68,20 +68,11 @@ class PrivateFilesController extends FilesController
      *   → зөвхөн read() function-аар дамжина.
      *
      * @param string $folder     Файл хадгалах хавтас
-     * @param bool   $relative   true → public URL харьцангуй хэлбэртэй
      */
-    public function setFolder(string $folder, bool $relative = true)
+    public function setFolder(string $folder)
     {
-        $script_path = $this->getScriptPath();
-        $public_folder = "$script_path/private/file?name=$folder";
-
-        // Серверийн private сангийн бодит absolute зам
-        $this->local = $this->getDocumentPath('/../private' . $folder);
-
-        // Хэрэглэгч харах URL (read() function-аар дамжуулна)
-        $this->public = $relative
-            ? $public_folder
-            : (string) $this->getRequest()->getUri()->withPath($public_folder);
+        $this->local_folder = $this->getDocumentPath("/../private{$folder}");
+        $this->public_path = "{$this->getScriptPath()}/private/file?name=$folder";
     }
 
     /**
@@ -90,9 +81,9 @@ class PrivateFilesController extends FilesController
      * @param string $fileName
      * @return string
      */
-    public function getPath(string $fileName): string
+    public function getFilePublicPath(string $fileName): string
     {
-        return "$this->public/" . \urlencode($fileName);
+        return "$this->public_path/" . \urlencode($fileName);
     }
 
     /**
@@ -143,7 +134,7 @@ class PrivateFilesController extends FilesController
             if ($mimeType === false) {
                 throw new \Exception('No Content', 204);
             }
-            
+
             \header("Content-Type: $mimeType");
             \readfile($filePath);
         } catch (\Throwable $err) {

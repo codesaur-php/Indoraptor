@@ -192,8 +192,27 @@ class NewsModel extends Model
      */
     public function generateSlug(string $title): string
     {
-        // Кирилл -> Латин хөрвүүлэх
-        $slug = \transliterator_transliterate('Any-Latin; Latin-ASCII', $title);
+        // Монгол кирилл -> латин (ICU transliterator Монгол дэмждэггүй)
+        $mongolian = [
+            'а'=>'a', 'б'=>'b', 'в'=>'v', 'г'=>'g', 'д'=>'d', 'е'=>'e', 'ё'=>'yo',
+            'ж'=>'j', 'з'=>'z', 'и'=>'i', 'й'=>'i', 'к'=>'k', 'л'=>'l', 'м'=>'m',
+            'н'=>'n', 'о'=>'o', 'ө'=>'u', 'п'=>'p', 'р'=>'r', 'с'=>'s', 'т'=>'t',
+            'у'=>'u', 'ү'=>'u', 'ф'=>'f', 'х'=>'kh', 'ц'=>'ts', 'ч'=>'ch', 'ш'=>'sh',
+            'щ'=>'sh', 'ъ'=>'', 'ы'=>'y', 'ь'=>'', 'э'=>'e', 'ю'=>'yu', 'я'=>'ya',
+            'А'=>'A', 'Б'=>'B', 'В'=>'V', 'Г'=>'G', 'Д'=>'D', 'Е'=>'E', 'Ё'=>'Yo',
+            'Ж'=>'J', 'З'=>'Z', 'И'=>'I', 'Й'=>'I', 'К'=>'K', 'Л'=>'L', 'М'=>'M',
+            'Н'=>'N', 'О'=>'O', 'Ө'=>'U', 'П'=>'P', 'Р'=>'R', 'С'=>'S', 'Т'=>'T',
+            'У'=>'U', 'Ү'=>'U', 'Ф'=>'F', 'Х'=>'Kh', 'Ц'=>'Ts', 'Ч'=>'Ch', 'Ш'=>'Sh',
+            'Щ'=>'Sh', 'Ъ'=>'', 'Ы'=>'Y', 'Ь'=>'', 'Э'=>'E', 'Ю'=>'Yu', 'Я'=>'Ya'
+        ];
+        $slug = \strtr($title, $mongolian);
+
+        // Бусад хэлний тэмдэгт байвал ICU transliterator ашиглах
+        if (\preg_match('/[^\x00-\x7F]/', $slug)
+            && \function_exists('transliterator_transliterate')
+        ) {
+            $slug = \transliterator_transliterate('Any-Latin; Latin-ASCII', $slug);
+        }
         // Жижиг үсэг болгох
         $slug = \mb_strtolower($slug);
         // Зөвхөн үсэг, тоо, зураас үлдээх
@@ -215,11 +234,11 @@ class NewsModel extends Model
      * Slug-аар мэдээ хайх.
      *
      * @param string $slug Мэдээний slug
-     * @return array|false Мэдээний мэдээлэл эсвэл false
+     * @return array|null Мэдээ эсвэл null
      */
-    public function getBySlug(string $slug): array|false
+    public function getBySlug(string $slug): array|null
     {
-        return $this->getRowBy(['slug' => $slug]);
+        return $this->getRowWhere(['slug' => $slug]);
     }
 
     /**

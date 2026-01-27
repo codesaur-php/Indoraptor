@@ -18,6 +18,7 @@ use Psr\Http\Message\UploadedFileInterface;
  *  • setSizeLimit(), setOverwrite()  
  *  • moveUploaded() → файлыг аюулгүй байршуулах гол функц  
  *  • renameTo() → файл сервер дотор байр солих  
+ *  • optimizeImage() -> зургийн файлыг web-д зориулж optimize хийх
  *  • MIME type илрүүлэх, filename collision хамгаалах  
  *  • upload_max_filesize / POST max size → format + convert bytes  
  *
@@ -25,9 +26,9 @@ use Psr\Http\Message\UploadedFileInterface;
  */
 class FileController extends \Raptor\Controller
 {
-    protected string $local;
+    protected string $local_folder;
     
-    protected string $public;
+    protected string $public_path;
     
     private bool $_overwrite = false;
     
@@ -41,18 +42,14 @@ class FileController extends \Raptor\Controller
      * Upload хийх фолдерийг тохируулна.
      *
      * @param string $folder  /users/1, /pages/22, /settings зэрэг харьцангуй path
-     * @param bool   $relative  true → public URL server root-оос автоматаар үүсгэнэ
      *
      * $this->local  → физик (document root дотор)
      * $this->public → браузер дээр харагдах public URL
      */
-    public function setFolder(string $folder, bool $relative = true)
+    public function setFolder(string $folder)
     {
-        $script_path = $this->getScriptPath();
-        $public_folder = "$script_path/public{$folder}";
-        
-        $this->local = $this->getDocumentPath('/public' . $folder);
-        $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);
+        $this->local_folder = $this->getDocumentPath("/public{$folder}");
+        $this->public_path = "{$this->getScriptPath()}/public{$folder}";        
     }
     
     /**
@@ -61,9 +58,9 @@ class FileController extends \Raptor\Controller
      * @param string $fileName
      * @return string example: /public/users/1/photo.jpg
      */
-    public function getPath(string $fileName): string
+    public function getFilePublicPath(string $fileName): string
     {
-        return $this->public . "/$fileName";
+        return $this->public_path . "/" . \rawurlencode($fileName);
     }
 
     protected function getDocumentPath(string $filePath): string
@@ -203,18 +200,28 @@ class FileController extends \Raptor\Controller
                 throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
             }
 
-            $upload_path = "$this->local/";
+            $upload_path = "$this->local_folder/";
             $file_name = \basename($uploadedFile->getClientFilename());
             $name = \pathinfo($file_name, \PATHINFO_FILENAME);
             $ext = \strtolower(\pathinfo($file_name, \PATHINFO_EXTENSION));
-            if (!$this->_overwrite) {
-                $file_name = $this->uniqueName($upload_path, $name, $ext);
-            }
 
             if ($this->_allowed_exts
                 && !\in_array($ext, $this->_allowed_exts)
             ) {
                 throw new \Exception('The uploaded file ext is not allowed', 9);
+            }
+
+            // Path урт шалгах (VARCHAR(255) - unique suffix _(XXX) = 10 = 245)
+            // base = public_path + "/" + "." + ext
+            $base_length = \strlen($this->public_path) + 2 + \strlen(\rawurlencode($ext));
+            $max_name_length = 255 - ($this->_overwrite ? 0 : 10) - $base_length;
+            if (\strlen(\rawurlencode($name)) > $max_name_length) {
+                // Нэр хэт урт - file-{uniqid} болгох
+                $name = 'file-' . \uniqid();
+                $file_name = "$name.$ext";
+            }
+            if (!$this->_overwrite) {
+                $file_name = $this->uniqueName($upload_path, $name, $ext);
             }
 
             if (!\file_exists($upload_path)
@@ -229,7 +236,7 @@ class FileController extends \Raptor\Controller
             $file_path = $upload_path . $file_name;
             $mime_type = \mime_content_type($file_path) ?: 'application/octet-stream';
             return [
-                'path' => $this->getPath($file_name),
+                'path' => $this->getFilePublicPath($file_name),
                 'file' => $file_path,
                 'size' => $file_size,
                 'type' => \explode('/', $mime_type)[0] ?? 'unknown',
@@ -331,6 +338,9 @@ class FileController extends \Raptor\Controller
      * @param int $mode
      *      Фолдер үүсгэх үед ашиглагдах permission (default: 0755)
      *
+     * @param string $subfolder
+     *      Нэмэлт дэд хавтас (жишээ: 'files' → /{table}/{id}/files/)
+     *
      * @return array|false
      *      Амжилттай бол:
      *          [
@@ -340,7 +350,7 @@ class FileController extends \Raptor\Controller
      *          ]
      *      Алдаатай бол false
      */
-    protected function renameTo(string $table, int $record_id, int $file_id, int $mode = 0755): array|false
+    protected function renameTo(string $table, int $record_id, int $file_id, int $mode = 0755, string $subfolder = ''): array|false
     {
         try {
             $model = new FilesModel($this->pdo);
@@ -352,26 +362,37 @@ class FileController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $this->setFolder("/$table/$record_id");
-            $upload_path = "$this->local/";
+            $folder = "/$table/$record_id" . ($subfolder ? "/$subfolder" : '');
+            $this->setFolder($folder);
+            $upload_path = "$this->local_folder/";
             $file_name = \basename($record['file']);
-            if (!\file_exists($upload_path)
-                || !\is_dir($upload_path)
-            ) {
+            $name = \pathinfo($file_name, \PATHINFO_FILENAME);
+            $ext = \strtolower(\pathinfo($file_name, \PATHINFO_EXTENSION));
+
+            $folder_exists = \file_exists($upload_path) && \is_dir($upload_path);
+
+            // Path урт шалгах (VARCHAR(255) - unique suffix _(XXX) = 10 = 245)
+            $base_length = \strlen($this->public_path) + 2 + \strlen(\rawurlencode($ext));
+            $max_name_length = 255 - ($folder_exists ? 10 : 0) - $base_length;
+            if (\strlen(\rawurlencode($name)) > $max_name_length) {
+                $name = 'file-' . \uniqid();
+                $file_name = "$name.$ext";
+            }
+
+            if (!$folder_exists) {
                 \mkdir($upload_path, $mode, true);
             } else {
-                $name = \pathinfo($file_name, \PATHINFO_FILENAME);
-                $ext = \strtolower(\pathinfo($file_name, \PATHINFO_EXTENSION));
                 $file_name = $this->uniqueName($upload_path, $name, $ext);
             }
+
             $newPath = $upload_path . $file_name;
             if (!\rename($record['file'], $newPath)) {
                 throw new \Exception("Can't rename file [{$record['file']}] to [$newPath]");
             }
             $update = [
                 'file' => $newPath,
-                'path' => $this->getPath($file_name),
-                'record_id' => $record_id,
+                'path' => $this->getFilePublicPath($file_name),
+                'record_id' => $record_id
             ];
             $updated = $model->updateById($file_id, $update + ['updated_by' => $this->getUserId()]);
             if (empty($updated)) {
@@ -380,6 +401,161 @@ class FileController extends \Raptor\Controller
             return $update;
         } catch (\Throwable $err) {
             $this->errorLog($err);
+            return false;
+        }
+    }
+
+    /**
+     * Зургийг web-д зориулж optimize хийх.
+     *
+     * Зургийн чанарыг тохируулж, хэрэв том бол хэмжээг багасгана.
+     * JPEG, PNG, GIF, WebP форматуудыг дэмждэг.
+     * PNG/GIF-ийн transparency хадгалагдана.
+     *
+     * Үйлдэл:
+     *   - Бүх зурагт quality compression хийнэ (JPEG/WebP)
+     *   - Хэрэв width > maxWidth бол resize хийнэ
+     *   - Жижиг зурагт зөвхөн quality optimize хийнэ
+     *   - Аль хэдийн optimize хийгдсэн зургийг давхар optimize хийхгүй
+     *     (хэрэв шинэ файл 10%-аас бага хэмнэлттэй бол эх файлыг хэвээр үлдээнэ)
+     *
+     * Тохиргоо (.env):
+     *   - INDO_CONTENT_IMG_MAX_WIDTH: Хамгийн их өргөн (default: 1920)
+     *   - INDO_CONTENT_IMG_QUALITY: JPEG/WebP чанар 1-100 (default: 90)
+     *
+     * @param string $filePath Зургийн физик зам
+     *
+     * @return bool Optimize хийгдсэн эсэх:
+     *   - true: Зураг амжилттай optimize хийгдсэн
+     *   - false: Optimize шаардлагагүй, алдаа, эсвэл дэмжигдээгүй формат
+     *
+     * @requires ext-gd GD extension шаардлагатай
+     */
+    protected function optimizeImage(string $filePath): bool
+    {
+        // GD сан суусан эсэхийг шалгах
+        if (!\extension_loaded('gd')) {
+            \error_log('optimizeImage: GD extension суугаагүй байна');
+            return false;
+        }
+
+        // Файл байгаа эсэхийг шалгах
+        if (!\file_exists($filePath) || !\is_readable($filePath)) {
+            return false;
+        }
+
+        $maxWidth = (int) (\getenv('INDO_CONTENT_IMG_MAX_WIDTH') ?: ($_ENV['INDO_CONTENT_IMG_MAX_WIDTH'] ?? 1920));
+        $quality = (int) (\getenv('INDO_CONTENT_IMG_QUALITY') ?: ($_ENV['INDO_CONTENT_IMG_QUALITY'] ?? 90));
+
+        $imageInfo = @\getimagesize($filePath);
+        if (!$imageInfo) {
+            return false;
+        }
+
+        [$width, $height, $type] = $imageInfo;
+
+        // Эх файлын хэмжээг хадгалах (дараа нь харьцуулахад ашиглана)
+        $originalSize = \filesize($filePath);
+
+        // Resize хэрэгтэй эсэхийг шалгах
+        $needsResize = $width > $maxWidth;
+
+        // Шинэ хэмжээ тооцоолох (resize хэрэггүй бол хуучин хэмжээ)
+        $newWidth = $needsResize ? $maxWidth : $width;
+        $newHeight = $needsResize ? (int) ($height * ($maxWidth / $width)) : $height;
+
+        // Зураг үүсгэх
+        $source = null;
+        switch ($type) {
+            case \IMAGETYPE_JPEG:
+                $source = @\imagecreatefromjpeg($filePath);
+                break;
+            case \IMAGETYPE_PNG:
+                $source = @\imagecreatefrompng($filePath);
+                break;
+            case \IMAGETYPE_GIF:
+                $source = @\imagecreatefromgif($filePath);
+                break;
+            case \IMAGETYPE_WEBP:
+                if (\function_exists('imagecreatefromwebp')) {
+                    $source = @\imagecreatefromwebp($filePath);
+                }
+                break;
+            default:
+                \error_log("optimizeImage: Дэмжигдээгүй зургийн төрөл: $type");
+                return false;
+        }
+
+        if (!$source) {
+            return false;
+        }
+
+        // Зураг боловсруулах (resize эсвэл quality optimize)
+        if ($needsResize) {
+            // Resize хийх
+            $output = \imagecreatetruecolor($newWidth, $newHeight);
+            if (!$output) {
+                \imagedestroy($source);
+                return false;
+            }
+
+            // PNG болон GIF-ийн transparency хадгалах
+            if ($type === \IMAGETYPE_PNG || $type === \IMAGETYPE_GIF) {
+                \imagealphablending($output, false);
+                \imagesavealpha($output, true);
+                $transparent = \imagecolorallocatealpha($output, 255, 255, 255, 127);
+                \imagefilledrectangle($output, 0, 0, $newWidth, $newHeight, $transparent);
+            }
+
+            \imagecopyresampled($output, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        } else {
+            // Resize хэрэггүй, зөвхөн quality optimize хийнэ
+            $output = $source;
+            $source = null; // $output руу шилжүүлсэн тул дахин destroy хийхгүй
+        }
+
+        // Түр файлд хадгалах (хэмжээ харьцуулахын тулд)
+        $tempPath = $filePath . '.tmp';
+        $saved = false;
+        switch ($type) {
+            case \IMAGETYPE_JPEG:
+                $saved = @\imagejpeg($output, $tempPath, $quality);
+                break;
+            case \IMAGETYPE_PNG:
+                // PNG compression level: 0-9 (6 нь сайн харьцаа)
+                $saved = @\imagepng($output, $tempPath, 6);
+                break;
+            case \IMAGETYPE_GIF:
+                $saved = @\imagegif($output, $tempPath);
+                break;
+            case \IMAGETYPE_WEBP:
+                if (\function_exists('imagewebp')) {
+                    $saved = @\imagewebp($output, $tempPath, $quality);
+                }
+                break;
+        }
+
+        if ($source) {
+            \imagedestroy($source);
+        }
+        \imagedestroy($output);
+
+        if (!$saved || !\file_exists($tempPath)) {
+            return false;
+        }
+
+        $optimizedSize = \filesize($tempPath);
+
+        // Хэрэв optimize хийсэн файл жижгэрсэн бол (10%-аас дээш хэмнэлттэй) солих
+        // Үгүй бол эх файлыг хэвээр үлдээх (аль хэдийн optimize хийгдсэн байж магадгүй)
+        if ($optimizedSize < $originalSize * 0.90) {
+            // Optimize үр дүнтэй - шинэ файлаар солих
+            \unlink($filePath);
+            \rename($tempPath, $filePath);
+            return true;
+        } else {
+            // Optimize үр дүнгүй - эх файлыг хэвээр үлдээх
+            \unlink($tempPath);
             return false;
         }
     }
@@ -491,7 +667,7 @@ class FileController extends \Raptor\Controller
     protected function unlinkByName(string $fileName): bool
     {
         try {
-            $filePath = $this->local . "/$fileName";
+            $filePath = $this->local_folder . "/$fileName";
             if (!\file_exists($filePath)) {
                 throw new \Exception(__CLASS__ . ": File [$filePath] doesn't exist!");
             }

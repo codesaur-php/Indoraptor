@@ -1675,22 +1675,46 @@ moedit.prototype._ocr = async function() {
 
 moedit.prototype._print = function() {
   const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    this._notify?.('error', this._isMn ? 'Popup хориглогдсон байна' : 'Popup blocked');
+    return;
+  }
+
+  /* Толгой зураг авах */
+  let headerImageHtml = '';
+  const headerArea = this.headerImageArea || this.root.querySelector('.moedit-header-image-area');
+  const headerPreview = this.headerImagePreview || this.root.querySelector('.moedit-header-image-preview');
+  /* headerImageArea харагдаж байгаа бөгөөд зураг ачаалагдсан үед л хэвлэх */
+  if (headerArea && headerArea.style.display !== 'none' && headerPreview && headerPreview.naturalWidth > 0) {
+    const imgSrc = headerPreview.src;
+    if (imgSrc && !imgSrc.startsWith('data:,') && !imgSrc.endsWith('/')) {
+      headerImageHtml = `<img src="${imgSrc}" style="max-width:100%;height:auto;margin-bottom:1rem;display:block;">`;
+    }
+  }
+
+  /* Контент авах */
+  const content = this.getHTML();
+
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Print</title>
+        <meta charset="UTF-8">
+        <title>${this._isMn ? 'Хэвлэх' : 'Print'}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
-          td, th { border: 1px solid #dee2e6; padding: 0.5rem; }
+          body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; padding: 2rem; max-width: 800px; margin: 0 auto; }
           img { max-width: 100%; height: auto; }
-          @media print {
-            body { padding: 0; }
-          }
+          table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+          td, th { padding: 0.5rem; border: 1px solid #ddd; }
+          blockquote { margin: 1rem 0; padding: 0.75rem 1rem; border-left: 4px solid #0d6efd; background: #f8f9fa; }
+          pre { background: #f8f9fa; padding: 1rem; overflow-x: auto; }
+          @media print { body { padding: 0; } }
         </style>
       </head>
-      <body>${this.getHTML()}</body>
+      <body>
+        ${headerImageHtml}
+        ${content}
+      </body>
     </html>
   `);
   printWindow.document.close();

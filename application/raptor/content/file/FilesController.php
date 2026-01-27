@@ -19,7 +19,7 @@ use Psr\Log\LogLevel;
  *
  * Онцлог:
  *  - Бүх файлуудыг `{table}_files` нэртэй динамик хүснэгтэд хадгална
- *  - PostgreSQL ба MySQL хоёуланд ажиллана
+ *  - PostgreSQL/MySQL/SQLite ажиллана
  *  - JSON response + Dashboard HTML response хосолсон
  *  - Access control (permission) бүрэн тусгагдсан
  *  - indolog() → үйлдэл бүрийг лог файл руу бичдэг
@@ -259,15 +259,28 @@ class FilesController extends FileController
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
             }
-
+            
             // Файл хадгалах фолдерийг тохируулах
-            $this->setFolder("/$table" . ($id == 0 ? '' : "/$id"));
+            $folder = "/$table" . ($id == 0 ? '/temp' : "/$id");
+            $query = $this->getQueryParams();
+            if (!empty($query['subfolder'])) {
+                $folder .= '/' . \preg_replace('/[^a-zA-Z0-9_-]/', '', $query['subfolder']);
+            }
+            $this->setFolder($folder);
             $this->allowCommonTypes();
 
             // Upload → Move
             $uploaded = $this->moveUploaded($input);
             if (!$uploaded) {
                 throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload!', 400);
+            }
+
+            // Зураг optimize хийх (хэрэв optimize=1 бол)
+            $body = $this->getParsedBody();
+            if (($body['optimize'] ?? '0') === '1' && ($uploaded['type'] ?? '') === 'image') {
+                if ($this->optimizeImage($uploaded['file'])) {
+                    $uploaded['size'] = \filesize($uploaded['file']);
+                }
             }
 
             if ($id > 0) {
@@ -293,7 +306,7 @@ class FilesController extends FileController
             ];
             $this->respondJSON($error, $err->getCode());
 
-            // Files (DB) бичлэг амжилтгүй тул upload-лагдсан файл байвал устгах хэрэгтэй
+            // Files (DB) бичлэг амжилтгүй тул upload файл байвал устгах хэрэгтэй
             if (!empty($uploaded['file'])) {
                 \unlink($uploaded['file']);
             }
@@ -335,8 +348,8 @@ class FilesController extends FileController
                 throw new \Exception('Unauthorized', 401);
             }
 
-            // Фолдер тохируулах
-            $this->setFolder("/$table" . ($id == 0 ? '' : "/$id"));
+            // Фолдер тохируулах (id=0 бол temp folder)
+            $this->setFolder("/$table" . ($id == 0 ? '/temp' : "/$id"));
             $this->allowImageOnly();
 
             // Upload хийх
@@ -353,7 +366,6 @@ class FilesController extends FileController
 
             // moedit-д зөвхөн path хэрэгтэй
             $this->respondJSON(['path' => $uploaded['path']]);
-
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'error' => [
@@ -363,126 +375,7 @@ class FilesController extends FileController
             ], $err->getCode() ?: 500);
         }
     }
-
-    /**
-     * Зургийг web-д зориулж optimize хийх.
-     *
-     * Том зургийг тохируулсан хэмжээнд багасгаж, чанарыг тохируулна.
-     * JPEG, PNG, GIF, WebP форматуудыг дэмждэг.
-     * PNG/GIF-ийн transparency хадгалагдана.
-     *
-     * Тохиргоо (.env):
-     *   - INDO_CONTENT_IMG_MAX_WIDTH: Хамгийн их өргөн (default: 1920)
-     *   - INDO_CONTENT_IMG_QUALITY: JPEG/WebP чанар 1-100 (default: 85)
-     *
-     * @param string $filePath Зургийн физик зам
-     *
-     * @return bool Optimize хийгдсэн эсэх:
-     *   - true: Зураг амжилттай optimize хийгдсэн
-     *   - false: Optimize хийгдээгүй (жижиг зураг, алдаа, эсвэл дэмжигдээгүй формат)
-     *
-     * @requires ext-gd GD extension шаардлагатай
-     */
-    private function optimizeImage(string $filePath): bool
-    {
-        // GD сан суусан эсэхийг шалгах
-        if (!\extension_loaded('gd')) {
-            \error_log('optimizeImage: GD extension суугаагүй байна');
-            return false;
-        }
-
-        // Файл байгаа эсэхийг шалгах
-        if (!\file_exists($filePath) || !\is_readable($filePath)) {
-            return false;
-        }
-
-        $maxWidth = (int) (\getenv('INDO_CONTENT_IMG_MAX_WIDTH') ?: ($_ENV['INDO_CONTENT_IMG_MAX_WIDTH'] ?? 1920));
-        $quality = (int) (\getenv('INDO_CONTENT_IMG_QUALITY') ?: ($_ENV['INDO_CONTENT_IMG_QUALITY'] ?? 85));
-
-        $imageInfo = @\getimagesize($filePath);
-        if (!$imageInfo) {
-            return false;
-        }
-
-        [$width, $height, $type] = $imageInfo;
-
-        // Хэрэв жижиг зураг бол optimize хийх шаардлагагүй
-        if ($width <= $maxWidth) {
-            return false;
-        }
-
-        // Шинэ хэмжээ тооцоолох
-        $newWidth = $maxWidth;
-        $newHeight = (int) ($height * ($maxWidth / $width));
-
-        // Зураг үүсгэх
-        $source = null;
-        switch ($type) {
-            case \IMAGETYPE_JPEG:
-                $source = @\imagecreatefromjpeg($filePath);
-                break;
-            case \IMAGETYPE_PNG:
-                $source = @\imagecreatefrompng($filePath);
-                break;
-            case \IMAGETYPE_GIF:
-                $source = @\imagecreatefromgif($filePath);
-                break;
-            case \IMAGETYPE_WEBP:
-                if (\function_exists('imagecreatefromwebp')) {
-                    $source = @\imagecreatefromwebp($filePath);
-                }
-                break;
-            default:
-                \error_log("optimizeImage: Дэмжигдээгүй зургийн төрөл: $type");
-                return false;
-        }
-
-        if (!$source) {
-            return false;
-        }
-
-        // Resize хийх
-        $resized = \imagecreatetruecolor($newWidth, $newHeight);
-        if (!$resized) {
-            \imagedestroy($source);
-            return false;
-        }
-
-        // PNG болон GIF-ийн transparency хадгалах
-        if ($type === \IMAGETYPE_PNG || $type === \IMAGETYPE_GIF) {
-            \imagealphablending($resized, false);
-            \imagesavealpha($resized, true);
-            $transparent = \imagecolorallocatealpha($resized, 255, 255, 255, 127);
-            \imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
-        }
-
-        \imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-        // Хадгалах
-        $result = false;
-        switch ($type) {
-            case \IMAGETYPE_JPEG:
-                $result = @\imagejpeg($resized, $filePath, $quality);
-                break;
-            case \IMAGETYPE_PNG:
-                $result = @\imagepng($resized, $filePath, 6);
-                break;
-            case \IMAGETYPE_GIF:
-                $result = @\imagegif($resized, $filePath);
-                break;
-            case \IMAGETYPE_WEBP:
-                if (\function_exists('imagewebp')) {
-                    $result = @\imagewebp($resized, $filePath, $quality);
-                }
-                break;
-        }
-
-        \imagedestroy($source);
-        \imagedestroy($resized);
-
-        return $result;
-    }
-
+    
     /**
      * Файл сонгоход зориулсан Modal HTML харуулна.
      *
@@ -535,8 +428,8 @@ class FilesController extends FileController
                 __DIR__ . "/$modal-modal.html",
                 ['table' => $table, 'record' => $record, 'host' => $host]
             );
-            // basename filter
-            $template->addFilter(new TwigFilter('basename', fn(string $path): string => \basename($path)));
+            // basename filter (rawurldecode хийж уншигдахуйц нэр харуулна)
+            $template->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
             $template->render();
         } catch (\Throwable $err) {
             $this->headerResponseCode($err->getCode());
