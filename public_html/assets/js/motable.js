@@ -330,3 +330,6 @@ motable.prototype.getDefaults = function (options) {
 
     return options;
 };
+
+/* Global export */
+window.motable = motable;

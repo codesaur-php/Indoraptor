@@ -32,10 +32,10 @@
             <strong>Relative:</strong>
             <!-- Copy button - copyContent(id) нь тухайн <pre>-ийн text-г clipboard рүү хуулна -->
             <a class="btn btn-sm btn-primary" onclick="copyContent('relative');">copy</a>
-            <!-- Генерацлагдсан <img> tag - зөвхөн relative URL -->
+            <!-- Генерацлагдсан <img> tag - зөвхөн relative URL (vanilla HTML) -->
             <pre class="border border-primary bg-dark text-light"
                  id="relative"
-                 style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
+                 style="white-space:pre-wrap">{{ ('<img src="' ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '" style="max-width: 100%; height: auto;">')|e }}</pre>
 
             <hr>
 
@@ -43,10 +43,10 @@
             <strong>Absolute:</strong>
             <!-- Copy button - copyContent(id) нь тухайн <pre>-ийн text-г clipboard рүү хуулна -->
             <a class="btn btn-sm btn-primary" onclick="copyContent('absolute');">copy</a>
-            <!-- Генерацлагдсан <img> tag - бүрэн absolute URL → host + path -->
+            <!-- Генерацлагдсан <img> tag - бүрэн absolute URL → host + path (vanilla HTML) -->
             <pre class="border border-primary bg-dark text-light"
                  id="absolute"
-                 style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
+                 style="white-space:pre-wrap">{{ ('<img src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '" style="max-width: 100%; height: auto;">')|e }}</pre>
         </div>
 
         <!-- Modal Footer -->

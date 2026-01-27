@@ -33,20 +33,20 @@
             <strong>Relative:</strong>
             <!-- <pre id="relative"> хэсгийн текстийг хуулна -->
             <a class="btn btn-sm btn-dark" onclick="copyContent('relative');">copy</a>
-            <!-- Харьцангуй URL бүхий <video> tag -->
+            <!-- Харьцангуй URL бүхий <video> tag (vanilla HTML) -->
             <pre class="border border-dark bg-secondary text-light"
                  id="relative"
-                 style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ record['path'] ~ '"></video>')|e }}</pre>
+                 style="white-space:pre-wrap">{{ ('<video src="' ~ record['path'] ~ '" controls style="max-width: 100%;"></video>')|e }}</pre>
 
             <hr>
 
             <!-- ABSOLUTE VIDEO EMBED CODE -->
             <strong>Absolute:</strong>
             <a class="btn btn-sm btn-dark" onclick="copyContent('absolute');">copy</a>
-            <!-- host + path → бүрэн URL бүхий embed код -->
+            <!-- host + path → бүрэн URL бүхий embed код (vanilla HTML) -->
             <pre class="border border-dark bg-secondary text-light"
                  id="absolute"
-                 style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ host ~ record['path'] ~ '"></video>')|e }}</pre>
+                 style="white-space:pre-wrap">{{ ('<video src="' ~ host ~ record['path'] ~ '" controls style="max-width: 100%;"></video>')|e }}</pre>
 
         </div>
 

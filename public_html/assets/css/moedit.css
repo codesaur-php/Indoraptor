@@ -250,11 +250,13 @@
   display:none !important;
 }
 
-.moedit-body{ 
-  position:relative; 
+.moedit-body{
+  position:relative;
   min-height:300px;
   max-height:600px;
   overflow-y:auto;
+  display:flex;
+  flex-direction:column;
 }
 
 .moedit-editor{
@@ -262,6 +264,7 @@
   min-height:300px;
   outline:none;
   line-height:1.6;
+  flex:1;
 }
 .moedit-editor:focus{
   outline:none;
@@ -327,7 +330,7 @@
 }
 
 .moedit.is-source .moedit-editor{ display:none; }
-.moedit.is-source .moedit-source{ display:block; }
+.moedit.is-source .moedit-source{ display:block; flex:1; }
 
 /* Fullscreen */
 .moedit.is-fullscreen{

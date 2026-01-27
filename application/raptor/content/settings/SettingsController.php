@@ -60,7 +60,7 @@ class SettingsController extends FileController
         if (\array_key_exists('id', $record)) {
             // FAVICO
             if (!empty($record['favico'])) {
-                $favicoFile = $this->local . '/' . \basename($record['favico']);
+                $favicoFile = $this->local_folder . '/' . \basename($record['favico']);
                 if (\file_exists($favicoFile)) {
                     $record['favico_size'] = $this->formatSizeUnits(\filesize($favicoFile));
                 }
@@ -68,7 +68,7 @@ class SettingsController extends FileController
 
             // APPLE TOUCH ICON
             if (!empty($record['apple_touch_icon'])) {
-                $appleFile = $this->local . '/' . \basename($record['apple_touch_icon']);
+                $appleFile = $this->local_folder . '/' . \basename($record['apple_touch_icon']);
                 if (\file_exists($appleFile)) {
                     $record['apple_touch_icon_size'] = $this->formatSizeUnits(\filesize($appleFile));
                 }
@@ -78,7 +78,7 @@ class SettingsController extends FileController
             if (!empty($record['localized']['logo'] ?? [])) {
                 foreach ($record['localized']['logo'] as $code => $path) {
                     if (!empty($path)) {
-                        $logoPath = $this->local . '/' . \basename($path);
+                        $logoPath = $this->local_folder . '/' . \basename($path);
                         if (\file_exists($logoPath)) {
                             $record['localized']['logo_size'][$code] =
                                 $this->formatSizeUnits(\filesize($logoPath));

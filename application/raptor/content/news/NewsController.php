@@ -171,25 +171,31 @@ class NewsController extends FileController
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                if (($payload['published'] ?? 0 ) == 1) {
-                    if (!$this->isUserCan('system_content_publish')
-                    ) {
-                        throw new \Exception($this->text('system-no-permission'), 401);
-                    }
-                    $payload['published_at'] = \date('Y-m-d H:i:s');
-                    $payload['published_by'] = $this->getUserId();
-                }
-                if (($payload['comment'] ?? 0) == 1
+                
+                // Нийтлэх эрх шаардлагатай талбарууд
+                $isPublished = ($payload['published'] ?? 0) == 1;
+                $needsPublishPermission =
+                    $isPublished ||
+                    ($payload['is_featured'] ?? 0) == 1 ||
+                    ($payload['comment'] ?? 0) == 1;
+                if ($needsPublishPermission
                     && !$this->isUserCan('system_content_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
+                }
+
+                if ($isPublished) {
+                    $payload['published_at'] = \date('Y-m-d H:i:s');
+                    $payload['published_by'] = $this->getUserId();
                 }
                 if (isset($payload['files'])) {
                     $files = \array_flip($payload['files']);
                     unset($payload['files']);
                 }
                 
-                $record = $model->insert($payload + ['created_by' => $this->getUserId()]);
+                $record = $model->insert(
+                    $payload + ['created_by' => $this->getUserId()]
+                );
                 if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
@@ -198,43 +204,52 @@ class NewsController extends FileController
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
-                
-                $this->allowImageOnly();
+
+                $this->setFolder("/$table/temp");
+                $tempPath = $this->public_path;
+                $tempFolder = $this->local_folder;
+
                 $this->setFolder("/$table/$id");
+                $recordPath = $this->public_path;
+                $recordFolder = $this->local_folder;
+
+                // Толгой зураг upload
+                $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
-                    $record = $model->updateById(
-                        $id,
-                        [
-                            'photo' => $photo['path'],
-                            'photo_size' => $photo['size']
-                        ]
-                    );
+                    $record = $model->updateById($id, [
+                        'photo' => $photo['path'],
+                        'photo_size' => $photo['size']
+                    ]);
                 }
-                $this->allowCommonTypes();
-                if (!empty($files) && \is_array($files)) {
-                    $html = $record['content'];
-                    \preg_match_all('/src="([^"]+)"/', $html, $srcs);
-                    \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
-                    foreach (\array_keys($files) as $file_id) {
-                        $update = $this->renameTo($table, $id, $file_id);
-                        if (!$update) continue;
-                        $files[$file_id] = $update;
-                        foreach ($srcs[1] as $src) {
-                            $src_updated = \str_replace("/$table/", "/$table/$id/", $src);
-                            if (\str_contains($src_updated, $update['path'])) {
-                                $html = \str_replace($src, $src_updated, $html);
-                            }
-                        }
-                        foreach ($hrefs[1] as $href) {
-                            $href_updated = \str_replace("/$table/", "/$table/$id/", $href);
-                            if (\str_contains($href_updated, $update['path'])) {
-                                $html = \str_replace($href, $href_updated, $html);
-                            }
+
+                // Content доторх зургуудыг regex-ээр олох
+                $html = $record['content'] ?? '';
+                if (\preg_match_all('/src=["\']([^"\']*' . \preg_quote($tempPath, '/') . '\/([^"\']+))["\']/', $html, $matches)) {
+                    if (!\is_dir($recordFolder)) {
+                        \mkdir($recordFolder, 0755, true);
+                    }
+                    // Зөвхөн content-д байгаа файлуудыг зөөх
+                    foreach ($matches[2] as $encodedFilename) {
+                        $filename = \rawurldecode($encodedFilename);
+                        $tempFile = "$tempFolder/$filename";
+                        if (\is_file($tempFile)) {
+                            \rename($tempFile, "$recordFolder/$filename");
                         }
                     }
-                    if ($html != $record['content']) {
-                        $record = $model->updateById($id, ['content' => $html]);
+                    // Content дотор temp path-уудыг шинэ path-аар солих
+                    $html = \str_replace($tempPath, $recordPath, $html);
+                    $model->updateById($id, ['content' => $html]);
+                }
+
+                // mofiles-аар upload хийсэн файлуудыг зөөх
+                $this->allowCommonTypes();
+                if (!empty($files) && \is_array($files)) {
+                    foreach (\array_keys($files) as $file_id) {
+                        $update = $this->renameTo($table, $id, $file_id, 0755, 'files');
+                        if ($update) {
+                            $files[$file_id] = $update;
+                        }
                     }
                     $record['files'] = $files;
                 }
@@ -309,25 +324,40 @@ class NewsController extends FileController
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
-            } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
+            } elseif ($record['published'] == 1
+                && !$this->isUserCan('system_content_publish')
+            ) {
+                // Нийтлэгдсэн бичлэгийг засахад publish эрх шаардлагатай
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
+
+                // Boolean талбаруудыг хөрвүүлэх
                 $payload['photo_removed'] = $payload['photo_removed'] ?? 0;
                 $payload['published'] = \filter_var($payload['published'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-                if ($payload['published'] != $record['published']) {
-                    if (!$this->isUserCan('system_content_publish')) {
-                        throw new \Exception($this->text('system-no-permission'), 401);
-                    }
-                    if ($payload['published'] == 1) {
-                        $payload['published_at'] = \date('Y-m-d H:i:s');
-                        $payload['published_by'] = $this->getUserId();
-                    }
-                }
+                $payload['is_featured'] = \filter_var($payload['is_featured'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
                 $payload['comment'] = \filter_var($payload['comment'] ?? 0, \FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+
+                // Нийтлэх эрх шаардлагатай талбарууд
+                $isPublished = $payload['published'] == 1;
+                $needsPublishPermission =
+                    $isPublished ||
+                    $payload['is_featured'] == 1 ||
+                    $payload['comment'] == 1;
+                if ($needsPublishPermission
+                    && !$this->isUserCan('system_content_publish')
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
+
+                // Нийтлэх төлөв өөрчлөгдсөн бол
+                if ($isPublished && $record['published'] != 1) {
+                    $payload['published_at'] = \date('Y-m-d H:i:s');
+                    $payload['published_by'] = $this->getUserId();
+                }
                 
                 $this->setFolder("/$table/$id");
                 $this->allowImageOnly();
@@ -459,7 +489,7 @@ class NewsController extends FileController
             }
             $template->set('record', $record);
             $template->set('files', $files);
-            $template->render();            
+            $template->render();
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();

@@ -1,549 +1,1183 @@
 /**
- * mofiles v1
+ * mofiles v3.0
  * ------------------------------------------------------------------
- * Файл upload, харуулах, устгах боломжтой хүснэгт.
- * motable дээр суурилсан, Plupload + Fancybox + SweetAlert2 ашигладаг.
+ * Файл удирдах хүснэгт - Local storage approach + motable
  *
- * @requires motable
- * @requires plupload
- * @requires Fancybox (optional)
- * @requires Swal (optional)
+ * Шинэ архитектур:
+ * - Файл сонгоход browser-д хадгална (File object)
+ * - Хүснэгтэд preview харуулна (motable ашиглана)
+ * - category, keyword, description засварлах боломжтой
+ * - Form submit үед бүх файлууд нэг дор илгээгдэнэ
  *
  * @example
  * const files = new mofiles('#news_files', {
- *     uploadUrl: '/api/files/upload',
- *     deleteUrl: '/api/files/delete',
- *     modalUrl: '/api/files/modal',
- *     permissions: { update: true, delete: true },
- *     onUpload: (res) => console.log('Uploaded:', res),
- *     onDelete: (id) => console.log('Deleted:', id)
+ *     files: [...],  // Одоо байгаа файлууд (update/view үед)
+ *     readonly: false
  * });
+ *
+ * // Form submit үед:
+ * const data = files.getFilesData();
  */
 
 class mofiles {
+    /* Static: CDN URLs */
+    static CDN = {
+        motableJs: 'https://cdn.jsdelivr.net/gh/codesaur-php/Indoraptor/public_html/assets/js/motable.js',
+        motableCss: 'https://cdn.jsdelivr.net/gh/codesaur-php/Indoraptor/public_html/assets/css/motable.css'
+    };
+
+    /* Static: CSS injected flag */
+    static _cssInjected = false;
+
+    /* Static: Loading promises */
+    static _loadingPromises = {};
+
+    /* Static: Media modal instance */
+    static _mediaModal = null;
+
+    /* Static: Confirm modal instance */
+    static _confirmModal = null;
+
+    /* Static: Edit modal instance */
+    static _editModal = null;
+
     /**
-     * mofiles constructor
-     * @param {string|HTMLElement} tableSelector - Table element эсвэл selector
-     * @param {Object} opts - Тохиргоо
+     * Constructor
      */
     constructor(tableSelector, opts = {}) {
-        /* Монгол хэл эсэхийг шалгах */
         this._isMn = document.documentElement.lang === 'mn';
+        this._isDark = this._detectDarkMode();
 
-        /* Options тохируулах */
         this.opts = {
-            /* Upload URL */
-            uploadUrl: null,
-            /* Delete URL */
-            deleteUrl: null,
-            /* Modal URL (файлын мэдээлэл засах modal) */
-            modalUrl: null,
-            /* Эрхүүд */
-            permissions: {
-                update: false,
-                delete: false
-            },
-            /* Max file size */
-            maxFileSize: '8mb',
-            /* Allowed file types */
-            mimeTypes: [
-                { title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico,webp' },
-                { title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt' },
-                { title: 'Audio', extensions: 'mp3,m4a,ogg,wav' },
-                { title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2' },
-                { title: 'Text files', extensions: 'txt,xml,json' },
-                { title: 'Archives', extensions: 'zip,rar' }
-            ],
-            /* Callbacks */
-            onUpload: null,
-            onDelete: null,
-            onChange: null,
-            /* Upload container ID */
-            containerId: 'mofiles-container',
-            pickButtonId: 'mofiles-pick',
-            uploadButtonId: 'mofiles-upload',
-            fileListId: 'mofiles-list',
-            /* Count badge element */
-            countBadge: null,
-            /* Readonly mode */
+            files: [],
             readonly: false,
-            /* Labels */
+            darkMode: 'auto',
+            maxFileSize: 8 * 1024 * 1024,
+            allowedExtensions: ['jpg', 'jpeg', 'jpe', 'png', 'gif', 'ico', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pps', 'ppsx', 'odt', 'mp3', 'm4a', 'ogg', 'wav', 'mp4', 'm4v', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2', 'txt', 'xml', 'json', 'zip', 'rar'],
+            onEmbed: null,
+            onChange: null,
+            countBadge: null,
             labels: {
                 selectFiles: this._isMn ? 'Файл сонгох' : 'Select files',
-                uploadFiles: this._isMn ? 'Хуулах' : 'Upload',
-                deleteConfirm: this._isMn ? 'Та {title} файлын бичлэгийг устгахдаа итгэлтэй байна уу?' : 'Are you sure to delete {title}?',
-                deleteNote: this._isMn ? 'Бодит файл нь устахгүй бөгөөд оршсоор байх болно.' : 'The actual file will not be deleted.',
-                uploadSuccess: this._isMn ? 'Файл амжилттай хуулагдлаа' : 'File uploaded successfully',
-                deleteSuccess: this._isMn ? 'Файл амжилттай устгагдлаа' : 'File deleted successfully',
+                deleteConfirm: this._isMn ? 'Та {title} файлыг устгахдаа итгэлтэй байна уу?' : 'Are you sure to delete {title}?',
                 error: this._isMn ? 'Алдаа' : 'Error',
                 success: this._isMn ? 'Амжилттай' : 'Success',
                 cancel: this._isMn ? 'Болих' : 'Cancel',
                 delete: this._isMn ? 'Устгах' : 'Delete',
-                sending: this._isMn ? 'илгээж байна' : 'sending'
+                close: this._isMn ? 'Хаах' : 'Close',
+                save: this._isMn ? 'Хадгалах' : 'Save',
+                edit: this._isMn ? 'Засах' : 'Edit',
+                headerFile: this._isMn ? 'Файл' : 'File',
+                headerProperties: this._isMn ? 'Шинж чанар' : 'Properties',
+                headerActions: this._isMn ? 'Үйлдэл' : 'Actions',
+                noFiles: this._isMn ? 'Файл байхгүй' : 'No files',
+                saveWarning: this._isMn
+                    ? 'Хадгалах товч дарснаар файлын өөрчлөлтүүд серверт илгээгдэнэ'
+                    : 'File changes will be sent to server when you click Save',
+                fileTooLarge: this._isMn ? 'Файл хэт том байна' : 'File is too large',
+                invalidType: this._isMn ? 'Зөвшөөрөгдөөгүй файлын төрөл' : 'Invalid file type',
+                embedHint: this._isMn
+                    ? 'Агуулгад зураг оруулахдаа засварлагчийн <b>Толгой зураг</b> эсвэл <b>Зураг оруулах</b> товч ашиглавал илүү үр дүнтэй.'
+                    : 'For images in content, use the editor\'s <b>Header Image</b> or <b>Insert Image</b> buttons for better results.',
+                category: this._isMn ? 'Ангилал' : 'Category',
+                keyword: this._isMn ? 'Түлхүүр үг' : 'Keyword',
+                description: this._isMn ? 'Тайлбар' : 'Description',
+                editFile: this._isMn ? 'Файлын мэдээлэл засах' : 'Edit file info',
+                newFile: this._isMn ? 'Шинэ' : 'New'
             },
             ...opts
         };
 
-        /* motable instance үүсгэх */
-        this.table = new motable(tableSelector, opts.motableOpts || {});
+        this._tableSelector = tableSelector;
+        this._newFiles = [];
+        this._existingFiles = [];
+        this._deletedIds = [];
+        this.table = null;
 
-        /* Uploader elements */
-        this.fileListEl = document.getElementById(this.opts.fileListId);
-        this.uploadBtn = document.getElementById(this.opts.uploadButtonId);
-        this.pickBtn = document.getElementById(this.opts.pickButtonId);
-        this.containerEl = document.getElementById(this.opts.containerId);
-
-        /* Plupload uploader */
-        this.uploader = null;
-
-        /* Readonly биш бол uploader идэвхжүүлэх */
-        if (!this.opts.readonly && this.opts.uploadUrl) {
-            this._initUploader();
-        }
+        this._injectCSS();
+        this._init();
     }
 
     /**
-     * Plupload uploader идэвхжүүлэх
-     * @private
+     * Dark mode detection
      */
-    _initUploader() {
-        if (!window.plupload) {
-            console.warn('mofiles: plupload not found');
+    _detectDarkMode() {
+        if (this.opts?.darkMode === true) return true;
+        if (this.opts?.darkMode === false) return false;
+        if (document.documentElement.classList.contains('dark') ||
+            document.body.classList.contains('dark') ||
+            document.documentElement.getAttribute('data-bs-theme') === 'dark' ||
+            document.documentElement.getAttribute('data-theme') === 'dark') {
+            return true;
+        }
+        return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
+    }
+
+    /**
+     * CSS inject
+     */
+    _injectCSS() {
+        if (mofiles._cssInjected) return;
+        mofiles._cssInjected = true;
+
+        const css = `
+/*!
+ * mofiles v3.0 styles
+ */
+.mofiles-wrapper {
+    --mo-bg: #fff;
+    --mo-text: #212529;
+    --mo-border: #dee2e6;
+    --mo-hover: rgba(0,0,0,.075);
+    --mo-stripe: rgba(0,0,0,.05);
+    --mo-primary: #0d6efd;
+    --mo-success: #198754;
+    --mo-warning: #ffc107;
+    --mo-danger: #dc3545;
+    --mo-info: #0dcaf0;
+    --mo-secondary: #6c757d;
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size: .875rem;
+    color: var(--mo-text);
+}
+.mofiles-wrapper.mo-dark,
+[data-bs-theme="dark"] .mofiles-wrapper {
+    --mo-bg: #212529;
+    --mo-text: #dee2e6;
+    --mo-border: #495057;
+    --mo-hover: rgba(255,255,255,.075);
+    --mo-stripe: rgba(255,255,255,.05);
+    --mo-primary: #6ea8fe;
+    --mo-success: #75b798;
+    --mo-warning: #ffda6a;
+    --mo-danger: #ea868f;
+    --mo-info: #6edff6;
+    --mo-secondary: #a7acb1;
+    --mo-dark: #424649;
+}
+.mofiles-wrapper.mo-dark .mo-btn-dark,
+[data-bs-theme="dark"] .mofiles-wrapper .mo-btn-dark {
+    background: var(--mo-dark);
+    border-color: var(--mo-dark);
+}
+
+/* Buttons */
+.mofiles-wrapper .mo-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    padding: .375rem .75rem;
+    font-size: .875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: .375rem;
+    transition: all .15s ease-in-out;
+}
+.mofiles-wrapper .mo-btn:disabled { opacity: .65; pointer-events: none; }
+.mofiles-wrapper .mo-btn-sm { padding: .25rem .5rem; font-size: .8125rem; border-radius: .25rem; }
+.mofiles-wrapper .mo-btn-xs { padding: .15rem .35rem; font-size: .75rem; border-radius: .2rem; }
+.mofiles-wrapper .mo-btn-warning { background: var(--mo-warning); border-color: var(--mo-warning); color: #000; }
+.mofiles-wrapper .mo-btn-warning:hover { filter: brightness(1.1); }
+.mofiles-wrapper .mo-btn-secondary { background: var(--mo-secondary); border-color: var(--mo-secondary); color: #fff; }
+.mofiles-wrapper .mo-btn-secondary:hover { filter: brightness(1.1); }
+.mofiles-wrapper .mo-btn-danger { background: var(--mo-danger); border-color: var(--mo-danger); color: #fff; }
+.mofiles-wrapper .mo-btn-danger:hover { filter: brightness(1.1); }
+.mofiles-wrapper .mo-btn-primary { background: var(--mo-primary); border-color: var(--mo-primary); color: #fff; }
+.mofiles-wrapper .mo-btn-primary:hover { filter: brightness(1.1); }
+.mofiles-wrapper .mo-btn-info { background: var(--mo-info); border-color: var(--mo-info); color: #000; }
+.mofiles-wrapper .mo-btn-info:hover { filter: brightness(1.1); }
+.mofiles-wrapper .mo-btn-pink { background: #d63384; border-color: #d63384; color: #fff; }
+.mofiles-wrapper .mo-btn-pink:hover { filter: brightness(1.1); }
+.mofiles-wrapper .mo-btn-dark { background: #212529; border-color: #212529; color: #fff; }
+.mofiles-wrapper .mo-btn-dark:hover { filter: brightness(1.3); }
+.mofiles-wrapper .mo-shadow-sm { box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
+.mofiles-wrapper .mo-btn-group { display: inline-flex; gap: .25rem; }
+
+/* Toolbar */
+.mofiles-toolbar {
+    margin-bottom: .75rem;
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.mofiles-toolbar input[type="file"] { display: none; }
+
+/* Warning */
+.mofiles-warning {
+    margin-bottom: .75rem;
+    padding: .5rem .75rem;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+    border-radius: .375rem;
+    font-size: .8125rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.mo-dark .mofiles-warning,
+[data-bs-theme="dark"] .mofiles-warning {
+    background: #332701;
+    color: #ffda6a;
+    border-color: #997404;
+}
+
+/* Embed hint */
+.mofiles-embed-hint {
+    margin-bottom: .75rem;
+    padding: .5rem .75rem;
+    background: #cff4fc;
+    color: #055160;
+    border: 1px solid #9eeaf9;
+    border-radius: .375rem;
+    font-size: .8125rem;
+}
+.mo-dark .mofiles-embed-hint,
+[data-bs-theme="dark"] .mofiles-embed-hint {
+    background: #032830;
+    color: #6edff6;
+    border-color: #087990;
+}
+
+/* Icons */
+.mofiles-wrapper .mo-bi { display: inline-block; width: 1em; height: 1em; vertical-align: -.125em; fill: currentColor; }
+
+/* New file badge */
+.mofiles-new-badge {
+    display: inline-block;
+    padding: .15em .4em;
+    font-size: .65em;
+    font-weight: 600;
+    background: var(--mo-success);
+    color: #fff;
+    border-radius: .25rem;
+    margin-left: .35rem;
+    vertical-align: middle;
+}
+
+/* File preview in table */
+.mofiles-wrapper .mofiles-preview {
+    max-height: 4rem;
+    max-width: 6rem;
+    cursor: pointer;
+    border-radius: .25rem;
+    object-fit: contain;
+}
+.mofiles-wrapper .mofiles-icon {
+    font-size: 2rem;
+    color: var(--mo-secondary);
+}
+.mofiles-wrapper .mofiles-filename {
+    font-weight: 500;
+    word-break: break-word;
+}
+.mofiles-wrapper .mofiles-meta {
+    font-size: .75rem;
+    color: var(--mo-secondary);
+}
+.mofiles-wrapper .mofiles-props {
+    font-size: .8rem;
+}
+.mofiles-wrapper .mofiles-props span {
+    display: inline-block;
+    padding: .1rem .4rem;
+    margin: .1rem;
+    background: var(--mo-stripe);
+    border-radius: .25rem;
+}
+
+/* Modal base */
+.mo-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,.6);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.mo-modal-overlay.mo-show { display: flex; }
+
+/* Media modal */
+.mo-media-modal .mo-modal-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+    background: #000;
+    border-radius: .5rem;
+    overflow: hidden;
+}
+.mo-media-modal .mo-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5rem .75rem;
+    background: rgba(0,0,0,.85);
+    gap: .5rem;
+}
+.mo-media-modal .mo-modal-caption {
+    color: #fff;
+    font-size: .875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.mo-modal-close {
+    width: 2rem;
+    height: 2rem;
+    background: rgba(255,255,255,.15);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.mo-modal-close:hover { background: rgba(255,255,255,.3); }
+.mo-media-modal img,
+.mo-media-modal video { max-width: 95vw; max-height: calc(95vh - 3rem); display: block; }
+
+/* Confirm modal */
+.mo-confirm-modal .mo-modal-content {
+    background: var(--mo-bg);
+    border-radius: .5rem;
+    max-width: 24rem;
+    width: 100%;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.3);
+    overflow: hidden;
+}
+.mo-confirm-modal .mo-modal-body {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--mo-text);
+}
+.mo-confirm-modal .mo-modal-footer {
+    padding: 1rem;
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    border-top: 1px solid var(--mo-border);
+}
+
+/* Edit modal */
+.mo-edit-modal .mo-modal-content {
+    background: var(--mo-bg);
+    border-radius: .5rem;
+    max-width: 28rem;
+    width: 100%;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.3);
+    overflow: hidden;
+}
+.mo-edit-modal .mo-modal-header {
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--mo-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--mo-stripe);
+}
+.mo-edit-modal .mo-modal-title {
+    font-weight: 600;
+    color: var(--mo-text);
+}
+.mo-edit-modal .mo-modal-body {
+    padding: 1rem;
+}
+.mo-edit-modal .mo-modal-footer {
+    padding: .75rem 1rem;
+    display: flex;
+    gap: .5rem;
+    justify-content: flex-end;
+    border-top: 1px solid var(--mo-border);
+}
+.mo-edit-modal .mo-form-group {
+    margin-bottom: .75rem;
+}
+.mo-edit-modal .mo-form-label {
+    display: block;
+    margin-bottom: .25rem;
+    font-weight: 500;
+    font-size: .8125rem;
+    color: var(--mo-text);
+}
+.mo-edit-modal .mo-form-control {
+    display: block;
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    color: var(--mo-text);
+    background-color: var(--mo-bg);
+    border: 1px solid var(--mo-border);
+    border-radius: .375rem;
+    transition: border-color .15s ease-in-out;
+}
+.mo-edit-modal .mo-form-control:focus {
+    outline: none;
+    border-color: var(--mo-primary);
+    box-shadow: 0 0 0 .2rem rgba(13,110,253,.25);
+}
+.mo-edit-modal textarea.mo-form-control {
+    min-height: 4rem;
+    resize: vertical;
+}
+
+/* Toast */
+.mo-toast {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10001;
+    min-width: 16rem;
+    max-width: 24rem;
+    background: var(--mo-bg);
+    border-radius: .5rem;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+    animation: mo-toast-in .3s ease-out;
+}
+@keyframes mo-toast-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.mo-toast-header {
+    padding: .5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-weight: 600;
+    font-size: .875rem;
+    border-radius: .5rem .5rem 0 0;
+}
+.mo-toast-header.mo-success { background: var(--mo-success); color: #fff; }
+.mo-toast-header.mo-danger { background: var(--mo-danger); color: #fff; }
+.mo-toast-body { padding: .75rem 1rem; font-size: .875rem; color: var(--mo-text); }
+.mo-toast-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+`;
+        const style = document.createElement('style');
+        style.id = 'mofiles-css';
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
+
+    /**
+     * Initialize
+     */
+    async _init() {
+        const tableEl = typeof this._tableSelector === 'string'
+            ? document.querySelector(this._tableSelector)
+            : this._tableSelector;
+
+        if (!tableEl) {
+            console.error('mofiles: Table element not found');
             return;
         }
 
-        if (!this.containerEl || !this.pickBtn) {
-            console.warn('mofiles: upload container or pick button not found');
-            return;
+        this._tableEl = tableEl;
+
+        // Wrapper үүсгэх
+        this._wrapper = document.createElement('div');
+        this._wrapper.className = 'mofiles-wrapper' + (this._isDark ? ' mo-dark' : '');
+        tableEl.parentNode.insertBefore(this._wrapper, tableEl);
+        this._wrapper.appendChild(tableEl);
+
+        // motable ачаалах
+        await this._loadMotable();
+
+        // UI бэлдэх
+        if (!this.opts.readonly) {
+            this._buildToolbar();
         }
 
-        const self = this;
+        this._createModals();
+        this._createCountBadge();
+        this._setupDarkModeListener();
 
-        this.uploader = new plupload.Uploader({
-            runtimes: 'html5,flash,silverlight,html4',
-            browse_button: this.opts.pickButtonId,
-            container: this.containerEl,
-            url: this.opts.uploadUrl,
-            filters: {
-                max_file_size: this.opts.maxFileSize,
-                mime_types: this.opts.mimeTypes
-            },
-            flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
-            silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
-            init: {
-                PostInit: function () {
-                    if (self.fileListEl) self.fileListEl.innerHTML = '';
-                    if (self.uploadBtn) {
-                        self.uploadBtn.onclick = function () {
-                            self.uploader.start();
-                            return false;
-                        };
-                    }
-                },
-                FilesAdded: function (up, files) {
-                    if (self.fileListEl) {
-                        plupload.each(files, function (file) {
-                            self.fileListEl.innerHTML += `<div id="${file.id}">${file.name} (${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
-                        });
-                    }
+        // motable эхлүүлэх
+        this._initTable();
 
-                    if (self.uploadBtn && self.uploadBtn.disabled) {
-                        self.uploadBtn.removeAttribute('disabled');
-                        self.uploadBtn.classList.remove('btn-secondary');
-                        self.uploadBtn.classList.add('btn-info');
-                    }
-                },
-                UploadProgress: function (up, file) {
-                    const el = document.getElementById(file.id);
-                    if (el) {
-                        el.getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"></i> ${self.opts.labels.sending} ${file.percent}%`;
-                    }
-                    if (self.uploadBtn) self.uploadBtn.setAttribute('disabled', '');
-                },
-                FileUploaded: function (up, file, response) {
-                    try {
-                        const res = JSON.parse(response.response);
-                        if (!res.file) {
-                            throw new Error('Invalid response!');
-                        }
+        // Одоо байгаа файлуудыг ачаалах
+        if (this.opts.files && this.opts.files.length > 0) {
+            this._existingFiles = [...this.opts.files];
+            this._existingFiles.forEach(file => this._appendRow(file, false));
+        }
 
-                        const currentFile = document.getElementById(file.id);
-                        if (currentFile) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
-                            currentFile.classList.add('text-success');
-                        }
+        this._updateCount();
+    }
 
-                        self.append(res);
+    /**
+     * Load motable
+     */
+    async _loadMotable() {
+        if (window.motable) return;
 
-                        if (typeof self.opts.onUpload === 'function') {
-                            self.opts.onUpload(res);
-                        }
+        // CSS
+        if (!document.querySelector('link[href*="motable"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = mofiles.CDN.motableCss;
+            document.head.appendChild(link);
+        }
 
-                        self._notify('success', self.opts.labels.success, self.opts.labels.uploadSuccess);
-                    } catch (err) {
-                        let errMsg = 'Unknown error!';
-                        if (err instanceof SyntaxError) {
-                            errMsg = 'Invalid request!';
-                        } else if (err.message) {
-                            errMsg = err.message;
-                        }
+        // JS
+        if (!mofiles._loadingPromises.motable) {
+            mofiles._loadingPromises.motable = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = mofiles.CDN.motableJs;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        await mofiles._loadingPromises.motable;
+    }
 
-                        const currentFile = document.getElementById(file.id);
-                        if (currentFile) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> error';
-                            currentFile.getElementsByTagName('em')[0].innerHTML = errMsg;
-                            currentFile.classList.add('text-danger');
-                        }
-                        self._notify('danger', self.opts.labels.error, errMsg);
-                    }
+    /**
+     * Init motable
+     */
+    _initTable() {
+        // Table structure
+        this._tableEl.innerHTML = '';
 
-                    self._checkUploadComplete();
-                },
-                Error: function (up, err) {
-                    if (err.file && err.file.id) {
-                        const currentFile = document.getElementById(err.file.id);
-                        if (currentFile) {
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"></i> failed';
-                            currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
-                            currentFile.classList.add('text-danger');
-                        }
-                    }
-                    self._notify('danger', self.opts.labels.error, err.message);
-                }
-            }
+        const thead = document.createElement('thead');
+        const tr = document.createElement('tr');
+
+        // Анхны байдал: File, Properties, Description, Category, Keyword, Date
+        const headers = [
+            { text: this.opts.labels.headerFile, style: 'min-width:200px' },
+            { text: this.opts.labels.headerProperties, style: 'min-width:100px' },
+            { text: this.opts.labels.description, style: 'min-width:120px' },
+            { text: this.opts.labels.category, style: 'width:100px' },
+            { text: this.opts.labels.keyword, style: 'width:100px' },
+            { text: this._isMn ? 'Огноо' : 'Date', style: 'width:100px' }
+        ];
+
+        headers.forEach(h => {
+            const th = document.createElement('th');
+            th.textContent = h.text;
+            if (h.style) th.style.cssText = h.style;
+            tr.appendChild(th);
         });
+        thead.appendChild(tr);
+        this._tableEl.appendChild(thead);
 
-        this.uploader.init();
+        const tbody = document.createElement('tbody');
+        tbody.setAttribute('data-empty', this.opts.labels.noFiles);
+        this._tableEl.appendChild(tbody);
+        this._tbody = tbody;
+
+        // motable эхлүүлэх
+        if (window.motable) {
+            this.table = new motable(this._tableEl, {
+                sortable: !this.opts.readonly,
+                darkMode: this._isDark ? true : 'auto'
+            });
+        }
     }
 
     /**
-     * Upload дууссан эсэхийг шалгах
-     * @private
+     * Build toolbar
      */
-    _checkUploadComplete() {
-        if (!this.fileListEl || !this.uploadBtn) return;
+    _buildToolbar() {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'mofiles-toolbar';
 
-        const list = this.fileListEl.children;
-        let processedCount = 0;
+        // File input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.multiple = true;
+        fileInput.id = 'mofiles-input-' + Math.random().toString(36).substr(2, 9);
+        fileInput.accept = this.opts.allowedExtensions.map(e => '.' + e).join(',');
+        this._fileInput = fileInput;
+        fileInput.onchange = (e) => this._handleFileSelect(e);
 
-        for (let i = 0; i < list.length; i++) {
-            if (list[i].getElementsByTagName('b')[0].innerHTML !== '') {
-                processedCount++;
+        // Select button
+        const selectBtn = document.createElement('button');
+        selectBtn.type = 'button';
+        selectBtn.className = 'mo-btn mo-btn-sm mo-btn-warning mo-shadow-sm';
+        selectBtn.innerHTML = this._icon('upload') + ' ' + this.opts.labels.selectFiles;
+        selectBtn.onclick = () => fileInput.click();
+
+        toolbar.appendChild(fileInput);
+        toolbar.appendChild(selectBtn);
+        this._wrapper.insertBefore(toolbar, this._tableEl);
+
+        // Warning
+        const warning = document.createElement('div');
+        warning.className = 'mofiles-warning';
+        warning.innerHTML = this._icon('exclamation-triangle') + ' ' + this.opts.labels.saveWarning;
+        this._wrapper.insertBefore(warning, this._tableEl);
+
+        // Embed hint
+        if (typeof this.opts.onEmbed === 'function') {
+            const hint = document.createElement('div');
+            hint.className = 'mofiles-embed-hint';
+            hint.innerHTML = this._icon('info-circle') + ' ' + this.opts.labels.embedHint;
+            this._wrapper.insertBefore(hint, warning);
+        }
+    }
+
+    /**
+     * Handle file select
+     */
+    _handleFileSelect(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            // Validate
+            if (file.size > this.opts.maxFileSize) {
+                this._notify('danger', this.opts.labels.error,
+                    `${file.name}: ${this.opts.labels.fileTooLarge}`);
+                continue;
             }
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!this.opts.allowedExtensions.includes(ext)) {
+                this._notify('danger', this.opts.labels.error,
+                    `${file.name}: ${this.opts.labels.invalidType}`);
+                continue;
+            }
+
+            const fileData = {
+                _localId: 'new_' + Date.now() + '_' + i,
+                _file: file,
+                name: file.name,
+                size: file.size,
+                type: this._getFileType(file.type),
+                mime_content_type: file.type,
+                category: '',
+                keyword: '',
+                description: ''
+            };
+
+            this._newFiles.push(fileData);
+            this._appendRow(fileData, true);
         }
 
-        if (processedCount === list.length) {
-            this.uploadBtn.classList.remove('btn-info');
-            this.uploadBtn.classList.add('btn-secondary');
-            this.uploadBtn.setAttribute('disabled', '');
-        } else {
-            this.uploadBtn.removeAttribute('disabled');
-        }
+        e.target.value = '';
+        this._updateCount();
+        this.opts.onChange?.('add');
     }
 
     /**
-     * Notify helper
-     * @private
+     * Append row
      */
-    _notify(type, title, message) {
-        if (typeof NotifyTop === 'function') {
-            NotifyTop(type, title, message);
-        } else if (typeof Swal !== 'undefined') {
-            Swal.fire({ icon: type === 'danger' ? 'error' : type, title, text: message });
+    _appendRow(file, isNew) {
+        const row = document.createElement('tr');
+        const id = file.id || file._localId;
+        row.dataset.id = id;
+        row.style.fontSize = '.875rem';
+
+        const name = file.name || this._basename(file.path || '');
+
+        // === File Cell (preview + name + action buttons) ===
+        const fileCell = document.createElement('td');
+
+        // Preview link/container
+        const previewLink = document.createElement('a');
+        previewLink.href = file.path || '#';
+        previewLink.style.cssText = 'display:block;cursor:pointer';
+
+        // Preview element
+        let previewEl;
+        const mediaSrc = isNew && file._file ? URL.createObjectURL(file._file) : file.path;
+
+        if (file.type === 'image' && mediaSrc) {
+            previewEl = document.createElement('img');
+            previewEl.src = mediaSrc;
+            previewEl.style.cssText = 'max-height:7.5rem;max-width:20rem;height:100%';
+            previewLink.onclick = (e) => { e.preventDefault(); this._showMedia('image', mediaSrc, name); };
+        } else if (file.type === 'video' && mediaSrc) {
+            previewEl = document.createElement('video');
+            previewEl.src = mediaSrc;
+            previewEl.style.cssText = 'max-height:15rem;height:100%;max-width:20rem;width:100%';
+            previewEl.controls = true;
+            previewEl.muted = true;
+            previewEl.preload = 'metadata';
+            previewLink.onclick = (e) => { e.preventDefault(); this._showMedia('video', mediaSrc, name); };
+        } else if (file.type === 'audio' && mediaSrc) {
+            previewEl = document.createElement('audio');
+            previewEl.src = mediaSrc;
+            previewEl.controls = true;
+            previewEl.preload = 'metadata';
+            previewEl.style.cssText = 'max-width:20rem;width:100%';
+            previewLink.onclick = (e) => e.preventDefault();
         } else {
-            alert(message);
+            previewEl = document.createElement('span');
+            previewEl.innerHTML = this._icon(this._getFileIcon(file.mime_content_type));
+            previewEl.style.fontSize = '2rem';
         }
+        previewLink.appendChild(previewEl);
+
+        // Filename
+        const filenameSpan = document.createElement('span');
+        filenameSpan.style.display = 'block';
+        filenameSpan.textContent = name;
+        if (isNew) {
+            filenameSpan.innerHTML += `<span class="mofiles-new-badge">${this.opts.labels.newFile}</span>`;
+        }
+        previewLink.appendChild(filenameSpan);
+
+        fileCell.appendChild(previewLink);
+
+        // Action buttons (анхны байдал: file cell дотор)
+        if (!this.opts.readonly) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.cssText = 'margin-top:.5rem';
+
+            // Edit button (info color, link icon like original)
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'mo-btn mo-btn-sm mo-btn-info mo-shadow-sm';
+            editBtn.innerHTML = this._icon('pencil');
+            editBtn.title = this.opts.labels.edit;
+            editBtn.style.marginRight = '.25rem';
+            editBtn.onclick = () => this._showEditModal(file, isNew, row);
+            actionsDiv.appendChild(editBtn);
+
+            // Embed button (dark color, code icon like original - зураг бөгөөд server дээр байгаа бол)
+            if (typeof this.opts.onEmbed === 'function' && file.type === 'image' && !isNew && file.path) {
+                const embedBtn = document.createElement('button');
+                embedBtn.type = 'button';
+                embedBtn.className = 'mo-btn mo-btn-sm mo-btn-dark mo-shadow-sm';
+                embedBtn.innerHTML = this._icon('code');
+                embedBtn.title = this._isMn ? 'Агуулгад нэмэх' : 'Embed';
+                embedBtn.style.marginRight = '.25rem';
+                embedBtn.onclick = () => {
+                    const html = `<img src="${file.path}" alt="${this._escape(name)}" style="max-width:100%;height:auto;">`;
+                    this.opts.onEmbed(html, file);
+                    embedBtn.classList.replace('mo-btn-dark', 'mo-btn-secondary');
+                };
+                actionsDiv.appendChild(embedBtn);
+            }
+
+            // Delete button (danger color)
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'mo-btn mo-btn-sm mo-btn-danger mo-shadow-sm';
+            deleteBtn.innerHTML = this._icon('trash');
+            deleteBtn.title = this.opts.labels.delete;
+            deleteBtn.onclick = () => this._confirmDelete(file, row, isNew);
+            actionsDiv.appendChild(deleteBtn);
+
+            fileCell.appendChild(actionsDiv);
+        }
+        row.appendChild(fileCell);
+
+        // === Properties Cell (MIME type + size) ===
+        const propsCell = document.createElement('td');
+        propsCell.innerHTML = `
+            <p style="max-width:11.25rem;word-wrap:break-all">
+                <u>${file.mime_content_type || ''}</u>
+            </p>
+            ${this._formatSize(file.size)}
+        `;
+        row.appendChild(propsCell);
+
+        // === Description Cell ===
+        const descCell = document.createElement('td');
+        descCell.className = 'mofiles-desc-cell';
+        descCell.textContent = file.description || '';
+        row.appendChild(descCell);
+
+        // === Category Cell ===
+        const catCell = document.createElement('td');
+        catCell.className = 'mofiles-cat-cell';
+        catCell.textContent = file.category || '';
+        row.appendChild(catCell);
+
+        // === Keyword Cell ===
+        const kwCell = document.createElement('td');
+        kwCell.className = 'mofiles-kw-cell';
+        kwCell.textContent = file.keyword || '';
+        row.appendChild(kwCell);
+
+        // === Date Cell ===
+        const dateCell = document.createElement('td');
+        dateCell.textContent = file.created_at || (isNew ? (this._isMn ? 'Шинэ' : 'New') : '');
+        row.appendChild(dateCell);
+
+        this._tbody.appendChild(row);
     }
 
     /**
-     * HTML escape
-     * @private
+     * Update row cells after edit
      */
+    _updateRowCells(row, file) {
+        // Description cell (3rd column, index 2)
+        const descCell = row.querySelector('.mofiles-desc-cell');
+        if (descCell) descCell.textContent = file.description || '';
+
+        // Category cell (4th column, index 3)
+        const catCell = row.querySelector('.mofiles-cat-cell');
+        if (catCell) catCell.textContent = file.category || '';
+
+        // Keyword cell (5th column, index 4)
+        const kwCell = row.querySelector('.mofiles-kw-cell');
+        if (kwCell) kwCell.textContent = file.keyword || '';
+    }
+
+    /**
+     * Show edit modal
+     */
+    _showEditModal(file, isNew, row) {
+        const modal = mofiles._editModal;
+        if (!modal) return;
+
+        modal.querySelector('.mo-modal-title').textContent = this.opts.labels.editFile;
+        modal.querySelector('#mo-edit-category').value = file.category || '';
+        modal.querySelector('#mo-edit-keyword').value = file.keyword || '';
+        modal.querySelector('#mo-edit-description').value = file.description || '';
+
+        modal.querySelector('.mo-edit-save').onclick = () => {
+            file.category = modal.querySelector('#mo-edit-category').value.trim();
+            file.keyword = modal.querySelector('#mo-edit-keyword').value.trim();
+            file.description = modal.querySelector('#mo-edit-description').value.trim();
+
+            this._updateRowCells(row, file);
+            this._closeModal(modal);
+            this.opts.onChange?.('edit');
+        };
+
+        modal.classList.add('mo-show');
+        document.body.style.overflow = 'hidden';
+        modal.querySelector('#mo-edit-category').focus();
+    }
+
+    /**
+     * Confirm delete
+     */
+    _confirmDelete(file, row, isNew) {
+        const name = file.name || this._basename(file.path || '');
+        const modal = mofiles._confirmModal;
+        if (!modal) return;
+
+        modal.querySelector('.mo-modal-body').textContent =
+            this.opts.labels.deleteConfirm.replace('{title}', name);
+
+        modal.querySelector('.mo-confirm-ok').onclick = () => {
+            if (isNew) {
+                const idx = this._newFiles.findIndex(f => f._localId === file._localId);
+                if (idx > -1) this._newFiles.splice(idx, 1);
+            } else {
+                if (file.id) this._deletedIds.push(file.id);
+                const idx = this._existingFiles.findIndex(f => f.id === file.id);
+                if (idx > -1) this._existingFiles.splice(idx, 1);
+            }
+            row.remove();
+            this._updateCount();
+            this._closeModal(modal);
+            this.opts.onChange?.('delete');
+        };
+
+        modal.classList.add('mo-show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // ==================== Public Methods ====================
+
+    getFilesData() {
+        return {
+            newFiles: this._newFiles.map(f => ({
+                file: f._file,
+                category: f.category,
+                keyword: f.keyword,
+                description: f.description
+            })),
+            existing: this._existingFiles.map(f => ({
+                id: f.id,
+                category: f.category,
+                keyword: f.keyword,
+                description: f.description
+            })),
+            deleted: this._deletedIds
+        };
+    }
+
+    getNewFiles() {
+        return this._newFiles.map(f => f._file);
+    }
+
+    getDeletedIds() {
+        return this._deletedIds;
+    }
+
+    getCount() {
+        return this._newFiles.length + this._existingFiles.length;
+    }
+
+    clear() {
+        this._newFiles = [];
+        this._existingFiles = [];
+        this._deletedIds = [];
+        this._tbody.innerHTML = '';
+        this._updateCount();
+    }
+
+    // ==================== Helper Methods ====================
+
+    _basename(url) {
+        if (!url) return '';
+        const name = url.split(/.*[\/|\\]/)[1] || url;
+        try { return decodeURIComponent(name); } catch { return name; }
+    }
+
     _escape(s) {
         if (!s) return '';
         const lookup = { '&': '&amp;', '"': '&quot;', "'": '&apos;', '<': '&lt;', '>': '&gt;' };
         return String(s).replace(/[&"'<>]/g, c => lookup[c]);
     }
 
-    /**
-     * Файлын нэр авах
-     * @private
-     */
-    _basename(url) {
-        if (!url) return '';
-        return url.split(/.*[\/|\\]/)[1] || url;
-    }
-
-    /**
-     * Байт хэмжээг форматлах
-     * @private
-     */
     _formatSize(bytes) {
+        if (!bytes) return '0b';
         const thresh = 1024;
         if (Math.abs(bytes) < thresh) return bytes + 'b';
-
-        const units = ['kb', 'mb', 'gb', 'tb'];
+        const units = ['kb', 'mb', 'gb'];
         let u = -1;
-        const r = 10;
-
-        do {
-            bytes /= thresh;
-            ++u;
-        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
+        do { bytes /= thresh; ++u; } while (Math.round(Math.abs(bytes) * 10) / 10 >= thresh && u < units.length - 1);
         return bytes.toFixed(1) + units[u];
     }
 
-    /**
-     * Файл нэмэх
-     * @param {Object} record - Файлын мэдээлэл
-     */
-    append(record) {
-        const self = this;
-        const fileName = this._escape(this._basename(record.path));
-        let fileIcon = '';
-        let fileLinkAttr = `target="_blank" onclick="return confirm('Open file: ${fileName}?')"`;
-        let fileAction = '';
-
-        /* Файлын төрлөөр icon тодорхойлох */
-        switch (record.type) {
-            case 'image':
-                fileIcon = `<img src="${record.path}" style="max-height:7.5rem;height:100%">`;
-                if (record.mime_content_type !== 'image/gif') {
-                    const caption = record.description ? this._escape(record.description) : fileName;
-                    fileLinkAttr = `data-fancybox="mofiles" data-caption="${caption}"`;
-                }
-                break;
-            case 'video':
-                fileIcon = `<video style="max-height:15rem;height:100%;max-width:20rem;width:100%" controls><source src="${record.path}"></video>`;
-                break;
-            case 'audio':
-                fileIcon = `<audio controls><source src="${record.path}" type="${record.mime_content_type}"></audio>`;
-                break;
-            default:
-                fileIcon = '<i class="bi bi-file-earmark" style="font-size:2rem"></i>';
-                break;
-        }
-
-        /* Action товчнууд */
-        if (this.opts.modalUrl) {
-            if (record.type === 'image' || record.type === 'video' || record.type === 'audio') {
-                fileAction += ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${this.opts.modalUrl}?modal=${record.type}-tag&id=${record.id}"><i class="bi bi-code"></i></a>`;
-            }
-            fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${this.opts.modalUrl}?modal=location&id=${record.id}"><i class="bi bi-link"></i></a>${fileAction}`;
-
-            if (this.opts.permissions.update) {
-                fileAction += ` <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${this.opts.modalUrl}?modal=files-update&id=${record.id}"><i class="bi bi-pencil-square"></i></a>`;
-            }
-        }
-
-        if (this.opts.permissions.delete && !this.opts.readonly) {
-            fileAction += ` <button class="mofiles-delete btn btn-sm btn-danger shadow-sm" data-id="${record.id}" type="button"><i class="bi bi-trash"></i></button>`;
-        }
-
-        /* Row үүсгэх */
-        const row = document.createElement('tr');
-        row.id = `file_${record.id}`;
-        row.style.fontSize = '.875rem';
-
-        /* Cell 1: Файл */
-        const cell1 = document.createElement('td');
-        cell1.innerHTML = `<input name="files[]" value="${record.id}" type="hidden"><a href="${record.path}" ${fileLinkAttr}>${fileIcon} <span style="display:block">${fileName}</span></a> ${fileAction}`;
-        row.appendChild(cell1);
-
-        /* Cell 2: Properties */
-        const cell2 = document.createElement('td');
-        cell2.innerHTML = `<p style="max-width:11.25rem;word-wrap:break-all"><u>${record.mime_content_type || ''}</u></p>${this._formatSize(record.size || 0)}`;
-        row.appendChild(cell2);
-
-        /* Cell 3: Description */
-        const cell3 = document.createElement('td');
-        cell3.innerHTML = record.description || '';
-        row.appendChild(cell3);
-
-        /* Cell 4: Category */
-        const cell4 = document.createElement('td');
-        cell4.innerHTML = record.category || '';
-        row.appendChild(cell4);
-
-        /* Cell 5: Keyword */
-        const cell5 = document.createElement('td');
-        cell5.innerHTML = record.keyword || '';
-        row.appendChild(cell5);
-
-        /* Table-д нэмэх */
-        let tBody = this.table.table.querySelector('tbody');
-        if (!tBody) {
-            tBody = document.createElement('tbody');
-            this.table.table.appendChild(tBody);
-        }
-        tBody.appendChild(row);
-
-        this.table.setReady();
-
-        /* Fancybox bind */
-        if (record.type === 'image' && record.mime_content_type !== 'image/gif' && typeof Fancybox !== 'undefined') {
-            Fancybox.close();
-            Fancybox.bind('[data-fancybox="mofiles"]', { groupAll: true });
-        }
-
-        /* Ajax modal event listeners */
-        row.querySelectorAll('.ajax-modal').forEach(a => {
-            a.addEventListener('click', function (e) {
-                e.preventDefault();
-                if (typeof ajaxModal === 'function') ajaxModal(a);
-            });
-        });
-
-        /* Delete button event listener */
-        const deleteBtn = row.querySelector('.mofiles-delete');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this._confirmDelete(record.id, fileName, row);
-            });
-        }
-
-        /* Update count badge */
-        this._updateCount();
-
-        /* onChange callback */
-        if (typeof this.opts.onChange === 'function') {
-            this.opts.onChange('append', record);
-        }
+    _getFileType(mimeType) {
+        if (!mimeType) return 'unknown';
+        const type = mimeType.split('/')[0];
+        return ['image', 'video', 'audio'].includes(type) ? type : 'document';
     }
 
-    /**
-     * Олон файл нэмэх
-     * @param {Array} records - Файлуудын жагсаалт
-     */
-    load(records) {
-        if (!Array.isArray(records)) return;
-        records.forEach(record => this.append(record));
+    _getFileIcon(mimeType) {
+        if (!mimeType) return 'file-earmark';
+        if (mimeType.startsWith('video/')) return 'file-play';
+        if (mimeType.startsWith('audio/')) return 'file-music';
+        if (mimeType.includes('pdf')) return 'file-pdf';
+        if (mimeType.includes('json')) return 'file-code';
+        if (mimeType.includes('xml')) return 'file-code';
+        if (mimeType.includes('text')) return 'file-text';
+        if (mimeType.includes('zip') || mimeType.includes('rar')) return 'file-zip';
+        if (mimeType.includes('word') || mimeType.includes('document')) return 'file-word';
+        if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'file-excel';
+        if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'file-ppt';
+        return 'file-earmark';
     }
 
-    /**
-     * Устгах баталгаажуулалт
-     * @private
-     */
-    _confirmDelete(id, title, row) {
-        const self = this;
-        const question = this.opts.labels.deleteConfirm.replace('{title}', title);
-        const note = this.opts.labels.deleteNote;
+    _icon(name) {
+        const icons = {
+            'upload': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/></svg>',
+            'trash': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>',
+            'pencil': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/></svg>',
+            'plus-lg': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/></svg>',
+            'code': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8z"/></svg>',
+            'file-earmark': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z"/></svg>',
+            'file-pdf': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>',
+            'file-text': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5M5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1"/></svg>',
+            'file-code': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5zM8.646 6.646a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L10.293 9 8.646 7.354a.5.5 0 0 1 0-.708m-1.292 0a.5.5 0 0 0-.708 0l-2 2a.5.5 0 0 0 0 .708l2 2a.5.5 0 0 0 .708-.708L5.707 9l1.647-1.646a.5.5 0 0 0 0-.708"/></svg>',
+            'file-zip': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 7.5a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v.938l.4 1.599a1 1 0 0 1-.416 1.074l-.93.62a1 1 0 0 1-1.109 0l-.93-.62a1 1 0 0 1-.415-1.074l.4-1.599zm2 0h-1v.938a1 1 0 0 1-.03.243l-.4 1.598.93.62.93-.62-.4-1.598a1 1 0 0 1-.03-.243z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm5.5-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9v1H8v1h1v1H8v1h1v1H7.5V5h-1V4h1V3h-1V2h1z"/></svg>',
+            'file-word': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z"/></svg>',
+            'file-excel': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z"/></svg>',
+            'file-ppt': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z"/></svg>',
+            'file-play': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 6.883v4.234a.5.5 0 0 0 .757.429l3.528-2.117a.5.5 0 0 0 0-.858L6.757 6.454a.5.5 0 0 0-.757.43z"/><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>',
+            'file-music': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.304 3.13a1 1 0 0 1 1.196.98v1.8l-2.5.5v5.09c0 .495-.301.883-.662 1.123C7.974 12.866 7.499 13 7 13s-.974-.134-1.338-.377C5.302 12.383 5 11.995 5 11.5s.301-.883.662-1.123C6.026 10.134 6.501 10 7 10c.356 0 .7.068 1 .196V4.41a1 1 0 0 1 .804-.98z"/><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>',
+            'info-circle': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>',
+            'exclamation-triangle': '<svg class="mo-bi" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.15.15 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.2.2 0 0 1-.054.06.1.1 0 0 1-.066.017H1.146a.1.1 0 0 1-.066-.017.2.2 0 0 1-.054-.06.18.18 0 0 1 .002-.183L7.884 2.073a.15.15 0 0 1 .054-.057m1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767z"/><path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg>'
+        };
+        return icons[name] || icons['file-earmark'];
+    }
 
-        let imgSrc = '';
-        const img = row.querySelector('img');
-        if (img) imgSrc = img.src;
+    // ==================== Modals ====================
 
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                imageUrl: imgSrc || undefined,
-                imageHeight: imgSrc ? 64 : undefined,
-                html: `<p class="text-danger mb-3">${question}<br/><br/>${note}</p>`,
-                showCancelButton: true,
-                cancelButtonText: this.opts.labels.cancel,
-                confirmButtonText: `<i class="bi bi-trash"></i> ${this.opts.labels.delete}`,
-                confirmButtonColor: '#df4759',
-                showLoaderOnConfirm: true,
-                allowOutsideClick: () => !Swal.isLoading(),
-                preConfirm: () => this._doDelete(id, title, row)
-            });
-        } else if (confirm(question)) {
-            this._doDelete(id, title, row);
+    _createModals() {
+        this._createMediaModal();
+        this._createConfirmModal();
+        this._createEditModal();
+    }
+
+    _createMediaModal() {
+        if (mofiles._mediaModal) return;
+        const modal = document.createElement('div');
+        modal.className = 'mo-modal-overlay mo-media-modal';
+        modal.innerHTML = `
+            <div class="mo-modal-content">
+                <div class="mo-modal-header">
+                    <div class="mo-modal-caption"></div>
+                    <button class="mo-modal-close" type="button">&times;</button>
+                </div>
+                <div class="mo-modal-body"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        mofiles._mediaModal = modal;
+        modal.querySelector('.mo-modal-close').onclick = () => this._closeModal(modal);
+        modal.onclick = (e) => { if (e.target === modal) this._closeModal(modal); };
+    }
+
+    _createConfirmModal() {
+        if (mofiles._confirmModal) return;
+        const modal = document.createElement('div');
+        modal.className = 'mo-modal-overlay mo-confirm-modal mofiles-wrapper' + (this._isDark ? ' mo-dark' : '');
+        modal.innerHTML = `
+            <div class="mo-modal-content">
+                <div class="mo-modal-body"></div>
+                <div class="mo-modal-footer">
+                    <button class="mo-btn mo-btn-secondary mo-confirm-cancel" type="button">${this.opts.labels.cancel}</button>
+                    <button class="mo-btn mo-btn-danger mo-confirm-ok" type="button">${this._icon('trash')} ${this.opts.labels.delete}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        mofiles._confirmModal = modal;
+        modal.querySelector('.mo-confirm-cancel').onclick = () => this._closeModal(modal);
+        modal.onclick = (e) => { if (e.target === modal) this._closeModal(modal); };
+    }
+
+    _createEditModal() {
+        if (mofiles._editModal) return;
+        const modal = document.createElement('div');
+        modal.className = 'mo-modal-overlay mo-edit-modal mofiles-wrapper' + (this._isDark ? ' mo-dark' : '');
+        modal.innerHTML = `
+            <div class="mo-modal-content">
+                <div class="mo-modal-header">
+                    <div class="mo-modal-title"></div>
+                    <button class="mo-modal-close" type="button">&times;</button>
+                </div>
+                <div class="mo-modal-body">
+                    <div class="mo-form-group">
+                        <label class="mo-form-label" for="mo-edit-category">${this.opts.labels.category}</label>
+                        <input type="text" class="mo-form-control" id="mo-edit-category" maxlength="24">
+                    </div>
+                    <div class="mo-form-group">
+                        <label class="mo-form-label" for="mo-edit-keyword">${this.opts.labels.keyword}</label>
+                        <input type="text" class="mo-form-control" id="mo-edit-keyword" maxlength="32">
+                    </div>
+                    <div class="mo-form-group">
+                        <label class="mo-form-label" for="mo-edit-description">${this.opts.labels.description}</label>
+                        <textarea class="mo-form-control" id="mo-edit-description" maxlength="255"></textarea>
+                    </div>
+                </div>
+                <div class="mo-modal-footer">
+                    <button class="mo-btn mo-btn-secondary mo-edit-cancel" type="button">${this.opts.labels.cancel}</button>
+                    <button class="mo-btn mo-btn-primary mo-edit-save" type="button">${this.opts.labels.save}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        mofiles._editModal = modal;
+        modal.querySelector('.mo-modal-close').onclick = () => this._closeModal(modal);
+        modal.querySelector('.mo-edit-cancel').onclick = () => this._closeModal(modal);
+        modal.onclick = (e) => { if (e.target === modal) this._closeModal(modal); };
+    }
+
+    _showMedia(type, src, caption = '') {
+        const modal = mofiles._mediaModal;
+        if (!modal) return;
+        const body = modal.querySelector('.mo-modal-body');
+        body.innerHTML = '';
+        modal.querySelector('.mo-modal-caption').textContent = caption;
+        if (type === 'image') {
+            const img = document.createElement('img');
+            img.src = src;
+            body.appendChild(img);
+        } else if (type === 'video') {
+            const video = document.createElement('video');
+            video.src = src;
+            video.controls = true;
+            video.autoplay = true;
+            body.appendChild(video);
         }
+        modal.classList.add('mo-show');
+        document.body.style.overflow = 'hidden';
     }
 
-    /**
-     * Файл устгах
-     * @private
-     */
-    _doDelete(id, title, row) {
-        const self = this;
+    _closeModal(modal) {
+        modal.classList.remove('mo-show');
+        document.body.style.overflow = '';
+        const video = modal.querySelector('video');
+        if (video) video.pause();
+    }
 
-        if (!this.opts.deleteUrl) {
-            row.remove();
-            this.table.setReady();
-            this._updateCount();
-            if (typeof this.opts.onDelete === 'function') {
-                this.opts.onDelete(id);
-            }
-            return Promise.resolve();
+    // ==================== Notification ====================
+
+    _notify(type, title, message) {
+        if (typeof NotifyTop === 'function') {
+            NotifyTop(type, title, message);
+            return;
         }
-
-        return fetch(this.opts.deleteUrl, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, title })
-        })
-            .then(res => res.json())
-            .then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message || 'Invalid response!');
-                }
-
-                if (typeof Swal !== 'undefined') Swal.close();
-
-                self._notify('success', self.opts.labels.success, response.message || self.opts.labels.deleteSuccess);
-
-                row.remove();
-                self.table.setReady();
-                self._updateCount();
-
-                if (typeof self.opts.onDelete === 'function') {
-                    self.opts.onDelete(id);
-                }
-
-                if (typeof self.opts.onChange === 'function') {
-                    self.opts.onChange('delete', { id });
-                }
-            })
-            .catch(error => {
-                if (typeof Swal !== 'undefined') {
-                    Swal.showValidationMessage(error.message);
-                } else {
-                    self._notify('danger', self.opts.labels.error, error.message);
-                }
-            });
+        document.querySelector('.mo-toast')?.remove();
+        const toast = document.createElement('div');
+        toast.className = 'mo-toast mofiles-wrapper' + (this._isDark ? ' mo-dark' : '');
+        toast.innerHTML = `
+            <div class="mo-toast-header mo-${type}">
+                <span>${this._escape(title)}</span>
+                <button class="mo-toast-close" type="button">&times;</button>
+            </div>
+            <div class="mo-toast-body">${this._escape(message)}</div>
+        `;
+        document.body.appendChild(toast);
+        toast.querySelector('.mo-toast-close').onclick = () => toast.remove();
+        setTimeout(() => toast.remove(), 4000);
     }
 
-    /**
-     * Count badge шинэчлэх
-     * @private
-     */
-    _updateCount() {
+    // ==================== Count Badge ====================
+
+    _createCountBadge() {
         if (!this.opts.countBadge) return;
-
-        const badge = typeof this.opts.countBadge === 'string'
+        const container = typeof this.opts.countBadge === 'string'
             ? document.querySelector(this.opts.countBadge)
             : this.opts.countBadge;
-
-        if (!badge) return;
-
-        const count = this.table.table.querySelectorAll('tbody tr').length;
-        badge.textContent = count;
-        badge.className = count > 0 ? 'badge bg-primary' : 'badge bg-secondary';
+        if (!container) return;
+        this._badgeEl = document.createElement('span');
+        this._badgeEl.className = 'badge bg-secondary ms-1';
+        this._badgeEl.textContent = '0';
+        container.appendChild(this._badgeEl);
     }
 
-    /**
-     * Файлуудын тоо авах
-     * @returns {number}
-     */
-    getCount() {
-        return this.table.table.querySelectorAll('tbody tr').length;
+    _updateCount() {
+        if (!this._badgeEl) return;
+        const count = this.getCount();
+        this._badgeEl.textContent = count;
+        this._badgeEl.classList.remove('bg-secondary', 'bg-primary');
+        this._badgeEl.classList.add(count > 0 ? 'bg-primary' : 'bg-secondary');
     }
 
-    /**
-     * Файлуудын ID-уудыг авах
-     * @returns {Array}
-     */
-    getFileIds() {
-        const ids = [];
-        this.table.table.querySelectorAll('tbody tr input[name="files[]"]').forEach(input => {
-            ids.push(input.value);
+    // ==================== Dark Mode ====================
+
+    _setupDarkModeListener() {
+        if (this.opts.darkMode !== 'auto') return;
+        const observer = new MutationObserver(() => {
+            const isDark = this._detectDarkMode();
+            if (isDark !== this._isDark) {
+                this._isDark = isDark;
+                this._wrapper?.classList.toggle('mo-dark', isDark);
+            }
         });
-        return ids;
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-bs-theme', 'data-theme'] });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    setDarkMode(isDark) {
+        this._isDark = isDark;
+        this._wrapper?.classList.toggle('mo-dark', isDark);
+    }
+
+    destroy() {
+        this._wrapper?.remove();
     }
 }
 
-/* Global export */
 window.mofiles = mofiles;

@@ -23,14 +23,7 @@
 <link href="{{ index }}/assets/css/moedit-icons.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/js/moedit.js"></script>
 <script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
-<!-- SweetAlert2 - мэдэгдэл харуулах сан -->
-<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- Plupload - файл upload хийх сан -->
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/plupload/3.1.5/plupload.full.min.js" integrity="sha512-yLlgKhLJjLhTYMuClLJ8GGEzwSCn/uwigfXug5Wf2uU5UdOtA8WRSMJHJcZ+mHgHmNY+lDc/Sfp86IT9hve0Rg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!-- Fancybox - зураг харуулах lightbox сан -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-<!-- mofiles - файл upload хүснэгт -->
+<!-- mofiles - файл upload хүснэгт (dependency автоматаар ачаална) -->
 <script defer src="{{ index }}/assets/js/mofiles.js"></script>
 <!-- Хуудасны толгой хэсэг - гарчиг болон үйлдлийн товчнууд -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
@@ -105,40 +98,18 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="files-tab" data-bs-toggle="tab" data-bs-target="#files-pane" type="button" role="tab" aria-controls="files-pane" aria-selected="false">
-                <i class="bi bi-paperclip"></i> {{ 'files'|text }} <span class="badge bg-secondary" id="files-count">0</span>
+                <i class="bi bi-paperclip"></i> {{ 'files'|text }}
             </button>
         </li>
     </ul>
     <div class="tab-content border border-top-0 rounded-bottom p-3" id="contentFilesTabContent">
         <!-- Агуулга tab (WYSIWYG editor) -->
         <div class="tab-pane fade show active" id="content-pane" role="tabpanel" aria-labelledby="content-tab">
-            <textarea class="form-control" id="content" name="content"></textarea>
+            <textarea id="content" name="content"></textarea>
         </div>
         <!-- Файлууд tab -->
         <div class="tab-pane fade" id="files-pane" role="tabpanel" aria-labelledby="files-tab">
-            <!-- Файл upload-ийн статус харуулах хэсэг -->
-            <div class="text-danger mb-2">
-                <div id="mofiles-list"></div>
-            </div>
-            <!-- Файл сонгох, upload хийх товчнууд -->
-            <div id="mofiles-container" class="mb-3">
-                <button class="btn btn-sm btn-warning shadow-sm" id="mofiles-pick" type="button">{{ 'select-files'|text }}</button>
-                <button class="btn btn-sm btn-secondary shadow-sm" id="mofiles-upload" disabled type="button">{{ 'upload-files'|text }}</button>
-            </div>
-            <!-- Upload хийсэн файлуудыг харуулах хүснэгт -->
-            <table class="table table-striped table-hover" id="news_files">
-                <thead>
-                    <tr>
-                        <th>{{ 'file'|text }}</th>
-                        <th>{{ 'properties'|text }}</th>
-                        <th>{{ 'description'|text }}</th>
-                        <th>{{ 'category'|text }}</th>
-                        <th>{{ 'keyword'|text }}</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot></tfoot>
-            </table>
+            <table class="table table-striped table-hover" id="news_files"></table>
         </div>
     </div>
     <!-- Хэрэв хэрэглэгч нийтлэх эрхтэй бол нийтлэх болон сэтгэгдэл авах тохиргоо харуулах -->
@@ -236,7 +207,20 @@
                 update: {{ user.can('system_content_update') ? 'true' : 'false' }},
                 delete: {{ user.can('system_content_delete') ? 'true' : 'false' }}
             },
-            countBadge: '#files-count'
+            countBadge: '#files-tab',
+            onEmbed: function (html) {
+                if (moeditInstance) {
+                    moeditInstance.insertHtml(html);
+                    /* Content tab руу шилжих */
+                    const contentTab = document.getElementById('content-tab');
+                    if (contentTab) contentTab.click();
+                    /* Editor-г идэвхжүүлж, оруулсан контент руу scroll хийх */
+                    setTimeout(() => {
+                        moeditInstance.editor.focus();
+                        moeditInstance.editor.scrollTop = moeditInstance.editor.scrollHeight;
+                    }, 100);
+                }
+            }
         });
 
         /* Форм илгээх функц */
