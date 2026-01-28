@@ -99,6 +99,8 @@ class moedit {
       readonly: false,
       uploadUrl: null,
       uploadImage: null,
+      uploadVideo: null,
+      uploadAudio: null,
       onUploadSuccess: null,
       onUploadError: null,
       /* Image upload modal */
@@ -110,7 +112,41 @@ class moedit {
         uploadText: 'Upload',
         uploadingText: isMn ? 'Уншиж байна...' : 'Uploading...',
         successMessage: isMn ? 'Зураг амжилттай орлоо.' : 'Image uploaded successfully.',
-        errorMessage: isMn ? 'Зураг upload хийхэд алдаа гарлаа' : 'Error uploading image'
+        errorMessage: isMn ? 'Зураг upload хийхэд алдаа гарлаа' : 'Error uploading image',
+        tabUpload: isMn ? 'Компьютерээс' : 'From Computer',
+        tabUrl: isMn ? 'URL хаягаар' : 'From URL',
+        urlLabel: isMn ? 'Зургийн URL хаяг' : 'Image URL',
+        urlPlaceholder: 'https://example.com/image.jpg'
+      },
+      /* Video modal */
+      videoModal: {
+        title: isMn ? 'Видео оруулах' : 'Insert Video',
+        placeholder: isMn ? 'Видео сонгоогүй байна...' : 'No video selected...',
+        browseText: isMn ? 'Сонгох' : 'Browse',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        uploadText: 'Upload',
+        uploadingText: isMn ? 'Уншиж байна...' : 'Uploading...',
+        successMessage: isMn ? 'Видео амжилттай орлоо.' : 'Video inserted successfully.',
+        errorMessage: isMn ? 'Видео upload хийхэд алдаа гарлаа' : 'Error uploading video',
+        tabUpload: isMn ? 'Компьютерээс' : 'From Computer',
+        tabUrl: isMn ? 'URL хаягаар' : 'From URL',
+        urlLabel: isMn ? 'Видеоны URL хаяг' : 'Video URL',
+        urlPlaceholder: 'https://example.com/video.mp4'
+      },
+      /* Audio modal */
+      audioModal: {
+        title: isMn ? 'Аудио оруулах' : 'Insert Audio',
+        placeholder: isMn ? 'Аудио сонгоогүй байна...' : 'No audio selected...',
+        browseText: isMn ? 'Сонгох' : 'Browse',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        uploadText: 'Upload',
+        uploadingText: isMn ? 'Уншиж байна...' : 'Uploading...',
+        successMessage: isMn ? 'Аудио амжилттай орлоо.' : 'Audio inserted successfully.',
+        errorMessage: isMn ? 'Аудио upload хийхэд алдаа гарлаа' : 'Error uploading audio',
+        tabUpload: isMn ? 'Компьютерээс' : 'From Computer',
+        tabUrl: isMn ? 'URL хаягаар' : 'From URL',
+        urlLabel: isMn ? 'Аудионы URL хаяг' : 'Audio URL',
+        urlPlaceholder: 'https://example.com/audio.mp3'
       },
       /* Link modal */
       linkModal: {
@@ -136,19 +172,29 @@ class moedit {
       /* YouTube modal */
       youtubeModal: {
         title: isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video',
-        urlLabel: 'YouTube URL',
-        placeholder: 'https://www.youtube.com/watch?v=...',
-        hint: isMn ? 'Жишээ: https://www.youtube.com/watch?v=dQw4w9WgXcQ эсвэл https://youtu.be/dQw4w9WgXcQ' : 'Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ or https://youtu.be/dQw4w9WgXcQ',
-        invalidUrl: isMn ? 'YouTube видео ID олдсонгүй. URL зөв эсэхийг шалгана уу.' : 'YouTube video ID not found. Please check the URL.',
+        urlLabel: isMn ? 'YouTube URL эсвэл Embed код' : 'YouTube URL or Embed code',
+        placeholder: 'https://www.youtube.com/watch?v=... эсвэл <iframe>...</iframe>',
+        hint: isMn ? 'YouTube дээр Share → Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click Share → Embed on YouTube and copy the code, or paste the video URL',
+        invalidUrl: isMn ? 'YouTube видео ID олдсонгүй. URL эсвэл embed код зөв эсэхийг шалгана уу.' : 'YouTube video ID not found. Please check the URL or embed code.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
       },
       /* Facebook modal */
       facebookModal: {
         title: isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video',
-        urlLabel: isMn ? 'Facebook видео URL' : 'Facebook Video URL',
-        placeholder: 'https://www.facebook.com/...',
-        hint: isMn ? 'Facebook видео эсвэл reel-ийн URL хуулж буулгана уу' : 'Paste Facebook video or reel URL',
+        urlLabel: isMn ? 'Facebook URL эсвэл Embed код' : 'Facebook URL or Embed code',
+        placeholder: 'https://www.facebook.com/... эсвэл <iframe>...</iframe>',
+        hint: isMn ? 'Facebook видео дээр ... → Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click ... → Embed on Facebook video and copy the code, or paste the video URL',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        okText: isMn ? 'Оруулах' : 'Insert'
+      },
+      /* Google Maps modal */
+      mapModal: {
+        title: isMn ? 'Google Maps оруулах' : 'Insert Google Maps',
+        urlLabel: isMn ? 'Google Maps URL эсвэл Embed код' : 'Google Maps URL or Embed code',
+        placeholder: 'https://www.google.com/maps/... эсвэл <iframe>...</iframe>',
+        hint: isMn ? 'Google Maps дээр Share → Embed a map дарж кодыг хуулна уу' : 'On Google Maps click Share → Embed a map and copy the code',
+        invalidUrl: isMn ? 'Google Maps URL буруу байна. Share → Embed a map ашиглана уу.' : 'Invalid Google Maps URL. Please use Share → Embed a map.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
       },
@@ -296,11 +342,14 @@ Instructions:
       insertLink: { type: "fn", fn: () => this._insertLink() },
       unlink:    { type: "cmd", cmd: "unlink" },
       image:     { type: "fn", fn: () => this._insertImage() },
+      video:     { type: "fn", fn: () => this._insertVideo() },
+      audio:     { type: "fn", fn: () => this._insertAudio() },
       table:     { type: "fn", fn: () => this._insertTable() },
       hr:        { type: "fn", fn: () => this._insertHR() },
       email:     { type: "fn", fn: () => this._insertEmail() },
       youtube:   { type: "fn", fn: () => this._insertYouTube() },
       facebook:  { type: "fn", fn: () => this._insertFacebook() },
+      map:       { type: "fn", fn: () => this._insertMap() },
       headerImage: { type: "fn", fn: () => this._selectHeaderImage() },
 
       cut:       { type: "cmd", cmd: "cut" },
@@ -990,11 +1039,14 @@ Instructions:
       <div class="moedit-sep moedit-sep-header-image" style="display:none;"></div>
       <div class="moedit-group">
         <button type="button" class="moedit-btn mo-danger" data-action="image" title="${isMn ? 'Зураг оруулах' : 'Insert Image'}"><i class="mi-image"></i></button>
+        <button type="button" class="moedit-btn mo-info" data-action="video" title="${isMn ? 'Видео оруулах' : 'Insert Video'}"><i class="mi-camera-video"></i></button>
+        <button type="button" class="moedit-btn mo-success" data-action="audio" title="${isMn ? 'Аудио оруулах' : 'Insert Audio'}"><i class="mi-music-note-beamed"></i></button>
         <button type="button" class="moedit-btn" data-action="table" title="${isMn ? 'Хүснэгт оруулах' : 'Insert Table'}"><i class="mi-table"></i></button>
         <button type="button" class="moedit-btn" data-action="insertLink" title="${isMn ? 'Холбоос / Имэйл оруулах' : 'Insert Link / Email'}"><i class="mi-link-45deg"></i></button>
         <button type="button" class="moedit-btn" data-action="hr" title="${isMn ? 'Хэвтээ зураас оруулах' : 'Insert Horizontal Rule'}"><i class="mi-dash-lg"></i></button>
         <button type="button" class="moedit-btn" data-action="youtube" title="${isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video'}"><i class="mi-youtube"></i></button>
         <button type="button" class="moedit-btn" data-action="facebook" title="${isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video'}"><i class="mi-facebook"></i></button>
+        <button type="button" class="moedit-btn" data-action="map" title="${isMn ? 'Google Maps оруулах' : 'Insert Google Maps'}"><i class="mi-geo-alt"></i></button>
         <button type="button" class="moedit-btn mo-info" data-action="ocr" title="${isMn ? 'AI OCR - Зургийг HTML болгох' : 'AI OCR - Convert Image to HTML'}"><i class="mi-file-text"></i></button>
         <button type="button" class="moedit-btn mo-danger" data-action="pdf" title="PDF → HTML"><i class="mi-file-earmark-pdf"></i></button>
         <button type="button" class="moedit-btn mo-warning" data-action="shine" title="${isMn ? 'AI Shine - Bootstrap 5 гоёжуулах' : 'AI Shine - Beautify with Bootstrap 5'}"><i class="mi-stars"></i></button>
