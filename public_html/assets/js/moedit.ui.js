@@ -502,42 +502,106 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   dialog.innerHTML = `
     <div class="moedit-modal">
       <h5 class="moedit-modal-title"><i class="mi-camera"></i> ${config.title}</h5>
-      <div class="moedit-modal-field">
-        <div class="moedit-modal-file-input">
-          <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">
-          <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
-            <i class="mi-folder2-open"></i> ${config.browseText}
-          </button>
-        </div>
-        <input type="file" id="${dialogId}-file" accept="image/*" style="display:none;">
+      <div class="moedit-modal-tabs">
+        <button type="button" class="moedit-modal-tab moedit-modal-tab-active" id="${dialogId}-tab-upload">
+          <i class="mi-pc-display"></i> ${config.tabUpload}
+        </button>
+        <button type="button" class="moedit-modal-tab" id="${dialogId}-tab-url">
+          <i class="mi-link-45deg"></i> ${config.tabUrl}
+        </button>
       </div>
-      <div class="moedit-modal-preview" id="${dialogId}-preview" style="display:none;">
-        <img id="${dialogId}-preview-img" src="">
+      <div class="moedit-modal-tab-content" id="${dialogId}-content-upload">
+        <div class="moedit-modal-field">
+          <div class="moedit-modal-file-input">
+            <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
+              <i class="mi-folder2-open"></i> ${config.browseText}
+            </button>
+          </div>
+          <input type="file" id="${dialogId}-file" accept="image/*" style="display:none;">
+        </div>
+        <div class="moedit-modal-preview" id="${dialogId}-preview-upload" style="display:none;">
+          <img id="${dialogId}-preview-img-upload" src="">
+        </div>
+      </div>
+      <div class="moedit-modal-tab-content" id="${dialogId}-content-url" style="display:none;">
+        <div class="moedit-modal-field">
+          <label class="moedit-modal-label">${config.urlLabel}</label>
+          <input type="url" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.urlPlaceholder}">
+        </div>
+        <div class="moedit-modal-preview" id="${dialogId}-preview-url" style="display:none;">
+          <img id="${dialogId}-preview-img-url" src="">
+        </div>
       </div>
       <div class="moedit-modal-buttons">
         <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
         <button type="button" class="moedit-modal-btn moedit-modal-btn-primary moedit-modal-btn-disabled" id="${dialogId}-ok" disabled>
-          <i class="mi-upload"></i> ${config.uploadText}
+          <i class="mi-check-lg"></i> OK
         </button>
       </div>
     </div>
   `;
   document.body.appendChild(dialog);
 
+  /* Tab elements */
+  const tabUpload = document.getElementById(`${dialogId}-tab-upload`);
+  const tabUrl = document.getElementById(`${dialogId}-tab-url`);
+  const contentUpload = document.getElementById(`${dialogId}-content-upload`);
+  const contentUrl = document.getElementById(`${dialogId}-content-url`);
+
+  /* Upload tab elements */
   const fileInput = document.getElementById(`${dialogId}-file`);
   const filenameInput = document.getElementById(`${dialogId}-filename`);
   const browseBtn = document.getElementById(`${dialogId}-browse`);
-  const previewDiv = document.getElementById(`${dialogId}-preview`);
-  const previewImg = document.getElementById(`${dialogId}-preview-img`);
+  const previewDivUpload = document.getElementById(`${dialogId}-preview-upload`);
+  const previewImgUpload = document.getElementById(`${dialogId}-preview-img-upload`);
+
+  /* URL tab elements */
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDivUrl = document.getElementById(`${dialogId}-preview-url`);
+  const previewImgUrl = document.getElementById(`${dialogId}-preview-img-url`);
+
+  /* Common elements */
   const okBtn = document.getElementById(`${dialogId}-ok`);
   const cancelBtn = document.getElementById(`${dialogId}-cancel`);
 
   let selectedFile = null;
-  let base64Image = null;
+  let activeTab = 'upload'; /* 'upload' or 'url' */
   let isBusy = false;
+  let urlPreviewTimeout = null;
 
   const closeDialog = () => dialog.remove();
 
+  /* Tab switching */
+  const switchTab = (tab) => {
+    activeTab = tab;
+    if (tab === 'upload') {
+      tabUpload.classList.add('moedit-modal-tab-active');
+      tabUrl.classList.remove('moedit-modal-tab-active');
+      contentUpload.style.display = 'block';
+      contentUrl.style.display = 'none';
+      /* Update OK button state based on file selection */
+      okBtn.disabled = !selectedFile;
+      okBtn.classList.toggle('moedit-modal-btn-disabled', !selectedFile);
+      okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
+    } else {
+      tabUrl.classList.add('moedit-modal-tab-active');
+      tabUpload.classList.remove('moedit-modal-tab-active');
+      contentUrl.style.display = 'block';
+      contentUpload.style.display = 'none';
+      /* Update OK button state based on URL input */
+      const hasUrl = urlInput.value.trim().length > 0;
+      okBtn.disabled = !hasUrl;
+      okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+      okBtn.innerHTML = `<i class="mi-check-lg"></i> OK`;
+      urlInput.focus();
+    }
+  };
+
+  tabUpload.addEventListener('click', () => switchTab('upload'));
+  tabUrl.addEventListener('click', () => switchTab('url'));
+
+  /* File upload handling */
   browseBtn.addEventListener('click', () => fileInput.click());
 
   fileInput.addEventListener('change', function() {
@@ -547,14 +611,43 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        base64Image = e.target.result;
-        previewImg.src = base64Image;
-        previewDiv.style.display = 'block';
+        previewImgUpload.src = e.target.result;
+        previewDivUpload.style.display = 'block';
       };
       reader.readAsDataURL(selectedFile);
 
       okBtn.disabled = false;
       okBtn.classList.remove('moedit-modal-btn-disabled');
+    }
+  });
+
+  /* URL input handling with preview */
+  urlInput.addEventListener('input', () => {
+    clearTimeout(urlPreviewTimeout);
+    const url = urlInput.value.trim();
+    const hasUrl = url.length > 0;
+    okBtn.disabled = !hasUrl;
+    okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+
+    if (hasUrl) {
+      urlPreviewTimeout = setTimeout(() => {
+        previewImgUrl.onload = () => {
+          previewDivUrl.style.display = 'block';
+        };
+        previewImgUrl.onerror = () => {
+          previewDivUrl.style.display = 'none';
+        };
+        previewImgUrl.src = url;
+      }, 500);
+    } else {
+      previewDivUrl.style.display = 'none';
+    }
+  });
+
+  /* Enter key for URL input */
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !okBtn.disabled && !isBusy) {
+      okBtn.click();
     }
   });
 
@@ -569,53 +662,64 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   };
   document.addEventListener('keydown', escHandler);
 
-  /* Upload товч */
+  /* OK button click */
   okBtn.addEventListener('click', () => {
-    if (!selectedFile) return;
+    if (activeTab === 'url') {
+      /* URL tab - шууд зураг оруулах */
+      const url = urlInput.value.trim();
+      if (!url) return;
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+      this._insertImageByUrl(url, savedRange);
+    } else {
+      /* Upload tab - файл upload хийх */
+      if (!selectedFile) return;
 
-    /* Бүх товчнуудыг disable хийх */
-    isBusy = true;
-    okBtn.disabled = true;
-    cancelBtn.disabled = true;
-    browseBtn.disabled = true;
-    okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
+      isBusy = true;
+      okBtn.disabled = true;
+      cancelBtn.disabled = true;
+      browseBtn.disabled = true;
+      tabUpload.disabled = true;
+      tabUrl.disabled = true;
+      okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-    /* uploadImage функц эсвэл uploadUrl ашиглах */
-    const uploadPromise = this.opts.uploadImage
-      ? this.opts.uploadImage(selectedFile)
-      : fetch(this.opts.uploadUrl, {
-          method: 'POST',
-          body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
-        }).then(res => res.json()).then(data => data.path);
+      const uploadPromise = this.opts.uploadImage
+        ? this.opts.uploadImage(selectedFile)
+        : fetch(this.opts.uploadUrl, {
+            method: 'POST',
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
+          }).then(res => res.json()).then(data => data.path);
 
-    Promise.resolve(uploadPromise)
-      .then(path => {
-        closeDialog();
-        document.removeEventListener('keydown', escHandler);
+      Promise.resolve(uploadPromise)
+        .then(path => {
+          closeDialog();
+          document.removeEventListener('keydown', escHandler);
 
-        if (path) {
-          this._insertImageByUrl(path, savedRange);
-          if (this.opts.onUploadSuccess) {
-            this.opts.onUploadSuccess({ path });
+          if (path) {
+            this._insertImageByUrl(path, savedRange);
+            if (this.opts.onUploadSuccess) {
+              this.opts.onUploadSuccess({ path });
+            }
+          } else {
+            throw new Error(config.errorMessage);
           }
-        } else {
-          throw new Error(config.errorMessage);
-        }
-      })
-      .catch(err => {
-        /* Бүх товчнуудыг enable хийх */
-        isBusy = false;
-        okBtn.disabled = false;
-        cancelBtn.disabled = false;
-        browseBtn.disabled = false;
-        okBtn.classList.remove('moedit-modal-btn-disabled');
-        okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
-        if (this.opts.onUploadError) {
-          this.opts.onUploadError(err);
-        } else {
-          this._notify('danger', err.message || config.errorMessage);
-        }
-      });
+        })
+        .catch(err => {
+          isBusy = false;
+          okBtn.disabled = false;
+          cancelBtn.disabled = false;
+          browseBtn.disabled = false;
+          tabUpload.disabled = false;
+          tabUrl.disabled = false;
+          okBtn.classList.remove('moedit-modal-btn-disabled');
+          okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
+          if (this.opts.onUploadError) {
+            this.opts.onUploadError(err);
+          } else {
+            this._notify('danger', err.message || config.errorMessage);
+          }
+        });
+    }
   });
 };
 
@@ -652,6 +756,622 @@ moedit.prototype._insertImageByUrl = function(url, savedRange) {
 
   /* Notify if available */
   this._notify('success', this.opts.imageUploadModal.successMessage);
+};
+
+/* ============================================
+   Video Upload
+   ============================================ */
+
+moedit.prototype._insertVideo = function() {
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  if (this.opts.uploadUrl || this.opts.uploadVideo) {
+    this._showVideoUploadDialog(savedRange);
+  } else {
+    this._showMediaUrlDialog('video', savedRange);
+  }
+};
+
+moedit.prototype._showVideoUploadDialog = function(savedRange) {
+  const config = this.opts.videoModal;
+  const dialogId = 'moedit-video-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="mi-camera-video"></i> ${config.title}</h5>
+      <div class="moedit-modal-tabs">
+        <button type="button" class="moedit-modal-tab moedit-modal-tab-active" id="${dialogId}-tab-upload">
+          <i class="mi-pc-display"></i> ${config.tabUpload}
+        </button>
+        <button type="button" class="moedit-modal-tab" id="${dialogId}-tab-url">
+          <i class="mi-link-45deg"></i> ${config.tabUrl}
+        </button>
+      </div>
+      <div class="moedit-modal-tab-content" id="${dialogId}-content-upload">
+        <div class="moedit-modal-field">
+          <div class="moedit-modal-file-input">
+            <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
+              <i class="mi-folder2-open"></i> ${config.browseText}
+            </button>
+          </div>
+          <input type="file" id="${dialogId}-file" accept="video/*" style="display:none;">
+        </div>
+        <div class="moedit-modal-preview" id="${dialogId}-preview-upload" style="display:none;">
+          <video id="${dialogId}-preview-video-upload" src="" controls style="max-width:100%; max-height:200px;"></video>
+        </div>
+      </div>
+      <div class="moedit-modal-tab-content" id="${dialogId}-content-url" style="display:none;">
+        <div class="moedit-modal-field">
+          <label class="moedit-modal-label">${config.urlLabel}</label>
+          <input type="url" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.urlPlaceholder}">
+        </div>
+        <div class="moedit-modal-preview" id="${dialogId}-preview-url" style="display:none;">
+          <video id="${dialogId}-preview-video-url" src="" controls style="max-width:100%; max-height:200px;"></video>
+        </div>
+      </div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary moedit-modal-btn-disabled" id="${dialogId}-ok" disabled>
+          <i class="mi-check-lg"></i> OK
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const tabUpload = document.getElementById(`${dialogId}-tab-upload`);
+  const tabUrl = document.getElementById(`${dialogId}-tab-url`);
+  const contentUpload = document.getElementById(`${dialogId}-content-upload`);
+  const contentUrl = document.getElementById(`${dialogId}-content-url`);
+
+  const fileInput = document.getElementById(`${dialogId}-file`);
+  const filenameInput = document.getElementById(`${dialogId}-filename`);
+  const browseBtn = document.getElementById(`${dialogId}-browse`);
+  const previewDivUpload = document.getElementById(`${dialogId}-preview-upload`);
+  const previewVideoUpload = document.getElementById(`${dialogId}-preview-video-upload`);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDivUrl = document.getElementById(`${dialogId}-preview-url`);
+  const previewVideoUrl = document.getElementById(`${dialogId}-preview-video-url`);
+
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  let selectedFile = null;
+  let activeTab = 'upload';
+  let isBusy = false;
+  let urlPreviewTimeout = null;
+
+  const closeDialog = () => dialog.remove();
+
+  const switchTab = (tab) => {
+    activeTab = tab;
+    if (tab === 'upload') {
+      tabUpload.classList.add('moedit-modal-tab-active');
+      tabUrl.classList.remove('moedit-modal-tab-active');
+      contentUpload.style.display = 'block';
+      contentUrl.style.display = 'none';
+      okBtn.disabled = !selectedFile;
+      okBtn.classList.toggle('moedit-modal-btn-disabled', !selectedFile);
+      okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
+    } else {
+      tabUrl.classList.add('moedit-modal-tab-active');
+      tabUpload.classList.remove('moedit-modal-tab-active');
+      contentUrl.style.display = 'block';
+      contentUpload.style.display = 'none';
+      const hasUrl = urlInput.value.trim().length > 0;
+      okBtn.disabled = !hasUrl;
+      okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+      okBtn.innerHTML = `<i class="mi-check-lg"></i> OK`;
+      urlInput.focus();
+    }
+  };
+
+  tabUpload.addEventListener('click', () => switchTab('upload'));
+  tabUrl.addEventListener('click', () => switchTab('url'));
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      selectedFile = this.files[0];
+      filenameInput.value = selectedFile.name;
+
+      const url = URL.createObjectURL(selectedFile);
+      previewVideoUpload.src = url;
+      previewDivUpload.style.display = 'block';
+
+      okBtn.disabled = false;
+      okBtn.classList.remove('moedit-modal-btn-disabled');
+    }
+  });
+
+  urlInput.addEventListener('input', () => {
+    clearTimeout(urlPreviewTimeout);
+    const url = urlInput.value.trim();
+    const hasUrl = url.length > 0;
+    okBtn.disabled = !hasUrl;
+    okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+
+    if (hasUrl) {
+      urlPreviewTimeout = setTimeout(() => {
+        previewVideoUrl.src = url;
+        previewDivUrl.style.display = 'block';
+      }, 500);
+    } else {
+      previewDivUrl.style.display = 'none';
+    }
+  });
+
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !okBtn.disabled && !isBusy) {
+      okBtn.click();
+    }
+  });
+
+  cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
+  dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape' && !isBusy) {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  okBtn.addEventListener('click', () => {
+    if (activeTab === 'url') {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+      this._insertMediaByUrl('video', url, savedRange);
+    } else {
+      if (!selectedFile) return;
+
+      isBusy = true;
+      okBtn.disabled = true;
+      cancelBtn.disabled = true;
+      browseBtn.disabled = true;
+      tabUpload.disabled = true;
+      tabUrl.disabled = true;
+      okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
+
+      const uploadPromise = this.opts.uploadVideo
+        ? this.opts.uploadVideo(selectedFile)
+        : fetch(this.opts.uploadUrl, {
+            method: 'POST',
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
+          }).then(res => res.json()).then(data => data.path);
+
+      Promise.resolve(uploadPromise)
+        .then(path => {
+          closeDialog();
+          document.removeEventListener('keydown', escHandler);
+
+          if (path) {
+            this._insertMediaByUrl('video', path, savedRange);
+            if (this.opts.onUploadSuccess) {
+              this.opts.onUploadSuccess({ path, type: 'video' });
+            }
+          } else {
+            throw new Error(config.errorMessage);
+          }
+        })
+        .catch(err => {
+          isBusy = false;
+          okBtn.disabled = false;
+          cancelBtn.disabled = false;
+          browseBtn.disabled = false;
+          tabUpload.disabled = false;
+          tabUrl.disabled = false;
+          okBtn.classList.remove('moedit-modal-btn-disabled');
+          okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
+          if (this.opts.onUploadError) {
+            this.opts.onUploadError(err);
+          } else {
+            this._notify('danger', err.message || config.errorMessage);
+          }
+        });
+    }
+  });
+};
+
+/* ============================================
+   Audio Upload
+   ============================================ */
+
+moedit.prototype._insertAudio = function() {
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  if (this.opts.uploadUrl || this.opts.uploadAudio) {
+    this._showAudioUploadDialog(savedRange);
+  } else {
+    this._showMediaUrlDialog('audio', savedRange);
+  }
+};
+
+moedit.prototype._showAudioUploadDialog = function(savedRange) {
+  const config = this.opts.audioModal;
+  const dialogId = 'moedit-audio-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="mi-music-note-beamed"></i> ${config.title}</h5>
+      <div class="moedit-modal-tabs">
+        <button type="button" class="moedit-modal-tab moedit-modal-tab-active" id="${dialogId}-tab-upload">
+          <i class="mi-pc-display"></i> ${config.tabUpload}
+        </button>
+        <button type="button" class="moedit-modal-tab" id="${dialogId}-tab-url">
+          <i class="mi-link-45deg"></i> ${config.tabUrl}
+        </button>
+      </div>
+      <div class="moedit-modal-tab-content" id="${dialogId}-content-upload">
+        <div class="moedit-modal-field">
+          <div class="moedit-modal-file-input">
+            <input type="text" class="moedit-modal-input moedit-modal-input-readonly" id="${dialogId}-filename" readonly placeholder="${config.placeholder}">
+            <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-browse">
+              <i class="mi-folder2-open"></i> ${config.browseText}
+            </button>
+          </div>
+          <input type="file" id="${dialogId}-file" accept="audio/*" style="display:none;">
+        </div>
+        <div class="moedit-modal-preview" id="${dialogId}-preview-upload" style="display:none;">
+          <audio id="${dialogId}-preview-audio-upload" src="" controls style="max-width:100%;"></audio>
+        </div>
+      </div>
+      <div class="moedit-modal-tab-content" id="${dialogId}-content-url" style="display:none;">
+        <div class="moedit-modal-field">
+          <label class="moedit-modal-label">${config.urlLabel}</label>
+          <input type="url" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.urlPlaceholder}">
+        </div>
+        <div class="moedit-modal-preview" id="${dialogId}-preview-url" style="display:none;">
+          <audio id="${dialogId}-preview-audio-url" src="" controls style="max-width:100%;"></audio>
+        </div>
+      </div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary moedit-modal-btn-disabled" id="${dialogId}-ok" disabled>
+          <i class="mi-check-lg"></i> OK
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const tabUpload = document.getElementById(`${dialogId}-tab-upload`);
+  const tabUrl = document.getElementById(`${dialogId}-tab-url`);
+  const contentUpload = document.getElementById(`${dialogId}-content-upload`);
+  const contentUrl = document.getElementById(`${dialogId}-content-url`);
+
+  const fileInput = document.getElementById(`${dialogId}-file`);
+  const filenameInput = document.getElementById(`${dialogId}-filename`);
+  const browseBtn = document.getElementById(`${dialogId}-browse`);
+  const previewDivUpload = document.getElementById(`${dialogId}-preview-upload`);
+  const previewAudioUpload = document.getElementById(`${dialogId}-preview-audio-upload`);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDivUrl = document.getElementById(`${dialogId}-preview-url`);
+  const previewAudioUrl = document.getElementById(`${dialogId}-preview-audio-url`);
+
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  let selectedFile = null;
+  let activeTab = 'upload';
+  let isBusy = false;
+  let urlPreviewTimeout = null;
+
+  const closeDialog = () => dialog.remove();
+
+  const switchTab = (tab) => {
+    activeTab = tab;
+    if (tab === 'upload') {
+      tabUpload.classList.add('moedit-modal-tab-active');
+      tabUrl.classList.remove('moedit-modal-tab-active');
+      contentUpload.style.display = 'block';
+      contentUrl.style.display = 'none';
+      okBtn.disabled = !selectedFile;
+      okBtn.classList.toggle('moedit-modal-btn-disabled', !selectedFile);
+      okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
+    } else {
+      tabUrl.classList.add('moedit-modal-tab-active');
+      tabUpload.classList.remove('moedit-modal-tab-active');
+      contentUrl.style.display = 'block';
+      contentUpload.style.display = 'none';
+      const hasUrl = urlInput.value.trim().length > 0;
+      okBtn.disabled = !hasUrl;
+      okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+      okBtn.innerHTML = `<i class="mi-check-lg"></i> OK`;
+      urlInput.focus();
+    }
+  };
+
+  tabUpload.addEventListener('click', () => switchTab('upload'));
+  tabUrl.addEventListener('click', () => switchTab('url'));
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      selectedFile = this.files[0];
+      filenameInput.value = selectedFile.name;
+
+      const url = URL.createObjectURL(selectedFile);
+      previewAudioUpload.src = url;
+      previewDivUpload.style.display = 'block';
+
+      okBtn.disabled = false;
+      okBtn.classList.remove('moedit-modal-btn-disabled');
+    }
+  });
+
+  urlInput.addEventListener('input', () => {
+    clearTimeout(urlPreviewTimeout);
+    const url = urlInput.value.trim();
+    const hasUrl = url.length > 0;
+    okBtn.disabled = !hasUrl;
+    okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+
+    if (hasUrl) {
+      urlPreviewTimeout = setTimeout(() => {
+        previewAudioUrl.src = url;
+        previewDivUrl.style.display = 'block';
+      }, 500);
+    } else {
+      previewDivUrl.style.display = 'none';
+    }
+  });
+
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !okBtn.disabled && !isBusy) {
+      okBtn.click();
+    }
+  });
+
+  cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
+  dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape' && !isBusy) {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  okBtn.addEventListener('click', () => {
+    if (activeTab === 'url') {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+      this._insertMediaByUrl('audio', url, savedRange);
+    } else {
+      if (!selectedFile) return;
+
+      isBusy = true;
+      okBtn.disabled = true;
+      cancelBtn.disabled = true;
+      browseBtn.disabled = true;
+      tabUpload.disabled = true;
+      tabUrl.disabled = true;
+      okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
+
+      const uploadPromise = this.opts.uploadAudio
+        ? this.opts.uploadAudio(selectedFile)
+        : fetch(this.opts.uploadUrl, {
+            method: 'POST',
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
+          }).then(res => res.json()).then(data => data.path);
+
+      Promise.resolve(uploadPromise)
+        .then(path => {
+          closeDialog();
+          document.removeEventListener('keydown', escHandler);
+
+          if (path) {
+            this._insertMediaByUrl('audio', path, savedRange);
+            if (this.opts.onUploadSuccess) {
+              this.opts.onUploadSuccess({ path, type: 'audio' });
+            }
+          } else {
+            throw new Error(config.errorMessage);
+          }
+        })
+        .catch(err => {
+          isBusy = false;
+          okBtn.disabled = false;
+          cancelBtn.disabled = false;
+          browseBtn.disabled = false;
+          tabUpload.disabled = false;
+          tabUrl.disabled = false;
+          okBtn.classList.remove('moedit-modal-btn-disabled');
+          okBtn.innerHTML = `<i class="mi-upload"></i> ${config.uploadText}`;
+          if (this.opts.onUploadError) {
+            this.opts.onUploadError(err);
+          } else {
+            this._notify('danger', err.message || config.errorMessage);
+          }
+        });
+    }
+  });
+};
+
+/* ============================================
+   Media URL Dialog (for video/audio without upload)
+   ============================================ */
+
+moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
+  const config = type === 'video' ? this.opts.videoModal : this.opts.audioModal;
+  const icon = type === 'video' ? 'mi-camera-video' : 'mi-music-note-beamed';
+  const dialogId = `moedit-${type}-url-dialog-` + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="${icon}"></i> ${config.title}</h5>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${config.urlLabel}</label>
+        <input type="url" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.urlPlaceholder}">
+      </div>
+      <div class="moedit-modal-preview" id="${dialogId}-preview" style="display:none;">
+        ${type === 'video'
+          ? `<video id="${dialogId}-preview-media" src="" controls style="max-width:100%; max-height:200px;"></video>`
+          : `<audio id="${dialogId}-preview-media" src="" controls style="max-width:100%;"></audio>`
+        }
+      </div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary moedit-modal-btn-disabled" id="${dialogId}-ok" disabled>
+          <i class="mi-check-lg"></i> OK
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDiv = document.getElementById(`${dialogId}-preview`);
+  const previewMedia = document.getElementById(`${dialogId}-preview-media`);
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  let urlPreviewTimeout = null;
+
+  const closeDialog = () => dialog.remove();
+
+  urlInput.addEventListener('input', () => {
+    clearTimeout(urlPreviewTimeout);
+    const url = urlInput.value.trim();
+    const hasUrl = url.length > 0;
+    okBtn.disabled = !hasUrl;
+    okBtn.classList.toggle('moedit-modal-btn-disabled', !hasUrl);
+
+    if (hasUrl) {
+      urlPreviewTimeout = setTimeout(() => {
+        previewMedia.src = url;
+        previewDiv.style.display = 'block';
+      }, 500);
+    } else {
+      previewDiv.style.display = 'none';
+    }
+  });
+
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !okBtn.disabled) {
+      okBtn.click();
+    }
+  });
+
+  cancelBtn.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  okBtn.addEventListener('click', () => {
+    const url = urlInput.value.trim();
+    if (!url) return;
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+    this._insertMediaByUrl(type, url, savedRange);
+  });
+
+  setTimeout(() => urlInput.focus(), 100);
+};
+
+/* ============================================
+   Insert Media (Video/Audio) by URL
+   ============================================ */
+
+moedit.prototype._insertMediaByUrl = function(type, url, savedRange) {
+  this._ensureVisualMode();
+  this._focusEditor();
+
+  if (savedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+
+  const config = type === 'video' ? this.opts.videoModal : this.opts.audioModal;
+
+  /* Block элемент учир өмнө нь P tag нэмж, курсорыг тэнд байрлуулна */
+  const fragment = document.createDocumentFragment();
+
+  /* Өмнөх P */
+  const pBefore = document.createElement('p');
+  pBefore.innerHTML = '<br>';
+
+  /* Media wrapper div - contenteditable="false" тул Enter дарахад style өвлөхгүй */
+  const wrapper = document.createElement('div');
+  wrapper.style.margin = '10px 0';
+  wrapper.setAttribute('contenteditable', 'false');
+
+  /* Media элемент */
+  let media;
+  if (type === 'video') {
+    media = document.createElement('video');
+    media.src = url;
+    media.controls = true;
+    media.style.maxWidth = '100%';
+  } else {
+    media = document.createElement('audio');
+    media.src = url;
+    media.controls = true;
+    media.style.maxWidth = '100%';
+  }
+
+  wrapper.appendChild(media);
+
+  /* Дараах P */
+  const pAfter = document.createElement('p');
+  pAfter.innerHTML = '<br>';
+
+  fragment.appendChild(pBefore);
+  fragment.appendChild(wrapper);
+  fragment.appendChild(pAfter);
+
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(fragment);
+
+    /* Cursor-ийг дараах P-д байрлуулах */
+    const newRange = document.createRange();
+    newRange.setStart(pAfter, 0);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+  }
+
+  this._emitChange();
+  this._notify('success', config.successMessage);
 };
 
 /* ============================================
@@ -2063,7 +2783,7 @@ moedit.prototype._insertYouTube = function() {
       <h5 class="moedit-modal-title"><i class="mi-youtube"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <label class="moedit-modal-label">${config.urlLabel}</label>
-        <input type="text" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.placeholder}">
+        <textarea class="moedit-modal-input" id="${dialogId}-url" rows="3" placeholder="${config.placeholder}" style="resize:vertical;min-height:80px;"></textarea>
         <div class="moedit-modal-hint" style="margin-top: 6px; font-size: 12px; color: #888;">${config.hint}</div>
       </div>
       <div class="moedit-modal-preview" id="${dialogId}-preview" style="display: none; margin-top: 12px;">
@@ -2089,14 +2809,31 @@ moedit.prototype._insertYouTube = function() {
 
   urlInput.focus();
 
-  /* YouTube видео ID задлах */
-  const extractYouTubeId = (url) => {
+  /**
+   * YouTube видео ID задлах
+   * Дэмжих форматууд:
+   * 1. <iframe src="..."></iframe> - embed код
+   * 2. https://www.youtube.com/watch?v=VIDEO_ID
+   * 3. https://youtu.be/VIDEO_ID
+   * 4. https://www.youtube.com/embed/VIDEO_ID
+   * 5. https://www.youtube.com/shorts/VIDEO_ID
+   * 6. VIDEO_ID шууд (11 тэмдэгт)
+   */
+  const extractYouTubeId = (input) => {
+    input = input.trim();
+
+    /* iframe tag-аас src гаргах */
+    const iframeMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframeMatch) {
+      input = iframeMatch[1];
+    }
+
     const patterns = [
       /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
       /^([a-zA-Z0-9_-]{11})$/
     ];
     for (const pattern of patterns) {
-      const match = url.match(pattern);
+      const match = input.match(pattern);
       if (match) return match[1];
     }
     return null;
@@ -2107,13 +2844,13 @@ moedit.prototype._insertYouTube = function() {
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      const url = urlInput.value.trim();
-      const videoId = extractYouTubeId(url);
+      const input = urlInput.value.trim();
+      const videoId = extractYouTubeId(input);
       if (videoId) {
         previewIframe.src = 'https://www.youtube.com/embed/' + videoId;
         previewDiv.style.display = 'block';
         errorDiv.style.display = 'none';
-      } else if (url) {
+      } else if (input) {
         previewDiv.style.display = 'none';
         errorDiv.textContent = config.invalidUrl;
         errorDiv.style.display = 'block';
@@ -2140,18 +2877,10 @@ moedit.prototype._insertYouTube = function() {
   };
   document.addEventListener('keydown', escHandler);
 
-  /* Enter дарахад OK */
-  urlInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      okBtn.click();
-    }
-  });
-
   /* OK товч */
   okBtn.addEventListener('click', () => {
-    const url = urlInput.value.trim();
-    const videoId = extractYouTubeId(url);
+    const input = urlInput.value.trim();
+    const videoId = extractYouTubeId(input);
 
     if (!videoId) {
       errorDiv.textContent = config.invalidUrl;
@@ -2172,40 +2901,48 @@ moedit.prototype._insertYouTube = function() {
       sel.addRange(savedRange);
     }
 
+    /* Block элемент учир P tag нэмэх */
+    const fragment = document.createDocumentFragment();
+
+    const pBefore = document.createElement('p');
+    pBefore.innerHTML = '<br>';
+
     /* Responsive wrapper div үүсгэх */
     const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
     wrapper.style.maxWidth = '560px';
-    wrapper.style.paddingBottom = '56.25%';
     wrapper.style.margin = '10px 0';
-    wrapper.style.height = '0';
-    wrapper.style.overflow = 'hidden';
+    wrapper.setAttribute('contenteditable', 'false');
 
     const iframe = document.createElement('iframe');
     iframe.src = 'https://www.youtube.com/embed/' + videoId;
-    iframe.style.position = 'absolute';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
+    iframe.width = '560';
+    iframe.height = '315';
     iframe.style.border = 'none';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
     iframe.allowFullscreen = true;
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
 
     wrapper.appendChild(iframe);
 
+    const pAfter = document.createElement('p');
+    pAfter.innerHTML = '<br>';
+
+    fragment.appendChild(pBefore);
+    fragment.appendChild(wrapper);
+    fragment.appendChild(pAfter);
+
     const sel = window.getSelection();
     if (sel.rangeCount > 0) {
       const range = sel.getRangeAt(0);
-      range.insertNode(wrapper);
-      range.setStartAfter(wrapper);
-      range.collapse(true);
+      range.deleteContents();
+      range.insertNode(fragment);
+
+      const newRange = document.createRange();
+      newRange.setStart(pAfter, 0);
+      newRange.collapse(true);
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(newRange);
     }
 
     this._emitChange();
@@ -2230,7 +2967,7 @@ moedit.prototype._insertFacebook = function() {
       <h5 class="moedit-modal-title"><i class="mi-facebook"></i> ${config.title}</h5>
       <div class="moedit-modal-field">
         <label class="moedit-modal-label">${config.urlLabel}</label>
-        <input type="text" class="moedit-modal-input" id="${dialogId}-url" placeholder="${config.placeholder}">
+        <textarea class="moedit-modal-input" id="${dialogId}-url" rows="3" placeholder="${config.placeholder}" style="resize:vertical;min-height:80px;"></textarea>
         <div class="moedit-modal-hint" style="margin-top: 6px; font-size: 12px; color: #888;">${config.hint}</div>
       </div>
       <div class="moedit-modal-preview" id="${dialogId}-preview" style="display: none; margin-top: 12px;">
@@ -2254,9 +2991,33 @@ moedit.prototype._insertFacebook = function() {
 
   urlInput.focus();
 
-  /* Facebook URL зөв эсэхийг шалгах */
-  const isValidFacebookUrl = (url) => {
-    return url.includes('facebook.com') || url.includes('fb.watch');
+  /**
+   * Facebook URL задлах
+   * Дэмжих форматууд:
+   * 1. <iframe src="..."></iframe> - embed код
+   * 2. https://www.facebook.com/... - видео URL
+   * 3. https://fb.watch/... - short URL
+   */
+  const extractFacebookUrl = (input) => {
+    input = input.trim();
+
+    /* iframe tag-аас src гаргах */
+    const iframeMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframeMatch) {
+      /* Facebook plugins URL-аас href параметр гаргах */
+      const hrefMatch = iframeMatch[1].match(/[?&]href=([^&]+)/);
+      if (hrefMatch) {
+        return decodeURIComponent(hrefMatch[1]);
+      }
+      return iframeMatch[1];
+    }
+
+    /* Facebook URL шалгах */
+    if (input.includes('facebook.com') || input.includes('fb.watch')) {
+      return input;
+    }
+
+    return null;
   };
 
   /* URL өөрчлөгдөхөд preview харуулах */
@@ -2264,9 +3025,9 @@ moedit.prototype._insertFacebook = function() {
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      const url = urlInput.value.trim();
-      if (url && isValidFacebookUrl(url)) {
-        previewIframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&show_text=0&width=500';
+      const fbUrl = extractFacebookUrl(urlInput.value);
+      if (fbUrl) {
+        previewIframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(fbUrl) + '&show_text=0&width=500';
         previewDiv.style.display = 'block';
       } else {
         previewDiv.style.display = 'none';
@@ -2290,19 +3051,11 @@ moedit.prototype._insertFacebook = function() {
   };
   document.addEventListener('keydown', escHandler);
 
-  /* Enter дарахад OK */
-  urlInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      okBtn.click();
-    }
-  });
-
   /* OK товч */
   okBtn.addEventListener('click', () => {
-    const url = urlInput.value.trim();
+    const fbUrl = extractFacebookUrl(urlInput.value);
 
-    if (!url) {
+    if (!fbUrl) {
       urlInput.focus();
       return;
     }
@@ -2319,40 +3072,262 @@ moedit.prototype._insertFacebook = function() {
       sel.addRange(savedRange);
     }
 
+    /* Block элемент учир P tag нэмэх */
+    const fragment = document.createDocumentFragment();
+
+    const pBefore = document.createElement('p');
+    pBefore.innerHTML = '<br>';
+
     /* Responsive wrapper div үүсгэх */
     const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
     wrapper.style.maxWidth = '560px';
-    wrapper.style.paddingBottom = '56.25%';
     wrapper.style.margin = '10px 0';
-    wrapper.style.height = '0';
-    wrapper.style.overflow = 'hidden';
+    wrapper.setAttribute('contenteditable', 'false');
 
     const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&show_text=0&width=560';
-    iframe.style.position = 'absolute';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
+    iframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(fbUrl) + '&show_text=0&width=560';
+    iframe.width = '560';
+    iframe.height = '315';
     iframe.style.border = 'none';
     iframe.scrolling = 'no';
     iframe.allow = 'encrypted-media';
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
 
     wrapper.appendChild(iframe);
 
+    const pAfter = document.createElement('p');
+    pAfter.innerHTML = '<br>';
+
+    fragment.appendChild(pBefore);
+    fragment.appendChild(wrapper);
+    fragment.appendChild(pAfter);
+
     const sel = window.getSelection();
     if (sel.rangeCount > 0) {
       const range = sel.getRangeAt(0);
-      range.insertNode(wrapper);
-      range.setStartAfter(wrapper);
-      range.collapse(true);
+      range.deleteContents();
+      range.insertNode(fragment);
+
+      const newRange = document.createRange();
+      newRange.setStart(pAfter, 0);
+      newRange.collapse(true);
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(newRange);
+    }
+
+    this._emitChange();
+  });
+};
+
+/* ============================================
+   Google Maps Embed
+   ============================================ */
+
+moedit.prototype._insertMap = function() {
+  /* Selection хадгалах */
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  const config = this.opts.mapModal;
+  const dialogId = 'moedit-map-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="mi-geo-alt"></i> ${config.title}</h5>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${config.urlLabel}</label>
+        <textarea class="moedit-modal-input" id="${dialogId}-url" rows="3" placeholder="${config.placeholder}" style="resize:vertical;min-height:80px;"></textarea>
+        <div class="moedit-modal-hint" style="margin-top: 6px; font-size: 12px; color: #888;">${config.hint}</div>
+      </div>
+      <div class="moedit-modal-preview" id="${dialogId}-preview" style="display: none; margin-top: 12px;">
+        <div style="position: relative; width: 100%; height: 200px; background: #f0f2f5; border-radius: 6px; overflow: hidden;">
+          <iframe id="${dialogId}-iframe" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+      </div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok">${config.okText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDiv = document.getElementById(`${dialogId}-preview`);
+  const previewIframe = document.getElementById(`${dialogId}-iframe`);
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  urlInput.focus();
+
+  /**
+   * Google Maps embed URL гаргаж авах
+   * Дэмжих форматууд:
+   * 1. <iframe src="..."></iframe> - embed код шууд
+   * 2. https://www.google.com/maps/embed?pb=... - embed URL
+   * 3. https://www.google.com/maps/place/... - place URL
+   * 4. https://www.google.com/maps?q=... - search URL
+   * 5. https://maps.google.com/... - maps URL
+   * 6. https://goo.gl/maps/... - short URL
+   */
+  const extractMapEmbedUrl = (input) => {
+    input = input.trim();
+
+    /* iframe tag-аас src гаргах */
+    const iframeMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframeMatch) {
+      return iframeMatch[1];
+    }
+
+    /* Embed URL шууд байвал */
+    if (input.includes('google.com/maps/embed')) {
+      return input;
+    }
+
+    /* Place URL → embed болгох */
+    const placeMatch = input.match(/google\.com\/maps\/place\/([^\/\?]+)/);
+    if (placeMatch) {
+      const place = placeMatch[1];
+      return `https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(place.replace(/\+/g, ' '))}`;
+    }
+
+    /* Search URL → embed болгох */
+    const searchMatch = input.match(/google\.com\/maps\?q=([^&]+)/);
+    if (searchMatch) {
+      return `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d10000!2d0!3d0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1!5m2!1sen!2s&q=${searchMatch[1]}`;
+    }
+
+    /* @координат байвал */
+    const coordMatch = input.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (coordMatch) {
+      const lat = coordMatch[1];
+      const lng = coordMatch[2];
+      return `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d5000!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1`;
+    }
+
+    /* Google Maps домэйн байвал ерөнхий embed үүсгэх */
+    if (input.includes('google.com/maps') || input.includes('maps.google.com') || input.includes('goo.gl/maps')) {
+      /* URL-ээс pb= параметр хайх */
+      const pbMatch = input.match(/[?&]pb=([^&]+)/);
+      if (pbMatch) {
+        return `https://www.google.com/maps/embed?pb=${pbMatch[1]}`;
+      }
+    }
+
+    return null;
+  };
+
+  /* URL өөрчлөгдөхөд preview харуулах */
+  let debounceTimer;
+  urlInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const embedUrl = extractMapEmbedUrl(urlInput.value);
+      if (embedUrl) {
+        previewIframe.src = embedUrl;
+        previewDiv.style.display = 'block';
+      } else {
+        previewDiv.style.display = 'none';
+      }
+    }, 500);
+  });
+
+  const closeDialog = () => {
+    previewIframe.src = '';
+    dialog.remove();
+  };
+
+  cancelBtn.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  /* OK товч */
+  okBtn.addEventListener('click', () => {
+    const input = urlInput.value.trim();
+
+    if (!input) {
+      urlInput.focus();
+      return;
+    }
+
+    const embedUrl = extractMapEmbedUrl(input);
+    if (!embedUrl) {
+      this._notify('danger', config.invalidUrl);
+      urlInput.focus();
+      return;
+    }
+
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+
+    /* Selection сэргээх */
+    this._ensureVisualMode();
+    this._focusEditor();
+    if (savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+
+    /* Block элемент учир P tag нэмэх */
+    const fragment = document.createDocumentFragment();
+
+    const pBefore = document.createElement('p');
+    pBefore.innerHTML = '<br>';
+
+    /* Responsive wrapper div үүсгэх */
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    wrapper.style.maxWidth = '600px';
+    wrapper.style.height = '450px';
+    wrapper.style.margin = '10px 0';
+    wrapper.style.borderRadius = '8px';
+    wrapper.style.overflow = 'hidden';
+    wrapper.setAttribute('contenteditable', 'false');
+
+    const iframe = document.createElement('iframe');
+    iframe.src = embedUrl;
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+    wrapper.appendChild(iframe);
+
+    const pAfter = document.createElement('p');
+    pAfter.innerHTML = '<br>';
+
+    fragment.appendChild(pBefore);
+    fragment.appendChild(wrapper);
+    fragment.appendChild(pAfter);
+
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(fragment);
+
+      const newRange = document.createRange();
+      newRange.setStart(pAfter, 0);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
     }
 
     this._emitChange();

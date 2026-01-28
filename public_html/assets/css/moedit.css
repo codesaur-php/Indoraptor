@@ -515,6 +515,54 @@
   border:1px solid var(--mo-border);
 }
 
+.moedit-modal-tabs{
+  display:flex;
+  gap:0.25rem;
+  margin-bottom:1rem;
+  border-bottom:1px solid var(--mo-border);
+  padding-bottom:0;
+}
+
+.moedit-modal-tab{
+  padding:0.5rem 1rem;
+  border:none;
+  background:transparent;
+  color:var(--mo-text-muted);
+  font-size:0.875rem;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:0.375rem;
+  border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+  transition:all 0.15s ease-in-out;
+  font-family:inherit;
+}
+
+.moedit-modal-tab:hover{
+  color:var(--mo-text);
+  background:var(--mo-soft);
+}
+
+.moedit-modal-tab-active{
+  color:var(--mo-primary);
+  border-bottom-color:var(--mo-primary);
+}
+
+.moedit-modal-tab-active:hover{
+  color:var(--mo-primary);
+  background:transparent;
+}
+
+.moedit-modal-tab:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+.moedit-modal-tab-content{
+  min-height:100px;
+}
+
 .moedit-modal-radio-group{
   display:flex;
   gap:1rem;
