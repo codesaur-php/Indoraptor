@@ -188,6 +188,16 @@ class moedit {
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
       },
+      /* Twitter/X modal */
+      twitterModal: {
+        title: isMn ? 'Twitter/X пост оруулах' : 'Insert Twitter/X Post',
+        urlLabel: isMn ? 'Twitter/X URL' : 'Twitter/X URL',
+        placeholder: 'https://x.com/username/status/...',
+        hint: isMn ? 'Tweet/пост дээр Share → Copy link дарж URL хуулна уу' : 'Click Share → Copy link on the tweet/post',
+        invalidUrl: isMn ? 'Twitter/X пост олдсонгүй. URL зөв эсэхийг шалгана уу.' : 'Twitter/X post not found. Please check the URL.',
+        cancelText: isMn ? 'Болих' : 'Cancel',
+        okText: isMn ? 'Оруулах' : 'Insert'
+      },
       /* Google Maps modal */
       mapModal: {
         title: isMn ? 'Google Maps оруулах' : 'Insert Google Maps',
@@ -312,6 +322,11 @@ Instructions:
       },
       /* Header image callback - зураг сонгогдох/устгагдах үед дуудагдана */
       onHeaderImageChange: null, /* function(file, preview) - file: File object эсвэл null */
+      /* Preview options */
+      titleSelector: null, /* Title input-ийн CSS selector, жнь: '#news_title' */
+      /* Attachment options */
+      attachments: [], /* Анхны файлууд [{id, path, name, size, type, mime_content_type, description, date}] */
+      onAttachmentChange: null, /* function(attachments) - файл нэмэх/устгах/засах үед дуудагдана */
       /* Toolbar position - 'top' эсвэл 'right' (right бол desktop-д баруун талд, mobile-д дээр) */
       toolbarPosition: 'right',
       ...opts,
@@ -322,6 +337,7 @@ Instructions:
       italic:      { type: "cmd", cmd: "italic", toggle: true },
       underline:   { type: "cmd", cmd: "underline", toggle: true },
       strike:      { type: "cmd", cmd: "strikeThrough", toggle: true },
+      mark:        { type: "fn", fn: () => this._toggleMark(), toggle: "mark" },
       subscript:   { type: "cmd", cmd: "subscript", toggle: true },
       superscript: { type: "cmd", cmd: "superscript", toggle: true },
 
@@ -345,10 +361,12 @@ Instructions:
       video:     { type: "fn", fn: () => this._insertVideo() },
       audio:     { type: "fn", fn: () => this._insertAudio() },
       table:     { type: "fn", fn: () => this._insertTable() },
+      accordion: { type: "fn", fn: () => this._insertAccordion() },
       hr:        { type: "fn", fn: () => this._insertHR() },
       email:     { type: "fn", fn: () => this._insertEmail() },
       youtube:   { type: "fn", fn: () => this._insertYouTube() },
       facebook:  { type: "fn", fn: () => this._insertFacebook() },
+      twitter:   { type: "fn", fn: () => this._insertTwitter() },
       map:       { type: "fn", fn: () => this._insertMap() },
       headerImage: { type: "fn", fn: () => this._selectHeaderImage() },
 
@@ -361,6 +379,8 @@ Instructions:
 
       removeFormat: { type: "cmd", cmd: "removeFormat" },
 
+      attachment: { type: "fn", fn: () => this._insertAttachment() },
+      preview:    { type: "fn", fn: () => this._preview() },
       print:      { type: "fn", fn: () => this._print() },
       source:     { type: "fn", fn: () => this.toggleSource() },
       fullscreen: { type: "fn", fn: () => this.toggleFullscreen() },
@@ -440,8 +460,25 @@ Instructions:
       }
     }
 
+    /** @private Зураг optimize хийх эсэх */
+    this._optimizeImages = true;
+
     /** @private Одоогийн header image file */
     this._headerImageFile = null;
+
+    /** @private Хавсралт файлууд */
+    this._attachments = [];
+    this._deletedAttachmentIds = [];
+    this._attachmentsArea = this.root.querySelector('.moedit-attachments');
+    this._attachmentsTbody = this.root.querySelector('.moedit-attachments tbody');
+
+    /* Анхны файлуудыг ачаалах */
+    if (this.opts.attachments && this.opts.attachments.length > 0) {
+      this.opts.attachments.forEach(f => {
+        this._attachments.push({ ...f, _isExisting: true });
+      });
+      this._renderAttachments();
+    }
   }
 
   /**
@@ -477,6 +514,33 @@ Instructions:
    */
   getHeaderImagePreview() {
     return this.headerImagePreview?.src || null;
+  }
+
+  /**
+   * Хавсралт файлуудын мэдээлэл авах
+   * @returns {{newFiles: Array, existing: Array, deleted: Array}}
+   */
+  getAttachments() {
+    return {
+      newFiles: this._attachments.filter(f => !f._isExisting).map(f => ({
+        file: f._file,
+        name: f.name,
+        description: f.description || ''
+      })),
+      existing: this._attachments.filter(f => f._isExisting).map(f => ({
+        id: f.id,
+        description: f.description || ''
+      })),
+      deleted: this._deletedAttachmentIds
+    };
+  }
+
+  /**
+   * Зураг optimize хийх эсэх
+   * @returns {boolean}
+   */
+  getOptimizeImages() {
+    return this._optimizeImages;
   }
 
   /**
@@ -990,6 +1054,8 @@ Instructions:
     /* Right toolbar бол content wrapper нэмэх */
     const isRightToolbar = opts.toolbarPosition === 'right';
 
+    const attachHtml = `<div class="moedit-attachments" style="display:none;"><table><thead><tr><th>${isMn ? 'Файл' : 'File'}</th><th>${isMn ? 'Шинж' : 'Properties'}</th><th>${isMn ? 'Тайлбар' : 'Description'}</th><th>${isMn ? 'Огноо' : 'Date'}</th></tr></thead><tbody></tbody></table></div>`;
+
     wrapper.innerHTML = isRightToolbar ? `
       <div class="moedit-content">
         ${headerImageHtml}
@@ -997,6 +1063,7 @@ Instructions:
           <div class="moedit-editor" contenteditable="true" data-placeholder="${this._escapeAttr(placeholder)}">${initialContent}</div>
           <textarea class="moedit-source">${this._escapeHtml(initialContent)}</textarea>
         </div>
+        ${attachHtml}
       </div>
     ` : `
       ${headerImageHtml}
@@ -1004,6 +1071,7 @@ Instructions:
         <div class="moedit-editor" contenteditable="true" data-placeholder="${this._escapeAttr(placeholder)}">${initialContent}</div>
         <textarea class="moedit-source">${this._escapeHtml(initialContent)}</textarea>
       </div>
+      ${attachHtml}
     `;
 
     /* Textarea-г нууж, wrapper-ийн дараа байрлуулах */
@@ -1033,6 +1101,12 @@ Instructions:
     const toolbar = document.createElement('div');
     toolbar.className = 'moedit-toolbar';
     toolbar.innerHTML = `
+      <div class="moedit-group">
+        <label class="moedit-optimize" title="${isMn ? 'Идэвхжүүлсэн үед upload хийгдэж буй зургийг автоматаар шахаж, хэмжээг нь багасгана. Толгой зураг, контент дотор оруулсан зураг, хавсаргасан зураг бүгдэд хамаарна. Зургийн чанар алдагдахгүйгээр файлын хэмжээг 50-80% хүртэл бууруулна.' : 'When enabled, uploaded images are automatically compressed and resized. Applies to header image, content images, and attached images. Reduces file size by 50-80% without noticeable quality loss.'}">
+          <input type="checkbox" checked> ${isMn ? 'Зураг optimize хийх' : 'Optimize images'}
+        </label>
+      </div>
+      <div class="moedit-sep"></div>
       <div class="moedit-group moedit-group-header-image" style="display:none;">
         <button type="button" class="moedit-btn mo-primary" data-action="headerImage" title="${isMn ? 'Толгой зураг' : 'Header Image'}"><i class="mi-photo"></i></button>
       </div>
@@ -1041,11 +1115,14 @@ Instructions:
         <button type="button" class="moedit-btn mo-danger" data-action="image" title="${isMn ? 'Зураг оруулах' : 'Insert Image'}"><i class="mi-image"></i></button>
         <button type="button" class="moedit-btn mo-info" data-action="video" title="${isMn ? 'Видео оруулах' : 'Insert Video'}"><i class="mi-camera-video"></i></button>
         <button type="button" class="moedit-btn mo-success" data-action="audio" title="${isMn ? 'Аудио оруулах' : 'Insert Audio'}"><i class="mi-music-note-beamed"></i></button>
+        <button type="button" class="moedit-btn mo-warning" data-action="attachment" title="${isMn ? 'Файл хавсаргах' : 'Attach File'}"><i class="mi-paperclip"></i></button>
         <button type="button" class="moedit-btn" data-action="table" title="${isMn ? 'Хүснэгт оруулах' : 'Insert Table'}"><i class="mi-table"></i></button>
+        <button type="button" class="moedit-btn" data-action="accordion" title="${isMn ? 'Accordion оруулах' : 'Insert Accordion'}"><i class="mi-chevron-bar-expand"></i></button>
         <button type="button" class="moedit-btn" data-action="insertLink" title="${isMn ? 'Холбоос / Имэйл оруулах' : 'Insert Link / Email'}"><i class="mi-link-45deg"></i></button>
         <button type="button" class="moedit-btn" data-action="hr" title="${isMn ? 'Хэвтээ зураас оруулах' : 'Insert Horizontal Rule'}"><i class="mi-dash-lg"></i></button>
         <button type="button" class="moedit-btn" data-action="youtube" title="${isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video'}"><i class="mi-youtube"></i></button>
         <button type="button" class="moedit-btn" data-action="facebook" title="${isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video'}"><i class="mi-facebook"></i></button>
+        <button type="button" class="moedit-btn" data-action="twitter" title="${isMn ? 'Twitter/X пост оруулах' : 'Insert Twitter/X Post'}"><i class="mi-twitter-x"></i></button>
         <button type="button" class="moedit-btn" data-action="map" title="${isMn ? 'Google Maps оруулах' : 'Insert Google Maps'}"><i class="mi-geo-alt"></i></button>
         <button type="button" class="moedit-btn mo-info" data-action="ocr" title="${isMn ? 'AI OCR - Зургийг HTML болгох' : 'AI OCR - Convert Image to HTML'}"><i class="mi-file-text"></i></button>
         <button type="button" class="moedit-btn mo-danger" data-action="pdf" title="PDF → HTML"><i class="mi-file-earmark-pdf"></i></button>
@@ -1056,6 +1133,7 @@ Instructions:
         <button type="button" class="moedit-btn mo-primary" data-action="fullscreen" title="${isMn ? 'Бүтэн дэлгэц' : 'Fullscreen'}"><i class="mi-arrows-fullscreen"></i></button>
         <button type="button" class="moedit-btn mo-success" data-action="source" title="${isMn ? 'Эх код' : 'Source Code'}"><i class="mi-code-slash"></i></button>
         <button type="button" class="moedit-btn" data-action="print" title="${isMn ? 'Хэвлэх' : 'Print'}"><i class="mi-printer"></i></button>
+        <button type="button" class="moedit-btn mo-info" data-action="preview" title="${isMn ? 'Урьдчилан харах' : 'Preview'}"><i class="mi-eye"></i></button>
       </div>
       <div class="moedit-sep"></div>
       <div class="moedit-group">
@@ -1063,6 +1141,7 @@ Instructions:
         <button type="button" class="moedit-btn" data-action="italic" title="${isMn ? 'Налуу (Ctrl+I)' : 'Italic (Ctrl+I)'}"><i class="mi-type-italic"></i></button>
         <button type="button" class="moedit-btn" data-action="underline" title="${isMn ? 'Доогуур зураас (Ctrl+U)' : 'Underline (Ctrl+U)'}"><i class="mi-type-underline"></i></button>
         <button type="button" class="moedit-btn" data-action="strike" title="${isMn ? 'Дундуур зураас' : 'Strikethrough'}"><i class="mi-type-strikethrough"></i></button>
+        <button type="button" class="moedit-btn" data-action="mark" title="${isMn ? 'Тодруулга (Highlight)' : 'Highlight (Mark)'}"><i class="mi-highlighter"></i></button>
         <button type="button" class="moedit-btn" data-action="subscript" title="${isMn ? 'Доод индекс' : 'Subscript'}"><i class="mi-type"></i><sub>x</sub></button>
         <button type="button" class="moedit-btn" data-action="superscript" title="${isMn ? 'Дээд индекс' : 'Superscript'}"><i class="mi-type"></i><sup>x</sup></button>
       </div>
@@ -1170,6 +1249,12 @@ Instructions:
       this.exec(btn.dataset.action);
     };
     this.toolbar.addEventListener("click", this._boundHandlers.toolbarClick);
+
+    /* Optimize checkbox */
+    const optimizeCheckbox = this.toolbar.querySelector('.moedit-optimize input[type="checkbox"]');
+    if (optimizeCheckbox) {
+      optimizeCheckbox.addEventListener('change', () => { this._optimizeImages = optimizeCheckbox.checked; });
+    }
 
     /* Toolbar keyboard navigation */
     this._setupToolbarKeyboardNav();
@@ -1538,9 +1623,19 @@ Instructions:
       if (!btn) continue;
 
       let on = false;
-      /* Зөвхөн editor дотор selection байвал queryCommandState ашиглах */
       if (isInsideEditor) {
-        try { on = document.queryCommandState(cfg.cmd); } catch {}
+        if (typeof cfg.toggle === 'string') {
+          /* Custom tag toggle (mark гэх мэт) - ancestor element шалгах */
+          let node = selection.anchorNode;
+          if (node && node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+          while (node && node !== this.editor) {
+            if (node.nodeName.toLowerCase() === cfg.toggle) { on = true; break; }
+            node = node.parentNode;
+          }
+        } else {
+          /* Зөвхөн editor дотор selection байвал queryCommandState ашиглах */
+          try { on = document.queryCommandState(cfg.cmd); } catch {}
+        }
       }
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     }

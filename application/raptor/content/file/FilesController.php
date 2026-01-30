@@ -163,7 +163,7 @@ class FilesController extends FileController
             } else {
                 // Хүснэгт байгаа тул доторх file мөр бичлэгүүдийг авна
                 $select_files =
-                    'SELECT id, record_id, file, path, size, type, mime_content_type, category, keyword, description, created_at ' .
+                    'SELECT id, record_id, file, path, size, type, mime_content_type, purpose, keyword, description, created_at ' .
                     "FROM {$table}_files WHERE is_active=1";
                 $files = $this->query($select_files)->fetchAll();
             }
@@ -358,10 +358,12 @@ class FilesController extends FileController
                 throw new \InvalidArgumentException('Зураг upload хийхэд алдаа гарлаа', 400);
             }
 
-            // Зургийг optimize хийх (хэрэв том бол)
-            $optimized = $this->optimizeImage($uploaded['file']);
-            if ($optimized) {
-                $uploaded['size'] = \filesize($uploaded['file']);
+            // Зургийг optimize хийх (optimize flag шалгах)
+            $body = $this->getParsedBody();
+            if (($body['optimize'] ?? '1') === '1') {
+                if ($this->optimizeImage($uploaded['file'])) {
+                    $uploaded['size'] = \filesize($uploaded['file']);
+                }
             }
 
             // moedit-д зөвхөн path хэрэгтэй
@@ -376,6 +378,49 @@ class FilesController extends FileController
         }
     }
     
+    /**
+     * moedit editor-ээс файл upload хийх.
+     *
+     * - Заасан folder руу файлыг байршуулна
+     * - optimize=1 бол зургийн файлыг optimize хийнэ
+     * - moveUploaded-тэй адил бүтэцтэй утга буцаана (path, file, size, type, mime_content_type)
+     *
+     * @return void
+     */
+    public function moUpload()
+    {
+        try {
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+
+            $body = $this->getParsedBody();
+            $folder = '/' . \trim(\preg_replace('/[^a-zA-Z0-9_\/-]/', '', $body['folder'] ?? 'moedit'), '/');
+            $this->setFolder($folder);
+            $this->allowCommonTypes();
+
+            $uploaded = $this->moveUploaded('file');
+            if (!$uploaded) {
+                throw new \InvalidArgumentException('Upload failed', 400);
+            }
+
+            if (($body['optimize'] ?? '0') === '1' && ($uploaded['type'] ?? '') === 'image') {
+                if ($this->optimizeImage($uploaded['file'])) {
+                    $uploaded['size'] = \filesize($uploaded['file']);
+                }
+            }
+
+            $this->respondJSON($uploaded);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'error' => [
+                    'code'    => $err->getCode(),
+                    'message' => $err->getMessage()
+                ]
+            ], $err->getCode() ?: 500);
+        }
+    }
+
     /**
      * Файл сонгоход зориулсан Modal HTML харуулна.
      *

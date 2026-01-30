@@ -213,37 +213,95 @@ class NewsController extends FileController
                 $recordPath = $this->public_path;
                 $recordFolder = $this->local_folder;
 
-                // Толгой зураг upload
+                $filesModel = new FilesModel($this->pdo);
+                $filesModel->setTable($table);
+                $optimize = ($payload['optimize'] ?? '1') === '1';
+
+                // Толгой зураг upload → purpose=1
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
+                    if ($optimize) {
+                        if ($this->optimizeImage($photo['file'])) {
+                            $photo['size'] = \filesize($photo['file']);
+                        }
+                    }
                     $record = $model->updateById($id, [
                         'photo' => $photo['path'],
                         'photo_size' => $photo['size']
                     ]);
+                    $filesModel->insert($photo + [
+                        'record_id'  => $id,
+                        'purpose'    => 1,
+                        'created_by' => $this->getUserId()
+                    ]);
                 }
 
-                // Content доторх зургуудыг regex-ээр олох
+                // Content доторх медиа файлуудыг regex-ээр олох → purpose=2
                 $html = $record['content'] ?? '';
                 if (\preg_match_all('/src=["\']([^"\']*' . \preg_quote($tempPath, '/') . '\/([^"\']+))["\']/', $html, $matches)) {
                     if (!\is_dir($recordFolder)) {
                         \mkdir($recordFolder, 0755, true);
                     }
-                    // Зөвхөн content-д байгаа файлуудыг зөөх
                     foreach ($matches[2] as $encodedFilename) {
                         $filename = \rawurldecode($encodedFilename);
                         $tempFile = "$tempFolder/$filename";
                         if (\is_file($tempFile)) {
                             \rename($tempFile, "$recordFolder/$filename");
+                            $filePath = "$recordFolder/$filename";
+                            $mime = \mime_content_type($filePath) ?: 'application/octet-stream';
+                            $filesModel->insert([
+                                'record_id'         => $id,
+                                'file'              => $filePath,
+                                'path'              => "$recordPath/$filename",
+                                'size'              => \filesize($filePath),
+                                'type'              => \explode('/', $mime)[0],
+                                'mime_content_type'  => $mime,
+                                'purpose'           => 2,
+                                'created_by'        => $this->getUserId()
+                            ]);
                         }
                     }
-                    // Content дотор temp path-уудыг шинэ path-аар солих
                     $html = \str_replace($tempPath, $recordPath, $html);
                     $model->updateById($id, ['content' => $html]);
                 }
 
-                // mofiles-аар upload хийсэн файлуудыг зөөх
+                // Moedit хавсралт файлууд → purpose=4
                 $this->allowCommonTypes();
+                $attachFiles = $_FILES['attachments'] ?? [];
+                $attachDescs = $payload['attachment_descriptions'] ?? [];
+                if (!empty($attachFiles['name'])) {
+                    $this->setFolder("/$table/$id");
+                    for ($i = 0; $i < \count($attachFiles['name']); $i++) {
+                        if ($attachFiles['error'][$i] !== \UPLOAD_ERR_OK) {
+                            continue;
+                        }
+                        $_FILES['_att'] = [
+                            'name'     => $attachFiles['name'][$i],
+                            'type'     => $attachFiles['type'][$i],
+                            'tmp_name' => $attachFiles['tmp_name'][$i],
+                            'error'    => $attachFiles['error'][$i],
+                            'size'     => $attachFiles['size'][$i],
+                        ];
+                        $uploaded = $this->moveUploaded('_att');
+                        if ($uploaded) {
+                            if ($optimize && ($uploaded['type'] ?? '') === 'image') {
+                                if ($this->optimizeImage($uploaded['file'])) {
+                                    $uploaded['size'] = \filesize($uploaded['file']);
+                                }
+                            }
+                            $filesModel->insert($uploaded + [
+                                'record_id'   => $id,
+                                'purpose'     => 4,
+                                'description' => $attachDescs[$i] ?? '',
+                                'created_by'  => $this->getUserId()
+                            ]);
+                        }
+                    }
+                    unset($_FILES['_att']);
+                }
+
+                // mofiles-аар upload хийсэн файлуудыг зөөх
                 if (!empty($files) && \is_array($files)) {
                     foreach (\array_keys($files) as $file_id) {
                         $update = $this->renameTo($table, $id, $file_id, 0755, 'files');

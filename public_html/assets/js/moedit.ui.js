@@ -687,7 +687,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
         ? this.opts.uploadImage(selectedFile)
         : fetch(this.opts.uploadUrl, {
             method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
           }).then(res => res.json()).then(data => data.path);
 
       Promise.resolve(uploadPromise)
@@ -950,7 +950,7 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
         ? this.opts.uploadVideo(selectedFile)
         : fetch(this.opts.uploadUrl, {
             method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
           }).then(res => res.json()).then(data => data.path);
 
       Promise.resolve(uploadPromise)
@@ -1178,7 +1178,7 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
         ? this.opts.uploadAudio(selectedFile)
         : fetch(this.opts.uploadUrl, {
             method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); return fd; })()
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
           }).then(res => res.json()).then(data => data.path);
 
       Promise.resolve(uploadPromise)
@@ -1541,6 +1541,185 @@ moedit.prototype._insertTable = function() {
         }
       } else {
         document.execCommand("insertHTML", false, table.outerHTML);
+      }
+
+      this._emitChange();
+    }
+  });
+};
+
+/* ============================================
+   Toggle Mark (Highlight)
+   ============================================ */
+
+moedit.prototype._toggleMark = function() {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+
+  /* Cursor байрлаж буй mark element-ийг олох */
+  let node = selection.anchorNode;
+  if (node && node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+  let existingMark = null;
+  while (node && node !== this.editor) {
+    if (node.nodeName === 'MARK') { existingMark = node; break; }
+    node = node.parentNode;
+  }
+
+  if (existingMark) {
+    /* Mark-ийг арилгах (unwrap) */
+    const parent = existingMark.parentNode;
+    while (existingMark.firstChild) {
+      parent.insertBefore(existingMark.firstChild, existingMark);
+    }
+    parent.removeChild(existingMark);
+    parent.normalize();
+  } else if (!range.collapsed) {
+    /* Сонгосон текстийг mark-аар ороох */
+    const mark = document.createElement('mark');
+    try {
+      range.surroundContents(mark);
+    } catch {
+      /* Хэрэв surroundContents ажиллахгүй бол (partial selection) extractContents ашиглах */
+      mark.appendChild(range.extractContents());
+      range.insertNode(mark);
+    }
+    /* Cursor-ийг mark-ийн ард байрлуулах */
+    const newRange = document.createRange();
+    newRange.setStartAfter(mark);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+  }
+
+  this._emitChange();
+};
+
+/* ============================================
+   Insert Accordion (details/summary)
+   ============================================ */
+
+moedit.prototype._insertAccordion = function() {
+  const isMn = this._isMn;
+
+  /* Selection хадгалах */
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  const dialogId = 'moedit-accordion-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal moedit-modal-sm">
+      <h5 class="moedit-modal-title"><i class="mi-chevron-bar-expand"></i> ${isMn ? 'Accordion оруулах' : 'Insert Accordion'}</h5>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${isMn ? 'Тоо' : 'Count'}</label>
+        <input type="number" class="moedit-modal-input" id="${dialogId}-count" value="3" min="1" max="20">
+      </div>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${isMn ? 'Горим' : 'Mode'}</label>
+        <select class="moedit-modal-input" id="${dialogId}-mode">
+          <option value="independent">${isMn ? 'Чөлөөт (олон нээгдэх)' : 'Independent (multiple open)'}</option>
+          <option value="exclusive" selected>${isMn ? 'Зөвхөн нэг нээгдэх' : 'Only one open at a time'}</option>
+        </select>
+      </div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${isMn ? 'Болих' : 'Cancel'}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok">OK</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const countInput = document.getElementById(`${dialogId}-count`);
+  const modeSelect = document.getElementById(`${dialogId}-mode`);
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  countInput.focus();
+  countInput.select();
+
+  const closeDialog = () => dialog.remove();
+
+  cancelBtn.addEventListener('click', closeDialog);
+
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) closeDialog();
+  });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  const enterHandler = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      okBtn.click();
+    }
+  };
+  countInput.addEventListener('keydown', enterHandler);
+
+  okBtn.addEventListener('click', () => {
+    const count = parseInt(countInput.value) || 3;
+    const mode = modeSelect.value;
+
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+
+    if (count > 0) {
+      const groupName = mode === 'exclusive' ? 'accordion-' + Date.now() : '';
+
+      const wrapper = document.createDocumentFragment();
+      for (let i = 0; i < count; i++) {
+        const details = document.createElement('details');
+        if (groupName) details.setAttribute('name', groupName);
+        if (i === 0) details.setAttribute('open', '');
+
+        const summary = document.createElement('summary');
+        summary.textContent = (isMn ? 'Гарчиг ' : 'Title ') + (i + 1);
+        details.appendChild(summary);
+
+        const content = document.createElement('p');
+        content.innerHTML = '&nbsp;';
+        details.appendChild(content);
+
+        wrapper.appendChild(details);
+      }
+
+      /* Selection сэргээх */
+      this._focusEditor();
+      if (savedRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(wrapper);
+
+        /* Cursor-ийг эхний summary дээр байрлуулах */
+        const firstSummary = sel.anchorNode.parentElement.querySelector
+          ? sel.anchorNode.parentElement.querySelector('details summary')
+          : null;
+        if (firstSummary) {
+          const newRange = document.createRange();
+          newRange.selectNodeContents(firstSummary);
+          newRange.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+        }
       }
 
       this._emitChange();
@@ -2445,6 +2624,256 @@ moedit.prototype._print = function() {
   }, 250);
 };
 
+/**
+ * Файл хавсаргах - file picker нээх
+ */
+moedit.prototype._insertAttachment = function() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.multiple = true;
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files.length > 0) {
+      const now = new Date();
+      const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      for (let i = 0; i < fileInput.files.length; i++) {
+        const file = fileInput.files[i];
+        const mimeType = file.type || '';
+        const type = mimeType.split('/')[0];
+        this._attachments.push({
+          _localId: 'att_' + Date.now() + '_' + i,
+          _file: file,
+          _isExisting: false,
+          name: file.name,
+          size: file.size,
+          type: ['image', 'video', 'audio'].includes(type) ? type : 'document',
+          mime_content_type: mimeType,
+          description: '',
+          date: dateStr
+        });
+      }
+      this._renderAttachments();
+      this._emitAttachmentChange();
+      this._notify?.('success', this._isMn ? 'Файл хавсаргагдлаа' : 'File attached');
+    }
+    fileInput.remove();
+  });
+
+  fileInput.addEventListener('cancel', () => fileInput.remove());
+  fileInput.click();
+};
+
+/**
+ * Хавсралт файлуудын хүснэгт зурах
+ */
+moedit.prototype._renderAttachments = function() {
+  if (!this._attachmentsArea || !this._attachmentsTbody) return;
+  const isMn = this._isMn;
+  const isReadonly = this.opts.readonly;
+
+  if (this._attachments.length === 0) {
+    this._attachmentsArea.style.display = 'none';
+    return;
+  }
+  this._attachmentsArea.style.display = '';
+
+  this._attachmentsTbody.innerHTML = '';
+  this._attachments.forEach((file, idx) => {
+    const tr = document.createElement('tr');
+
+    /* File */
+    const fileName = file.path ? file.path.split('/').pop() : (file.name || '');
+    let sizeStr = '';
+    if (file.size != null) {
+      if (file.size < 1024) sizeStr = file.size + ' B';
+      else if (file.size < 1048576) sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+      else sizeStr = (file.size / 1048576).toFixed(2) + ' MB';
+    }
+    const tdFile = document.createElement('td');
+    const displayName = file._isExisting ? fileName : file.name;
+    if (file.path || file._file) {
+      const link = document.createElement('a');
+      link.href = file.path || (file._file ? URL.createObjectURL(file._file) : '#');
+      link.target = '_blank';
+      link.className = 'moedit-attach-link';
+      link.textContent = displayName;
+      tdFile.appendChild(link);
+    } else {
+      tdFile.textContent = displayName;
+    }
+    if (!isReadonly) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'moedit-attach-remove';
+      removeBtn.title = isMn ? 'Устгах' : 'Remove';
+      removeBtn.innerHTML = '<i class="mi-trash"></i>';
+      removeBtn.addEventListener('click', () => {
+        if (file._isExisting && file.id) {
+          this._deletedAttachmentIds.push(file.id);
+        }
+        this._attachments.splice(idx, 1);
+        this._renderAttachments();
+        this._emitAttachmentChange();
+      });
+      tdFile.appendChild(removeBtn);
+    }
+    tr.appendChild(tdFile);
+
+    /* Properties */
+    const tdProps = document.createElement('td');
+    tdProps.innerHTML = `<span class="moedit-attach-type">${file.type || ''}</span><span class="moedit-attach-size">${sizeStr}</span>`;
+    tr.appendChild(tdProps);
+
+    /* Description */
+    const tdDesc = document.createElement('td');
+    if (isReadonly) {
+      tdDesc.textContent = file.description || '';
+    } else {
+      const descInput = document.createElement('input');
+      descInput.type = 'text';
+      descInput.className = 'moedit-attach-desc';
+      descInput.value = file.description || '';
+      descInput.placeholder = isMn ? 'Тайлбар...' : 'Description...';
+      descInput.addEventListener('change', () => {
+        file.description = descInput.value;
+        this._emitAttachmentChange();
+      });
+      tdDesc.appendChild(descInput);
+    }
+    tr.appendChild(tdDesc);
+
+    /* Date */
+    const tdDate = document.createElement('td');
+    tdDate.textContent = file.date || file.created_at || '';
+    tr.appendChild(tdDate);
+
+    this._attachmentsTbody.appendChild(tr);
+  });
+};
+
+/**
+ * Attachment change callback дуудах
+ */
+moedit.prototype._emitAttachmentChange = function() {
+  if (typeof this.opts.onAttachmentChange === 'function') {
+    this.opts.onAttachmentChange(this._attachments);
+  }
+};
+
+/**
+ * Preview - контентыг popup цонхонд rendered харуулах
+ */
+moedit.prototype._preview = function() {
+  const previewWindow = window.open('', '_blank');
+  if (!previewWindow) {
+    this._notify?.('error', this._isMn ? 'Popup хориглогдсон байна' : 'Popup blocked');
+    return;
+  }
+
+  /* Title авах */
+  let titleHtml = '';
+  if (this.opts.titleSelector) {
+    const titleEl = document.querySelector(this.opts.titleSelector);
+    if (titleEl) {
+      const titleVal = (titleEl.value || titleEl.textContent || '').trim();
+      if (titleVal) {
+        titleHtml = `<h2>${titleVal}</h2>`;
+      }
+    }
+  }
+
+  /* Толгой зураг авах */
+  let headerImageHtml = '';
+  const headerArea = this.headerImageArea || this.root.querySelector('.moedit-header-image');
+  const headerPreview = this.headerImagePreview || this.root.querySelector('.moedit-header-image-preview');
+  if (headerArea && headerArea.style.display !== 'none' && headerPreview && headerPreview.naturalWidth > 0) {
+    const imgSrc = headerPreview.src;
+    if (imgSrc && !imgSrc.startsWith('data:,') && !imgSrc.endsWith('/')) {
+      headerImageHtml = `<img class="img-fluid mt-1" src="${imgSrc}">`;
+    }
+  }
+
+  /* Контент авах */
+  const content = this.getHTML();
+
+  /* Хавсралт файлууд */
+  let filesHtml = '';
+  if (this._attachments && this._attachments.length > 0) {
+    const isMn = this._isMn;
+    let rows = '';
+    this._attachments.forEach((file, idx) => {
+      const fileName = file.path ? file.path.split('/').pop() : (file.name || '');
+      let icon = '<i class="bi bi-file-earmark"></i>';
+      if (file.type === 'image') icon = '<i class="bi bi-file-image text-success"></i>';
+      else if (file.type === 'video') icon = '<i class="bi bi-file-play text-danger"></i>';
+      else if (file.type === 'audio') icon = '<i class="bi bi-file-music text-info"></i>';
+      else if (file.mime_content_type) {
+        const mime = file.mime_content_type;
+        if (mime === 'application/pdf') icon = '<i class="bi bi-file-pdf text-danger"></i>';
+        else if (mime.startsWith('application/vnd.ms-excel') || mime.startsWith('application/vnd.openxmlformats-officedocument.spreadsheet')) icon = '<i class="bi bi-file-excel text-success"></i>';
+        else if (mime.startsWith('application/msword') || mime.startsWith('application/vnd.openxmlformats-officedocument.wordprocessing')) icon = '<i class="bi bi-file-word text-primary"></i>';
+        else if (mime.startsWith('application/zip') || mime.startsWith('application/x-rar') || mime.startsWith('application/x-7z')) icon = '<i class="bi bi-file-zip text-warning"></i>';
+      }
+      let sizeStr = '';
+      if (file.size != null) {
+        if (file.size < 1024) sizeStr = file.size + ' B';
+        else if (file.size < 1048576) sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+        else sizeStr = (file.size / 1048576).toFixed(2) + ' MB';
+      }
+      const descHtml = file.description ? `<small class="text-muted d-block">${file.description}</small>` : '';
+      const linkHref = file.path || (file._file ? URL.createObjectURL(file._file) : '#');
+      rows += `<tr>
+        <td>${idx + 1}</td>
+        <td><a href="${linkHref}" target="_blank" class="text-decoration-none">${icon} ${file._isExisting ? fileName : file.name}</a>${descHtml}</td>
+        <td>${sizeStr}</td>
+        <td><span class="badge bg-secondary">${file.type || ''}</span></td>
+      </tr>`;
+    });
+    filesHtml = `
+      <div class="col-12 mt-5">
+        <hr>
+        <h5><i class="bi bi-paperclip"></i> ${isMn ? 'Хавсралт файлууд' : 'Attachments'}</h5>
+        <table class="table table-striped table-hover">
+          <thead><tr>
+            <th style="width:50px">#</th>
+            <th>${isMn ? 'Файл' : 'File'}</th>
+            <th style="width:120px">${isMn ? 'Хэмжээ' : 'Size'}</th>
+            <th style="width:100px">${isMn ? 'Төрөл' : 'Type'}</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  previewWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${this._isMn ? 'Урьдчилан харах' : 'Preview'}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    img { max-width: 100%; height: auto; }
+    table { width: 100%; }
+    blockquote { margin: 1rem 0; padding: 0.75rem 1rem; border-left: 4px solid #0d6efd; background: #f8f9fa; }
+    pre { background: #f8f9fa; padding: 1rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <main class="container" style="width:50rem;margin-top:.75rem;margin-bottom:.75rem;">
+    ${titleHtml}
+    ${headerImageHtml}
+    <div class="col-12 mt-1">${content}</div>
+    ${filesHtml}
+  </main>
+</body>
+</html>`);
+  previewWindow.document.close();
+  previewWindow.focus();
+};
+
 /* ============================================
    Font & Color Functions
    ============================================ */
@@ -3091,6 +3520,184 @@ moedit.prototype._insertFacebook = function() {
     iframe.style.border = 'none';
     iframe.scrolling = 'no';
     iframe.allow = 'encrypted-media';
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+    wrapper.appendChild(iframe);
+
+    const pAfter = document.createElement('p');
+    pAfter.innerHTML = '<br>';
+
+    fragment.appendChild(pBefore);
+    fragment.appendChild(wrapper);
+    fragment.appendChild(pAfter);
+
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(fragment);
+
+      const newRange = document.createRange();
+      newRange.setStart(pAfter, 0);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    }
+
+    this._emitChange();
+  });
+};
+
+/* ============================================
+   Twitter/X Embed
+   ============================================ */
+
+moedit.prototype._insertTwitter = function() {
+  /* Selection хадгалах */
+  let savedRange = null;
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  const config = this.opts.twitterModal;
+  const dialogId = 'moedit-twitter-dialog-' + Date.now();
+  const dialog = document.createElement('div');
+  dialog.id = dialogId;
+  dialog.className = 'moedit-modal-overlay';
+  dialog.innerHTML = `
+    <div class="moedit-modal">
+      <h5 class="moedit-modal-title"><i class="mi-twitter-x"></i> ${config.title}</h5>
+      <div class="moedit-modal-field">
+        <label class="moedit-modal-label">${config.urlLabel}</label>
+        <textarea class="moedit-modal-input" id="${dialogId}-url" rows="3" placeholder="${config.placeholder}" style="resize:vertical;min-height:80px;"></textarea>
+        <div class="moedit-modal-hint" style="margin-top: 6px; font-size: 12px; color: #888;">${config.hint}</div>
+      </div>
+      <div class="moedit-modal-preview" id="${dialogId}-preview" style="display: none; margin-top: 12px;">
+        <div style="position: relative; width: 100%; max-width: 550px; height: 300px; background: #f7f9fa; border-radius: 6px; overflow: hidden;">
+          <iframe id="${dialogId}-iframe" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+      </div>
+      <div class="moedit-modal-error" id="${dialogId}-error" style="display: none; margin-top: 8px; color: #dc3545; font-size: 13px;"></div>
+      <div class="moedit-modal-buttons">
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel">${config.cancelText}</button>
+        <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok">${config.okText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  const urlInput = document.getElementById(`${dialogId}-url`);
+  const previewDiv = document.getElementById(`${dialogId}-preview`);
+  const previewIframe = document.getElementById(`${dialogId}-iframe`);
+  const errorDiv = document.getElementById(`${dialogId}-error`);
+  const okBtn = document.getElementById(`${dialogId}-ok`);
+  const cancelBtn = document.getElementById(`${dialogId}-cancel`);
+
+  urlInput.focus();
+
+  /**
+   * Twitter/X tweet ID задлах
+   * Дэмжих форматууд:
+   * 1. https://twitter.com/username/status/1234567890
+   * 2. https://x.com/username/status/1234567890
+   * 3. https://twitter.com/username/status/1234567890?s=20
+   * 4. Tweet ID шууд (цифр)
+   */
+  const extractTweetId = (input) => {
+    input = input.trim();
+
+    const patterns = [
+      /(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/,
+      /^(\d{10,})$/
+    ];
+    for (const pattern of patterns) {
+      const match = input.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  /* URL өөрчлөгдөхөд preview харуулах */
+  let debounceTimer;
+  urlInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const input = urlInput.value.trim();
+      const tweetId = extractTweetId(input);
+      if (tweetId) {
+        previewIframe.src = 'https://platform.twitter.com/embed/Tweet.html?id=' + tweetId;
+        previewDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+      } else if (input) {
+        previewDiv.style.display = 'none';
+        errorDiv.textContent = config.invalidUrl;
+        errorDiv.style.display = 'block';
+      } else {
+        previewDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+      }
+    }, 300);
+  });
+
+  const closeDialog = () => {
+    previewIframe.src = '';
+    dialog.remove();
+  };
+
+  cancelBtn.addEventListener('click', closeDialog);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDialog();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+
+  /* OK товч */
+  okBtn.addEventListener('click', () => {
+    const input = urlInput.value.trim();
+    const tweetId = extractTweetId(input);
+
+    if (!tweetId) {
+      errorDiv.textContent = config.invalidUrl;
+      errorDiv.style.display = 'block';
+      urlInput.focus();
+      return;
+    }
+
+    closeDialog();
+    document.removeEventListener('keydown', escHandler);
+
+    /* Selection сэргээх */
+    this._ensureVisualMode();
+    this._focusEditor();
+    if (savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+
+    /* Block элемент учир P tag нэмэх */
+    const fragment = document.createDocumentFragment();
+
+    const pBefore = document.createElement('p');
+    pBefore.innerHTML = '<br>';
+
+    /* Responsive wrapper div үүсгэх */
+    const wrapper = document.createElement('div');
+    wrapper.style.maxWidth = '550px';
+    wrapper.style.margin = '10px 0';
+    wrapper.setAttribute('contenteditable', 'false');
+
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://platform.twitter.com/embed/Tweet.html?id=' + tweetId;
+    iframe.width = '550';
+    iframe.height = '300';
+    iframe.style.border = 'none';
     iframe.setAttribute('loading', 'lazy');
     iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
 

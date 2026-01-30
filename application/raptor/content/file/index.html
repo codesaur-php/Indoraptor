@@ -46,7 +46,7 @@
             <th scope="col">{{ 'file'|text }}</th>
             <th scope="col">{{ 'properties'|text }}</th>
             <th scope="col">{{ 'description'|text }}</th>
-            <th scope="col">{{ 'category'|text }}</th>
+            <th scope="col">{{ 'purpose'|text('Зориулалт') }}</th>
             <th scope="col">{{ 'keyword'|text }}</th>
             <th scope="col">{{ 'date'|text }}</th>
         </tr>
@@ -83,6 +83,12 @@
         );
 
         return bytes.toFixed(1) + units[u];
+    }
+
+    /* Purpose утгыг текст болгон харуулах */
+    function purposeLabel(val) {
+        const labels = { 0: '', 1: '{{ localization.code == "mn" ? "Толгой зураг" : "Header image" }}', 2: '{{ localization.code == "mn" ? "Контент медиа" : "Content media" }}', 4: '{{ localization.code == "mn" ? "Хавсралт" : "Attachment" }}' };
+        return labels[parseInt(val)] ?? '';
     }
 
     /* HTML-д орох текстийг escapeлах (XSS-ээс хамгаална) */
@@ -210,9 +216,9 @@
             cell3.innerHTML = file['description'] ?? '';
             row.appendChild(cell3);
 
-            /* 4-р багана - category */
+            /* 4-р багана - purpose */
             let cell4 = document.createElement('td');
-            cell4.innerHTML = file['category'] ?? '';
+            cell4.innerHTML = purposeLabel(file['purpose']);
             row.appendChild(cell4);
 
             /* 5-р багана - keyword */

@@ -1,16 +1,8 @@
 <!--
-    Файлын category, keyword, description мэдээллийг засварлах modal.
+    Файлын purpose, keyword, description мэдээллийг засварлах modal.
     Энэ modal нь files-update route руу PUT хүсэлт илгээж
     тухайн файлын metadata-г шинэчилнэ.
 -->
-
-<!-- Файлын ангиллын жагсаалт (dropdown ашиглахдаа энэ обьектыг loop-д хэрэглэнэ) -->
-{% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
-  'featured': { 'mn': 'Онцолсон' },
-  'attach': { 'mn': 'Хавсралт' },
-  'special': { 'mn': 'Тусгай' }
-} %}
 
 <div class="modal-lg modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -44,42 +36,18 @@
                   method="PUT"
                   enctype="multipart/form-data">
 
-                <!-- CATEGORY -->
+                <!-- PURPOSE -->
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end">
-                        {{ 'category'|text }}
+                        {{ 'purpose'|text('Зориулалт') }}
                     </label>
                     <div class="col-9">
-                        <div class="input-group mb-3">
-                            <!-- Category input - шууд бичих боломжтой -->
-                            <input class="form-control"
-                                   name="file_category"
-                                   type="text"
-                                   value="{{ record['category']|e }}"
-                                   maxlength="24">
-
-                            <div class="invalid-feedback">
-                                {{ 'field-is-required'|text }}
-                            </div>
-
-                            <!-- Dropdown toggle button -->
-                            <button class="btn btn-outline-secondary dropdown-toggle"
-                                    type="button"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                            </button>
-
-                            <!-- Dropdown menu - categories loop -->
-                            <ul class="dropdown-menu dropdown-menu-end"
-                                id="file_category_list">
-                                {% for value,name in categories %}
-                                    <li class="dropdown-item"
-                                        value="{{ value|e }}">
-                                        {{ (name[localization.code] ?? value)|capitalize }}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
+                        <select class="form-select" name="file_purpose">
+                            <option value="0"{{ record['purpose'] == 0 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Тодорхойгүй' : 'Undefined' }}</option>
+                            <option value="1"{{ record['purpose'] == 1 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Толгой зураг' : 'Header image' }}</option>
+                            <option value="2"{{ record['purpose'] == 2 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Контент медиа' : 'Content media' }}</option>
+                            <option value="4"{{ record['purpose'] == 4 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Хавсралт' : 'Attachment' }}</option>
+                        </select>
                     </div>
                 </div>
 
@@ -129,17 +97,6 @@
 </div>
 
 <script type="text/javascript">
-    /* CATEGORY DROPDOWN CLICK HANDLER
-       Dropdown доторх LI дээр дарахад input-д value нь орно. */
-    const category = document.querySelector('input[name="file_category"]');
-    document.getElementById('file_category_list')
-        .addEventListener('click', function (e) {
-
-            if (e.target && e.target.nodeName === 'LI') {
-                category.value = e.target.getAttribute('value');
-            }
-        });
-
     /* FORM VALIDATION + SUBMISSION */
     const formUpdate = document.querySelector('form#files_update');
 
@@ -203,7 +160,7 @@
                 if (!row) return;
 
                 row.children[2].innerHTML = resp.record.description;
-                row.children[3].innerHTML = resp.record.category;
+                row.children[3].innerHTML = typeof purposeLabel === 'function' ? purposeLabel(resp.record.purpose) : (resp.record.purpose ?? 0);
                 row.children[4].innerHTML = resp.record.keyword;
 
                 /* Амжилттай мэдэгдэл */

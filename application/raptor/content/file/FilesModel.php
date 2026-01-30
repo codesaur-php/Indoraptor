@@ -104,7 +104,7 @@ class FilesModel extends Model
      *  size               - Файлын хэмжээ (byte)
      *  type               - Файлын төрөл (image, audio, video, application…)
      *  mime_content_type  - MIME type (image/png гэх мэт)
-     *  category           - Файлын ангилал (optional)
+     *  purpose            - Файлын зориулалт (0=тодорхойгүй, 1=толгой зураг, 2=контент медиа, 4=хавсралт)
      *  keyword            - Түлхүүр үг (optional)
      *  description        - Тайлбар (optional)
      *  is_active          - 1 → идэвхтэй / 0 → soft delete хийгдсэн
@@ -125,7 +125,7 @@ class FilesModel extends Model
             new Column('size', 'int'),
             new Column('type', 'varchar', 24),
             new Column('mime_content_type', 'varchar', 127),
-            new Column('category', 'varchar', 24),
+           (new Column('purpose', 'tinyint'))->default(0),
             new Column('keyword', 'varchar', 32),
             new Column('description', 'varchar', 255),
            (new Column('is_active', 'tinyint'))->default(1),
