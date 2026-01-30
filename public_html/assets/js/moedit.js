@@ -10,7 +10,7 @@
  * @example
  * // Тохиргоотой
  * const editor = new moedit(document.querySelector('.moedit'), {
- *   uploadUrl: '/api/upload',
+ *   upload: '/dashboard/files/moedit/upload',
  *   onChange: (html) => console.log('Changed:', html),
  *   notify: (type, msg) => showToast(type, msg)
  * });
@@ -45,7 +45,8 @@ class moedit {
    * @param {Object} [opts={}] - Тохиргоо
    * @param {Function} [opts.onChange] - HTML өөрчлөгдөх үед дуудагдах callback
    * @param {Function} [opts.prompt] - Prompt dialog функц (default: window.prompt)
-   * @param {string} [opts.uploadUrl] - Зураг upload хийх URL
+   * @param {string} [opts.upload] - Upload endpoint URL (бүх файл upload-д ашиглана)
+   * @param {string} [opts.uploadFolder='moedit'] - Upload хийх folder нэр
    * @param {Function} [opts.uploadImage] - Зураг upload хийх async функц (file) => url
    * @param {Function} [opts.onUploadSuccess] - Upload амжилттай болсны callback
    * @param {Function} [opts.onUploadError] - Upload алдааны callback
@@ -97,7 +98,8 @@ class moedit {
       onChange: null,
       prompt: (label, def = "") => window.prompt(label, def),
       readonly: false,
-      uploadUrl: null,
+      upload: null,
+      uploadFolder: 'moedit',
       uploadImage: null,
       uploadVideo: null,
       uploadAudio: null,

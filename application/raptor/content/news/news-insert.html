@@ -87,7 +87,7 @@
         <input class="form-control" name="title" required value="" maxlength="255" type="text" autocomplete="off">
         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
     </div>
-    <!-- Агуулга (WYSIWYG editor + хавсралт файлууд) -->
+    <!-- Агуулга -->
     <div class="mt-3">
         <textarea id="content" name="content"></textarea>
     </div>
@@ -165,7 +165,8 @@
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
         moeditInstance = new moedit(content, {
             shineUrl: `{{ 'moedit-ai'|link }}`,
-            uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': 0}) }}`,
+            upload: `{{ 'files-moedit-upload'|link }}`,
+            uploadFolder: 'news/temp',
             titleSelector: 'input[name="title"]',
             onHeaderImageChange: function (file) {
                 headerImageFile = file;

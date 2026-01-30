@@ -174,8 +174,8 @@ moedit.prototype._handlePaste = function(e) {
  * @param {File} file - Зургийн файл
  */
 moedit.prototype._uploadAndInsertImage = function(file) {
-  /* uploadUrl эсвэл uploadImage тохируулаагүй бол анхааруулга өгөх */
-  if (!this.opts.uploadUrl && !this.opts.uploadImage) {
+  /* upload эсвэл uploadImage тохируулаагүй бол анхааруулга өгөх */
+  if (!this.opts.upload && !this.opts.uploadImage) {
     this._notify('warning',
       this._isMn ? 'Зураг upload хийх боломжгүй' : 'Cannot upload image',
       this._isMn ? 'Зургийн upload тохиргоо хийгдээгүй байна.' : 'Image upload is not configured.');
@@ -194,12 +194,12 @@ moedit.prototype._uploadAndInsertImage = function(file) {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  /* uploadImage функц эсвэл uploadUrl ашиглах */
+  /* uploadImage функц эсвэл upload ашиглах */
   const uploadPromise = this.opts.uploadImage
     ? this.opts.uploadImage(file)
-    : fetch(this.opts.uploadUrl, {
+    : fetch(this.opts.upload, {
         method: 'POST',
-        body: (() => { const fd = new FormData(); fd.append('file', file); return fd; })()
+        body: (() => { const fd = new FormData(); fd.append('file', file); fd.append('folder', this.opts.uploadFolder || 'moedit'); return fd; })()
       }).then(res => res.json()).then(data => data.path);
 
   Promise.resolve(uploadPromise)
@@ -394,8 +394,8 @@ moedit.prototype._insertImage = function() {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  /* Хэрэв uploadUrl эсвэл uploadImage тохируулсан бол file upload dialog харуулах */
-  if (this.opts.uploadUrl || this.opts.uploadImage) {
+  /* Хэрэв upload эсвэл uploadImage тохируулсан бол file upload dialog харуулах */
+  if (this.opts.upload || this.opts.uploadImage) {
     this._showImageUploadDialog(savedRange);
   } else {
     /* URL оруулах dialog харуулах */
@@ -685,9 +685,9 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
 
       const uploadPromise = this.opts.uploadImage
         ? this.opts.uploadImage(selectedFile)
-        : fetch(this.opts.uploadUrl, {
+        : fetch(this.opts.upload, {
             method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('folder', this.opts.uploadFolder || 'moedit'); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
           }).then(res => res.json()).then(data => data.path);
 
       Promise.resolve(uploadPromise)
@@ -769,7 +769,7 @@ moedit.prototype._insertVideo = function() {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  if (this.opts.uploadUrl || this.opts.uploadVideo) {
+  if (this.opts.upload || this.opts.uploadVideo) {
     this._showVideoUploadDialog(savedRange);
   } else {
     this._showMediaUrlDialog('video', savedRange);
@@ -948,9 +948,9 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
 
       const uploadPromise = this.opts.uploadVideo
         ? this.opts.uploadVideo(selectedFile)
-        : fetch(this.opts.uploadUrl, {
+        : fetch(this.opts.upload, {
             method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('folder', this.opts.uploadFolder || 'moedit'); return fd; })()
           }).then(res => res.json()).then(data => data.path);
 
       Promise.resolve(uploadPromise)
@@ -997,7 +997,7 @@ moedit.prototype._insertAudio = function() {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  if (this.opts.uploadUrl || this.opts.uploadAudio) {
+  if (this.opts.upload || this.opts.uploadAudio) {
     this._showAudioUploadDialog(savedRange);
   } else {
     this._showMediaUrlDialog('audio', savedRange);
@@ -1176,9 +1176,9 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
 
       const uploadPromise = this.opts.uploadAudio
         ? this.opts.uploadAudio(selectedFile)
-        : fetch(this.opts.uploadUrl, {
+        : fetch(this.opts.upload, {
             method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
+            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('folder', this.opts.uploadFolder || 'moedit'); return fd; })()
           }).then(res => res.json()).then(data => data.path);
 
       Promise.resolve(uploadPromise)

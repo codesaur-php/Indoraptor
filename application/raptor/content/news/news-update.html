@@ -184,7 +184,8 @@
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
         moeditInstance = new moedit(content, {
             shineUrl: `{{ 'moedit-ai'|link }}`,
-            uploadUrl: `{{ 'content-image-post'|link({'table': 'news', 'id': record['id']}) }}`,
+            upload: `{{ 'files-moedit-upload'|link }}`,
+            uploadFolder: 'news/{{ record['id'] }}',
             {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
 
             onHeaderImageChange: function (file) {
