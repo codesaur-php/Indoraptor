@@ -26,7 +26,6 @@ use codesaur\DataObject\Column;
  *  - title (varchar 255) - Мэдээний гарчиг
  *  - content (mediumtext) - Мэдээний бүтэн агуулга
  *  - photo (varchar 255) - Мэдээний зургын URL path
- *  - photo_size (int) - Мэдээний зургын файлын хэмжээ (byte)
  *  - code (varchar 2) - Хэлний код (mn, en, гэх мэт)
  *  - type (varchar 32, default: 'article') - Мэдээний төрөл
  *  - category (varchar 32, default: 'general') - Мэдээний ангилал
@@ -93,7 +92,6 @@ class NewsModel extends Model
             new Column('title', 'varchar', 255),
             new Column('content', 'mediumtext'),
             new Column('photo', 'varchar', 255),
-            new Column('photo_size', 'int'),
             new Column('code', 'varchar', 2),
            (new Column('type', 'varchar', 32))->default('article'),
            (new Column('category', 'varchar', 32))->default('general'),

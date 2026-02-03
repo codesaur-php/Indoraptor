@@ -192,7 +192,15 @@ class NewsController extends FileController
                     $files = \array_flip($payload['files']);
                     unset($payload['files']);
                 }
-                
+
+                // Model-д байхгүй талбаруудыг payload-оос салгах
+                $optimize = ($payload['optimize'] ?? '1') === '1';
+                $attachDescs = $payload['attachment_descriptions'] ?? [];
+                unset(
+                    $payload['optimize'],
+                    $payload['attachment_descriptions']
+                );
+
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
                 );
@@ -215,7 +223,6 @@ class NewsController extends FileController
 
                 $filesModel = new FilesModel($this->pdo);
                 $filesModel->setTable($table);
-                $optimize = ($payload['optimize'] ?? '1') === '1';
 
                 // Толгой зураг upload → purpose=1
                 $this->allowImageOnly();
@@ -227,8 +234,7 @@ class NewsController extends FileController
                         }
                     }
                     $record = $model->updateById($id, [
-                        'photo' => $photo['path'],
-                        'photo_size' => $photo['size']
+                        'photo' => $photo['path']
                     ]);
                     $filesModel->insert($photo + [
                         'record_id'  => $id,
@@ -269,7 +275,6 @@ class NewsController extends FileController
                 // Moedit хавсралт файлууд → purpose=4
                 $this->allowCommonTypes();
                 $attachFiles = $_FILES['attachments'] ?? [];
-                $attachDescs = $payload['attachment_descriptions'] ?? [];
                 if (!empty($attachFiles['name'])) {
                     $this->setFolder("/$table/$id");
                     for ($i = 0; $i < \count($attachFiles['name']); $i++) {
@@ -299,17 +304,6 @@ class NewsController extends FileController
                         }
                     }
                     unset($_FILES['_att']);
-                }
-
-                // mofiles-аар upload хийсэн файлуудыг зөөх
-                if (!empty($files) && \is_array($files)) {
-                    foreach (\array_keys($files) as $file_id) {
-                        $update = $this->renameTo($table, $id, $file_id, 0755, 'files');
-                        if ($update) {
-                            $files[$file_id] = $update;
-                        }
-                    }
-                    $record['files'] = $files;
                 }
             } else {
                 $dashboard = $this->twigDashboard(
@@ -437,7 +431,21 @@ class NewsController extends FileController
                     $payload['photo'] = $photo['path'];
                 }
                 unset($payload['photo_removed']);
-                
+
+                // Model-д байхгүй талбаруудыг payload-оос салгах
+                $optimize = ($payload['optimize'] ?? '1') === '1';
+                $attachDescs = $payload['attachment_descriptions'] ?? [];
+                $existingAttachments = $payload['existing_attachments'] ?? [];
+                $existingAttachDescs = $payload['existing_attachment_descriptions'] ?? [];
+                $deletedAttachments = $payload['deleted_attachments'] ?? [];
+                unset(
+                    $payload['optimize'],
+                    $payload['attachment_descriptions'],
+                    $payload['existing_attachments'],
+                    $payload['existing_attachment_descriptions'],
+                    $payload['deleted_attachments']
+                );
+
                 $updates = [];
                 foreach ($payload as $field => $value) {
                     if ($record[$field] != $value) {
