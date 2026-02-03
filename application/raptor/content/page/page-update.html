@@ -36,11 +36,28 @@
     <div class="row mt-3">
         <div class="col-4">
             <label class="form-label">{{ 'language'|text }}</label>
-            <select class="form-select" name="code">
-                {% for code,language in localization.language %}
-                <option value="{{ code }}"{{ record['code'] == code ? ' selected' : '' }}>{{ language['title']|e }}</option>
-                {% endfor %}
-            </select>
+            {% set selected_code = record['code'] %}
+            {% set selected_flag = selected_code == 'en' ? 'us' : selected_code %}
+            <div class="input-group">
+                <span class="input-group-text" id="lang_flag">
+                    <img src="https://flagcdn.com/20x15/{{ selected_flag }}.png"
+                         srcset="https://flagcdn.com/40x30/{{ selected_flag }}.png 2x"
+                         width="20" height="15" alt="{{ selected_code }}">
+                </span>
+                <input class="form-control" name="code" type="text" value="{{ selected_code|e }}" readonly>
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="lang_list">
+                    {% for code,language in localization.language %}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <li class="dropdown-item" value="{{ code|e }}">
+                            <img src="https://flagcdn.com/16x12/{{ flag }}.png"
+                                 srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x"
+                                 width="16" height="12" alt="{{ code }}"
+                                 style="vertical-align:middle;margin-right:.35rem">{{ language['title']|e }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
         <div class="col-4">
             <label class="form-label">{{ 'type'|text }}</label>
@@ -239,13 +256,26 @@
         }
     });
 
+    /* Хэл сонгох event listener */
+    const langInput = document.querySelector('input[name="code"]');
+    const langFlag = document.getElementById('lang_flag');
+    document.getElementById('lang_list').addEventListener('click', function (e) {
+        const li = e.target.closest('li.dropdown-item');
+        if (li) {
+            const code = li.getAttribute('value');
+            langInput.value = code;
+            const flag = code === 'en' ? 'us' : code;
+            langFlag.innerHTML = `<img src="https://flagcdn.com/20x15/${flag}.png" srcset="https://flagcdn.com/40x30/${flag}.png 2x" width="20" height="15" alt="${code}">`;
+        }
+    });
+
     const category = document.querySelector('input[name="category"]');
     document.getElementById('category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             category.value = e.target.getAttribute('value');
         }
     });
-    
+
     const onFileInput = function (fileInput) {
         let id = fileInput.id;
         if (!id) {

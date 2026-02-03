@@ -18,41 +18,50 @@
 </div>
 
 <!-- ========== ШҮҮЛТҮҮР ХЭСЭГ ========== -->
-<!-- Мэдээг төрөл, ангилал гэх мэт шалгууруудаар шүүх навигаци -->
-<nav class="d-flex navbar navbar-expand navbar-dark bg-info mb-2 rounded">
-    <div class="container">
-        <span class="text-light pe-2 my-auto">{{ 'filter'|text }}</span>
-        <ul class="navbar-nav">
-            <!-- Шүүлтүүр бүрийг давтаж dropdown үүсгэнэ -->
-            {% for name,filter in filters %}
-            <li class="nav-item dropdown ps-2 my-auto">
-                <!-- Шүүлтүүрийн товч - дарахад сонголтууд гарч ирнэ -->
-                <button class="btn btn-dark btn-sm dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
-                    {{ filter.title }}
-                </button>
-                <!-- Шүүлтүүрийн утгуудын жагсаалт -->
-                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                    {% for val,label in filter.values %}
-                        <li><button class="dropdown-item filter-values-{{ name }}" data-id="{{ val }}" type="button">{{ label }}</button></li>
-                    {% endfor %}
-                </ul>
-            </li>
+<!-- Шүүлтүүрийн товчнуудыг dark/light mode хоёуланд тохируулах -->
+<style>
+.btn-filter {
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-border-color: var(--bs-emphasis-color);
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-hover-bg: var(--bs-emphasis-color);
+    --bs-btn-hover-border-color: var(--bs-emphasis-color);
+    --bs-btn-active-color: var(--bs-body-bg);
+    --bs-btn-active-bg: var(--bs-emphasis-color);
+    --bs-btn-active-border-color: var(--bs-emphasis-color);
+}
+.btn-filter.active {
+    color: var(--bs-body-bg);
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+}
+</style>
+<!-- Мэдээг төрөл, ангилал гэх мэт шалгууруудаар шүүх -->
+<div class="d-flex align-items-center flex-wrap gap-2 bg-body-tertiary rounded shadow-sm px-3 py-2 mb-3">
+    <span class="badge bg-secondary bg-gradient text-uppercase">
+        <i class="bi bi-funnel"></i> {{ 'filter'|text }}
+    </span>
+    {% for name,filter in filters %}
+    <div class="dropdown">
+        <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
+            {{ filter.title }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+            {% for val,label in filter.values %}
+                <li><button class="dropdown-item filter-values-{{ name }}" data-id="{{ val }}" type="button">{{ label }}</button></li>
             {% endfor %}
-            <!-- Шүүлтүүр хэрэглэх товч -->
-            <li class="nav-item ps-2 my-auto">
-                <button class="btn btn-secondary btn-sm shadow-sm disabled" id="set_filter" type="button">
-                    <i class="bi bi-filter"></i>
-                </button>
-            </li>
-            <!-- Шүүлтүүр цэвэрлэх товч -->
-            <li class="nav-item ps-2 my-auto">
-                <button class="btn btn-danger btn-sm shadow-sm disabled" id="reset_filter" type="button">
-                    <i class="bi bi-x-circle"></i>
-                </button>
-            </li>
         </ul>
     </div>
-</nav>
+    {% endfor %}
+    <div class="ms-auto d-flex gap-1">
+        <button class="btn btn-sm btn-secondary shadow-sm disabled" id="set_filter" type="button">
+            <i class="bi bi-funnel-fill"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary shadow-sm disabled" id="reset_filter" type="button">
+            <i class="bi bi-x-circle"></i>
+        </button>
+    </div>
+</div>
 
 <!-- ========== МЭДЭЭНИЙ ХҮСНЭГТ ========== -->
 <!-- Мэдээний жагсаалтыг харуулах хүснэгт - JavaScript-ээр өгөгдөл дүүргэнэ -->
@@ -93,9 +102,11 @@
         /* Бүх шүүлтүүрийг шалгаж параметр үүсгэнэ */
         filterBtns.forEach(filter => {
             /* Сонгогдсон шүүлтүүрийн товчны загварыг өөрчлөх */
-            filter.classList.toggle('btn-outline-light', !!filter.dataset.id);
             if (filter.dataset.id) {
+                filter.classList.add('active');
                 filterParams.append(filter.dataset.name, filter.dataset.id);
+            } else {
+                filter.classList.remove('active');
             }
         });
 
@@ -103,10 +114,10 @@
         if (filterParams?.toString() !== urlParams?.toString()) {
             /* Өөрчлөлт байвал хэрэглэх товчийг идэвхжүүлнэ */
             setFilter.classList.remove('disabled', 'btn-secondary');
-            setFilter.classList.add('btn-primary', 'btn-outline-light');
+            setFilter.classList.add('btn-filter', 'active');
         } else {
             /* Өөрчлөлт байхгүй бол хэрэглэх товчийг идэвхгүйжүүлнэ */
-            setFilter.classList.remove('btn-dark', 'btn-outline-light');
+            setFilter.classList.remove('btn-filter', 'active');
             setFilter.classList.add('disabled', 'btn-secondary');
         }
     }
@@ -158,8 +169,8 @@
         /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
         if (urlParams?.size > 0) {
             /* Цэвэрлэх товчийг идэвхжүүлэх */
-            resetFilter.classList.remove('disabled');
-            resetFilter.classList.add('btn-outline-light');
+            resetFilter.classList.remove('disabled', 'btn-outline-secondary');
+            resetFilter.classList.add('btn-outline-danger');
 
             /* Шүүлтүүр бүрийн утгыг URL-ээс унших */
             filterBtns.forEach(filter => {
@@ -170,7 +181,7 @@
                     const selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
                     const titleElement = document.querySelector(selector);
                     filter.textContent = titleElement?.textContent || value;
-                    filter.classList.add('btn-outline-light');
+                    filter.classList.add('active');
                 }
             });
         }
