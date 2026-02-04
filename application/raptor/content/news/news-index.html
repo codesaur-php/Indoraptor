@@ -3,7 +3,7 @@
 
 <!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <!-- Мэдээний хуудасны гарчиг болон шинэ мэдээ нэмэх товч -->
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
     <h3 class="px-2 my-auto fs-5 text-info text-uppercase">
         <i class="bi bi-book"></i> {{ 'news'|text }}
     </h3>
@@ -37,10 +37,10 @@
 }
 </style>
 <!-- Мэдээг төрөл, ангилал гэх мэт шалгууруудаар шүүх -->
-<div class="d-flex align-items-center flex-wrap gap-2 bg-body-tertiary rounded shadow-sm px-3 py-2 mb-3">
-    <span class="badge bg-secondary bg-gradient text-uppercase">
+<div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
+    <button class="btn btn-sm btn-secondary text-uppercase" id="filter_action" type="button">
         <i class="bi bi-funnel"></i> {{ 'filter'|text }}
-    </span>
+    </button>
     {% for name,filter in filters %}
     <div class="dropdown">
         <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
@@ -53,14 +53,6 @@
         </ul>
     </div>
     {% endfor %}
-    <div class="ms-auto d-flex gap-1">
-        <button class="btn btn-sm btn-secondary shadow-sm disabled" id="set_filter" type="button">
-            <i class="bi bi-funnel-fill"></i>
-        </button>
-        <button class="btn btn-sm btn-outline-secondary shadow-sm disabled" id="reset_filter" type="button">
-            <i class="bi bi-x-circle"></i>
-        </button>
-    </div>
 </div>
 
 <!-- ========== МЭДЭЭНИЙ ХҮСНЭГТ ========== -->
@@ -70,11 +62,12 @@
         <tr class="text-uppercase">
             <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>      <!-- Мэдээний ID болон огноо -->
             <th scope="col"><i class="bi bi-translate"></i> </th>                                <!-- Хэлний туг -->
-            <th scope="col">{{ 'photo'|text }}</th>                                              <!-- Зураг -->
+            <th scope="col"><i class="bi bi-image"></i></th>
             <th scope="col">{{ 'title'|text }}</th>                                              <!-- Гарчиг -->
-            <th scope="col"><i class="bi bi-paperclip"></i> </th>                                <!-- Хавсралт файлын тоо -->
-            <th scope="col">{{ 'type'|text }}</th>                                               <!-- Төрөл ба ангилал -->
-            <th scope="col">{{ 'publish'|text }}</th>                                            <!-- Нийтлэгдсэн эсэх -->
+            <th scope="col"><i class="bi bi-files"></i> {{ 'files'|text }}</th>
+            <th scope="col">{{ 'type'|text }} / {{ 'category'|text }}</th>
+            <th scope="col">{{ 'publish'|text }}</th>
+            <th scope="col"><i class="bi bi-hdd"></i> mb</th>
             <th scope="col" style="width:10rem">{{ 'action'|text }}</th>                         <!-- Үйлдлийн товчнууд -->
         </tr>
     </thead>
@@ -86,49 +79,53 @@
     const urlParams = new URLSearchParams(window.location.search);
 
     /* Шүүлтүүрийн товчнуудыг сонгох */
-    const setFilter = document.querySelector('button[id="set_filter"]');      /* Шүүлтүүр хэрэглэх товч */
-    const resetFilter = document.querySelector('button[id="reset_filter"]');  /* Шүүлтүүр цэвэрлэх товч */
-    const filterBtns = document.querySelectorAll('button.content-filters');   /* Бүх шүүлтүүрийн dropdown товчнууд */
+    const filterAction = document.getElementById('filter_action');
+    const filterBtns = document.querySelectorAll('button.content-filters');
 
-    /**
-     * Шүүлтүүрийн утга өөрчлөгдөхөд дуудагдах функц
-     * - Шүүлтүүрийн товчны загварыг шинэчилнэ
-     * - Хэрэглэх/цэвэрлэх товчнуудын төлөвийг тохируулна
-     */
+    /* filter_action товчны төлөвийг шинэчлэх
+       3 горим: idle (btn-secondary), changed (btn-success), applied (btn-info) */
     function onFilterChange()
     {
-        const filterParams = new URLSearchParams();
-
-        /* Бүх шүүлтүүрийг шалгаж параметр үүсгэнэ */
-        filterBtns.forEach(filter => {
-            /* Сонгогдсон шүүлтүүрийн товчны загварыг өөрчлөх */
-            if (filter.dataset.id) {
-                filter.classList.add('active');
-                filterParams.append(filter.dataset.name, filter.dataset.id);
-            } else {
-                filter.classList.remove('active');
-            }
+        filterBtns.forEach(f => {
+            f.classList.toggle('active', !!f.dataset.id);
         });
 
-        /* Одоогийн URL параметртэй харьцуулж товчны төлөвийг тохируулах */
-        if (filterParams?.toString() !== urlParams?.toString()) {
-            /* Өөрчлөлт байвал хэрэглэх товчийг идэвхжүүлнэ */
-            setFilter.classList.remove('disabled', 'btn-secondary');
-            setFilter.classList.add('btn-filter', 'active');
+        /* Одоогийн сонголтыг URL параметртэй харьцуулах */
+        const currentParams = new URLSearchParams();
+        filterBtns.forEach(f => { if (f.dataset.id) currentParams.append(f.dataset.name, f.dataset.id); });
+        const hasFilter = currentParams.size > 0;
+        const matchesUrl = currentParams.toString() === urlParams.toString();
+
+        filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
+
+        if (!hasFilter && urlParams.size === 0) {
+            /* Горим 1: Фильтргүй */
+            filterAction.classList.add('btn-secondary');
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+        } else if (hasFilter && matchesUrl) {
+            /* Горим 3: Set хийгдсэн фильтертэй */
+            filterAction.classList.add('btn-dark');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
-            /* Өөрчлөлт байхгүй бол хэрэглэх товчийг идэвхгүйжүүлнэ */
-            setFilter.classList.remove('btn-filter', 'active');
-            setFilter.classList.add('disabled', 'btn-secondary');
+            /* Горим 2: Өөрчлөгдсөн, set хийхэд бэлэн */
+            filterAction.classList.add('btn-danger');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        }
+
+        const resetIcon = filterAction.querySelector('[data-reset]');
+        if (resetIcon) {
+            resetIcon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.location.href = window.location.pathname;
+            });
         }
     }
 
     /* ========== ШҮҮЛТҮҮРИЙН DROPDOWN СОНГОЛТУУДАД EVENT LISTENER НЭМЭХ ========== */
     filterBtns.forEach(filter => {
-        /* Тухайн шүүлтүүрийн бүх утгуудад click event нэмэх */
         document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
-                /* Товчны текст болон утгыг шинэчлэх */
                 filter.textContent = e.target.textContent;
                 filter.dataset.id = e.target.dataset?.id;
                 onFilterChange();
@@ -137,57 +134,43 @@
     });
 
     /* ========== ШҮҮЛТҮҮР ХЭРЭГЛЭХ ТОВЧНЫ EVENT ========== */
-    setFilter.addEventListener('click', function (btn) {
-        btn.preventDefault();
-
-        /* Сонгосон шүүлтүүрүүдийг цуглуулах */
+    filterAction.addEventListener('click', function (e) {
+        e.preventDefault();
+        /* Фильтргүй үед анхааруулга */
+        if (filterAction.classList.contains('btn-secondary')) {
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+        }
+        /* Set хийгдсэн горимд дахин ачаалахгүй */
+        if (filterAction.classList.contains('btn-dark')) return;
         const params = [];
         filterBtns.forEach(filter => {
             if (filter.dataset.id) {
                 params.push(`${filter.dataset.name}=${filter.dataset.id}`);
             }
         });
-
-        /* Хэрэв шүүлтүүр сонгоогүй бол анхааруулга харуулах */
-        if (params.length === 0) {
-            return NotifyTop('danger', `{{ 'warning'|text|e }}`, 'Та шүүлтүүрээс ядаж нэгийг сонгоорой!');
-        }
-
-        /* Шүүлтүүрийн параметрүүдтэй хуудсыг дахин ачаалах */
+        if (params.length === 0) return;
         window.location.href = window.location.pathname + '?' + params.join('&');
-    });
-
-    /* ========== ШҮҮЛТҮҮР ЦЭВЭРЛЭХ ТОВЧНЫ EVENT ========== */
-    resetFilter.addEventListener('click', function (a) {
-        a.preventDefault();
-        /* Параметргүйгээр хуудсыг дахин ачаалах */
-        window.location.href = window.location.pathname;
     });
 
     /* ========== DOM БЭЛЭН БОЛСНЫ ДАРАА АЖИЛЛАХ КОД ========== */
     document.addEventListener('DOMContentLoaded', function () {
         /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
         if (urlParams?.size > 0) {
-            /* Цэвэрлэх товчийг идэвхжүүлэх */
-            resetFilter.classList.remove('disabled', 'btn-outline-secondary');
-            resetFilter.classList.add('btn-outline-danger');
-
-            /* Шүүлтүүр бүрийн утгыг URL-ээс унших */
             filterBtns.forEach(filter => {
                 const value = urlParams.get(filter.dataset.name);
                 if (value) {
                     filter.dataset.id = value;
-                    /* Тухайн утгын текстийг олж товчинд харуулах */
                     const selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
                     const titleElement = document.querySelector(selector);
                     filter.textContent = titleElement?.textContent || value;
                     filter.classList.add('active');
                 }
             });
+            onFilterChange();
         }
 
         /* ========== МЭДЭЭНИЙ ХҮСНЭГТИЙГ ЭХЛҮҮЛЭХ ========== */
-        const news = new motable('table#news');
+        const news = new motable('table#news', { freezeColumns: [0] });
 
         /* Серверээс мэдээний жагсаалтыг татах */
         fetch(
@@ -236,6 +219,9 @@
 
                 /* Нийтлэгдсэн төлөвийг харуулах */
                 const published = record.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+                const fc = data.files_counts[id];
+                const totalBytes = (record.text_size || 0) + (fc ? fc.files_size : 0);
+                const sizeMB = (totalBytes / 1048576).toFixed(2);
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
                 const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${record.id}"><i class="bi bi-book"></i></a>`];  /* Унших товч */
@@ -252,7 +238,7 @@
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
                 /* Хүснэгтийн мөр үүсгэх */
-                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${data.files_counts[id] ?? 0}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${(() => { const fc = data.files_counts[id]; if (!fc) return ''; const parts = []; if (fc.media) parts.push(`<small class="text-muted">content</small> ${fc.media}`); if (fc.attach) parts.push(`<small class="text-muted">attach</small> ${fc.attach}`); return parts.join('<br>'); })()}</td><td>${type_category}</td><td>${published}</td><td><small class="text-muted">${sizeMB}</small></td><td>${actions}</td></tr>`;
             });
 
             /* Хүснэгтэд өгөгдөл оруулах */

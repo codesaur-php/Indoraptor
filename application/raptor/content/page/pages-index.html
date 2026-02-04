@@ -1,5 +1,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
         <i class="bi bi-book-half"></i> {{ 'pages'|text }}
     </h3>
@@ -11,6 +13,8 @@
         {% endif %}
     </div>
 </div>
+
+<!-- ========== ШҮҮЛТҮҮР ХЭСЭГ ========== -->
 <style>
 .btn-filter {
     --bs-btn-color: var(--bs-emphasis-color);
@@ -28,10 +32,10 @@
     border-color: var(--bs-emphasis-color);
 }
 </style>
-<div class="d-flex align-items-center flex-wrap gap-2 bg-body-tertiary rounded shadow-sm px-3 py-2 mb-3">
-    <span class="badge bg-secondary bg-gradient text-uppercase">
+<div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
+    <button class="btn btn-sm btn-secondary text-uppercase" id="filter_action" type="button">
         <i class="bi bi-funnel"></i> {{ 'filter'|text }}
-    </span>
+    </button>
     {% for name,filter in filters %}
     <div class="dropdown">
         <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
@@ -44,56 +48,67 @@
         </ul>
     </div>
     {% endfor %}
-    <div class="ms-auto d-flex gap-1">
-        <button class="btn btn-sm btn-secondary shadow-sm disabled" id="set_filter" type="button">
-            <i class="bi bi-funnel-fill"></i>
-        </button>
-        <button class="btn btn-sm btn-outline-secondary shadow-sm disabled" id="reset_filter" type="button">
-            <i class="bi bi-x-circle"></i>
-        </button>
-    </div>
 </div>
+
+<!-- ========== ХҮСНЭГТ ========== -->
 <table class="table table-sm table-hover table-striped table-bordered" id="pages">
     <thead>
         <tr class="text-uppercase">
             <th scope="col">#</th>
             <th scope="col"><i class="bi bi-translate"></i> </th>
-            <th scope="col">{{ 'photo'|text }}</th>
+            <th scope="col"><i class="bi bi-image"></i></th>
             <th scope="col">{{ 'title'|text }}</th>
-            <th scope="col"><i class="bi bi-paperclip"></i> </th>
-            <th scope="col">{{ 'type'|text }}</th>
+            <th scope="col"><i class="bi bi-files"></i> {{ 'files'|text }}</th>
+            <th scope="col">{{ 'type'|text }} / {{ 'category'|text }}</th>
             <th scope="col">{{ 'position'|text }}</th>
             <th scope="col">{{ 'publish'|text }}</th>
+            <th scope="col"><i class="bi bi-hdd"></i> mb</th>
             <th scope="col" style="width:10rem">{{ 'action'|text }}</th>
         </tr>
     </thead>
 </table>
+
 <script type="text/javascript">
     const urlParams = new URLSearchParams(window.location.search);
-    const setFilter = document.querySelector('button[id="set_filter"]');
-    const resetFilter = document.querySelector('button[id="reset_filter"]');
+
+    const filterAction = document.getElementById('filter_action');
     const filterBtns = document.querySelectorAll('button.content-filters');
-    
+
+    /* filter_action товчны төлөвийг шинэчлэх
+       3 горим: idle (btn-secondary), changed (btn-danger), applied (btn-dark) */
     function onFilterChange()
     {
-        const filterParams = new URLSearchParams();
-        filterBtns.forEach(filter => {
-            if (filter.dataset.id) {
-                filter.classList.add('active');
-                filterParams.append(filter.dataset.name, filter.dataset.id);
-            } else {
-                filter.classList.remove('active');
-            }
+        filterBtns.forEach(f => {
+            f.classList.toggle('active', !!f.dataset.id);
         });
-        if (filterParams?.toString() !== urlParams?.toString()) {
-            setFilter.classList.remove('disabled', 'btn-secondary');
-            setFilter.classList.add('btn-filter', 'active');
+
+        const currentParams = new URLSearchParams();
+        filterBtns.forEach(f => { if (f.dataset.id) currentParams.append(f.dataset.name, f.dataset.id); });
+        const hasFilter = currentParams.size > 0;
+        const matchesUrl = currentParams.toString() === urlParams.toString();
+
+        filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
+
+        if (!hasFilter && urlParams.size === 0) {
+            filterAction.classList.add('btn-secondary');
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+        } else if (hasFilter && matchesUrl) {
+            filterAction.classList.add('btn-dark');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
-            setFilter.classList.remove('btn-filter', 'active');
-            setFilter.classList.add('disabled', 'btn-secondary');
+            filterAction.classList.add('btn-danger');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        }
+
+        const resetIcon = filterAction.querySelector('[data-reset]');
+        if (resetIcon) {
+            resetIcon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.location.href = window.location.pathname;
+            });
         }
     }
-    
+
     filterBtns.forEach(filter => {
         document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
             btn.addEventListener('click', function (e) {
@@ -104,31 +119,25 @@
             });
         });
     });
-    
-    setFilter.addEventListener('click', function (btn) {
-        btn.preventDefault();
-        
-        let params = [];
+
+    filterAction.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (filterAction.classList.contains('btn-secondary')) {
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+        }
+        if (filterAction.classList.contains('btn-dark')) return;
+        const params = [];
         filterBtns.forEach(filter => {
             if (filter.dataset.id) {
                 params.push(`${filter.dataset.name}=${filter.dataset.id}`);
             }
         });
-        if (params.length === 0) {
-            return NotifyTop('danger', `{{ 'warning'|text|e }}`, 'Та шүүлтүүрээс ядаж нэгийг сонгоорой!');
-        }
+        if (params.length === 0) return;
         window.location.href = window.location.pathname + '?' + params.join('&');
-    });
-
-    resetFilter.addEventListener('click', function (a) {
-        a.preventDefault();
-        window.location.href = window.location.pathname;
     });
 
     document.addEventListener('DOMContentLoaded', function () {
         if (urlParams?.size > 0) {
-            resetFilter.classList.remove('disabled', 'btn-outline-secondary');
-            resetFilter.classList.add('btn-outline-danger');
             filterBtns.forEach(filter => {
                 const value = urlParams.get(filter.dataset.name);
                 if (value) {
@@ -139,9 +148,10 @@
                     filter.classList.add('active');
                 }
             });
+            onFilterChange();
         }
 
-        const pages = new motable('table#pages');
+        const pages = new motable('table#pages', { freezeColumns: [0] });
         fetch(
             `{{ 'pages-list'|link }}` + window.location.search
         ).then(res => {
@@ -153,24 +163,25 @@
             }
 
             let rowsHTML = '';
-            let indexLink = `{{ 'pages'|link }}`;
-            let canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
-            let canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
-            let published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
+            const indexLink = `{{ 'pages'|link }}`;
+            const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
+            const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
+            const published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
+
             data.list.forEach(page => {
-                let id = page.id;
-                
+                const id = page.id;
+
                 let flag = '';
                 if (page.code) {
-                    let codeFlag = page.code === 'en' ? 'us' : page.code;
+                    const codeFlag = page.code === 'en' ? 'us' : page.code;
                     flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
                 }
-                
+
                 let image = '';
                 if (page.photo) {
                     image = `<img style="max-width:60px;max-height:60px" src="${page.photo}">`;
                 }
-                
+
                 let title = '';
                 if (data.infos[id]['parent_titles']) {
                     title = `<span class="fw-lighter"><small>${data.infos[id]['parent_titles']}</small></span>`;
@@ -179,13 +190,16 @@
                 if (page.link) {
                     title += `<small class="bg-light d-block text-primary">${page.link}</small>`;
                 }
-                
+
                 let type_category = `<span class="badge bg-warning text-dark">${page.type}</span>`;
                 type_category += ` <span class="badge bg-secondary">${page.category}</span>`;
-                
-                let published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
-                let buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${page.id}"><i class="bi bi-book"></i></a>`];
+                const published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+                const fc = data.files_counts[id];
+                const totalBytes = (page.text_size || 0) + (fc ? fc.files_size : 0);
+                const sizeMB = (totalBytes / 1048576).toFixed(2);
+
+                const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${page.id}"><i class="bi bi-book"></i></a>`];
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}"><i class="bi bi-eye"></i></a>`);
                 if (canUpdate) {
                     buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}"><i class="bi bi-pencil-square"></i></a>`);
@@ -193,9 +207,9 @@
                 if (canDelete) {
                     buttons.push(`<button class="deactivate-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);
                 }
-                let actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+                const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
-                rowsHTML += `<tr><th scope="row">${id}</th><td>${flag} <span class="text-secondary fw-lighter">${page.code}</span> </td><td>${image}</td><td>${title}</td><td>${data.files_counts[id] ?? 0}</td><td>${type_category}</td><td>${page.position}</td><td>${published}</td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row">${id}</th><td>${flag} <span class="text-secondary fw-lighter">${page.code}</span> </td><td>${image}</td><td>${title}</td><td>${(() => { const fc = data.files_counts[id]; if (!fc) return ''; const parts = []; if (fc.media) parts.push(`<small class="text-muted">content</small> ${fc.media}`); if (fc.attach) parts.push(`<small class="text-muted">attach</small> ${fc.attach}`); return parts.join('<br>'); })()}</td><td>${type_category}</td><td>${page.position}</td><td>${published}</td><td><small class="text-muted">${sizeMB}</small></td><td>${actions}</td></tr>`;
             });
             pages.setBody(rowsHTML);
             pages.setReady();
@@ -210,7 +224,7 @@
             const deactivates = pages.table.querySelectorAll('.deactivate-page');
             deactivates.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
-                
+
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
                     return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
@@ -222,7 +236,7 @@
                     : `<p class="text-danger mb-3">Are you sure to deactivate the page (${title})?</p>`;
 
                 let src = '';
-                let photo = thisRow.children[2].querySelector('img');
+                const photo = thisRow.children[2].querySelector('img');
                 if (photo && photo.src) {
                     src = photo.src;
                 } else {

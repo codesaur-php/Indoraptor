@@ -122,7 +122,7 @@ class NewsController extends FileController
             // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new NewsModel($this->pdo))->getName();
             $select_pages = 
-                'SELECT id, photo, title, code, type, category, published, published_at, date(created_at) as created_date ' .
+                'SELECT id, photo, title, code, type, category, published, published_at, date(created_at) as created_date, LENGTH(title)+LENGTH(content) as text_size ' .
                 "FROM $table WHERE $where ORDER BY created_at desc";
             $news_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
@@ -188,16 +188,14 @@ class NewsController extends FileController
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
                 }
-                if (isset($payload['files'])) {
-                    $files = \array_flip($payload['files']);
-                    unset($payload['files']);
-                }
 
                 // Model-д байхгүй талбаруудыг payload-оос салгах
-                $optimize = ($payload['optimize'] ?? '1') === '1';
+                $photoPath = $payload['photo_path'] ?? '';
+                $attachPaths = $payload['attachment_paths'] ?? [];
                 $attachDescs = $payload['attachment_descriptions'] ?? [];
                 unset(
-                    $payload['optimize'],
+                    $payload['photo_path'],
+                    $payload['attachment_paths'],
                     $payload['attachment_descriptions']
                 );
 
@@ -213,7 +211,7 @@ class NewsController extends FileController
                     'message' => $this->text('record-insert-success')
                 ]);
 
-                $this->setFolder("/$table/temp");
+                $this->setFolder("/$table/temp_{$this->getUserId()}");
                 $tempPath = $this->public_path;
                 $tempFolder = $this->local_folder;
 
@@ -224,23 +222,32 @@ class NewsController extends FileController
                 $filesModel = new FilesModel($this->pdo);
                 $filesModel->setTable($table);
 
-                // Толгой зураг upload → purpose=1
-                $this->allowImageOnly();
-                $photo = $this->moveUploaded('photo');
-                if ($photo) {
-                    if ($optimize) {
-                        if ($this->optimizeImage($photo['file'])) {
-                            $photo['size'] = \filesize($photo['file']);
+                // Толгой зураг: temp-ээс record folder руу зөөх → purpose=1
+                if (!empty($photoPath)) {
+                    $photoFilename = \basename(\rawurldecode($photoPath));
+                    $tempPhotoFile = "$tempFolder/$photoFilename";
+                    if (\is_file($tempPhotoFile)) {
+                        if (!\is_dir($recordFolder)) {
+                            \mkdir($recordFolder, 0755, true);
                         }
+                        \rename($tempPhotoFile, "$recordFolder/$photoFilename");
+                        $filePath = "$recordFolder/$photoFilename";
+                        $newPhotoPath = "$recordPath/" . \rawurlencode($photoFilename);
+                        $mime = \mime_content_type($filePath) ?: 'image/jpeg';
+                        $record = $model->updateById($id, [
+                            'photo' => $newPhotoPath
+                        ]);
+                        $filesModel->insert([
+                            'record_id'         => $id,
+                            'file'              => $filePath,
+                            'path'              => $newPhotoPath,
+                            'size'              => \filesize($filePath),
+                            'type'              => \explode('/', $mime)[0],
+                            'mime_content_type'  => $mime,
+                            'purpose'           => 1,
+                            'created_by'        => $this->getUserId()
+                        ]);
                     }
-                    $record = $model->updateById($id, [
-                        'photo' => $photo['path']
-                    ]);
-                    $filesModel->insert($photo + [
-                        'record_id'  => $id,
-                        'purpose'    => 1,
-                        'created_by' => $this->getUserId()
-                    ]);
                 }
 
                 // Content доторх медиа файлуудыг regex-ээр олох → purpose=2
@@ -272,38 +279,31 @@ class NewsController extends FileController
                     $model->updateById($id, ['content' => $html]);
                 }
 
-                // Moedit хавсралт файлууд → purpose=4
-                $this->allowCommonTypes();
-                $attachFiles = $_FILES['attachments'] ?? [];
-                if (!empty($attachFiles['name'])) {
-                    $this->setFolder("/$table/$id");
-                    for ($i = 0; $i < \count($attachFiles['name']); $i++) {
-                        if ($attachFiles['error'][$i] !== \UPLOAD_ERR_OK) {
-                            continue;
-                        }
-                        $_FILES['_att'] = [
-                            'name'     => $attachFiles['name'][$i],
-                            'type'     => $attachFiles['type'][$i],
-                            'tmp_name' => $attachFiles['tmp_name'][$i],
-                            'error'    => $attachFiles['error'][$i],
-                            'size'     => $attachFiles['size'][$i],
-                        ];
-                        $uploaded = $this->moveUploaded('_att');
-                        if ($uploaded) {
-                            if ($optimize && ($uploaded['type'] ?? '') === 'image') {
-                                if ($this->optimizeImage($uploaded['file'])) {
-                                    $uploaded['size'] = \filesize($uploaded['file']);
-                                }
-                            }
-                            $filesModel->insert($uploaded + [
-                                'record_id'   => $id,
-                                'purpose'     => 4,
-                                'description' => $attachDescs[$i] ?? '',
-                                'created_by'  => $this->getUserId()
+                // Moedit хавсралт файлууд: temp-ээс record folder руу зөөх → purpose=4
+                if (!empty($attachPaths)) {
+                    if (!\is_dir($recordFolder)) {
+                        \mkdir($recordFolder, 0755, true);
+                    }
+                    foreach ($attachPaths as $i => $attPath) {
+                        $attFilename = \basename(\rawurldecode($attPath));
+                        $tempAttFile = "$tempFolder/$attFilename";
+                        if (\is_file($tempAttFile)) {
+                            \rename($tempAttFile, "$recordFolder/$attFilename");
+                            $filePath = "$recordFolder/$attFilename";
+                            $mime = \mime_content_type($filePath) ?: 'application/octet-stream';
+                            $filesModel->insert([
+                                'record_id'         => $id,
+                                'file'              => $filePath,
+                                'path'              => "$recordPath/" . \rawurlencode($attFilename),
+                                'size'              => \filesize($filePath),
+                                'type'              => \explode('/', $mime)[0],
+                                'mime_content_type'  => $mime,
+                                'purpose'           => 4,
+                                'description'       => $attachDescs[$i] ?? '',
+                                'created_by'        => $this->getUserId()
                             ]);
                         }
                     }
-                    unset($_FILES['_att']);
                 }
             } else {
                 $dashboard = $this->twigDashboard(
@@ -412,9 +412,12 @@ class NewsController extends FileController
                 }
                 
                 $this->setFolder("/$table/$id");
-                $this->allowImageOnly();
-                $photo = $this->moveUploaded('photo');
-                $current_photo_name = empty($record['photo']) ? '' : \basename($record['photo']);
+                $recordPath = $this->public_path;
+                $recordFolder = $this->local_folder;
+
+                // Толгой зураг: photo_path (аль хэдийн record folder-д upload хийгдсэн)
+                $photoPath = $payload['photo_path'] ?? '';
+                $current_photo_name = empty($record['photo']) ? '' : \basename(\rawurldecode($record['photo']));
                 if (!empty($current_photo_name)
                     && $payload['photo_removed'] == 1
                 ) {
@@ -422,29 +425,67 @@ class NewsController extends FileController
                     $current_photo_name = null;
                     $payload['photo'] = '';
                 }
-                if ($photo) {
-                    if (!empty($current_photo_name)
-                        && \basename($photo['path']) != $current_photo_name
-                    ) {
-                        $this->unlinkByName($current_photo_name);
+                if (!empty($photoPath)) {
+                    $photoFilename = \basename(\rawurldecode($photoPath));
+                    $filePath = "$recordFolder/$photoFilename";
+                    if (\is_file($filePath)) {
+                        if (!empty($current_photo_name)
+                            && $photoFilename != $current_photo_name
+                        ) {
+                            $this->unlinkByName($current_photo_name);
+                        }
+                        $newPhotoPath = "$recordPath/" . \rawurlencode($photoFilename);
+                        $mime = \mime_content_type($filePath) ?: 'image/jpeg';
+                        $payload['photo'] = $newPhotoPath;
+                        $filesModel->insert([
+                            'record_id'         => $id,
+                            'file'              => $filePath,
+                            'path'              => $newPhotoPath,
+                            'size'              => \filesize($filePath),
+                            'type'              => \explode('/', $mime)[0],
+                            'mime_content_type'  => $mime,
+                            'purpose'           => 1,
+                            'created_by'        => $this->getUserId()
+                        ]);
                     }
-                    $payload['photo'] = $photo['path'];
                 }
-                unset($payload['photo_removed']);
+                unset($payload['photo_path'], $payload['photo_removed']);
 
                 // Model-д байхгүй талбаруудыг payload-оос салгах
-                $optimize = ($payload['optimize'] ?? '1') === '1';
+                $attachPaths = $payload['attachment_paths'] ?? [];
                 $attachDescs = $payload['attachment_descriptions'] ?? [];
                 $existingAttachments = $payload['existing_attachments'] ?? [];
                 $existingAttachDescs = $payload['existing_attachment_descriptions'] ?? [];
                 $deletedAttachments = $payload['deleted_attachments'] ?? [];
                 unset(
-                    $payload['optimize'],
+                    $payload['attachment_paths'],
                     $payload['attachment_descriptions'],
                     $payload['existing_attachments'],
                     $payload['existing_attachment_descriptions'],
                     $payload['deleted_attachments']
                 );
+
+                // Шинэ хавсралт файлууд: record folder-д аль хэдийн upload хийгдсэн → purpose=4
+                if (!empty($attachPaths)) {
+                    foreach ($attachPaths as $i => $attPath) {
+                        $attFilename = \basename(\rawurldecode($attPath));
+                        $aFilePath = "$recordFolder/$attFilename";
+                        if (\is_file($aFilePath)) {
+                            $mime = \mime_content_type($aFilePath) ?: 'application/octet-stream';
+                            $filesModel->insert([
+                                'record_id'         => $id,
+                                'file'              => $aFilePath,
+                                'path'              => "$recordPath/" . \rawurlencode($attFilename),
+                                'size'              => \filesize($aFilePath),
+                                'type'              => \explode('/', $mime)[0],
+                                'mime_content_type'  => $mime,
+                                'purpose'           => 4,
+                                'description'       => $attachDescs[$i] ?? '',
+                                'created_by'        => $this->getUserId()
+                            ]);
+                        }
+                    }
+                }
 
                 $updates = [];
                 foreach ($payload as $field => $value) {
@@ -696,7 +737,7 @@ class NewsController extends FileController
     }
     
     /**
-     * Мэдээ бүрийн хавсаргасан идэвхтэй файлын тоог тоолох.
+     * Мэдээ бүрийн идэвхтэй файлын тоог тоолох.
      *
      * Энэ method нь:
      * - Мэдээний хүснэгт (news) болон файлын хүснэгт (news_files) хооронд
@@ -710,15 +751,24 @@ class NewsController extends FileController
     private function getFilesCounts(string $table): array
     {
         try {
-            $files_count = 
-                'SELECT n.id as id, COUNT(*) as files ' .
+            $sql =
+                'SELECT n.id, f.purpose, COUNT(*) as cnt, COALESCE(SUM(f.size),0) as total_size ' .
                 "FROM $table as n INNER JOIN {$table}_files as f ON n.id=f.record_id " .
                 'WHERE n.is_active=1 AND f.is_active=1 ' .
-                'GROUP BY n.id';
-            $result = $this->query($files_count)->fetchAll();
+                'GROUP BY n.id, f.purpose';
+            $result = $this->query($sql)->fetchAll();
             $counts = [];
-            foreach ($result as $count) {
-                $counts[$count['id']] = $count['files'];
+            foreach ($result as $row) {
+                $id = $row['id'];
+                if (!isset($counts[$id])) {
+                    $counts[$id] = ['media' => 0, 'attach' => 0, 'files_size' => 0];
+                }
+                $counts[$id]['files_size'] += (int)$row['total_size'];
+                if ($row['purpose'] == 2) {
+                    $counts[$id]['media'] = (int)$row['cnt'];
+                } elseif ($row['purpose'] == 4) {
+                    $counts[$id]['attach'] = (int)$row['cnt'];
+                }
             }
             return $counts;
         } catch (\Throwable) {

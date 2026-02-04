@@ -166,6 +166,44 @@ moedit.prototype._handlePaste = function(e) {
 };
 
 /* ============================================
+   Shared Upload Helper
+   ============================================ */
+
+/**
+ * Файлыг серверт upload хийх (бүх upload нэг дор явагдана)
+ * @param {File} file - Upload хийх файл
+ * @returns {Promise<{path, file, size, type, mime_content_type}>}
+ */
+moedit.prototype._uploadFileToServer = function(file) {
+  if (!this.opts.upload?.url) {
+    return Promise.reject(new Error(this._isMn ? 'Upload тохиргоо хийгдээгүй' : 'Upload not configured'));
+  }
+  const maxSize = this.opts.upload.maxFileSize || 0;
+  if (maxSize > 0 && file.size > maxSize) {
+    const limitMB = (maxSize / (1024 * 1024)).toFixed(1);
+    const fileMB = (file.size / (1024 * 1024)).toFixed(1);
+    const msg = this._isMn
+      ? `Файлын хэмжээ хэтэрсэн: ${fileMB} MB (хамгийн ихдээ ${limitMB} MB)`
+      : `File too large: ${fileMB} MB (max ${limitMB} MB)`;
+    return Promise.reject(new Error(msg));
+  }
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('folder', this.opts.upload.folder || 'moedit');
+  const isImage = file.type && file.type.startsWith('image/');
+  fd.append('optimize', isImage && this._optimizeImages ? '1' : '0');
+  return fetch(this.opts.upload.url, { method: 'POST', body: fd })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      if (data.error) throw new Error(data.error.message || 'Upload failed');
+      return data;
+    });
+};
+
+/* ============================================
    Clipboard-аас зураг upload хийх
    ============================================ */
 
@@ -174,8 +212,8 @@ moedit.prototype._handlePaste = function(e) {
  * @param {File} file - Зургийн файл
  */
 moedit.prototype._uploadAndInsertImage = function(file) {
-  /* upload эсвэл uploadImage тохируулаагүй бол анхааруулга өгөх */
-  if (!this.opts.upload && !this.opts.uploadImage) {
+  /* upload тохируулаагүй бол анхааруулга өгөх */
+  if (!this.opts.upload) {
     this._notify('warning',
       this._isMn ? 'Зураг upload хийх боломжгүй' : 'Cannot upload image',
       this._isMn ? 'Зургийн upload тохиргоо хийгдээгүй байна.' : 'Image upload is not configured.');
@@ -185,7 +223,7 @@ moedit.prototype._uploadAndInsertImage = function(file) {
   const config = this.opts.imageUploadModal;
 
   /* Upload хийж байгаа мэдэгдэл харуулах */
-  this._notify('info', config.uploadingText);
+  this._notify('info', config.uploadingText, file.name);
 
   /* Selection хадгалах */
   let savedRange = null;
@@ -194,22 +232,16 @@ moedit.prototype._uploadAndInsertImage = function(file) {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  /* uploadImage функц эсвэл upload ашиглах */
-  const uploadPromise = this.opts.uploadImage
-    ? this.opts.uploadImage(file)
-    : fetch(this.opts.upload, {
-        method: 'POST',
-        body: (() => { const fd = new FormData(); fd.append('file', file); fd.append('folder', this.opts.uploadFolder || 'moedit'); return fd; })()
-      }).then(res => res.json()).then(data => data.path);
+  /* Upload хийх */
+  const uploadPromise = this._uploadFileToServer(file).then(data => data.path);
 
   Promise.resolve(uploadPromise)
     .then(path => {
       if (path) {
-        this._insertImageByUrl(path, savedRange);
+        this._insertImageByUrl(path, savedRange, file.name);
         if (this.opts.onUploadSuccess) {
           this.opts.onUploadSuccess({ path });
         }
-        this._notify('success', this._isMn ? 'Зураг амжилттай оруулагдлаа' : 'Image uploaded successfully');
       } else {
         throw new Error(config.errorMessage);
       }
@@ -218,7 +250,7 @@ moedit.prototype._uploadAndInsertImage = function(file) {
       if (this.opts.onUploadError) {
         this.opts.onUploadError(err);
       } else {
-        this._notify('danger', err.message || config.errorMessage);
+        this._notify('danger', this._isMn ? 'Зураг upload хийхэд алдаа гарлаа' : 'Image upload failed', file.name + ': ' + (err.message || config.errorMessage));
       }
     });
 };
@@ -394,8 +426,8 @@ moedit.prototype._insertImage = function() {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  /* Хэрэв upload эсвэл uploadImage тохируулсан бол file upload dialog харуулах */
-  if (this.opts.upload || this.opts.uploadImage) {
+  /* Хэрэв upload тохируулсан бол file upload dialog харуулах */
+  if (this.opts.upload) {
     this._showImageUploadDialog(savedRange);
   } else {
     /* URL оруулах dialog харуулах */
@@ -683,12 +715,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
       tabUrl.disabled = true;
       okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-      const uploadPromise = this.opts.uploadImage
-        ? this.opts.uploadImage(selectedFile)
-        : fetch(this.opts.upload, {
-            method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('folder', this.opts.uploadFolder || 'moedit'); fd.append('optimize', this._optimizeImages ? '1' : '0'); return fd; })()
-          }).then(res => res.json()).then(data => data.path);
+      const uploadPromise = this._uploadFileToServer(selectedFile).then(data => data.path);
 
       Promise.resolve(uploadPromise)
         .then(path => {
@@ -696,7 +723,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
           document.removeEventListener('keydown', escHandler);
 
           if (path) {
-            this._insertImageByUrl(path, savedRange);
+            this._insertImageByUrl(path, savedRange, selectedFile.name);
             if (this.opts.onUploadSuccess) {
               this.opts.onUploadSuccess({ path });
             }
@@ -716,14 +743,14 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
           if (this.opts.onUploadError) {
             this.opts.onUploadError(err);
           } else {
-            this._notify('danger', err.message || config.errorMessage);
+            this._notify('danger', this._isMn ? 'Зураг upload хийхэд алдаа гарлаа' : 'Image upload failed', selectedFile.name + ': ' + (err.message || config.errorMessage));
           }
         });
     }
   });
 };
 
-moedit.prototype._insertImageByUrl = function(url, savedRange) {
+moedit.prototype._insertImageByUrl = function(url, savedRange, fileName) {
   this._ensureVisualMode();
   this._focusEditor();
 
@@ -755,7 +782,7 @@ moedit.prototype._insertImageByUrl = function(url, savedRange) {
   this._emitChange();
 
   /* Notify if available */
-  this._notify('success', this.opts.imageUploadModal.successMessage);
+  this._notify('success', this.opts.imageUploadModal.successMessage, fileName);
 };
 
 /* ============================================
@@ -769,7 +796,7 @@ moedit.prototype._insertVideo = function() {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  if (this.opts.upload || this.opts.uploadVideo) {
+  if (this.opts.upload) {
     this._showVideoUploadDialog(savedRange);
   } else {
     this._showMediaUrlDialog('video', savedRange);
@@ -946,12 +973,7 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
       tabUrl.disabled = true;
       okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-      const uploadPromise = this.opts.uploadVideo
-        ? this.opts.uploadVideo(selectedFile)
-        : fetch(this.opts.upload, {
-            method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('folder', this.opts.uploadFolder || 'moedit'); return fd; })()
-          }).then(res => res.json()).then(data => data.path);
+      const uploadPromise = this._uploadFileToServer(selectedFile).then(data => data.path);
 
       Promise.resolve(uploadPromise)
         .then(path => {
@@ -959,7 +981,7 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
           document.removeEventListener('keydown', escHandler);
 
           if (path) {
-            this._insertMediaByUrl('video', path, savedRange);
+            this._insertMediaByUrl('video', path, savedRange, selectedFile.name);
             if (this.opts.onUploadSuccess) {
               this.opts.onUploadSuccess({ path, type: 'video' });
             }
@@ -979,7 +1001,7 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
           if (this.opts.onUploadError) {
             this.opts.onUploadError(err);
           } else {
-            this._notify('danger', err.message || config.errorMessage);
+            this._notify('danger', this._isMn ? 'Видео upload хийхэд алдаа гарлаа' : 'Video upload failed', selectedFile.name + ': ' + (err.message || config.errorMessage));
           }
         });
     }
@@ -997,7 +1019,7 @@ moedit.prototype._insertAudio = function() {
     savedRange = selection.getRangeAt(0).cloneRange();
   }
 
-  if (this.opts.upload || this.opts.uploadAudio) {
+  if (this.opts.upload) {
     this._showAudioUploadDialog(savedRange);
   } else {
     this._showMediaUrlDialog('audio', savedRange);
@@ -1174,12 +1196,7 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
       tabUrl.disabled = true;
       okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-      const uploadPromise = this.opts.uploadAudio
-        ? this.opts.uploadAudio(selectedFile)
-        : fetch(this.opts.upload, {
-            method: 'POST',
-            body: (() => { const fd = new FormData(); fd.append('file', selectedFile); fd.append('folder', this.opts.uploadFolder || 'moedit'); return fd; })()
-          }).then(res => res.json()).then(data => data.path);
+      const uploadPromise = this._uploadFileToServer(selectedFile).then(data => data.path);
 
       Promise.resolve(uploadPromise)
         .then(path => {
@@ -1187,7 +1204,7 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
           document.removeEventListener('keydown', escHandler);
 
           if (path) {
-            this._insertMediaByUrl('audio', path, savedRange);
+            this._insertMediaByUrl('audio', path, savedRange, selectedFile.name);
             if (this.opts.onUploadSuccess) {
               this.opts.onUploadSuccess({ path, type: 'audio' });
             }
@@ -1207,7 +1224,7 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
           if (this.opts.onUploadError) {
             this.opts.onUploadError(err);
           } else {
-            this._notify('danger', err.message || config.errorMessage);
+            this._notify('danger', this._isMn ? 'Аудио upload хийхэд алдаа гарлаа' : 'Audio upload failed', selectedFile.name + ': ' + (err.message || config.errorMessage));
           }
         });
     }
@@ -1308,7 +1325,7 @@ moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
    Insert Media (Video/Audio) by URL
    ============================================ */
 
-moedit.prototype._insertMediaByUrl = function(type, url, savedRange) {
+moedit.prototype._insertMediaByUrl = function(type, url, savedRange, fileName) {
   this._ensureVisualMode();
   this._focusEditor();
 
@@ -1371,7 +1388,7 @@ moedit.prototype._insertMediaByUrl = function(type, url, savedRange) {
   }
 
   this._emitChange();
-  this._notify('success', config.successMessage);
+  this._notify('success', config.successMessage, fileName);
 };
 
 /* ============================================
@@ -1729,7 +1746,7 @@ moedit.prototype._insertAccordion = function() {
 
 /* ============================================
    AI Config Notice Dialog
-   shineUrl тохируулаагүй үед тайлбарлах dialog харуулна
+   ai_helper тохируулаагүй үед тайлбарлах dialog харуулна
    ============================================ */
 
 moedit.prototype._showAiConfigNotice = function(title, feature) {
@@ -1755,14 +1772,14 @@ moedit.prototype._showAiConfigNotice = function(title, feature) {
         <p style="margin-bottom: 12px; color: var(--mo-text, #333);">
           <strong>${this._isMn ? 'AI функц идэвхжүүлээгүй байна.' : 'AI function is not enabled.'}</strong>
         </p>
-        <p style="margin-bottom: 12px; color: var(--mo-text-muted, #666); font-size: 14px;">
+        <p style="margin-bottom: 12px; color: var(--mo-placeholder); font-size: 14px;">
           ${this._isMn ? 'Энэ функцийг ашиглахын тулд системийн администратор дараах тохиргоог хийсэн байх шаардлагатай:' : 'To use this function, the system administrator must configure the following:'}
         </p>
-        <ul style="margin-bottom: 15px; padding-left: 20px; color: var(--mo-text-muted, #666); font-size: 13px;">
-          <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">shineUrl</code> - ${this._isMn ? 'AI endpoint URL тохируулах' : 'Set AI endpoint URL'}</li>
+        <ul style="margin-bottom: 15px; padding-left: 20px; color: var(--mo-placeholder); font-size: 13px;">
+          <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">ai_helper</code> - ${this._isMn ? 'AI endpoint URL тохируулах' : 'Set AI endpoint URL'}</li>
           <li style="margin-bottom: 6px;"><code style="background: var(--mo-bg-muted, #f5f5f5); padding: 2px 6px; border-radius: 3px;">INDO_OPENAI_API_KEY</code> - ${this._isMn ? 'Backend дээр OpenAI API key тохируулах' : 'Set OpenAI API key on backend'}</li>
         </ul>
-        <p style="margin: 0; color: var(--mo-text-muted, #666); font-size: 13px; font-style: italic;">
+        <p style="margin: 0; color: var(--mo-placeholder); font-size: 13px; font-style: italic;">
           ${this._isMn ? 'Тохиргоо хийгдсэн бол энэ функц автоматаар идэвхжинэ.' : 'Once configured, this function will be enabled automatically.'}
         </p>
       </div>
@@ -1797,10 +1814,10 @@ moedit.prototype._showAiConfigNotice = function(title, feature) {
 moedit.prototype._shine = async function() {
   const html = this.getHTML();
   const cfg = this.opts.shineModal;
-  const shineUrl = this.opts.shineUrl;
+  const ai_helper = this.opts.ai_helper;
 
-  /* shineUrl тохируулаагүй бол тайлбарлах dialog харуулах */
-  if (!shineUrl || !shineUrl.trim()) {
+  /* ai_helper тохируулаагүй бол тайлбарлах dialog харуулах */
+  if (!ai_helper || !ai_helper.trim()) {
     this._showAiConfigNotice(cfg.title, 'shine');
     return;
   }
@@ -1902,7 +1919,7 @@ moedit.prototype._shine = async function() {
     const customPrompt = promptTextarea.value.trim();
 
     try {
-      const response = await fetch(this.opts.shineUrl, {
+      const response = await fetch(this.opts.ai_helper, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html: html, prompt: customPrompt })
@@ -2339,10 +2356,10 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
 
 moedit.prototype._ocr = async function() {
   const cfg = this.opts.ocrModal;
-  const shineUrl = this.opts.shineUrl;
+  const ai_helper = this.opts.ai_helper;
 
-  /* shineUrl тохируулаагүй бол тайлбарлах dialog харуулах */
-  if (!shineUrl || !shineUrl.trim()) {
+  /* ai_helper тохируулаагүй бол тайлбарлах dialog харуулах */
+  if (!ai_helper || !ai_helper.trim()) {
     this._showAiConfigNotice(cfg.title, 'ocr');
     return;
   }
@@ -2499,7 +2516,7 @@ moedit.prototype._ocr = async function() {
       });
 
       /* OpenAI Vision API руу илгээх */
-      const response = await fetch(shineUrl, {
+      const response = await fetch(ai_helper, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2579,6 +2596,18 @@ moedit.prototype._print = function() {
     return;
   }
 
+  /* Title авах */
+  let titleHtml = '';
+  if (this.opts.titleSelector) {
+    const titleEl = document.querySelector(this.opts.titleSelector);
+    if (titleEl) {
+      const titleVal = (titleEl.value || titleEl.textContent || '').trim();
+      if (titleVal) {
+        titleHtml = `<h2 style="margin:0 0 1rem 0;">${titleVal}</h2>`;
+      }
+    }
+  }
+
   /* Толгой зураг авах */
   let headerImageHtml = '';
   const headerArea = this.headerImageArea || this.root.querySelector('.moedit-header-image-area');
@@ -2611,6 +2640,7 @@ moedit.prototype._print = function() {
         </style>
       </head>
       <body>
+        ${titleHtml}
         ${headerImageHtml}
         ${content}
       </body>
@@ -2642,9 +2672,10 @@ moedit.prototype._insertAttachment = function() {
         const file = fileInput.files[i];
         const mimeType = file.type || '';
         const type = mimeType.split('/')[0];
-        this._attachments.push({
-          _localId: 'att_' + Date.now() + '_' + i,
-          _file: file,
+        const localId = 'att_' + Date.now() + '_' + i;
+        const entry = {
+          _localId: localId,
+          _uploading: true,
           _isExisting: false,
           name: file.name,
           size: file.size,
@@ -2652,11 +2683,31 @@ moedit.prototype._insertAttachment = function() {
           mime_content_type: mimeType,
           description: '',
           date: dateStr
+        };
+        this._attachments.push(entry);
+
+        /* Серверт upload хийх */
+        this._uploadFileToServer(file).then(data => {
+          /* Амжилттай: серверийн metadata хадгалах */
+          entry.path = data.path;
+          entry.size = data.size;
+          entry.type = data.type;
+          entry.mime_content_type = data.mime_content_type;
+          delete entry._uploading;
+          this._renderAttachments();
+          this._emitAttachmentChange();
+          this._notify('success', this._isMn ? 'Файл амжилттай хавсаргалаа' : 'File attached successfully', entry.name);
+        }).catch(err => {
+          /* Алдаа: entry устгах */
+          const idx = this._attachments.indexOf(entry);
+          if (idx !== -1) this._attachments.splice(idx, 1);
+          this._renderAttachments();
+          this._emitAttachmentChange();
+          this._notify('danger', this._isMn ? 'Файл upload хийхэд алдаа гарлаа' : 'File upload failed', entry.name + ': ' + err.message);
         });
       }
       this._renderAttachments();
       this._emitAttachmentChange();
-      this._notify?.('success', this._isMn ? 'Файл хавсаргагдлаа' : 'File attached');
     }
     fileInput.remove();
   });
@@ -2682,9 +2733,11 @@ moedit.prototype._renderAttachments = function() {
   this._attachmentsTbody.innerHTML = '';
   this._attachments.forEach((file, idx) => {
     const tr = document.createElement('tr');
+    const isUploading = !!file._uploading;
 
     /* File */
-    const fileName = file.path ? file.path.split('/').pop() : (file.name || '');
+    const rawName = file.path ? file.path.split('/').pop() : (file.name || '');
+    const fileName = (() => { try { return decodeURIComponent(rawName); } catch { return rawName; } })();
     let sizeStr = '';
     if (file.size != null) {
       if (file.size < 1024) sizeStr = file.size + ' B';
@@ -2693,9 +2746,20 @@ moedit.prototype._renderAttachments = function() {
     }
     const tdFile = document.createElement('td');
     const displayName = file._isExisting ? fileName : file.name;
-    if (file.path || file._file) {
+    if (isUploading) {
+      /* Uploading state: spinner + italic нэр */
+      const spinner = document.createElement('span');
+      spinner.className = 'moedit-attach-spinner';
+      spinner.innerHTML = '<i class="mi-arrow-clockwise moedit-spin"></i> ';
+      tdFile.appendChild(spinner);
+      const nameSpan = document.createElement('span');
+      nameSpan.style.fontStyle = 'italic';
+      nameSpan.style.opacity = '0.7';
+      nameSpan.textContent = displayName;
+      tdFile.appendChild(nameSpan);
+    } else if (file.path) {
       const link = document.createElement('a');
-      link.href = file.path || (file._file ? URL.createObjectURL(file._file) : '#');
+      link.href = file.path;
       link.target = '_blank';
       link.className = 'moedit-attach-link';
       link.textContent = displayName;
@@ -2709,6 +2773,10 @@ moedit.prototype._renderAttachments = function() {
       removeBtn.className = 'moedit-attach-remove';
       removeBtn.title = isMn ? 'Устгах' : 'Remove';
       removeBtn.innerHTML = '<i class="mi-trash"></i>';
+      if (isUploading) {
+        removeBtn.disabled = true;
+        removeBtn.style.opacity = '0.3';
+      }
       removeBtn.addEventListener('click', () => {
         if (file._isExisting && file.id) {
           this._deletedAttachmentIds.push(file.id);
@@ -2804,7 +2872,8 @@ moedit.prototype._preview = function() {
     const isMn = this._isMn;
     let rows = '';
     this._attachments.forEach((file, idx) => {
-      const fileName = file.path ? file.path.split('/').pop() : (file.name || '');
+      const rawName = file.path ? file.path.split('/').pop() : (file.name || '');
+    const fileName = (() => { try { return decodeURIComponent(rawName); } catch { return rawName; } })();
       let icon = '<i class="bi bi-file-earmark"></i>';
       if (file.type === 'image') icon = '<i class="bi bi-file-image text-success"></i>';
       else if (file.type === 'video') icon = '<i class="bi bi-file-play text-danger"></i>';
@@ -4018,10 +4087,10 @@ moedit.prototype._loadPdfJs = function() {
 
 moedit.prototype._insertPdf = async function() {
   const config = this.opts.pdfModal;
-  const shineUrl = this.opts.shineUrl;
+  const ai_helper = this.opts.ai_helper;
 
-  /* shineUrl тохируулаагүй бол тайлбарлах dialog харуулах */
-  if (!shineUrl || !shineUrl.trim()) {
+  /* ai_helper тохируулаагүй бол тайлбарлах dialog харуулах */
+  if (!ai_helper || !ai_helper.trim()) {
     this._showAiConfigNotice(config.title, 'pdf');
     return;
   }
@@ -4371,7 +4440,7 @@ moedit.prototype._insertPdf = async function() {
       const canvas = await renderPageToCanvas(page, 2);
       const base64Image = canvas.toDataURL('image/png');
 
-      const response = await fetch(shineUrl, {
+      const response = await fetch(ai_helper, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -4502,26 +4571,48 @@ moedit.prototype._selectHeaderImage = function() {
     if (fileInput.files && fileInput.files[0]) {
       const file = fileInput.files[0];
 
-      /* FileReader ашиглан preview үүсгэх */
+      /* FileReader ашиглан data URL preview шууд харуулах */
       const reader = new FileReader();
       reader.onload = (e) => {
-        const preview = e.target.result;
+        const dataUrl = e.target.result;
+        const prevSrc = this.headerImagePreview?.src || '';
 
-        /* Header image preview харуулах */
+        /* Preview шууд харуулах */
         if (this.headerImageArea && this.headerImagePreview) {
-          this.headerImagePreview.src = preview;
+          this.headerImagePreview.src = dataUrl;
           this.headerImageArea.style.display = 'block';
+          this.headerImageArea.classList.remove('moedit-header-image-error');
         }
 
-        /* File хадгалах */
-        this._headerImageFile = file;
+        /* Серверт upload хийх */
+        this._uploadFileToServer(file).then(data => {
+          /* Амжилттай: серверийн path хадгалах */
+          this._headerImagePath = data.path;
+          this._headerImageRemoved = false;
 
-        /* Callback дуудах */
-        if (typeof this.opts.onHeaderImageChange === 'function') {
-          this.opts.onHeaderImageChange(file, preview);
-        }
+          /* Preview-г серверийн URL-ээр солих */
+          if (this.headerImagePreview) {
+            this.headerImagePreview.src = data.path;
+          }
 
-        this._notify('success', this._isMn ? 'Толгой зураг сонгогдлоо' : 'Header image selected');
+          /* Callback дуудах */
+          if (typeof this.opts.onHeaderImageChange === 'function') {
+            this.opts.onHeaderImageChange(data.path, data.path);
+          }
+
+          this._notify('success', this._isMn ? 'Толгой зураг амжилттай upload хийгдлээ' : 'Header image uploaded', file.name);
+        }).catch(err => {
+          /* Алдаа: preview буцаах */
+          if (this.headerImageArea && this.headerImagePreview) {
+            if (prevSrc) {
+              this.headerImagePreview.src = prevSrc;
+            } else {
+              this.headerImageArea.style.display = 'none';
+              this.headerImagePreview.src = '';
+            }
+          }
+          this._notify('danger', this._isMn ? 'Толгой зураг upload хийхэд алдаа гарлаа' : 'Header image upload failed', file.name + ': ' + err.message);
+        });
       };
       reader.readAsDataURL(file);
     }

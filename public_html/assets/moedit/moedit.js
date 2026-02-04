@@ -45,9 +45,10 @@ class moedit {
    * @param {Object} [opts={}] - Тохиргоо
    * @param {Function} [opts.onChange] - HTML өөрчлөгдөх үед дуудагдах callback
    * @param {Function} [opts.prompt] - Prompt dialog функц (default: window.prompt)
-   * @param {string} [opts.upload] - Upload endpoint URL (бүх файл upload-д ашиглана)
-   * @param {string} [opts.uploadFolder='moedit'] - Upload хийх folder нэр
-   * @param {Function} [opts.uploadImage] - Зураг upload хийх async функц (file) => url
+   * @param {Object} [opts.upload] - Upload тохиргоо {url, folder, maxFileSize}
+   * @param {string} opts.upload.url - Upload endpoint URL
+   * @param {string} [opts.upload.folder='moedit'] - Upload хийх folder нэр
+   * @param {number} [opts.upload.maxFileSize=0] - Хамгийн их файл хэмжээ (bytes), 0 = хязгааргүй
    * @param {Function} [opts.onUploadSuccess] - Upload амжилттай болсны callback
    * @param {Function} [opts.onUploadError] - Upload алдааны callback
    * @param {Object} [opts.imageUploadModal] - Image upload modal тохиргоо
@@ -70,7 +71,8 @@ class moedit {
     /* toolbarPosition default утга - _createWrapper дуудахаас ӨМНӨ тохируулах */
     if (!opts.toolbarPosition) opts.toolbarPosition = 'right';
 
-    /* onHeaderImageChange заасан бол headerImage автоматаар идэвхжүүлэх */
+    /* headerImage default утга - _createWrapper дуудахаас ӨМНӨ тохируулах */
+    if (opts.headerImage === undefined) opts.headerImage = true;
     if (opts.onHeaderImageChange && !opts.headerImage) opts.headerImage = true;
 
     /* Хэрэв textarea дамжуулсан бол бүтэц автоматаар үүсгэх */
@@ -81,6 +83,10 @@ class moedit {
       this.root = root;
       this._targetTextarea = null;
     }
+
+    /* DOM element дээрээс instance авах боломж олгох */
+    this.root._moedit = this;
+    if (this._targetTextarea) this._targetTextarea._moedit = this;
 
     this.editor = this.root.querySelector(".moedit-editor");
     this.source = this.root.querySelector(".moedit-source");
@@ -99,10 +105,6 @@ class moedit {
       prompt: (label, def = "") => window.prompt(label, def),
       readonly: false,
       upload: null,
-      uploadFolder: 'moedit',
-      uploadImage: null,
-      uploadVideo: null,
-      uploadAudio: null,
       onUploadSuccess: null,
       onUploadError: null,
       /* Image upload modal */
@@ -309,11 +311,11 @@ Instructions:
 5. Use <p> tag for paragraphs`
       },
       /* Shine API URL */
-      shineUrl: null,
+      ai_helper: null,
       /* Notify function - optional */
       notify: null,
       /* Header image */
-      headerImage: false,
+      headerImage: true,
       /* Header image modal */
       headerImageModal: {
         title: isMn ? 'Толгой зураг' : 'Header Image',
@@ -397,7 +399,7 @@ Instructions:
     /* ENTER дарахад <div> биш <p> үүсгэх */
     document.execCommand('defaultParagraphSeparator', false, 'p');
 
-    /* Shine товчийг shineUrl байхгүй бол нуух */
+    /* Shine товчийг ai_helper байхгүй бол нуух */
     this._toggleShineButton();
 
     /* Readonly горим идэвхжүүлэх */
@@ -405,6 +407,11 @@ Instructions:
 
     /* Header image идэвхжүүлэх */
     this._initHeaderImage();
+
+    /* Source mode идэвхжүүлэх */
+    if (this.opts.sourceMode) {
+      this.toggleSource(true);
+    }
 
     /** @private */
     this._destroyed = false;
@@ -448,6 +455,7 @@ Instructions:
 
       /* headerImage нь URL string бол анхны зургийг харуулах */
       if (typeof this.opts.headerImage === 'string' && this.opts.headerImage) {
+        this._headerImagePath = this.opts.headerImage;
         this.headerImagePreview.src = this.opts.headerImage;
         this.headerImageArea.style.display = 'block';
 
@@ -465,8 +473,11 @@ Instructions:
     /** @private Зураг optimize хийх эсэх */
     this._optimizeImages = true;
 
-    /** @private Одоогийн header image file */
-    this._headerImageFile = null;
+    /** @private Одоогийн header image серверийн path */
+    this._headerImagePath = null;
+
+    /** @private Header image устгагдсан эсэх */
+    this._headerImageRemoved = false;
 
     /** @private Хавсралт файлууд */
     this._attachments = [];
@@ -494,7 +505,8 @@ Instructions:
         this.headerImagePreview.src = '';
       }
     }
-    this._headerImageFile = null;
+    this._headerImagePath = null;
+    this._headerImageRemoved = true;
 
     /* Callback дуудах */
     if (typeof this.opts.onHeaderImageChange === 'function') {
@@ -503,11 +515,19 @@ Instructions:
   }
 
   /**
-   * Header image-ийн file object авах
-   * @returns {File|null} Header image file эсвэл null
+   * Header image-ийн серверийн path авах
+   * @returns {string|null} Server path эсвэл null
    */
-  getHeaderImageFile() {
-    return this._headerImageFile || null;
+  getHeaderImagePath() {
+    return this._headerImagePath || null;
+  }
+
+  /**
+   * Header image устгагдсан эсэхийг шалгах
+   * @returns {boolean}
+   */
+  isHeaderImageRemoved() {
+    return this._headerImageRemoved;
   }
 
   /**
@@ -524,9 +544,12 @@ Instructions:
    */
   getAttachments() {
     return {
-      newFiles: this._attachments.filter(f => !f._isExisting).map(f => ({
-        file: f._file,
+      newFiles: this._attachments.filter(f => !f._isExisting && !f._uploading).map(f => ({
+        path: f.path,
         name: f.name,
+        size: f.size,
+        type: f.type,
+        mime_content_type: f.mime_content_type,
         description: f.description || ''
       })),
       existing: this._attachments.filter(f => f._isExisting).map(f => ({
@@ -547,12 +570,12 @@ Instructions:
 
   /**
    * AI товчнуудын тохиргоо
-   * - shineUrl тохируулаагүй бол товчнуудыг дарахад тайлбар dialog гарна
-   * - shineUrl тохируулсан бол хэвийн ажиллана (backend-ээс INDO_OPENAI_API_KEY шалгана)
+   * - ai_helper тохируулаагүй бол товчнуудыг дарахад тайлбар dialog гарна
+   * - ai_helper тохируулсан бол хэвийн ажиллана (backend-ээс INDO_OPENAI_API_KEY шалгана)
    * @private
    */
   _toggleShineButton() {
-    /* AI товчнууд үргэлж харагдана, shineUrl байхгүй бол dialog тайлбарлана */
+    /* AI товчнууд үргэлж харагдана, ai_helper байхгүй бол dialog тайлбарлана */
   }
 
   /**
@@ -728,6 +751,27 @@ Instructions:
     if (fullscreenBtn) {
       fullscreenBtn.setAttribute("aria-pressed", next ? "true" : "false");
     }
+
+    /* Fullscreen үед Title харуулах */
+    if (this.opts.titleSelector) {
+      let titleBar = this.root.querySelector('.moedit-fullscreen-title');
+      if (next) {
+        const titleEl = document.querySelector(this.opts.titleSelector);
+        const titleVal = titleEl ? (titleEl.value || titleEl.textContent || '').trim() : '';
+        if (titleVal) {
+          if (!titleBar) {
+            titleBar = document.createElement('div');
+            titleBar.className = 'moedit-fullscreen-title';
+            const body = this.root.querySelector('.moedit-body');
+            const anchor = this.headerImageArea || body;
+            anchor.parentNode.insertBefore(titleBar, anchor);
+          }
+          titleBar.textContent = titleVal;
+        }
+      } else if (titleBar) {
+        titleBar.remove();
+      }
+    }
   }
 
   /**
@@ -741,6 +785,7 @@ Instructions:
    */
   toggleSource(force) {
     const next = typeof force === "boolean" ? force : !this.isSource;
+    const changed = next !== this.isSource;
     this.isSource = next;
 
     if (next) {
@@ -790,6 +835,12 @@ Instructions:
     const sourceBtn = this.toolbar.querySelector('[data-action="source"]');
     if (sourceBtn) {
       sourceBtn.setAttribute("aria-pressed", next ? "true" : "false");
+    }
+
+    if (changed) {
+      this._notify('info', next
+        ? (this._isMn ? 'HTML эх код горим руу шилжлээ' : 'Switched to source mode')
+        : (this._isMn ? 'Визуал горим руу шилжлээ' : 'Switched to visual mode'));
     }
 
     this._emitChange();

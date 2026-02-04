@@ -80,7 +80,7 @@ class PagesController extends FileController
             // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages = 
-                'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active ' .
+                'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active, LENGTH(title)+LENGTH(content) as text_size ' .
                 "FROM $table WHERE $where ORDER BY position, id";
             $pages_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
@@ -547,15 +547,24 @@ class PagesController extends FileController
     private function getFilesCounts(string $table): array
     {
         try {
-            $files_count = 
-                'SELECT n.id as id, COUNT(*) as files ' .
+            $sql =
+                'SELECT n.id, f.purpose, COUNT(*) as cnt, COALESCE(SUM(f.size),0) as total_size ' .
                 "FROM $table as n INNER JOIN {$table}_files as f ON n.id=f.record_id " .
                 'WHERE n.is_active=1 AND f.is_active=1 ' .
-                'GROUP BY n.id';
-            $result = $this->query($files_count)->fetchAll();
+                'GROUP BY n.id, f.purpose';
+            $result = $this->query($sql)->fetchAll();
             $counts = [];
-            foreach ($result as $count) {
-                $counts[$count['id']] = $count['files'];
+            foreach ($result as $row) {
+                $id = $row['id'];
+                if (!isset($counts[$id])) {
+                    $counts[$id] = ['media' => 0, 'attach' => 0, 'files_size' => 0];
+                }
+                $counts[$id]['files_size'] += (int)$row['total_size'];
+                if ($row['purpose'] == 2) {
+                    $counts[$id]['media'] = (int)$row['cnt'];
+                } elseif ($row['purpose'] == 4) {
+                    $counts[$id]['attach'] = (int)$row['cnt'];
+                }
             }
             return $counts;
         } catch (\Throwable) {

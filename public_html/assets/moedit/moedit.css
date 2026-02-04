@@ -457,6 +457,17 @@
   background:var(--mo-bg);
   box-shadow:0 0 0 0.15rem rgba(13,110,253,.2);
 }
+.moedit-attach-spinner{
+  display:inline-flex;
+  align-items:center;
+}
+.moedit-spin{
+  animation:moedit-spin-anim 1s linear infinite;
+}
+@keyframes moedit-spin-anim{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
 
 /* Fullscreen */
 .moedit.is-fullscreen{
@@ -471,6 +482,14 @@
 }
 .moedit.is-fullscreen .moedit-toolbar{
   flex-shrink:0;
+}
+.moedit-fullscreen-title{
+  flex-shrink:0;
+  padding:.5rem 1rem;
+  font-size:1.25rem;
+  font-weight:600;
+  border-bottom:1px solid var(--mo-border, #dee2e6);
+  background:var(--mo-bg, #fff);
 }
 .moedit.is-fullscreen .moedit-body{
   flex:1;
@@ -653,7 +672,7 @@
   padding:0.5rem 1rem;
   border:none;
   background:transparent;
-  color:var(--mo-text-muted);
+  color:var(--mo-placeholder);
   font-size:0.875rem;
   cursor:pointer;
   display:inline-flex;
@@ -1143,7 +1162,7 @@
   .moedit.moedit-toolbar-right .moedit-list-label{
     width:100%;
     font-size:0.625rem;
-    color:var(--mo-text-muted);
+    color:var(--mo-placeholder);
     text-transform:uppercase;
     letter-spacing:0.5px;
     padding-bottom:0.125rem;

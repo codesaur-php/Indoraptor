@@ -19,11 +19,11 @@
     'fun': { 'mn': 'Хөгжилтэй' }
 } %}
 <!-- Mongolian WYSIWYG Editor - текст editor -->
-<link href="{{ index }}/assets/css/moedit.css" rel="stylesheet">
-<link href="{{ index }}/assets/css/moedit-icons.css" rel="stylesheet">
-<script defer src="{{ index }}/assets/js/moedit.js"></script>
-<script defer src="{{ index }}/assets/js/moedit.ui.js"></script>
-<!-- Хуудасны толгой хэсэг - гарчиг болон үйлдлийн товчнууд -->
+<link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
+<link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/moedit/moedit.js"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
+<!-- Хуудасны толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-success">
         <i class="bi bi-book"></i> {{ 'add-record'|text }} (news)
@@ -73,7 +73,7 @@
         </div>
         <!-- Мэдээний төрөл сонгох талбар (dropdown) -->
         <div class="col-4">
-            <label class="form-label">{{ 'type'|text }}</label>
+            <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
             <div class="input-group">
                 <input class="form-control" name="type" type="text" value="{{ types|keys|first|e }}" maxlength="32">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
@@ -86,7 +86,7 @@
         </div>
         <!-- Мэдээний ангилал сонгох талбар (dropdown) -->
         <div class="col-4">
-            <label class="form-label">{{ 'category'|text }}</label>
+            <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
             <div class="input-group">
                 <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
@@ -100,13 +100,13 @@
     </div>
     <!-- Мэдээний гарчиг -->
     <div class="mt-3">
-        <label class="form-label">{{ 'title'|text }}</label>
+        <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
         <input class="form-control" name="title" required value="" maxlength="255" type="text" autocomplete="off">
         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
     </div>
     <!-- Агуулга -->
     <div class="mt-3">
-        <textarea id="content" name="content"></textarea>
+        <textarea name="content"></textarea>
     </div>
     <!-- Хэрэв хэрэглэгч нийтлэх эрхтэй бол нийтлэх болон сэтгэгдэл авах тохиргоо харуулах -->
     {% if user.can('system_content_publish') %}
@@ -114,7 +114,7 @@
         <div class="row">
             <!-- Нийтлэх эсэх сонголт -->
             <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
+                <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="published" type="checkbox" role="switch">
                     {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
@@ -122,7 +122,7 @@
             </div>
             <!-- Онцлох мэдээ эсэх сонголт -->
             <div class="col-4">
-                <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }}</label>
+                <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="is_featured" type="checkbox" role="switch">
                     {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
@@ -130,7 +130,7 @@
             </div>
             <!-- Сэтгэгдэл авах эсэх сонголт -->
             <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
+                <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="comment" type="checkbox" role="switch">
                     {{ 'can-comment'|text }}
@@ -153,16 +153,13 @@
 </div>
 <script type="text/javascript">
     /* Мэдээний төрөл сонгох үед editor-ийн горимыг өөрчлөх */
-    const content = document.getElementById('content');
+    const content = document.querySelector('textarea[name="content"]');
     const type = document.querySelector('input[name="type"]');
-    let moeditInstance = null;
 
     document.getElementById('type_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             type.value = e.target.getAttribute('value');
-            if (moeditInstance) {
-                moeditInstance.toggleSource(type.value === 'embed');
-            }
+            content._moedit?.toggleSource(type.value === 'embed');
         }
     });
 
@@ -187,26 +184,19 @@
         }
     });
 
-    /* Header image файл хадгалах хувьсагч */
-    let headerImageFile = null;
-
     /* DOM ачаалагдсаны дараа */
     document.addEventListener('DOMContentLoaded', function () {
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
-        moeditInstance = new moedit(content, {
-            shineUrl: `{{ 'moedit-ai'|link }}`,
-            upload: `{{ 'files-moedit-upload'|link }}`,
-            uploadFolder: 'news/temp',
+        new moedit(content, {
+            upload: {
+                url: `{{ 'files-moedit-upload'|link }}`,
+                folder: 'news/temp_{{ user.profile['id'] }}',
+                maxFileSize: {{ max_file_size }}
+            },
             titleSelector: 'input[name="title"]',
-            onHeaderImageChange: function (file) {
-                headerImageFile = file;
-            }
+            ai_helper: `{{ 'moedit-ai'|link }}`,
+            sourceMode: type.value === 'embed'
         });
-
-        /* Хэрэв 'embed' төрөл сонгогдвол source mode руу шилжих */
-        if (type.value === 'embed') {
-            moeditInstance.toggleSource(true);
-        }
 
         /* Форм илгээх функц */
         const formInsert = document.querySelector('form#news_insert');
@@ -240,9 +230,10 @@
                 /* FormData үүсгэж сервер рүү илгээх */
                 const data = new FormData(this);
 
-                /* Header image файлыг FormData-д нэмэх */
-                if (headerImageFile) {
-                    data.append('photo', headerImageFile);
+                /* Header image path-ийг FormData-д нэмэх */
+                const headerImagePath = content._moedit?.getHeaderImagePath();
+                if (headerImagePath) {
+                    data.append('photo_path', headerImagePath);
                 }
 
                 /* Checkbox-уудыг normalize хийх (checked = 1, unchecked = 0) */
@@ -259,12 +250,11 @@
                     data.set('comment', commentCheckbox.checked ? '1' : '0');
                 }
 
-                /* Хавсралт файлууд + optimize flag */
-                if (moeditInstance) {
-                    data.set('optimize', moeditInstance.getOptimizeImages() ? '1' : '0');
-                    const attachments = moeditInstance.getAttachments();
-                    attachments.newFiles.forEach((item, i) => {
-                        data.append('attachments[]', item.file);
+                /* Хавсралт файлууд (аль хэдийн upload хийгдсэн path-ууд) */
+                if (content._moedit) {
+                    const attachments = content._moedit.getAttachments();
+                    attachments.newFiles.forEach((item) => {
+                        data.append('attachment_paths[]', item.path);
                         data.append('attachment_descriptions[]', item.description);
                     });
                 }

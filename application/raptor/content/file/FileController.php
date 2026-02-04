@@ -490,6 +490,35 @@ class FileController extends \Raptor\Controller
             return false;
         }
 
+        // EXIF orientation дагуу зургийг эргүүлэх (гар утасны зураг эргэх асуудлыг шийднэ)
+        $exifRotated = false;
+        if ($type === \IMAGETYPE_JPEG && \function_exists('exif_read_data')) {
+            $exif = @\exif_read_data($filePath);
+            if (!empty($exif['Orientation']) && $exif['Orientation'] != 1) {
+                switch ($exif['Orientation']) {
+                    case 3:
+                        $source = \imagerotate($source, 180, 0);
+                        $exifRotated = true;
+                        break;
+                    case 6:
+                        $source = \imagerotate($source, -90, 0);
+                        [$width, $height] = [$height, $width];
+                        $exifRotated = true;
+                        break;
+                    case 8:
+                        $source = \imagerotate($source, 90, 0);
+                        [$width, $height] = [$height, $width];
+                        $exifRotated = true;
+                        break;
+                }
+                if ($exifRotated) {
+                    $needsResize = $width > $maxWidth;
+                    $newWidth = $needsResize ? $maxWidth : $width;
+                    $newHeight = $needsResize ? (int) ($height * ($maxWidth / $width)) : $height;
+                }
+            }
+        }
+
         // Зураг боловсруулах (resize эсвэл quality optimize)
         if ($needsResize) {
             // Resize хийх
@@ -546,9 +575,8 @@ class FileController extends \Raptor\Controller
 
         $optimizedSize = \filesize($tempPath);
 
-        // Хэрэв optimize хийсэн файл жижгэрсэн бол (10%-аас дээш хэмнэлттэй) солих
-        // Үгүй бол эх файлыг хэвээр үлдээх (аль хэдийн optimize хийгдсэн байж магадгүй)
-        if ($optimizedSize < $originalSize * 0.90) {
+        // EXIF эргүүлэлт хийгдсэн бол заавал солих, эсвэл 10%-аас дээш хэмнэлттэй бол солих
+        if ($exifRotated || $optimizedSize < $originalSize * 0.90) {
             // Optimize үр дүнтэй - шинэ файлаар солих
             \unlink($filePath);
             \rename($tempPath, $filePath);
@@ -590,15 +618,13 @@ class FileController extends \Raptor\Controller
      *        upload_max_filesize = 8M
      *   → буцах утга: "8mb"
      *
-     * @return string
+     * @return int  Byte хэмжээ
      */
-    protected function getMaximumFileUploadSize(): string
+    protected function getMaximumFileUploadSize(): int
     {
-        return $this->formatSizeUnits(
-            \min(
-                $this->convertPHPSizeToBytes(\ini_get('post_max_size')),
-                $this->convertPHPSizeToBytes(\ini_get('upload_max_filesize'))
-            )
+        return \min(
+            $this->convertPHPSizeToBytes(\ini_get('post_max_size')),
+            $this->convertPHPSizeToBytes(\ini_get('upload_max_filesize'))
         );
     }
     
