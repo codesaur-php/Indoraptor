@@ -66,7 +66,7 @@
                                     {% else %}
                                         <i class="bi bi-file-earmark"></i>
                                     {% endif %}
-                                    {{ file['path']|split('/')|last }}
+                                    {{ file['path']|basename }}
                                 </a>
                                 {% if file['description'] is not empty %}
                                     <small class="text-muted d-block">{{ file['description'] }}</small>

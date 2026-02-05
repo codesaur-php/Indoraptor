@@ -163,7 +163,7 @@ class FilesController extends FileController
             } else {
                 // Хүснэгт байгаа тул доторх file мөр бичлэгүүдийг авна
                 $select_files =
-                    'SELECT id, record_id, file, path, size, type, mime_content_type, purpose, keyword, description, created_at ' .
+                    'SELECT id, record_id, file, path, size, type, mime_content_type, keyword, description, created_at ' .
                     "FROM {$table}_files WHERE is_active=1";
                 $files = $this->query($select_files)->fetchAll();
             }
@@ -328,58 +328,9 @@ class FilesController extends FileController
             $this->indolog($table, $level, $message, $context);
         }
     }
-
-    /**
-     * Контент зураг upload хийх (moedit editor-д зориулсан).
-     *
-     * - Зөвхөн зураг хүлээн авна (jpg, png, gif, webp)
-     * - Том зургийг web-д зориулж optimize хийнэ (max 1920px, 85% quality)
-     * - JSON хариу: { path: '/public/content/123/image.jpg' }
-     *
-     * @param string $table Хүснэгтийн нэр (news, pages гэх мэт)
-     * @param int $id Контентын ID (0 бол temp folder)
-     * @return void
-     */
-    public function imagePost(string $table, int $id)
-    {
-        try {
-            // Хэрэглэгч нэвтэрсэн байх ёстой
-            if (!$this->isUserAuthorized()) {
-                throw new \Exception('Unauthorized', 401);
-            }
-
-            // Фолдер тохируулах (id=0 бол temp folder)
-            $this->setFolder("/$table" . ($id == 0 ? '/temp' : "/$id"));
-            $this->allowImageOnly();
-
-            // Upload хийх
-            $uploaded = $this->moveUploaded('file');
-            if (!$uploaded) {
-                throw new \InvalidArgumentException('Зураг upload хийхэд алдаа гарлаа', 400);
-            }
-
-            // Зургийг optimize хийх (optimize flag шалгах)
-            $body = $this->getParsedBody();
-            if (($body['optimize'] ?? '1') === '1') {
-                if ($this->optimizeImage($uploaded['file'])) {
-                    $uploaded['size'] = \filesize($uploaded['file']);
-                }
-            }
-
-            // moedit-д зөвхөн path хэрэгтэй
-            $this->respondJSON(['path' => $uploaded['path']]);
-        } catch (\Throwable $err) {
-            $this->respondJSON([
-                'error' => [
-                    'code'    => $err->getCode(),
-                    'message' => $err->getMessage()
-                ]
-            ], $err->getCode() ?: 500);
-        }
-    }
     
     /**
-     * moedit editor-ээс файл upload хийх.
+     * Файл upload хийх.
      *
      * - Заасан folder руу файлыг байршуулна
      * - optimize=1 бол зургийн файлыг optimize хийнэ
@@ -387,29 +338,28 @@ class FilesController extends FileController
      *
      * @return void
      */
-    public function moUpload()
+    public function upload()
     {
         try {
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
             }
 
-            $body = $this->getParsedBody();
-            $folder = '/' . \trim(\preg_replace('/[^a-zA-Z0-9_\/-]/', '', $body['folder'] ?? 'moedit'), '/');
+            $payload = $this->getParsedBody();
+            $folder = '/' . \trim(\preg_replace('/[^a-zA-Z0-9_\/-]/', '', $payload['folder'] ?? 'files'), '/');
             $this->setFolder($folder);
             $this->allowCommonTypes();
-
             $uploaded = $this->moveUploaded('file');
             if (!$uploaded) {
                 throw new \InvalidArgumentException('Upload failed', 400);
             }
-
-            if (($body['optimize'] ?? '0') === '1' && ($uploaded['type'] ?? '') === 'image') {
+            if (($uploaded['type'] ?? '') == 'image'
+                && ($payload['optimize'] ?? 0) == 1
+            ) {
                 if ($this->optimizeImage($uploaded['file'])) {
                     $uploaded['size'] = \filesize($uploaded['file']);
                 }
             }
-
             $this->respondJSON($uploaded);
         } catch (\Throwable $err) {
             $this->respondJSON([

@@ -46,7 +46,6 @@
             <th scope="col">{{ 'file'|text }}</th>
             <th scope="col">{{ 'properties'|text }}</th>
             <th scope="col">{{ 'description'|text }}</th>
-            <th scope="col">{{ 'purpose'|text('Зориулалт') }}</th>
             <th scope="col">{{ 'keyword'|text }}</th>
             <th scope="col">{{ 'date'|text }}</th>
         </tr>
@@ -83,12 +82,6 @@
         );
 
         return bytes.toFixed(1) + units[u];
-    }
-
-    /* Purpose утгыг текст болгон харуулах */
-    function purposeLabel(val) {
-        const labels = { 0: '', 1: '{{ localization.code == "mn" ? "Толгой зураг" : "Header image" }}', 2: '{{ localization.code == "mn" ? "Контент медиа" : "Content media" }}', 4: '{{ localization.code == "mn" ? "Хавсралт" : "Attachment" }}' };
-        return labels[parseInt(val)] ?? '';
     }
 
     /* HTML-д орох текстийг escapeлах (XSS-ээс хамгаална) */
@@ -216,19 +209,14 @@
             cell3.innerHTML = file['description'] ?? '';
             row.appendChild(cell3);
 
-            /* 4-р багана - purpose */
+            /* 4-р багана - keyword */
             let cell4 = document.createElement('td');
-            cell4.innerHTML = purposeLabel(file['purpose']);
+            cell4.innerHTML = file['keyword'] ?? '';
             row.appendChild(cell4);
 
-            /* 5-р багана - keyword */
+            /* 5-р багана - created_at */
             let cell5 = document.createElement('td');
-            cell5.innerHTML = file['keyword'] ?? '';
-            row.appendChild(cell5);
-
-            /* 6-р багана - created_at */
-            let cell6 = document.createElement('td');
-            cell6.innerHTML = file['created_at'] ?? '';
+            cell5.innerHTML = file['created_at'] ?? '';
             row.appendChild(cell6);
 
             /* tbody байхгүй бол шинээр үүсгэнэ */

@@ -188,7 +188,7 @@
         /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
         new moedit(content, {
             upload: {
-                url: `{{ 'files-moedit-upload'|link }}`,
+                url: `{{ 'files-upload'|link }}`,
                 folder: 'news/{{ record['id'] }}',
                 maxFileSize: {{ max_file_size }}
             },
@@ -197,9 +197,9 @@
             {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
             sourceMode: type.value === 'embed',
             attachments: [
-                {% for file in files %}{% if file.purpose == 4 %}
+                {% for file in files %}
                 JSON.parse(`{{ file|json_encode|e('js') }}`),
-                {% endif %}{% endfor %}
+                {% endfor %}
             ]
         });
 
@@ -232,30 +232,9 @@
 
                 const data = new FormData(this);
 
-                /* Header image path-ийг FormData-д нэмэх */
-                const headerImagePath = content._moedit?.getHeaderImagePath();
-                if (headerImagePath) {
-                    data.append('photo_path', headerImagePath);
-                }
-                /* Header image устгагдсан эсэхийг илгээх */
-                if (content._moedit?.isHeaderImageRemoved()) {
-                    data.append('photo_removed', '1');
-                }
-
-                /* Хавсралт файлууд (аль хэдийн upload хийгдсэн path-ууд) */
+                /* Бүх файлуудын мэдээллийг JSON хэлбэрээр илгээх */
                 if (content._moedit) {
-                    const attachments = content._moedit.getAttachments();
-                    attachments.newFiles.forEach((item) => {
-                        data.append('attachment_paths[]', item.path);
-                        data.append('attachment_descriptions[]', item.description);
-                    });
-                    attachments.existing.forEach((item) => {
-                        data.append('existing_attachments[]', item.id);
-                        data.append('existing_attachment_descriptions[]', item.description);
-                    });
-                    attachments.deleted.forEach((id) => {
-                        data.append('deleted_attachments[]', id);
-                    });
+                    data.append('files', JSON.stringify(content._moedit.getFiles()));
                 }
 
                 /* Ensure switches are always sent as 1/0, even when unchecked */

@@ -1,20 +1,21 @@
+<!-- Хуудасны төрлүүдийн тодорхойлолт -->
 {% set types = {
-  'menu': { 'mn': 'Цэс' },
-  'important-menu': { 'mn': 'Чухал цэс' },
-  'mega-menu': { 'mn': 'Мега цэс' },
-  'special-page': { 'mn': 'Тусгай хуудас' },
-  'embed': { 'mn': 'Шигтгэсэн' }
+    'menu': { 'mn': 'Цэс' },
+    'important-menu': { 'mn': 'Чухал цэс' },
+    'mega-menu': { 'mn': 'Мега цэс' },
+    'special-page': { 'mn': 'Тусгай хуудас' },
+    'embed': { 'mn': 'Шигтгэсэн' }
 } %}
+<!-- Хуудасны ангиллын тодорхойлолт -->
 {% set categories = {
-  'general': { 'mn': 'Ерөнхий' },
-  'featured': { 'mn': 'Онцолсон' }
+    'general': { 'mn': 'Ерөнхий' },
+    'featured': { 'mn': 'Онцолсон' }
 } %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/themes/default.min.css" integrity="sha512-9TfMTQR1fqjvuXo8Vas7DnLUZJr5kGFT6gHaFXG7dAZlzh+kFMDEQvbYxzaWXoFwchYSZCwU++Z24Kv1cSpVZA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/sceditor.min.js" integrity="sha512-vTXYqh9aMw9z7j2KaQuGMHFyeIKixbOhsIGfPTNCeGd1EAj+Ju1Gm5z3aAat7N+FWscIdV3BPg9f0IzDGUaifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/formats/xhtml.min.js" integrity="sha512-KqPn4r6fCBEj1ZW6FXn8sD4J84IiGcGj8Onr2yAtrbBm6iT7rTclXbQhS0Nqxc9E2oU0JR8QEc8C+SuRTdh4Bw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/sceditor/3.2.0/icons/monocons.min.js" integrity="sha512-UQApvlNbeoc7G9i+5A3pT0D/kCmNcX3Nbw0mbh7IxmifLDSXdYpiviDKer0BN2ZNcaXL8wiEClUqYgwUJrR3tQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<!-- Mongolian WYSIWYG Editor - текст editor -->
+<link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
+<link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/moedit/moedit.js"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
         <i class="bi bi-eye"></i> {{ record['title']|e }}
@@ -36,78 +37,43 @@
         </span>
     </div>
     <div class="col-4">
-        <label class="form-label">{{ 'type'|text }}</label>
-        <input class="form-control" name="type" value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" readonly placeholder="" type="text" autocomplete="off">
+        <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
+        <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
     </div>
     <div class="col-4">
-        <label class="form-label">{{ 'category'|text }}</label>
+        <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
         <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
     </div>
 </div>
-<div class="row mt-3">
-    <div class="col-8">
-        <div class="form-floating">
-            <input class="form-control" name="parent_id" readonly value="{{ (infos[record['parent_id']] is not null ? infos[record['parent_id']]['parent_titles'] ~ infos[record['parent_id']]['title'] : '-')|e }}" placeholder="" type="text" autocomplete="off">
-            <label>{{ 'parent'|text }}</label>
-        </div>
-    </div>
-    <div class="col-4">
-        <div class="form-floating">
-            <input class="form-control" name="position" readonly value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
-            <label>{{ 'position'|text }}</label>
-        </div>
-    </div>
+<div class="mt-3">
+    <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
+    <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
 </div>
-<div class="row mt-3">
-    <div class="form-group">
-        <label class="form-label">{{ 'title'|text }}</label>
-        <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
-    </div>
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'description'|text }}</label>
-        <textarea class="form-control" name="description" readonly>{{ record['description']|e }}</textarea>
-    </div>
-    {% if record['photo'] is not empty %}
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'photo'|text }} <i class="bi bi-image"></i></label>
-        <br/>
-        <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}">
-    </div>
-    {% endif %}
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'content'|text }} <i class="bi bi-text-paragraph"></i></label>
-        <textarea class="form-control" id="content" name="content" readonly rows="10">{{ record['content']|e }}</textarea>
-    </div>
-    <div class="form-group mt-3">
-        <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-        <input class="form-control" name="link" value="{{ record['link']|e }}" readonly placeholder="" type="url" autocomplete="off">
-    </div>
-</div>
-<div class="row mt-4">
-    <label class="form-label fw-bolder">{{ 'files'|text }} <i class="bi bi-paperclip"></i></label>
-    <table class="table table-striped table-hover" id="pages_files">
-        <thead>
-            <tr>
-                <th>{{ 'file'|text }}</th>
-                <th>{{ 'properties'|text }}</th>
-                <th>{{ 'description'|text }}</th>
-                <th>{{ 'category'|text }}</th>
-                <th>{{ 'keyword'|text }}</th>
-            </tr>
-        </thead>
-    </table>
+<!-- Агуулга -->
+<div class="mt-3">
+    <textarea name="content" readonly>{{ record['content']|e }}</textarea>
 </div>
 <div class="rounded border border-success mt-4 p-3">
     <div class="row">
-        <div class="col-6">
-            <label class="form-label fw-bolder">{{ 'publish'|text }}</label>
+        <!-- Нийтлэх эсэх -->
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
             <div class="form-check form-switch">
                 <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}
+                {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
             </div>
         </div>
-        <div class="col-6">
-            <label class="form-label fw-bolder">{{ 'comment'|text }}</label>
+        <!-- Онцлох хуудас эсэх -->
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+            </div>
+        </div>
+        <!-- Сэтгэгдэл авах эсэх -->
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
             <div class="form-check form-switch">
                 <input class="form-check-input" name="comment"{{ record['comment'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
                 {{ 'can-comment'|text }}
@@ -129,135 +95,20 @@
 </div>
 {% endif %}
 <script type="text/javascript">
-    function getBasename(url) {
-        return url.split(/.*[\/|\\]/)[1];
-    }
-
-    function formatSizeUnits(bytes)
-    {
-        const thresh = 1024;
-        if (Math.abs(bytes) < thresh) {
-            return bytes + 'b';
-        }
-
-        const units = ['kb', 'mb', 'gb', 'tb'];
-        let u = -1;
-        const r = 10 ** 1;
-        do {
-            bytes /= thresh;
-            ++u;
-        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
-        return bytes.toFixed(1) + units[u];
-    }
-    
-    function escapeStr(s) {
-        let lookup = {
-            '&': "&amp;",
-            '"': "&quot;",
-            '\'': "&apos;",
-            '<': "&lt;",
-            '>': "&gt;"
-        };
-        return s.replace(/[&"'<>]/g, c => lookup[c]);
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
-        let content = document.getElementById('content');
-        {% if record['type'] != 'embed' %}
-        sceditor.create(content, {
-            format: 'xhtml',
-            emoticonsEnabled: false,
-            toolbar: 'maximize,source,print',
-            icons: 'monocons',
-            colors: '#ffff00,#ff00ff,#00ffff|#ff0000,#00ff00,#0000ff',
-            readOnly: true,
-            width: '100%',
-            height: '360px',
-            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        const content = document.querySelector('textarea[name="content"]');
+        new moedit(content, {
+            readonly: true,
+            titleSelector: 'input[name="title"]',
+            {% if record['type'] == 'embed' %}sourceMode: true,{% endif %}
+            {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
+            attachments: [
+                {% for file in files %}
+                JSON.parse(`{{ file|json_encode|e('js') }}`),
+                {% endfor %}
+            ]
         });
-        {% endif %}
-        
-        let pageFilesLink = `{{ 'files-modal'|link({'table':table}) }}`;
-        motable.prototype.append = function (record) {
-            let fileIcon;
-            let fileName = escapeStr(getBasename(record['path']));
-            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
-            let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
-            switch (record['type']) {
-                case 'image':
-                    {
-                        fileIcon = `<img src="${record['path']}" style="max-height:7.5rem;height:100%">`;
-                        if (record['mime_content_type'] !== 'image/gif') {
-                            if (record['description']) {
-                                fileLinkAttr = `file-data-fancybox data-caption="${escapeStr(record['description'])}"`;
-                            } else {
-                                fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
-                            }
-                        }
-                    }
-                    break;
-                case 'video':
-                    fileIcon = `<video style="max-height:15rem;height:100%;max-width:20rem;width:100%" controls><source src="${record['path']}"></video>`;
-                    break;
-                case 'audio':
-                    fileIcon = `<audio controls><source src="${record['path']}" type="${record['mime_content_type']}"></audio>`;
-                    break;
-                default:
-                    {
-                        fileIcon = '<i class="bi bi-hdd"></i>';
-                        fileAction = '';
-                    }
-                    break;
-            }        
-            fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${pageFilesLink}?modal=location&id=${record['id']}"><i class="bi bi-link"></i></a>${fileAction}`;
 
-            let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
-            fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
-
-            let row = document.createElement('tr');
-            row.id = `file_${record['id']}`;
-            row.style.fontSize = '.875rem';
-            let cell1 = document.createElement('td');
-            cell1.innerHTML = fileFigure;
-            row.appendChild(cell1);
-
-            let cell2 = document.createElement('td');
-            cell2.innerHTML = `<p style="max-width:11.25rem;word-wrap:break-all"><u>${record['mime_content_type']}</u></p>${formatSizeUnits(record['size'])}`;
-            row.appendChild(cell2);
-
-            let cell3 = document.createElement('td');
-            cell3.innerHTML = record['description'] ?? '';
-            row.appendChild(cell3);
-
-            let cell4 = document.createElement('td');
-            cell4.innerHTML = record['category'] ?? '';
-            row.appendChild(cell4);
-
-            let cell5 = document.createElement('td');
-            cell5.innerHTML = record['keyword'] ?? '';
-            row.appendChild(cell5);
-
-            let tBody = this.table.querySelector('tbody');
-            if (!tBody) {
-                tBody = document.createElement('tbody');
-                this.table.appendChild(tBody);
-
-                if (this.options.style.tbody)
-                    tBody.style.cssText = this.options.style.tbody;
-            }
-            tBody.appendChild(row);
-
-            this.setReady();
-        };
-    
-        let files = new motable('table#pages_files');
-        files.setReady();
-        {% for file in files %}
-        files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
-        {% endfor %}        
-        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-                
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;

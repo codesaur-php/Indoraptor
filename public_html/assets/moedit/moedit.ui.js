@@ -233,14 +233,14 @@ moedit.prototype._uploadAndInsertImage = function(file) {
   }
 
   /* Upload хийх */
-  const uploadPromise = this._uploadFileToServer(file).then(data => data.path);
-
-  Promise.resolve(uploadPromise)
-    .then(path => {
-      if (path) {
-        this._insertImageByUrl(path, savedRange, file.name);
+  this._uploadFileToServer(file)
+    .then(data => {
+      if (data.path) {
+        this._insertImageByUrl(data.path, savedRange, file.name);
+        /* Content media файлын бүрэн мэдээллийг хадгалах */
+        this._contentMediaFiles.push({ ...data, name: file.name });
         if (this.opts.onUploadSuccess) {
-          this.opts.onUploadSuccess({ path });
+          this.opts.onUploadSuccess(data);
         }
       } else {
         throw new Error(config.errorMessage);
@@ -715,17 +715,17 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
       tabUrl.disabled = true;
       okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-      const uploadPromise = this._uploadFileToServer(selectedFile).then(data => data.path);
-
-      Promise.resolve(uploadPromise)
-        .then(path => {
+      this._uploadFileToServer(selectedFile)
+        .then(data => {
           closeDialog();
           document.removeEventListener('keydown', escHandler);
 
-          if (path) {
-            this._insertImageByUrl(path, savedRange, selectedFile.name);
+          if (data.path) {
+            this._insertImageByUrl(data.path, savedRange, selectedFile.name);
+            /* Content media файлын бүрэн мэдээллийг хадгалах */
+            this._contentMediaFiles.push({ ...data, name: selectedFile.name });
             if (this.opts.onUploadSuccess) {
-              this.opts.onUploadSuccess({ path });
+              this.opts.onUploadSuccess(data);
             }
           } else {
             throw new Error(config.errorMessage);
@@ -973,17 +973,17 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
       tabUrl.disabled = true;
       okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-      const uploadPromise = this._uploadFileToServer(selectedFile).then(data => data.path);
-
-      Promise.resolve(uploadPromise)
-        .then(path => {
+      this._uploadFileToServer(selectedFile)
+        .then(data => {
           closeDialog();
           document.removeEventListener('keydown', escHandler);
 
-          if (path) {
-            this._insertMediaByUrl('video', path, savedRange, selectedFile.name);
+          if (data.path) {
+            this._insertMediaByUrl('video', data.path, savedRange, selectedFile.name);
+            /* Content media файлын бүрэн мэдээллийг хадгалах */
+            this._contentMediaFiles.push({ ...data, name: selectedFile.name });
             if (this.opts.onUploadSuccess) {
-              this.opts.onUploadSuccess({ path, type: 'video' });
+              this.opts.onUploadSuccess(data);
             }
           } else {
             throw new Error(config.errorMessage);
@@ -1196,17 +1196,17 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
       tabUrl.disabled = true;
       okBtn.innerHTML = `<i class="mi-hourglass-split"></i> ${config.uploadingText}`;
 
-      const uploadPromise = this._uploadFileToServer(selectedFile).then(data => data.path);
-
-      Promise.resolve(uploadPromise)
-        .then(path => {
+      this._uploadFileToServer(selectedFile)
+        .then(data => {
           closeDialog();
           document.removeEventListener('keydown', escHandler);
 
-          if (path) {
-            this._insertMediaByUrl('audio', path, savedRange, selectedFile.name);
+          if (data.path) {
+            this._insertMediaByUrl('audio', data.path, savedRange, selectedFile.name);
+            /* Content media файлын бүрэн мэдээллийг хадгалах */
+            this._contentMediaFiles.push({ ...data, name: selectedFile.name });
             if (this.opts.onUploadSuccess) {
-              this.opts.onUploadSuccess({ path, type: 'audio' });
+              this.opts.onUploadSuccess(data);
             }
           } else {
             throw new Error(config.errorMessage);
@@ -2690,6 +2690,7 @@ moedit.prototype._insertAttachment = function() {
         this._uploadFileToServer(file).then(data => {
           /* Амжилттай: серверийн metadata хадгалах */
           entry.path = data.path;
+          entry.file = data.file;
           entry.size = data.size;
           entry.type = data.type;
           entry.mime_content_type = data.mime_content_type;
@@ -4586,8 +4587,9 @@ moedit.prototype._selectHeaderImage = function() {
 
         /* Серверт upload хийх */
         this._uploadFileToServer(file).then(data => {
-          /* Амжилттай: серверийн path хадгалах */
+          /* Амжилттай: серверийн path болон бүрэн data хадгалах */
           this._headerImagePath = data.path;
+          this._headerImageData = { ...data, name: file.name };
           this._headerImageRemoved = false;
 
           /* Preview-г серверийн URL-ээр солих */

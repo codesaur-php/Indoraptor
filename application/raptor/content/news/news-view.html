@@ -103,19 +103,18 @@
 {% endif %}
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        {% if record['type'] != 'embed' %}
         const content = document.querySelector('textarea[name="content"]');
         new moedit(content, {
             readonly: true,
+            titleSelector: 'input[name="title"]',
+            {% if record['type'] == 'embed' %}sourceMode: true,{% endif %}
             {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
-
             attachments: [
-                {% for file in files %}{% if file.purpose == 4 %}
+                {% for file in files %}
                 JSON.parse(`{{ file|json_encode|e('js') }}`),
-                {% endif %}{% endfor %}
+                {% endfor %}
             ]
         });
-        {% endif %}
 
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {

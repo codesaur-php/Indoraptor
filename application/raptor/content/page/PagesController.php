@@ -3,6 +3,7 @@
 namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
+use Twig\TwigFilter;
 
 class PagesController extends FileController
 {
@@ -79,8 +80,8 @@ class PagesController extends FileController
             $where = \implode(' AND ', $conditions);
             // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new PagesModel($this->pdo))->getName();
-            $select_pages = 
-                'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active, LENGTH(title)+LENGTH(content) as text_size ' .
+            $select_pages =
+                'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active ' .
                 "FROM $table WHERE $where ORDER BY position, id";
             $pages_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
@@ -106,73 +107,51 @@ class PagesController extends FileController
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
             if ($this->getRequest()->getMethod() == 'POST') {
                 $payload = $this->getParsedBody();
-                if (empty($payload['title'])){
+                if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['created_by'] = $this->getUserId();
-                $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
-                if ($payload['published'] == 1) {
-                    if (!$this->isUserCan('system_content_publish')
-                    ) {
-                        throw new \Exception($this->text('system-no-permission'), 401);
-                    }
+
+                // Нийтлэх эрх шаардлагатай талбарууд
+                $isPublished = ($payload['published'] ?? 0) == 1;
+                $needsPublishPermission =
+                    $isPublished ||
+                    ($payload['is_featured'] ?? 0) == 1 ||
+                    ($payload['comment'] ?? 0) == 1;
+                if ($needsPublishPermission
+                    && !$this->isUserCan('system_content_publish')
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
+
+                if ($isPublished) {
                     $payload['published_at'] = \date('Y-m-d H:i:s');
                     $payload['published_by'] = $this->getUserId();
                 }
-                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
-                if (isset($payload['files'])) {
-                    $files = \array_flip($payload['files']);
-                    unset($payload['files']);
-                }
-                
-                $record = $model->insert($payload);
+
+                // Model-д байхгүй талбаруудыг payload-оос салгах
+                $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
+                unset($payload['files']);
+
+                $record = $model->insert(
+                    $payload + ['created_by' => $this->getUserId()]
+                );
                 if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 $id = $record['id'];
+
+                // Файлуудыг нэгдсэн аргаар боловсруулах (respondJSON-ийн өмнө!)
+                $this->processFiles($record, $files, true);
+
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
-                
-                $this->allowImageOnly();
-                $this->setFolder("/$table/$id");
-                $photo = $this->moveUploaded('photo');
-                if ($photo) {
-                    $record = $model->updateById($id, ['photo' => $photo['path']]);
-                }
-                $this->allowCommonTypes();
-                if (!empty($files) && \is_array($files)) {
-                    $html = $payload['content'];
-                    \preg_match_all('/src="([^"]+)"/', $html, $srcs);
-                    \preg_match_all('/href="([^"]+)"/', $html, $hrefs);
-                    foreach (\array_keys($files) as $file_id) {
-                        $update = $this->renameTo($table, $id, $file_id);
-                        if (!$update) continue;
-                        $files[$file_id] = $update;
-                        foreach ($srcs[1] as $src) {
-                            $src_updated = \str_replace("/$table/", "/$table/$id/", $src);
-                            if (\str_contains($src_updated, $update['path'])) {
-                                $html = \str_replace($src, $src_updated, $html);
-                            }
-                        }
-                        foreach ($hrefs[1] as $href) {
-                            $href_updated = \str_replace("/$table/", "/$table/$id/", $href);
-                            if (\str_contains($href_updated, $update['path'])) {
-                                $html = \str_replace($href, $href_updated, $html);
-                            }
-                        }
-                    }
-                    if ($html != $payload['content']) {
-                        $record = $model->updateById($id, ['content' => $html]);
-                    }
-                    $record['files'] = $files;
-                }
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/page-insert.html',
@@ -191,7 +170,7 @@ class PagesController extends FileController
             } else {
                 $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
             }
-        }  finally {
+        } finally {
             $context = ['action' => 'create'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
@@ -227,12 +206,14 @@ class PagesController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+
             $template = $this->twigTemplate(__DIR__ . '/page-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
             }
             $template->set('record', $record);
             $template->set('files', $files);
+            $template->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
             $template->render();            
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
         } catch (\Throwable $err) {
@@ -305,85 +286,76 @@ class PagesController extends FileController
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
+            $filesModel = new FilesModel($this->pdo);
+            $filesModel->setTable($table);
             $record = $model->getRowWhere([
                 'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
-            } elseif ($record['published'] == 1 && !$this->isUserCan('system_content_publish')) {
+            } elseif ($record['published'] == 1
+                && !$this->isUserCan('system_content_publish')
+            ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            if ($this->getRequest()->getMethod() == 'PUT') {
+            } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['published'] = ($payload['published'] ?? 'off' ) == 'on' ? 1 : 0;
-                if ($payload['published'] != $record['published']) {
-                    if (!$this->isUserCan('system_content_publish')) {
-                        throw new \Exception($this->text('system-no-permission'), 401);
-                    }
-                    if ($payload['published'] == 1) {
-                        $payload['published_at'] = \date('Y-m-d H:i:s');
-                        $payload['published_by'] = $this->getUserId();
-                    }
-                }
-                $payload['comment'] = ($payload['comment'] ?? 'off' ) == 'on' ? 1 : 0;
 
-                $this->setFolder("/$table/$id");
-                $this->allowImageOnly();
-                $photo = $this->moveUploaded('photo');
-                $current_photo_name = empty($record['photo']) ? '' : \basename($record['photo']);
-                if (!empty($current_photo_name)
-                    && $payload['photo_removed'] == 1
+                // Нийтлэх эрх шаардлагатай талбарууд
+                $isPublished = ($payload['published'] ?? 0) == 1;
+                $needsPublishPermission =
+                    $isPublished ||
+                    ($payload['is_featured'] ?? 0) == 1 ||
+                    ($payload['comment'] ?? 0) == 1;
+                if ($needsPublishPermission
+                    && !$this->isUserCan('system_content_publish')
                 ) {
-                    $this->unlinkByName($current_photo_name);
-                    $current_photo_name = null;
-                    $payload['photo'] = '';
+                    throw new \Exception($this->text('system-no-permission'), 401);
                 }
-                if ($photo) {
-                    if (!empty($current_photo_name)
-                        && \basename($photo['path']) != $current_photo_name
-                    ) {
-                        $this->unlinkByName($current_photo_name);
-                    }
-                    $payload['photo'] = $photo['path'];
+
+                // Нийтлэх төлөв өөрчлөгдсөн бол
+                if ($isPublished && $record['published'] != 1) {
+                    $payload['published_at'] = \date('Y-m-d H:i:s');
+                    $payload['published_by'] = $this->getUserId();
                 }
-                unset($payload['photo_removed']);
-                
+
+                // Model-д байхгүй болон аюултай талбаруудыг payload-оос салгах
+                $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
+                unset($payload['files']);
+                if (isset($payload['id'])) {
+                    unset($payload['id']);
+                }
+
+                // Файлуудыг эхлээд боловсруулах
+                $hasFileChanges = $this->processFiles($record, $files);
+
+                // Өөрчлөлт байгаа эсэхийг шалгах
                 $updates = [];
                 foreach ($payload as $field => $value) {
-                    if ($record[$field] != $value) {
+                    if (($record[$field] ?? null) != $value) {
                         $updates[] = $field;
                     }
                 }
-                $date = $record['updated_at'] ?? $record['created_at'];
-                $count_updated_files =
-                    "SELECT id FROM {$filesModel->getName()} " .
-                    "WHERE record_id=$id AND (created_at > '$date' OR updated_at > '$date')";
-                $files_changed = $filesModel->prepare($count_updated_files);
-                if ($files_changed->execute()
-                    && $files_changed->rowCount() > 0
-                ) {
+                if ($hasFileChanges) {
                     $updates[] = 'files';
                 }
                 if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
-                
+
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
                 $updated = $model->updateById($id, $payload);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
-                
+
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
@@ -548,27 +520,163 @@ class PagesController extends FileController
     {
         try {
             $sql =
-                'SELECT n.id, f.purpose, COUNT(*) as cnt, COALESCE(SUM(f.size),0) as total_size ' .
-                "FROM $table as n INNER JOIN {$table}_files as f ON n.id=f.record_id " .
-                'WHERE n.is_active=1 AND f.is_active=1 ' .
-                'GROUP BY n.id, f.purpose';
+                'SELECT record_id, COUNT(*) as cnt ' .
+                "FROM {$table}_files " .
+                'WHERE is_active=1 ' .
+                'GROUP BY record_id';
             $result = $this->query($sql)->fetchAll();
             $counts = [];
             foreach ($result as $row) {
-                $id = $row['id'];
-                if (!isset($counts[$id])) {
-                    $counts[$id] = ['media' => 0, 'attach' => 0, 'files_size' => 0];
-                }
-                $counts[$id]['files_size'] += (int)$row['total_size'];
-                if ($row['purpose'] == 2) {
-                    $counts[$id]['media'] = (int)$row['cnt'];
-                } elseif ($row['purpose'] == 4) {
-                    $counts[$id]['attach'] = (int)$row['cnt'];
-                }
+                $counts[$row['record_id']] = ['attach' => (int)$row['cnt']];
             }
             return $counts;
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Файлуудыг нэгдсэн аргаар боловсруулах.
+     *
+     * @param array $record  Бичлэг
+     * @param array $files   Frontend-ээс ирсэн файлуудын мэдээлэл
+     * @param bool $fromTemp Insert үйлдэл эсэх (temp folder-оос зөөх)
+     * @return bool Файл өөрчлөгдсөн эсэх
+     */
+    private function processFiles(array $record, array $files, bool $fromTemp = false): bool
+    {
+        $changed = false;
+        $userId = $this->getUserId();
+
+        $model = new PagesModel($this->pdo);
+        $table = $model->getName();
+
+        $filesModel = new FilesModel($this->pdo);
+        $filesModel->setTable($table);
+
+        if ($fromTemp) {
+            $this->setFolder("/$table/temp/$userId");
+            $tempPath = $this->public_path;
+            $tempFolder = $this->local_folder;
+        }
+
+        $this->setFolder("/$table/{$record['id']}");
+        $recordPath = $this->public_path;
+        $recordFolder = $this->local_folder;
+
+        // Header image устгагдсан эсэх
+        if (($files['headerImageRemoved'] ?? false) && !empty($record['photo'])) {
+            $photoFilename = \basename(\rawurldecode($record['photo']));
+            $this->unlinkByName($photoFilename);
+            $record = $model->updateById($record['id'], ['photo' => '']);
+            $changed = true;
+        }
+
+        // 1. Header Image - зөвхөн pages.photo талбарт хадгална
+        if (!empty($files['headerImage'])) {
+            $headerData = $files['headerImage'];
+            $filename = \basename($headerData['file']);
+
+            if (!empty($record['photo'])) {
+                $photoFilename = \basename(\rawurldecode($record['photo']));
+                $this->unlinkByName($photoFilename);
+            }
+
+            if ($fromTemp) {
+                $tempFile = "$tempFolder/$filename";
+                if (\is_file($tempFile)) {
+                    if (!\is_dir($recordFolder)) {
+                        \mkdir($recordFolder, 0755, true);
+                    }
+                    \rename($tempFile, "$recordFolder/$filename");
+                    $headerData['path'] = "$recordPath/" . \rawurlencode($filename);
+                }
+            }
+
+            $model->updateById($record['id'], ['photo' => $headerData['path']]);
+            $changed = true;
+        }
+
+        // 2. Content Media - DB-д бүртгэхгүй, зөвхөн файл зөөх
+        foreach ($files['contentMedia'] ?? [] as $media) {
+            if ($fromTemp) {
+                $filename = \basename($media['file']);
+                $tempFile = "$tempFolder/$filename";
+                if (\is_file($tempFile)) {
+                    if (!\is_dir($recordFolder)) {
+                        \mkdir($recordFolder, 0755, true);
+                    }
+                    \rename($tempFile, "$recordFolder/$filename");
+                }
+            }
+        }
+
+        // Content HTML дахь temp path-уудыг record path болгох
+        if ($fromTemp) {
+            $html = $record['content'] ?? '';
+            if (\strpos($html, $tempPath) !== false) {
+                $html = \str_replace($tempPath, $recordPath, $html);
+                $model->updateById($record['id'], ['content' => $html]);
+            }
+        }
+
+        // 3. Attachments - New
+        foreach ($files['attachments']['new'] ?? [] as $att) {
+            $filename = \basename($att['file']);
+
+            if ($fromTemp) {
+                $tempFile = "$tempFolder/$filename";
+                if (\is_file($tempFile)) {
+                    if (!\is_dir($recordFolder)) {
+                        \mkdir($recordFolder, 0755, true);
+                    }
+                    \rename($tempFile, "$recordFolder/$filename");
+                    $att['file'] = "$recordFolder/$filename";
+                    $att['path'] = "$recordPath/" . \rawurlencode($filename);
+                }
+            }
+
+            $filesModel->insert([
+                'record_id'         => $record['id'],
+                'file'              => $att['file'],
+                'path'              => $att['path'],
+                'size'              => $att['size'],
+                'type'              => $att['type'],
+                'mime_content_type' => $att['mime_content_type'],
+                'description'       => $att['description'] ?? '',
+                'created_by'        => $userId
+            ]);
+            $changed = true;
+        }
+
+        // 4. Attachments - Update existing (description only)
+        $currentDescriptions = [];
+        if (!empty($files['attachments']['existing'])) {
+            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']} AND is_active=1"]);
+            $currentDescriptions = \array_column($currentFiles, 'description', 'id');
+        }
+        foreach ($files['attachments']['existing'] ?? [] as $att) {
+            $attId = (int)$att['id'];
+            $newDesc = $att['description'] ?? '';
+            if (($currentDescriptions[$attId] ?? '') !== $newDesc) {
+                $filesModel->updateById($attId, [
+                    'description' => $newDesc,
+                    'updated_at'  => \date('Y-m-d H:i:s'),
+                    'updated_by'  => $userId
+                ]);
+                $changed = true;
+            }
+        }
+
+        // 5. Attachments - Delete (soft delete)
+        foreach ($files['attachments']['deleted'] ?? [] as $fileId) {
+            $filesModel->deactivateById((int)$fileId, [
+                'updated_at' => \date('Y-m-d H:i:s'),
+                'updated_by' => $userId
+            ]);
+            $changed = true;
+        }
+
+        return $changed;
     }
 }

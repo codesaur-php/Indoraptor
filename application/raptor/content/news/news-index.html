@@ -64,10 +64,9 @@
             <th scope="col"><i class="bi bi-translate"></i> </th>                                <!-- Хэлний туг -->
             <th scope="col"><i class="bi bi-image"></i></th>
             <th scope="col">{{ 'title'|text }}</th>                                              <!-- Гарчиг -->
-            <th scope="col"><i class="bi bi-files"></i> {{ 'files'|text }}</th>
+            <th scope="col"><i class="bi bi-paperclip"></i></th>
             <th scope="col">{{ 'type'|text }} / {{ 'category'|text }}</th>
             <th scope="col">{{ 'publish'|text }}</th>
-            <th scope="col"><i class="bi bi-hdd"></i> mb</th>
             <th scope="col" style="width:10rem">{{ 'action'|text }}</th>                         <!-- Үйлдлийн товчнууд -->
         </tr>
     </thead>
@@ -219,9 +218,6 @@
 
                 /* Нийтлэгдсэн төлөвийг харуулах */
                 const published = record.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
-                const fc = data.files_counts[id];
-                const totalBytes = (record.text_size || 0) + (fc ? fc.files_size : 0);
-                const sizeMB = (totalBytes / 1048576).toFixed(2);
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
                 const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${record.id}"><i class="bi bi-book"></i></a>`];  /* Унших товч */
@@ -238,7 +234,7 @@
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
                 /* Хүснэгтийн мөр үүсгэх */
-                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${(() => { const fc = data.files_counts[id]; if (!fc) return ''; const parts = []; if (fc.media) parts.push(`<small class="text-muted">content</small> ${fc.media}`); if (fc.attach) parts.push(`<small class="text-muted">attach</small> ${fc.attach}`); return parts.join('<br>'); })()}</td><td>${type_category}</td><td>${published}</td><td><small class="text-muted">${sizeMB}</small></td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${data.files_counts[id]?.attach || ''}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
             });
 
             /* Хүснэгтэд өгөгдөл оруулах */

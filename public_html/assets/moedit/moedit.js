@@ -479,6 +479,12 @@ Instructions:
     /** @private Header image устгагдсан эсэх */
     this._headerImageRemoved = false;
 
+    /** @private Header image-ийн бүрэн upload response data */
+    this._headerImageData = null;
+
+    /** @private Content доторх медиа файлуудын upload response data */
+    this._contentMediaFiles = [];
+
     /** @private Хавсралт файлууд */
     this._attachments = [];
     this._deletedAttachmentIds = [];
@@ -506,6 +512,7 @@ Instructions:
       }
     }
     this._headerImagePath = null;
+    this._headerImageData = null;
     this._headerImageRemoved = true;
 
     /* Callback дуудах */
@@ -566,6 +573,35 @@ Instructions:
    */
   getOptimizeImages() {
     return this._optimizeImages;
+  }
+
+  /**
+   * Бүх файлуудын мэдээллийг нэгтгэж авах
+   * Backend руу илгээхэд бэлэн бүтэц буцаана
+   * @returns {Object} Файлуудын бүрэн мэдээлэл
+   */
+  getFiles() {
+    return {
+      headerImage: this._headerImageData,
+      headerImageRemoved: this._headerImageRemoved,
+      contentMedia: this._contentMediaFiles,
+      attachments: {
+        new: this._attachments.filter(f => !f._isExisting && !f._uploading).map(f => ({
+          path: f.path,
+          file: f.file,
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          mime_content_type: f.mime_content_type,
+          description: f.description || ''
+        })),
+        existing: this._attachments.filter(f => f._isExisting).map(f => ({
+          id: f.id,
+          description: f.description || ''
+        })),
+        deleted: this._deletedAttachmentIds
+      }
+    };
   }
 
   /**

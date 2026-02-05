@@ -86,8 +86,6 @@
             <th scope="col">{{ 'properties'|text }}</th>
             <!-- Файлын тайлбар - хэрэглэгчийн оруулсан description -->
             <th scope="col">{{ 'description'|text }}</th>
-            <!-- Файлын зориулалт (purpose) -->
-            <th scope="col">{{ 'purpose'|text('Зориулалт') }}</th>
             <!-- Файлыг keyword-оор шүүх, хайхад зориулагдсан түлхүүр үг -->
             <th scope="col">{{ 'keyword'|text }}</th>
             <!-- Үүсгэсэн огноо / created_at -->
@@ -123,12 +121,6 @@
         } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
         
         return `${bytes.toFixed(1)}${units[u]}`;
-    }
-
-    /* Purpose утгыг текст болгон харуулах */
-    function purposeLabel(val) {
-        const labels = { 0: '', 1: '{{ localization.code == "mn" ? "Толгой зураг" : "Header image" }}', 2: '{{ localization.code == "mn" ? "Контент медиа" : "Content media" }}', 4: '{{ localization.code == "mn" ? "Хавсралт" : "Attachment" }}' };
-        return labels[parseInt(val)] ?? '';
     }
 
     /* HTML-тэй холбогдох аюулгүй байдлын үүднээс энгийн escape */
@@ -280,20 +272,15 @@
             cell3.innerHTML = file['description'] ?? '';
             row.appendChild(cell3);
 
-            /* 📌 4-р багана - purpose */
+            /* 📌 4-р багана - keyword */
             const cell4 = document.createElement('td');
-            cell4.innerHTML = purposeLabel(file['purpose']);
+            cell4.innerHTML = file['keyword'] ?? '';
             row.appendChild(cell4);
 
-            /* 📌 5-р багана - keyword */
+            /* 📌 5-р багана - created_at */
             const cell5 = document.createElement('td');
-            cell5.innerHTML = file['keyword'] ?? '';
+            cell5.innerHTML = file['created_at'] ?? '';
             row.appendChild(cell5);
-
-            /* 📌 6-р багана - created_at */
-            const cell6 = document.createElement('td');
-            cell6.innerHTML = file['created_at'] ?? '';
-            row.appendChild(cell6);
 
             let tBody = this.table.querySelector('tbody');
             /* 🧩 tbody байхгүй бол үүсгэнэ */
@@ -471,7 +458,7 @@
             container: document.getElementById('container'),
             
             /* FileController::post → files-post endpoint руу upload хийнэ */
-            url: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':0}) }}`,
+            url: `{{ 'files-post'|link({'input':'file', 'table':table}) }}`,
             
             /* Файл upload-д тохирох filter */
             filters: {

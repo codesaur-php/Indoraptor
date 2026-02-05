@@ -1,5 +1,5 @@
 <!--
-    Файлын purpose, keyword, description мэдээллийг засварлах modal.
+    Файлын keyword, description мэдээллийг засварлах modal.
     Энэ modal нь files-update route руу PUT хүсэлт илгээж
     тухайн файлын metadata-г шинэчилнэ.
 -->
@@ -35,21 +35,6 @@
                   action="{{ 'files-update'|link({'table':table, 'id':record['id']}) }}"
                   method="PUT"
                   enctype="multipart/form-data">
-
-                <!-- PURPOSE -->
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end">
-                        {{ 'purpose'|text('Зориулалт') }}
-                    </label>
-                    <div class="col-9">
-                        <select class="form-select" name="file_purpose">
-                            <option value="0"{{ record['purpose'] == 0 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Тодорхойгүй' : 'Undefined' }}</option>
-                            <option value="1"{{ record['purpose'] == 1 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Толгой зураг' : 'Header image' }}</option>
-                            <option value="2"{{ record['purpose'] == 2 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Контент медиа' : 'Content media' }}</option>
-                            <option value="4"{{ record['purpose'] == 4 ? ' selected' : '' }}>{{ localization.code == 'mn' ? 'Хавсралт' : 'Attachment' }}</option>
-                        </select>
-                    </div>
-                </div>
 
                 <!-- KEYWORD -->
                 <div class="row mb-3">
@@ -160,8 +145,7 @@
                 if (!row) return;
 
                 row.children[2].innerHTML = resp.record.description;
-                row.children[3].innerHTML = typeof purposeLabel === 'function' ? purposeLabel(resp.record.purpose) : (resp.record.purpose ?? 0);
-                row.children[4].innerHTML = resp.record.keyword;
+                row.children[3].innerHTML = resp.record.keyword;
 
                 /* Амжилттай мэдэгдэл */
                 NotifyTop(
