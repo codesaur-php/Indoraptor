@@ -3,7 +3,7 @@
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2.1-777BB4.svg?logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк**
+**Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк**<br>
 **Clean architecture object-oriented web development framework**
 
 ---
@@ -184,9 +184,9 @@ This project is licensed under the MIT License.
 
 ## Author
 
-**Narankhuu**
-📧 codesaur@gmail.com
-📱 +976 99000287
+**Narankhuu**<br>
+📧 codesaur@gmail.com<br>
+📱 +976 99000287<br>
 🌐 https://github.com/codesaur
 
 🦖 **codesaur ecosystem:** https://codesaur.net
