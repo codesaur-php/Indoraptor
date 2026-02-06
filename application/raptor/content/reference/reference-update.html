@@ -111,7 +111,7 @@
                                name="title[{{ code }}]"
                                required
                                maxlength="255"
-                               value="{{ record['localized']['title'][code]|e }}"
+                               value="{{ record['localized'][code]['title']|e }}"
                                autocomplete="off">
 
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
@@ -123,7 +123,7 @@
                         <textarea class="form-control"
                                   name="content[{{ code }}]"
                                   rows="10"
-                                  required>{{ record['localized']['content'][code]|e }}</textarea>
+                                  required>{{ record['localized'][code]['content']|e }}</textarea>
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>

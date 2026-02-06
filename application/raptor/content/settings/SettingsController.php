@@ -75,14 +75,13 @@ class SettingsController extends FileController
             }
 
             /* LOGO (Олон хэл дээр) */
-            if (!empty($record['localized']['logo'] ?? [])) {
-                foreach ($record['localized']['logo'] as $code => $path) {
-                    if (!empty($path)) {
-                        $logoPath = $this->local_folder . '/' . \basename($path);
-                        if (\file_exists($logoPath)) {
-                            $record['localized']['logo_size'][$code] =
-                                $this->formatSizeUnits(\filesize($logoPath));
-                        }
+            foreach ($record['localized'] ?? [] as $code => $langData) {
+                $path = $langData['logo'] ?? '';
+                if (!empty($path)) {
+                    $logoPath = $this->local_folder . '/' . \basename($path);
+                    if (\file_exists($logoPath)) {
+                        $record['localized'][$code]['logo_size'] =
+                            $this->formatSizeUnits(\filesize($logoPath));
                     }
                 }
             }
@@ -294,7 +293,7 @@ class SettingsController extends FileController
 
             foreach (\array_keys($uploadedLogos) as $code) {
 
-                $logo_name = \basename($current['localized']['logo'][$code] ?? '');
+                $logo_name = \basename($current['localized'][$code]['logo'] ?? '');
                 $logo = $this->moveUploaded($uploadedLogos[$code]);
 
                 if (!empty($logo_name)

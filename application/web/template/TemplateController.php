@@ -2,6 +2,7 @@
 
 namespace Web\Template;
 
+use Twig\TwigFilter;
 use codesaur\Template\TwigTemplate;
 use Raptor\Content\PagesModel;
 
@@ -19,7 +20,7 @@ use Raptor\Content\PagesModel;
  * ✔ Контент template-ийг index layout дотор оруулж нэгтгэх  
  * ✔ System settings → footer, SEO, branding гэх мэт template хувьсагчид  
  * ✔ Олон түвшинтэй Main Menu (dynamic page tree) үүсгэх  
- * ✔ Important Menu (footer-ийн товч меню) үүсгэх  
+ * ✔ Featured Pages (footer-ийн онцлох холбоосууд) үүсгэх
  *
  * Тухайн сайт нь олон хэл дээр ажиллах ба `PagesModel` дээр суурилсан
  * харагдах, нийтлэгдсэн контентуудыг navigation болгон хувиргана.
@@ -35,7 +36,7 @@ class TemplateController extends \Raptor\Controller
      * 1) index.html layout-г ачаална  
      * 2) content template-г ачааж index layout дотор `{{ content }}` хувьсагчид суулгана  
      * 3) System settings (favicon, title, description…) дамжуулна  
-     * 4) Main Menu болон Important Menu-г тухайн хэл дээр динамик байдлаар үүсгэнэ  
+     * 4) Main Menu болон Featured Pages-г тухайн хэл дээр динамик байдлаар үүсгэнэ
      *
      * @param string $template Контентын Twig template файл (жишээ: page.html)
      * @param array  $vars     Контент template-д дамжуулах хувьсагчид
@@ -45,7 +46,9 @@ class TemplateController extends \Raptor\Controller
     public function template(string $template, array $vars = []): TwigTemplate
     {
         $index = $this->twigTemplate(__DIR__ . '/index.html');
-        $index->set('content', $this->twigTemplate($template, $vars));
+        $content = $this->twigTemplate($template, $vars);
+        $content->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
+        $index->set('content', $content);
 
         // System settings (favicon, SEO, branding…)
         foreach ($this->getAttribute('settings', []) as $key => $value) {
@@ -55,7 +58,7 @@ class TemplateController extends \Raptor\Controller
         // Navigation menu (сонгосон хэлээр)
         $code = $this->getLanguageCode();
         $index->set('main_menu', $this->getMainMenu($code));
-        $index->set('important_menu', $this->getImportantMenu($code));
+        $index->set('featured_pages', $this->getFeaturedPages($code));
 
         return $index;
     }
@@ -118,22 +121,21 @@ class TemplateController extends \Raptor\Controller
     }
 
     /**
-     * Important Menu-г авах (footer-ийн чухал холбоосууд)
+     * Онцлох хуудсуудыг авах (footer-ийн чухал холбоосууд).
      *
-     * type='important-menu' гэж тэмдэглэсэн контентуудыг энд гаргана.
+     * is_featured=1 гэж тэмдэглэгдсэн, нийтлэгдсэн хуудсуудыг буцаана.
      *
      * @param string $code Хэлний код
-     * @return array Footer-д харуулах богино меню
+     * @return array Footer-д харуулах онцлох хуудсуудын жагсаалт
      */
-    public function getImportantMenu(string $code): array
+    public function getFeaturedPages(string $code): array
     {
         $pages = [];
-        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
             'SELECT id, title, link ' .
             "FROM $pages_table " .
-            "WHERE code=:code AND is_active=1 AND published=1 AND type='important-menu' " .
+            'WHERE code=:code AND is_active=1 AND published=1 AND is_featured=1 ' .
             'ORDER BY position, id';
         $stmt = $this->prepare($pages_query);
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);

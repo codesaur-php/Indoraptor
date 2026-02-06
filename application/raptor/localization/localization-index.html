@@ -170,7 +170,7 @@
 
                             <!-- Хэл бүрийн текст -->
                             {% for code in localization.language|keys %}
-                                <td>{{ row['localized']['text'][code] }}</td>
+                                <td>{{ row['localized'][code]['text'] }}</td>
                             {% endfor %}
 
                             <!-- Текстийн төрөл (plain, html…) -->

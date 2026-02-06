@@ -203,8 +203,8 @@ class NewsController extends FileController
                 }
                 $id = $record['id'];
 
-                // Файлуудыг нэгдсэн аргаар боловсруулах (respondJSON-ийн өмнө!)
-                $this->processFiles($record, $files, true);
+                // Файлуудыг нэгдсэн аргаар боловсруулах
+                $fileChanges = $this->processFiles($record, $files, true);
 
                 $this->respondJSON([
                     'status' => 'success',
@@ -237,6 +237,7 @@ class NewsController extends FileController
                 $level = LogLevel::INFO;
                 $message = '{record.id} дугаартай [{record.title}] мэдээг амжилттай үүсгэлээ';
                 $context += ['record_id' => $id, 'record' => $record];
+                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Мэдээ үүсгэх үйлдлийг эхлүүллээ';
@@ -318,7 +319,7 @@ class NewsController extends FileController
                 }
 
                 // Файлуудыг эхлээд боловсруулах
-                $hasFileChanges = $this->processFiles($record, $files);
+                $fileChanges = $this->processFiles($record, $files);
 
                 // Өөрчлөлт байгаа эсэхийг шалгах
                 $updates = [];
@@ -327,7 +328,7 @@ class NewsController extends FileController
                         $updates[] = $field;
                     }
                 }
-                if ($hasFileChanges) {
+                if (!empty($fileChanges)) {
                     $updates[] = 'files';
                 }
                 if (empty($updates)) {
@@ -376,6 +377,7 @@ class NewsController extends FileController
                 $level = LogLevel::INFO;
                 $message = '{record.id} дугаартай [{record.title}] мэдээг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
+                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
@@ -512,11 +514,11 @@ class NewsController extends FileController
      * @param array $record  Бичлэг
      * @param array $files   Frontend-ээс ирсэн файлуудын мэдээлэл
      * @param bool $fromTemp Insert үйлдэл эсэх (temp folder-оос зөөх)
-     * @return bool Файл өөрчлөгдсөн эсэх
+     * @return array Файлуудын өөрчлөлтүүдийн жагсаалт (хоосон бол өөрчлөлт байхгүй)
      */
-    private function processFiles(array $record, array $files, bool $fromTemp = false): bool
+    private function processFiles(array $record, array $files, bool $fromTemp = false): array
     {
-        $changed = false;
+        $changes = [];
         $userId = $this->getUserId();
 
         $model = new NewsModel($this->pdo);
@@ -540,7 +542,7 @@ class NewsController extends FileController
             $photoFilename = \basename(\rawurldecode($record['photo']));
             $this->unlinkByName($photoFilename);
             $record = $model->updateById($record['id'], ['photo' => '']);
-            $changed = true;
+            $changes[] = "header image deleted: $photoFilename";
         }
 
         // 1. Header Image - зөвхөн news.photo талбарт хадгална
@@ -565,7 +567,7 @@ class NewsController extends FileController
             }
 
             $model->updateById($record['id'], ['photo' => $headerData['path']]);
-            $changed = true;
+            $changes[] = "header image updated: $filename";
         }
 
         // 2. Content Media - DB-д бүртгэхгүй, зөвхөн файл зөөх
@@ -578,6 +580,7 @@ class NewsController extends FileController
                         \mkdir($recordFolder, 0755, true);
                     }
                     \rename($tempFile, "$recordFolder/$filename");
+                    $changes[] = "content media moved: $filename";
                 }
             }
         }
@@ -617,7 +620,7 @@ class NewsController extends FileController
                 'description'       => $att['description'] ?? '',
                 'created_by'        => $userId
             ]);
-            $changed = true;
+            $changes[] = "attachment added: $filename";
         }
 
         // 4. Attachments - Update existing (description only)
@@ -635,7 +638,7 @@ class NewsController extends FileController
                     'updated_at'  => \date('Y-m-d H:i:s'),
                     'updated_by'  => $userId
                 ]);
-                $changed = true;
+                $changes[] = "attachment description updated: #$attId";
             }
         }
 
@@ -645,10 +648,10 @@ class NewsController extends FileController
                 'updated_at' => \date('Y-m-d H:i:s'),
                 'updated_by' => $userId
             ]);
-            $changed = true;
+            $changes[] = "attachment deleted: #$fileId";
         }
 
-        return $changed;
+        return $changes;
     }
 
     /**

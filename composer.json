@@ -5,7 +5,7 @@
     "keywords": [
         "indoraptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "mongol", "mongolia", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден"
     ],
-    "homepage": "https://github.com/codesaur-php",
+    "homepage": "https://codesaur.net",
     "authors": [
         {
             "name": "Narankhuu (+976 99000287)",

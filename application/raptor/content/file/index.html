@@ -1,39 +1,102 @@
-<!-- Fancybox - зураг болон медиа файлуудыг modal хэлбэрээр томруулж харахад ашиглана -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<!-- Custom image preview overlay CSS (Fancybox-ийн оронд) -->
+<style>
+    .image-preview-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.85);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .image-preview-overlay img,
+    .image-preview-overlay video {
+        max-width: 90%;
+        max-height: 85vh;
+        object-fit: contain;
+        cursor: default;
+        border-radius: 4px;
+    }
+    .image-preview-overlay audio {
+        cursor: default;
+        min-width: 320px;
+    }
+    .image-preview-overlay pre {
+        width: 90%;
+        max-height: 85vh;
+        overflow: auto;
+        background: #f8f9fa;
+        color: #212529;
+        padding: 1rem;
+        border-radius: 4px;
+        font-size: .875rem;
+        cursor: default;
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .image-preview-overlay iframe {
+        width: 90%;
+        height: 90vh;
+        border: none;
+        border-radius: 4px;
+        background: #fff;
+        cursor: default;
+    }
+    .image-preview-overlay .preview-close {
+        position: absolute;
+        top: 12px;
+        right: 20px;
+        color: #fff;
+        font-size: 2.5rem;
+        cursor: pointer;
+        line-height: 1;
+        z-index: 1;
+    }
+    .image-preview-overlay .preview-caption {
+        color: #ccc;
+        margin-top: 10px;
+        font-size: .95rem;
+        text-align: center;
+        max-width: 80%;
+    }
+</style>
 
-<!--
-    Дээд хэсгийн статистик блок -
-    Файлууд хэдэн хүснэгтэд, нийт хэдэн мөртэй, ямар хэмжээ эзэлж буйг харуулна.
--->
-<div class="bd-callout bd-callout-dark text-bg-light alert alert-dismissible fade show shadow-sm">
-    <span class="d-block mb-2">
-        <i class="bi bi-folder-fill"></i>
-        Мэдээллийн санд нийт
-        <strong>{{ total['tables'] }}</strong> хүснэгтэд
-        <strong>{{ total['rows'] }}</strong> ширхэг файл хатуу дискний
-        <strong>{{ total['sizes'] }}</strong> хэмжээг эзэлсэн байна.
+<!-- Файлын статистик -->
+<div class="d-flex flex-wrap align-items-center gap-3 mt-2 mb-2" style="font-size:.875rem">
+    <span class="lang-mn">
+        <i class="bi bi-database-fill text-primary me-1"></i>
+        <strong>{{ total['tables'] }}</strong> хүснэгт,
+        <strong>{{ total['rows'] }}</strong> файл,
+        <strong>{{ total['sizes'] }}</strong>
     </span>
-
-    <!-- Файл хадгалж буй хүснэгтүүдийн жагсаалт -->
-    {% for name,info in tables %}
-        <span class="d-inline-block ps-3">
-            [
-            <a class="badge bg-primary" href="{{ 'files'|link }}?table={{ name|e }}">
-                <strong>{{ name }}</strong>: {{ info['count'] ~ ' -> ' ~ info['size'] }}
-            </a>
-            ]
-        </span>
-    {% else %}
-        мэдээлэл олдсонгүй
-    {% endfor %}
+    <span class="lang-en" hidden>
+        <i class="bi bi-database-fill text-primary me-1"></i>
+        <strong>{{ total['tables'] }}</strong> tables,
+        <strong>{{ total['rows'] }}</strong> files,
+        <strong>{{ total['sizes'] }}</strong>
+    </span>
+    <small class="text-body-tertiary fst-italic ms-auto">
+        <span class="lang-mn">* контентын толгой зураг, агуулгын файл тооцогдоогүй</span>
+        <span class="lang-en" hidden>* excludes header images &amp; inline files</span>
+    </small>
 </div>
-
-<!-- Сонгогдсон файлын хүснэгтийн гарчиг -->
-<div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
-    <h3 class="px-2 my-auto">
-        <i class="bi bi-folder"></i> {{ table|capitalize }}
-    </h3>
+<!-- Хүснэгт сонголт -->
+<div class="d-flex flex-wrap gap-1 mb-3">
+    {% for name,info in tables %}
+    <a class="btn btn-sm rounded-pill {{ name == table ? 'btn-primary' : 'btn-outline-secondary' }}"
+       href="{{ 'files'|link }}?table={{ name|e }}">
+        {{ name }}{{ name != 'files' ? ' (attachments)' : '' }}
+        <span class="badge rounded-pill ms-1 {{ name == table ? 'text-bg-light' : 'text-bg-secondary' }}">
+            {{ info['count'] }} &middot; {{ info['size'] }}
+        </span>
+    </a>
+    {% else %}
+    <span class="lang-mn text-body-secondary">мэдээлэл олдсонгүй</span>
+    <span class="lang-en text-body-secondary" hidden>no data found</span>
+    {% endfor %}
 </div>
 
 <!--
@@ -53,6 +116,8 @@
 </table>
 
 <script type="text/javascript">
+    const _mn = document.documentElement.lang === 'mn';
+
     /* ---------------------------------------------------------------
        ФАЙЛЫН ТУСЛАХ ФУНКЦҮҮД
        --------------------------------------------------------------- */
@@ -96,10 +161,76 @@
         return s.replace(/[&"'<>]/g, c => lookup[c]);
     }
 
+    /* 🖼 Custom image preview (Fancybox-ийн оронд)
+       ------------------------------------------------------------ */
+    function openFilePreview(src, caption, type) {
+        const overlay = document.createElement('div');
+        overlay.className = 'image-preview-overlay';
+
+        let content = '';
+        if (type === 'video') {
+            content = `<video src="${src}" controls autoplay></video>`;
+        } else if (type === 'audio') {
+            content = `<audio src="${src}" controls autoplay></audio>`;
+        } else if (type === 'pdf') {
+            content = `<iframe src="${src}"></iframe>`;
+        } else if (type === 'text') {
+            content = `<pre>${_mn ? 'Ачаалж байна...' : 'Loading...'}</pre>`;
+        } else {
+            content = `<img src="${src}" alt="">`;
+        }
+
+        overlay.innerHTML = `
+            <span class="preview-close">&times;</span>
+            ${content}
+            ${caption ? `<div class="preview-caption">${caption}</div>` : ''}
+        `;
+
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        if (type === 'text') {
+            fetch(src)
+                .then(res => res.text())
+                .then(text => {
+                    const pre = overlay.querySelector('pre');
+                    if (pre) pre.textContent = text;
+                })
+                .catch(() => {
+                    const pre = overlay.querySelector('pre');
+                    if (pre) pre.textContent = _mn ? 'Файлын агуулгыг ачаалж чадсангүй.' : 'Failed to load file content.';
+                });
+        }
+
+        const close = () => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        };
+
+        overlay.querySelector('.preview-close').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') {
+                close();
+                document.removeEventListener('keydown', onKey);
+            }
+        };
+        document.addEventListener('keydown', onKey);
+    }
+
     /* ---------------------------------------------------------------
        DOCUMENT READY - JS ажиллагаа эндээс эхэлнэ
        --------------------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function () {
+        /* 🌐 Хэлний toggle */
+        if (!_mn) {
+            document.querySelectorAll('.lang-mn').forEach(el => el.hidden = true);
+            document.querySelectorAll('.lang-en').forEach(el => el.hidden = false);
+        }
+
         /* Modal нээхэд ашиглагдах files-link */
         const filesLink = `{{ 'files-modal'|link({'table': table}) }}`;
 
@@ -109,11 +240,12 @@
             let fileIcon;
 
             /* Файлын нэр (basename) + HTML escape */
-            let fileName = escapeStr(getBasename(file['path']));
+            let fileName = escapeStr(decodeURIComponent(getBasename(file['path'])));
 
             /* Файл нээх үед харагдах default behaviour */
             let fileLinkAttr =
-                `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
+                `target="__blank" onclick="return confirm('${_mn ? `Та [${fileName}] файлыг нээхдээ итгэлтэй байна уу?` : `Are you sure you want to open this file [${fileName}]?`}')"`;
+
 
             /* Modal → code tag хэсэг рүү илгээх линк */
             let fileAction = `
@@ -133,36 +265,63 @@
                         `<img src="${file['path']}"
                               style="max-height:7.5rem;max-width:20rem;height:100%">`;
 
-                    /* GIF-ээс бусад зурагт fancybox хэрэглэнэ */
-                    if (file['mime_content_type'] !== 'image/gif') {
-                        const caption = file['description']
-                            ? escapeStr(file['description'])
-                            : fileName;
-                        fileLinkAttr = `file-data-fancybox data-caption="${caption}"`;
-                    }
+                    const caption = file['description']
+                        ? escapeStr(file['description'])
+                        : fileName;
+                    fileLinkAttr = `data-preview="image" data-caption="${caption}"`;
                 }
                 break;
 
                 /* ----------------- VIDEO ----------------- */
-                case 'video':
+                case 'video': {
                     fileIcon = `
                         <video style="max-height:15rem;height:100%;max-width:20rem;width:100%" controls>
                             <source src="${file['path']}">
                         </video>`;
-                    break;
+
+                    const caption = file['description']
+                        ? escapeStr(file['description'])
+                        : fileName;
+                    fileLinkAttr = `data-preview="video" data-caption="${caption}"`;
+                }
+                break;
 
                 /* ----------------- AUDIO ----------------- */
-                case 'audio':
+                case 'audio': {
                     fileIcon = `
                         <audio controls>
                             <source src="${file['path']}" type="${file['mime_content_type']}">
                         </audio>`;
-                    break;
+
+                    const caption = file['description']
+                        ? escapeStr(file['description'])
+                        : fileName;
+                    fileLinkAttr = `data-preview="audio" data-caption="${caption}"`;
+                }
+                break;
 
                 /* ----------------- OTHER ----------------- */
                 default:
                     fileIcon = '<i class="bi bi-hdd"></i>';
-                    fileAction = ''; /* html code tag modal-ыг нуух */
+                    fileAction = '';
+
+                    const mime = file['mime_content_type'];
+
+                    if (mime === 'application/pdf') {
+                        /* PDF файлыг browser-д шууд preview хийх */
+                        fileIcon = '<i class="bi bi-file-earmark-pdf" style="font-size:2rem;color:#dc3545"></i>';
+                        const caption = file['description']
+                            ? escapeStr(file['description'])
+                            : fileName;
+                        fileLinkAttr = `data-preview="pdf" data-caption="${caption}"`;
+                    } else if (mime === 'text/plain' || mime === 'application/json' || mime === 'text/xml' || mime === 'application/xml') {
+                        /* Text файлыг fetch хийж overlay дээр харуулах */
+                        fileIcon = '<i class="bi bi-file-earmark-text" style="font-size:2rem"></i>';
+                        const caption = file['description']
+                            ? escapeStr(file['description'])
+                            : fileName;
+                        fileLinkAttr = `data-preview="text" data-caption="${caption}"`;
+                    }
                     break;
             }
 
@@ -217,7 +376,7 @@
             /* 5-р багана - created_at */
             let cell5 = document.createElement('td');
             cell5.innerHTML = file['created_at'] ?? '';
-            row.appendChild(cell6);
+            row.appendChild(cell5);
 
             /* tbody байхгүй бол шинээр үүсгэнэ */
             let tBody = this.table.querySelector('tbody');
@@ -242,6 +401,15 @@
                     ajaxModal(a);
                 })
             );
+
+            /* 🖼 data-preview attribute бүхий зурагт click handler нэмэх */
+            const previewLink = row.querySelector('[data-preview]');
+            if (previewLink) {
+                previewLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openFilePreview(this.href, this.dataset.caption || '', this.dataset.preview);
+                });
+            }
         };
 
         /* motable instance үүсгэж байна */
@@ -255,7 +423,7 @@
             .then(res => {
                 const contentType = res.headers.get('content-type') || '';
                 if (contentType.includes('application/json')) return res.json();
-                
+
                 throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
             })
             .then(data => {
@@ -271,12 +439,6 @@
             })
             .catch(err => {
                 files.error(err);
-            })
-            .finally(() => {
-                /* Fancybox-г зургын файлуудад bind хийх */
-                Fancybox.bind('[file-data-fancybox]', {
-                    groupAll: true
-                });
             });
     });
 </script>

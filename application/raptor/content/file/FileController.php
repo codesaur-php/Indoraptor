@@ -79,28 +79,42 @@ class FileController extends \Raptor\Controller
         $this->_allowed_exts = $exts;
     }
 
+    /**
+     * Бүх файл өргөтгөлийг зөвшөөрнө (шүүлтүүр хасна).
+     */
     public function allowAnything()
     {
         $this->_allowed_exts = false;
     }
-    
+
+    /**
+     * Зөвхөн зургийн файл өргөтгөлүүдийг зөвшөөрнө.
+     */
     public function allowImageOnly()
     {
-        $this->allowExtensions(['jpg', 'jpeg', 'jpe', 'png', 'gif', 'webp']);
+        $this->allowExtensions(['jpg', 'jpeg', 'jpe', 'png', 'gif', 'webp', 'svg', 'avif', 'bmp', 'tif', 'tiff']);
     }
-    
+
+    /**
+     * Вэб-д түгээмэл ашиглагддаг бүх файл өргөтгөлүүдийг зөвшөөрнө.
+     */
     public function allowCommonTypes()
     {
         $this->allowExtensions([
-            'jpg', 'jpeg', 'jpe', 'png', 'gif', 'webp', 'ico',
-            'pdf', 'doc', 'docx', 'ppt', 'pptx', 'pps', 'ppsx', 'xls', 'xlsx', 'odt', 'psd',
-            'mp3', 'm4a', 'ogg', 'wav',
-            'mp4', 'm4v', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2',
+            'jpg', 'jpeg', 'jpe', 'png', 'gif', 'ico', 'webp', 'svg', 'avif', 'bmp', 'tif', 'tiff',
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pps', 'ppsx', 'odt', 'ods', 'odp', 'csv', 'rtf', 'psd',
+            'mp3', 'm4a', 'ogg', 'wav', 'aac', 'flac', 'wma',
+            'mp4', 'm4v', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2', 'webm',
             'txt', 'xml', 'json',
-            'zip', 'rar'
+            'zip', 'rar', '7z', 'gz', 'tar'
         ]);
     }
 
+    /**
+     * Файлын хэмжээний дээд хязгаарыг тогтооно (байтаар).
+     *
+     * @param int $size Хамгийн их байт
+     */
     public function setSizeLimit(int $size)
     {
         $this->_size_limit = $size;
@@ -167,6 +181,7 @@ class FileController extends \Raptor\Controller
      * Хэрвээ overwrite=false → давхар filename collision-оос автоматаар хамгаална.
      *
      * @param string|UploadedFileInterface $uploadedFile
+     * @param bool $optimize  Зураг optimize хийх эсэх         
      * @param int $mode  mkdir() permission
      *
      * @return array|false  Амжилттай бол:
@@ -180,7 +195,7 @@ class FileController extends \Raptor\Controller
      *
      * Амжилтгүй бол false буцаана, алдааны code-г getLastUploadError() авч мэдэж болно.
      */
-    protected function moveUploaded($uploadedFile, int $mode = 0755): array|false
+    protected function moveUploaded($uploadedFile, bool $optimize = false, int $mode = 0755): array|false
     {
         try {
             if (\is_string($uploadedFile)) {
@@ -194,7 +209,7 @@ class FileController extends \Raptor\Controller
             }
 
             $file_size = $uploadedFile->getSize();
-            if ($this->_size_limit
+            if (!$optimize && $this->_size_limit
                 && $file_size > $this->_size_limit
             ) {
                 throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
@@ -235,11 +250,24 @@ class FileController extends \Raptor\Controller
             
             $file_path = $upload_path . $file_name;
             $mime_type = \mime_content_type($file_path) ?: 'application/octet-stream';
+            $type = \explode('/', $mime_type)[0] ?? 'unknown';
+            if ($optimize && $type === 'image') {
+                if ($this->optimizeImage($file_path)) {
+                    $file_size = \filesize($file_path);
+                }
+            }
+
+            // Optimize хийсний дараа хэмжээг дахин шалгах
+            if ($optimize && $this->_size_limit && $file_size > $this->_size_limit) {
+                @\unlink($file_path);
+                throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
+            }
+
             return [
                 'path' => $this->getFilePublicPath($file_name),
                 'file' => $file_path,
                 'size' => $file_size,
-                'type' => \explode('/', $mime_type)[0] ?? 'unknown',
+                'type' => $type,
                 'mime_content_type' => $mime_type
             ];
         } catch (\Throwable $err) {

@@ -77,19 +77,60 @@
     <!-- 📎 Хавсралт файлууд (байгаа үед) -->
     {% if files is defined and files is not empty %}
     <div class="mt-4">
-        <h5 class="text-primary">
-            <i class="bi bi-paperclip"></i>
-        </h5>
-        <ul class="list-group mt-2">
-            {% for file in files %}
-                <li class="list-group-item">
-                    <a href="{{ file['url'] ?? file['path'] }}" target="_blank">
-                        <i class="bi bi-file-earmark"></i>
-                        {{ file['title'] ?? file['name'] }}
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
+        <hr>
+        <h5><i class="bi bi-paperclip"></i> {{ code == 'mn' ? 'Хавсралт файлууд' : 'Attachments' }}</h5>
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>{{ code == 'mn' ? 'Файл' : 'File' }}</th>
+                    <th style="width:120px">{{ code == 'mn' ? 'Хэмжээ' : 'Size' }}</th>
+                    <th style="width:100px">{{ code == 'mn' ? 'Төрөл' : 'Type' }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <a href="{{ file['path'] }}" target="_blank" class="text-decoration-none">
+                            {% if file['type'] == 'image' %}
+                                <i class="bi bi-file-image text-success"></i>
+                            {% elseif file['type'] == 'video' %}
+                                <i class="bi bi-file-play text-danger"></i>
+                            {% elseif file['type'] == 'audio' %}
+                                <i class="bi bi-file-music text-info"></i>
+                            {% elseif file['mime_content_type'] == 'application/pdf' %}
+                                <i class="bi bi-file-pdf text-danger"></i>
+                            {% elseif file['mime_content_type'] starts with 'application/vnd.ms-excel' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.spreadsheet' %}
+                                <i class="bi bi-file-excel text-success"></i>
+                            {% elseif file['mime_content_type'] starts with 'application/msword' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.wordprocessing' %}
+                                <i class="bi bi-file-word text-primary"></i>
+                            {% elseif file['mime_content_type'] starts with 'application/zip' or file['mime_content_type'] starts with 'application/x-rar' or file['mime_content_type'] starts with 'application/x-7z' %}
+                                <i class="bi bi-file-zip text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-file-earmark"></i>
+                            {% endif %}
+                            {{ file['path']|basename }}
+                        </a>
+                        {% if file['description'] is not empty %}
+                            <small class="text-muted d-block">{{ file['description'] }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if file['size'] < 1024 %}
+                            {{ file['size'] }} B
+                        {% elseif file['size'] < 1048576 %}
+                            {{ (file['size'] / 1024)|round(1) }} KB
+                        {% else %}
+                            {{ (file['size'] / 1048576)|round(2) }} MB
+                        {% endif %}
+                    </td>
+                    <td><span class="badge bg-secondary">{{ file['type'] }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
 

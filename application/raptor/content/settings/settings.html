@@ -83,7 +83,7 @@
                     <!-- Нэрийн утга -->
                     <input class="form-control"
                            name="title[{{ code }}]"
-                           value="{{ record['localized']['title'][code]|e }}"
+                           value="{{ record['localized'][code]['title']|e }}"
                            maxlength="70"
                            id="title_{{ code }}"
                            autocomplete="off">
@@ -109,7 +109,7 @@
                 <div class="form-floating mt-2">
                     <input class="form-control"
                            name="description[{{ code }}]"
-                           value="{{ record['localized']['description'][code]|e }}"
+                           value="{{ record['localized'][code]['description']|e }}"
                            maxlength="255"
                            id="description_{{ code }}"
                            autocomplete="off">
@@ -136,7 +136,7 @@
                     <textarea class="form-control"
                               name="urgent[{{ code }}]"
                               id="urgent_{{ code }}"
-                              style="height:200px">{{ record['localized']['urgent'][code]|e }}</textarea>
+                              style="height:200px">{{ record['localized'][code]['urgent']|e }}</textarea>
                     <label for="urgent_{{ code }}">
                         {{ 'urgent'|text }}
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -193,7 +193,7 @@
                     <textarea class="form-control"
                               name="contact[{{ code }}]"
                               id="contact_{{ code }}"
-                              style="height:200px">{{ record['localized']['contact'][code]|e }}</textarea>
+                              style="height:200px">{{ record['localized'][code]['contact']|e }}</textarea>
 
                     <!-- Хэл тус бүрийн гарчиг + далбаа -->
                     <label for="contact_{{ code }}">
@@ -221,7 +221,7 @@
                     <textarea class="form-control"
                               name="address[{{ code }}]"
                               id="address_{{ code }}"
-                              style="height:120px">{{ record['localized']['address'][code]|e }}</textarea>
+                              style="height:120px">{{ record['localized'][code]['address']|e }}</textarea>
 
                     <!-- Хаягийн label + хэлний далбаа -->
                     <label for="address_{{ code }}">
@@ -249,7 +249,7 @@
 
                     <input class="form-control"
                            name="copyright[{{ code }}]"
-                           value="{{ record['localized']['copyright'][code]|e }}"
+                           value="{{ record['localized'][code]['copyright']|e }}"
                            maxlength="255"
                            id="copyright_{{ code }}"
                            autocomplete="off">
@@ -339,7 +339,7 @@
                                    type="text"
                                    id="logo_{{ code }}_name"
                                    disabled
-                                   value="{{ record['localized']['logo'][code]|e }}"
+                                   value="{{ record['localized'][code]['logo']|e }}"
                                    placeholder="{{ 'select-an-image'|text|e }}">
                             <div class="input-group-append">
                                 <div class="btn-group">
@@ -361,7 +361,7 @@
                                     <!-- ФАЙЛЫГ УСТГАХ / ЦЭВЭРЛЭХ ТОВЧ -->
                                     <button class="btn btn-danger" type="button"
                                             onclick="onFileClear(this);"
-                                            style="{% if record['localized']['logo'][code] is empty %}display:none;{% endif %}">
+                                            style="{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
                                         {{ 'remove'|text }}
                                     </button>
 
@@ -377,7 +377,7 @@
                         <!-- Logo file size харуулах талбар -->
                         <input class="form-control-plaintext small text-muted mt-1"
                                id="logo_{{ code }}_size"
-                               value="{{ record['localized']['logo_size'][code] ?? '' }}"
+                               value="{{ record['localized'][code]['logo_size'] ?? '' }}"
                                disabled>
                         <!-- 
                             LOGO PREVIEW ЗУРАГ
@@ -387,8 +387,8 @@
                         -->
                         <img class="img-thumbnail img-fluid"
                              id="logo_{{ code }}_preview"
-                             src="{{ record['localized']['logo'][code]|e }}"
-                             style="max-height:480px;{% if record['localized']['logo'][code] is empty %}display:none;{% endif %}">
+                             src="{{ record['localized'][code]['logo']|e }}"
+                             style="max-height:480px;{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
                     {% endfor %}
                 </div> <!-- end col-left -->
 

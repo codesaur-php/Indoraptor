@@ -51,12 +51,16 @@ use Psr\Http\Server\RequestHandlerInterface;
  * - session_write_close() нь үүнийг шийдэж, өндөр ачаалалтай системд
  *   асар том давуу тал өгдөг.
  *
- * @param ServerRequestInterface $request
- * @param RequestHandlerInterface $handler
- * @return ResponseInterface
  */
 class SessionMiddleware implements MiddlewareInterface
 {
+    /**
+     * Session эхлүүлж, write-lock оптимизацийг хийсний дараа дараагийн handler рүү дамжуулах.
+     *
+     * @param ServerRequestInterface $request HTTP хүсэлт.
+     * @param RequestHandlerInterface $handler Дараагийн middleware/handler.
+     * @return ResponseInterface HTTP хариу.
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         // 1) Session нэрийг тогтмолжуулах

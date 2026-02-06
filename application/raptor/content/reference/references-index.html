@@ -67,7 +67,7 @@
 
                             <!-- Хэл тус бүрийн title-г гаргаж байна -->
                             {% for code in localization.language|keys %}
-                                <td>{{ row['localized']['title'][code] }}</td>
+                                <td>{{ row['localized'][code]['title'] }}</td>
                             {% endfor %}
 
                             <td>{{ row['category'] }}</td>

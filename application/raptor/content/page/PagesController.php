@@ -5,17 +5,40 @@ namespace Raptor\Content;
 use Psr\Log\LogLevel;
 use Twig\TwigFilter;
 
+/**
+ * Class PagesController
+ *
+ * Хуудас (Pages) модулийн Dashboard Controller.
+ * Хуудас үүсгэх, засварлах, унших, харах, идэвхгүй болгох
+ * зэрэг бүх CRUD үйлдлийг гүйцэтгэнэ.
+ *
+ * Онцлог:
+ *  - Хуудас бүр нэг хэлтэй (code), parent_id-р шатлал үүсгэнэ
+ *  - Header image (photo) + content media + attachment файлуудтай
+ *  - Published/unpublished төлөвтэй, нийтлэхэд тусгай эрх шаардлагатай
+ *  - Slug автоматаар үүсгэдэг (PagesModel)
+ *
+ * @package Raptor\Content
+ */
 class PagesController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
-    
+
+    /**
+     * Хуудасны жагсаалтын Dashboard хуудас.
+     *
+     * - Шүүлтүүр: хэл (code), төрөл (type), ангилал (category), нийтлэгдсэн эсэх (published)
+     * - pages-index.html template-д filter утгуудыг дамжуулна
+     *
+     * Permission: system_content_index
+     */
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
-        
+
         $filters = [];
         // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new PagesModel($this->pdo))->getName();
@@ -53,17 +76,25 @@ class PagesController extends FileController
         $dashboard = $this->twigDashboard(__DIR__ . '/pages-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
-        
+
         $this->indolog($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг үзэж байна', ['action' => 'index']);
     }
-    
+
+    /**
+     * Хуудасны жагсаалтыг JSON хэлбэрээр буцаана.
+     *
+     * Query параметрүүдээр шүүлтүүр хийх боломжтой:
+     * code, type, category, published, is_active
+     *
+     * Permission: system_content_index
+     */
     public function list()
     {
         try {
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
             $params = $this->getQueryParams();
             if (!isset($params['is_active'])) {
                 $params['is_active'] = 1;
@@ -100,7 +131,17 @@ class PagesController extends FileController
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         }
     }
-    
+
+    /**
+     * Шинэ хуудас үүсгэх.
+     *
+     * - GET: Хуудас үүсгэх форм харуулна
+     * - POST: Хуудас үүсгэж DB-д хадгална
+     *   - Header image, content media, attachment файлууд temp folder-оос зөөгдөнө
+     *   - published=1 бол system_content_publish эрх шаардлагатай
+     *
+     * Permission: system_content_insert
+     */
     public function insert()
     {
         try {
@@ -145,8 +186,8 @@ class PagesController extends FileController
                 }
                 $id = $record['id'];
 
-                // Файлуудыг нэгдсэн аргаар боловсруулах (respondJSON-ийн өмнө!)
-                $this->processFiles($record, $files, true);
+                // Файлуудыг нэгдсэн аргаар боловсруулах
+                $fileChanges = $this->processFiles($record, $files, true);
 
                 $this->respondJSON([
                     'status' => 'success',
@@ -180,6 +221,7 @@ class PagesController extends FileController
                 $level = LogLevel::INFO;
                 $message = '{record.id} дугаартай [{record.title}] хуудсыг амжилттай үүсгэлээ';
                 $context += ['record_id' => $id, 'record' => $record];
+                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Хуудас үүсгэх үйлдлийг эхлүүллээ';
@@ -187,7 +229,17 @@ class PagesController extends FileController
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Хуудсыг blog хэлбэрээр унших (read view).
+     *
+     * - Хуудасны контент + хавсралт файлуудыг харуулна
+     * - read_count тоолуурыг нэмэгдүүлнэ
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Хуудасны ID
+     */
     public function read(int $id)
     {
         try {
@@ -214,7 +266,7 @@ class PagesController extends FileController
             $template->set('record', $record);
             $template->set('files', $files);
             $template->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
-            $template->render();            
+            $template->render();
             $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
@@ -232,7 +284,16 @@ class PagesController extends FileController
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Хуудасны дэлгэрэнгүй мэдээлэл харах (Dashboard view).
+     *
+     * - Бичлэг + хавсралт файлууд + эцэг хуудасны мэдээлэл
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Хуудасны ID
+     */
     public function view(int $id)
     {
         try {
@@ -279,7 +340,20 @@ class PagesController extends FileController
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Хуудасны бичлэгийг шинэчлэх.
+     *
+     * - GET: Засварлах форм харуулна
+     * - PUT: Бичлэгийг шинэчлэнэ
+     *   - Гол зураг (photo) шинэчлэх/устгах боломжтой
+     *   - Хавсаргасан файлууд нэмэх/засах/устгах боломжтой
+     *   - published төлөв өөрчлөхөд system_content_publish эрх шаардлагатай
+     *
+     * Permission: system_content_update
+     *
+     * @param int $id Шинэчлэх хуудасны ID
+     */
     public function update(int $id)
     {
         try {
@@ -333,7 +407,7 @@ class PagesController extends FileController
                 }
 
                 // Файлуудыг эхлээд боловсруулах
-                $hasFileChanges = $this->processFiles($record, $files);
+                $fileChanges = $this->processFiles($record, $files);
 
                 // Өөрчлөлт байгаа эсэхийг шалгах
                 $updates = [];
@@ -342,7 +416,7 @@ class PagesController extends FileController
                         $updates[] = $field;
                     }
                 }
-                if ($hasFileChanges) {
+                if (!empty($fileChanges)) {
                     $updates[] = 'files';
                 }
                 if (empty($updates)) {
@@ -393,6 +467,7 @@ class PagesController extends FileController
                 $level = LogLevel::INFO;
                 $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг амжилттай шинэчлэлээ';
                 $context += ['updates' => $updates, 'record' => $updated];
+                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
             } else {
                 $level = LogLevel::NOTICE;
                 $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
@@ -401,7 +476,14 @@ class PagesController extends FileController
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Хуудсын бичлэгийг идэвхгүй болгоно (soft delete).
+     *
+     * Бодит файл устахгүй, is_active=0 болгоно.
+     *
+     * Permission: system_content_delete
+     */
     public function deactivate()
     {
         try {
@@ -415,7 +497,7 @@ class PagesController extends FileController
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-            }            
+            }
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $deactivated = $model->deactivateById(
                 $id,
@@ -426,7 +508,7 @@ class PagesController extends FileController
             );
             if (!$deactivated) {
                 throw new \Exception($this->text('no-record-selected'));
-            }            
+            }
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -452,12 +534,22 @@ class PagesController extends FileController
             $this->indolog($table ?? 'pages', $level, $message, $context);
         }
     }
-    
+
+    /**
+     * Хуудасны шатлалтай мэдээллийг авах.
+     *
+     * Хуудас бүрийн parent_id-г дагаж parent_titles
+     * (жишээ: "Нүүр » Бидний тухай » ") бүрдүүлнэ.
+     *
+     * @param string $table  Хүснэгтийн нэр
+     * @param string $condition  Нэмэлт WHERE нөхцөл (хоосон бол бүгдийг авна)
+     * @return array  id => [id, parent_id, title, parent_titles] бүтэцтэй массив
+     */
     private function getInfos(string $table, string $condition = ''): array
     {
         $pages = [];
         try {
-            $select_pages = 
+            $select_pages =
                 'SELECT id, parent_id, title ' .
                 "FROM $table WHERE is_active=1";
             $result = $this->query("$select_pages ORDER BY position, id")->fetchAll();
@@ -465,7 +557,7 @@ class PagesController extends FileController
                 $pages[$record['id']] = $record;
             }
         } catch (\Throwable) {}
-        
+
         if (!empty($condition)) {
             $pages_specified = [];
             try {
@@ -481,13 +573,13 @@ class PagesController extends FileController
             $id = $page['id'];
             $ancestry = $this->findAncestry($id, $pages);
             if (\array_key_exists($id, $ancestry)) {
-                unset($ancestry[$id]);                
+                unset($ancestry[$id]);
                 \error_log(__CLASS__ . ": Page $id misconfigured with parenting path!");
             }
             if (empty($ancestry)) {
                 continue;
             }
-            
+
             $path = '';
             $ancestry_keys = \array_flip($ancestry);
             for ($i = \count($ancestry_keys); $i > 0; $i--) {
@@ -498,10 +590,18 @@ class PagesController extends FileController
                 $pages_specified[$id]['parent_titles'] = $path;
             }
         }
-        
+
         return $pages_specified ?? $pages;
     }
-    
+
+    /**
+     * Хуудасны өвөг эцгийн шатлалыг рекурсивээр олох.
+     *
+     * @param int   $id       Хуудасны ID
+     * @param array $pages    Бүх хуудасны массив (id => row)
+     * @param array $ancestry Өвөг эцгийн жагсаалт (reference)
+     * @return array parent_id => depth бүтэцтэй массив
+     */
     private function findAncestry(int $id, array $pages, array &$ancestry = []): array
     {
         $parent = $pages[$id]['parent_id'];
@@ -511,11 +611,17 @@ class PagesController extends FileController
         ) {
             return $ancestry;
         }
-        
+
         $ancestry[$parent] = \count($ancestry) + 1;
         return $this->findAncestry($parent, $pages, $ancestry);
     }
-    
+
+    /**
+     * Хуудас бүрийн хавсралт файлын тоог тоолох.
+     *
+     * @param string $table Хүснэгтийн нэр
+     * @return array record_id => ['attach' => count] бүтэцтэй массив
+     */
     private function getFilesCounts(string $table): array
     {
         try {
@@ -538,14 +644,19 @@ class PagesController extends FileController
     /**
      * Файлуудыг нэгдсэн аргаар боловсруулах.
      *
+     * Frontend-ээс ирсэн files JSON-г parse хийж:
+     * - Header image хадгалах/устгах
+     * - Content media файлууд хадгалах
+     * - Attachment файлууд нэмэх/шинэчлэх/устгах
+     *
      * @param array $record  Бичлэг
      * @param array $files   Frontend-ээс ирсэн файлуудын мэдээлэл
      * @param bool $fromTemp Insert үйлдэл эсэх (temp folder-оос зөөх)
-     * @return bool Файл өөрчлөгдсөн эсэх
+     * @return array Файлуудын өөрчлөлтүүдийн жагсаалт (хоосон бол өөрчлөлт байхгүй)
      */
-    private function processFiles(array $record, array $files, bool $fromTemp = false): bool
+    private function processFiles(array $record, array $files, bool $fromTemp = false): array
     {
-        $changed = false;
+        $changes = [];
         $userId = $this->getUserId();
 
         $model = new PagesModel($this->pdo);
@@ -569,7 +680,7 @@ class PagesController extends FileController
             $photoFilename = \basename(\rawurldecode($record['photo']));
             $this->unlinkByName($photoFilename);
             $record = $model->updateById($record['id'], ['photo' => '']);
-            $changed = true;
+            $changes[] = "header image deleted: $photoFilename";
         }
 
         // 1. Header Image - зөвхөн pages.photo талбарт хадгална
@@ -594,7 +705,7 @@ class PagesController extends FileController
             }
 
             $model->updateById($record['id'], ['photo' => $headerData['path']]);
-            $changed = true;
+            $changes[] = "header image updated: $filename";
         }
 
         // 2. Content Media - DB-д бүртгэхгүй, зөвхөн файл зөөх
@@ -607,6 +718,7 @@ class PagesController extends FileController
                         \mkdir($recordFolder, 0755, true);
                     }
                     \rename($tempFile, "$recordFolder/$filename");
+                    $changes[] = "content media moved: $filename";
                 }
             }
         }
@@ -646,7 +758,7 @@ class PagesController extends FileController
                 'description'       => $att['description'] ?? '',
                 'created_by'        => $userId
             ]);
-            $changed = true;
+            $changes[] = "attachment added: $filename";
         }
 
         // 4. Attachments - Update existing (description only)
@@ -664,7 +776,7 @@ class PagesController extends FileController
                     'updated_at'  => \date('Y-m-d H:i:s'),
                     'updated_by'  => $userId
                 ]);
-                $changed = true;
+                $changes[] = "attachment description updated: #$attId";
             }
         }
 
@@ -674,9 +786,9 @@ class PagesController extends FileController
                 'updated_at' => \date('Y-m-d H:i:s'),
                 'updated_by' => $userId
             ]);
-            $changed = true;
+            $changes[] = "attachment deleted: #$fileId";
         }
 
-        return $changed;
+        return $changes;
     }
 }

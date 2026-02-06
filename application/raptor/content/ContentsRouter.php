@@ -50,8 +50,8 @@ class ContentsRouter extends Router
         // Файл upload хийх
         $this->POST('/dashboard/files/upload', [FilesController::class, 'upload'])->name('files-upload');
 
-        // Файл upload хийх, контентод зураг хавсаргах
-        $this->POST('/dashboard/files/{input}/{table}/{uint:id}', [FilesController::class, 'post'])->name('files-post');
+        // Файл upload хийгээд мэдээллийн сан хүснэгтэд бүртгэх
+        $this->POST('/dashboard/files/post/{table}', [FilesController::class, 'post'])->name('files-post');
 
         // Файл сонгох modal UI
         $this->GET('/dashboard/files/modal/{table}', [FilesController::class, 'modal'])->name('files-modal');
@@ -64,7 +64,7 @@ class ContentsRouter extends Router
 
         // Private файл унших (зөвхөн нэвтэрсэн хэрэглэгчдэд, PUBLIC web дээр харагдахгүй гэсэн үг)
         $this->GET('/dashboard/private/file', [PrivateFilesController::class, 'read'])->name('private-files-read');
-
+        
         
         /* ------------------------------
          * 📰 NEWS - Мэдээлэл

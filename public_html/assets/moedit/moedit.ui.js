@@ -2661,6 +2661,7 @@ moedit.prototype._insertAttachment = function() {
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.multiple = true;
+  fileInput.accept = '.jpg,.jpeg,.jpe,.png,.gif,.ico,.webp,.svg,.avif,.bmp,.tif,.tiff,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.odt,.ods,.odp,.csv,.rtf,.psd,.mp3,.m4a,.ogg,.wav,.aac,.flac,.wma,.mp4,.m4v,.mov,.wmv,.avi,.mpg,.ogv,.3gp,.3g2,.webm,.txt,.xml,.json,.zip,.rar,.7z,.gz,.tar';
   fileInput.style.display = 'none';
   document.body.appendChild(fileInput);
 

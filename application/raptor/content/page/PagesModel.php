@@ -5,8 +5,36 @@ namespace Raptor\Content;
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
+/**
+ * Class PagesModel
+ *
+ * Indoraptor CMS-ийн "Хуудас" (Pages) модулийн өгөгдлийн загвар.
+ *
+ * Хуудас нь мод бүтэцтэй (parent_id), олон хэлтэй бус (single-table),
+ * SEO-friendly slug-тай контент юм. Тухайлбал:
+ *  - Цэс (type=menu)
+ *  - Ерөнхий мэдээлэл (category=general)
+ *  - Нийтлэл (published/draft)
+ *
+ * codesaur\DataObject\Model-оос өвлөсөн тул:
+ *  - CRUD (insert, getById, updateById, deleteById)
+ *  - getRowWhere(), getRows() зэрэг query method-ууд
+ *  - __initial() хүснэгт анх үүсгэх үед FK constraint нэмэх
+ *
+ * Нэмэлт функцууд:
+ *  - generateSlug() - Монгол/олон хэлний гарчгаас URL slug үүсгэх
+ *  - getBySlug() - Slug-аар хуудас хайх
+ *  - getExcerpt() - HTML контентоос товч текст гаргах
+ *
+ * @package Raptor\Content
+ */
 class PagesModel extends Model
 {
+    /**
+     * Конструктор - PDO холболт тохируулж, баганууд болон хүснэгт нэрийг зарлах.
+     *
+     * @param \PDO $pdo Өгөгдлийн сангийн холболт.
+     */
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
@@ -40,6 +68,13 @@ class PagesModel extends Model
         $this->setTable('pages');
     }
 
+    /**
+     * Хүснэгт анх үүсэх үед FK constraint-уудыг нэмэх.
+     *
+     * published_by, created_by, updated_by баганууд нь
+     * users хүснэгтийн id руу гадаад түлхүүрээр холбогдоно.
+     * SQLite дээр ALTER TABLE ADD CONSTRAINT дэмжигдэхгүй тул алгасна.
+     */
     protected function __initial()
     {
         $table = $this->getName();
@@ -71,6 +106,15 @@ class PagesModel extends Model
         }
     }
 
+    /**
+     * Шинэ хуудас оруулах.
+     *
+     * - created_at талбарыг автоматаар одоогийн цагаар тохируулна.
+     * - slug хоосон бол title-аас generateSlug() ашиглан автоматаар үүсгэнэ.
+     *
+     * @param array $record Хуудасны өгөгдөл (title, content, parent_id, ...).
+     * @return array|false Амжилттай бол оруулсан бичлэгийн мэдээлэл, алдаатай бол false.
+     */
     public function insert(array $record): array|false
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
@@ -85,6 +129,15 @@ class PagesModel extends Model
 
     /**
      * Гарчигаас SEO-friendly slug үүсгэх.
+     *
+     * Дараах алхмуудыг гүйцэтгэнэ:
+     *  1) Монгол кирилл үсгийг латин тэмдэгтэд хөрвүүлэх
+     *  2) Бусад Unicode тэмдэгтийг ICU transliterator-оор латинжуулах
+     *  3) Жижиг үсэгт шилжүүлж, тусгай тэмдэгтүүдийг `-` болгох
+     *  4) Давхардал шалгаж, шаардлагатай бол дугаар залгах (title-1, title-2, ...)
+     *
+     * @param string $title Хуудасны гарчиг.
+     * @return string Давхардалгүй, URL-д тохирсон slug.
      */
     public function generateSlug(string $title): string
     {
@@ -125,6 +178,9 @@ class PagesModel extends Model
 
     /**
      * Slug-аар хуудас хайх.
+     *
+     * @param string $slug Хайх slug утга.
+     * @return array|null Олдвол хуудасны бичлэг, олдохгүй бол null.
      */
     public function getBySlug(string $slug): array|null
     {
@@ -132,7 +188,13 @@ class PagesModel extends Model
     }
 
     /**
-     * Content-оос товч тайлбар (excerpt) үүсгэх.
+     * HTML контентоос товч тайлбар (excerpt) үүсгэх.
+     *
+     * HTML tag-уудыг хасаж, цэвэр текстийг заасан уртаар таслана.
+     *
+     * @param string $content HTML контент.
+     * @param int $length Хамгийн их тэмдэгтийн урт (анхдагч: 200).
+     * @return string Товчилсон текст. Хэтэрвэл `...` залгана.
      */
     public function getExcerpt(string $content, int $length = 200): string
     {

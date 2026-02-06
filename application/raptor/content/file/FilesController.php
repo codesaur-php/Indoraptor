@@ -78,6 +78,7 @@ class FilesController extends FileController
 
             $tables[$table] = [
                 'count' => $count,
+                'bytes' => (int) $size,
                 'size'  => $this->formatSizeUnits($size)
             ];
         }
@@ -98,6 +99,7 @@ class FilesController extends FileController
             return;
         }
         
+        $total['total_bytes'] = (int) $total['sizes'];
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
 
         // Тухайн хүснэгтэнд зориулсан тусгай template мөрдөх
@@ -172,7 +174,55 @@ class FilesController extends FileController
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         }
     }
+    
+    /**
+     * Файл upload хийх.
+     *
+     * - Заасан folder руу файлыг байршуулна
+     * - optimize=1 бол зургийн файлыг optimize хийнэ
+     * - moveUploaded-тэй адил бүтэцтэй утга буцаана (path, file, size, type, mime_content_type)
+     *
+     * @return void
+     */
+    public function upload()
+    {
+        try {
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
 
+            $payload = $this->getParsedBody();
+            $folder = '/' . \trim(\preg_replace('/[^a-zA-Z0-9_\/-]/', '', $payload['folder'] ?? 'files'), '/');
+            $this->setFolder($folder);
+            $this->allowCommonTypes();
+            $optimize = ($payload['optimize'] ?? 0) == 1;
+            $uploaded = $this->moveUploaded('file', $optimize);
+            if (!$uploaded) {
+                throw new \InvalidArgumentException('Upload failed', 400);
+            }
+            $this->respondJSON($uploaded);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'error' => [
+                    'code'    => $err->getCode(),
+                    'message' => $err->getMessage()
+                ]
+            ], $err->getCode() ?: 500);
+        } finally {
+            $context = ['action' => 'files-upload', 'folder' => $folder ?? ''];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Файл байршуулах үед алдаа гарлаа';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::INFO;
+                $message = '<a target="__blank" href="{path}">{path}</a> файлыг байршууллаа';
+                $context += $uploaded;
+            }
+            $this->indolog('files', $level, $message, $context);
+        }
+    }
+    
     /**
      * Файл upload хийх болон `{table}_files` хүснэгтэд бүртгэх.
      *
@@ -219,7 +269,7 @@ class FilesController extends FileController
      *      SELECT * FROM pages_files WHERE record_id = 10 AND is_active=1;
      *
      * Жишээ 2:
-     *   `$id = 0` бол файл ямар ч контент мөртэй холбогдохгүй.
+     *   `$record_id = 0` бол файл ямар ч контент мөртэй холбогдохгүй.
      *   Энэ нь “ерөнхий upload”, эсвэл түр хадгалах файл гэсэн утгатай.
      *
      * -----------------------------------------
@@ -238,21 +288,18 @@ class FilesController extends FileController
      * -----------------------------------------
      *  Хэрэглэгч заавал **authentication** хийгдсэн байх ёстой.
      *
-     * @param string $input
-     *     HTML <input type="file" name="..."> атрибутын name утга.
-     *
      * @param string $table
      *     files бүртгэх үндсэн хүснэгтийн нэр.
-     *     Жишээ: 'pages', 'news', 'products'
+     *     Жишээ: 'files', 'pages', 'news', 'products'
      *
-     * @param int $id
+     * @param int $record_id
      *     Хамаарах контент бичлэгийн ID дугаар.
      *     - 0 → ерөнхий файл, контент мөртэй холбогдохгүй
      *     - >0 → тухайн content-ийн attachments (record_id)
      *
      * @return void
      */
-    public function post(string $input, string $table, int $id)
+    public function post(string $table, int $record_id = 0)
     {
         try {
             // Хэрэглэгч нэвтэрсэн байх ёстой
@@ -261,31 +308,21 @@ class FilesController extends FileController
             }
             
             // Файл хадгалах фолдерийг тохируулах
-            $folder = "/$table" . ($id == 0 ? '/temp' : "/$id");
-            $query = $this->getQueryParams();
-            if (!empty($query['subfolder'])) {
-                $folder .= '/' . \preg_replace('/[^a-zA-Z0-9_-]/', '', $query['subfolder']);
-            }
+            $folder = "/$table" . ($record_id == 0 ? '' : "/$record_id");
             $this->setFolder($folder);
             $this->allowCommonTypes();
 
-            // Upload → Move
-            $uploaded = $this->moveUploaded($input);
+            // Upload → Move (optimize=1 бол зургийг автоматаар optimize хийнэ)
+            $body = $this->getParsedBody();
+            $optimize = ($body['optimize'] ?? '0') === '1';
+            $uploaded = $this->moveUploaded('file', $optimize);
             if (!$uploaded) {
                 throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload!', 400);
             }
 
-            // Зураг optimize хийх (хэрэв optimize=1 бол)
-            $body = $this->getParsedBody();
-            if (($body['optimize'] ?? '0') === '1' && ($uploaded['type'] ?? '') === 'image') {
-                if ($this->optimizeImage($uploaded['file'])) {
-                    $uploaded['size'] = \filesize($uploaded['file']);
-                }
-            }
-
-            if ($id > 0) {
+            if ($record_id > 0) {
                 // Холбох content record id дугаар
-                $uploaded['record_id'] = $id;
+                $uploaded['record_id'] = $record_id;
             }
 
             // Files бичлэг бүртгэл
@@ -295,7 +332,6 @@ class FilesController extends FileController
             if (!isset($record['id'])) {
                 throw new \Exception($this->text('record-insert-error'));
             }
-
             $this->respondJSON($record);
         } catch (\Throwable $err) {
             $error = [
@@ -312,7 +348,7 @@ class FilesController extends FileController
             }
         } finally {
             // Лог бичих
-            $context = ['action' => 'files-post'];
+            $context = ['action' => 'files-post', 'table' => $table];
             if (isset($record['id'])) {
                 $context += $record;
                 $level = LogLevel::INFO;
@@ -329,48 +365,6 @@ class FilesController extends FileController
         }
     }
     
-    /**
-     * Файл upload хийх.
-     *
-     * - Заасан folder руу файлыг байршуулна
-     * - optimize=1 бол зургийн файлыг optimize хийнэ
-     * - moveUploaded-тэй адил бүтэцтэй утга буцаана (path, file, size, type, mime_content_type)
-     *
-     * @return void
-     */
-    public function upload()
-    {
-        try {
-            if (!$this->isUserAuthorized()) {
-                throw new \Exception('Unauthorized', 401);
-            }
-
-            $payload = $this->getParsedBody();
-            $folder = '/' . \trim(\preg_replace('/[^a-zA-Z0-9_\/-]/', '', $payload['folder'] ?? 'files'), '/');
-            $this->setFolder($folder);
-            $this->allowCommonTypes();
-            $uploaded = $this->moveUploaded('file');
-            if (!$uploaded) {
-                throw new \InvalidArgumentException('Upload failed', 400);
-            }
-            if (($uploaded['type'] ?? '') == 'image'
-                && ($payload['optimize'] ?? 0) == 1
-            ) {
-                if ($this->optimizeImage($uploaded['file'])) {
-                    $uploaded['size'] = \filesize($uploaded['file']);
-                }
-            }
-            $this->respondJSON($uploaded);
-        } catch (\Throwable $err) {
-            $this->respondJSON([
-                'error' => [
-                    'code'    => $err->getCode(),
-                    'message' => $err->getMessage()
-                ]
-            ], $err->getCode() ?: 500);
-        }
-    }
-
     /**
      * Файл сонгоход зориулсан Modal HTML харуулна.
      *
@@ -470,14 +464,14 @@ class FilesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $parsedBoy = $this->getParsedBody();
-            if (empty($parsedBoy)) {
+            $parsedBody = $this->getParsedBody();
+            if (empty($parsedBody)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
 
             // Payload боловсруулах (file_ → арилга)
             $payload = [];
-            foreach ($parsedBoy as $k => $v) {
+            foreach ($parsedBody as $k => $v) {
                 if (\str_starts_with($k, 'file_')) {
                     $k = \substr($k, 5);
                 }
