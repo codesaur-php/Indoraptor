@@ -9,13 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 ## [11.1.0] - 2026-02-09
 
 ### Added
-- **Pages Navigation** (`/dashboard/pages/nav`) - хуудсуудын мод бүтэцтэй навигацийн удирдлага
-  - Хэл тус бүрээр карт харуулах
-  - Published/unpublished ялгаа: хөх гарчиг + ногоон check / eye-slash icon
-  - Хуудасны photo thumbnail харуулна
-- **"Системийн хуудас" ойлголтыг устгасан** - бүх нийтлэгдсэн хуудас навигацид харагдана
+- **Pages Navigation** (`/dashboard/pages/nav`) - Tree-structured page navigation management
+  - Display cards grouped by language
+  - Published/unpublished distinction: blue title + green check icon / eye-slash icon
+  - Display page photo thumbnails
+- **Removed the "System page" concept** - All published pages are now visible in navigation
 - Insert form: automatic position calculation (parent position + 10 for first child, max sibling + 10 for subsequent, max top-level + 100 for same-language)
-- Page view: position field (language, category, position нэг мөрөнд)
+- Page view: position field (language, category, position displayed in a single row)
 - **OG meta tags** for page and news: `og:title`, `og:description`, `og:image`, `og:type`, `og:site_name`, logo fallback
 - `<title>` tag: "Record Title | Site Title" format for content pages
 
