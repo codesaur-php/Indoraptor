@@ -17,8 +17,8 @@ use codesaur\Router\Router;
  * ✔ Нүүр хуудас (/)  
  * ✔ /home - нүүр хуудасны alias  
  * ✔ Хэл солих - /language/{code}  
- * ✔ Статик/динамик Page - /page/{id}  
- * ✔ News - /news/{id}  
+ * ✔ Статик/динамик Page - /page/{slug}
+ * ✔ News - /news/{slug}  
  * ✔ Холбоо барих - /contact  
  *
  * ⚡ Router-ийн онцлог:
@@ -53,11 +53,11 @@ class HomeRouter extends Router
         // Системийн хэл солих
         $this->GET('/language/{code}', [HomeController::class, 'language'])->name('language');
 
-        // Динамик Page
-        $this->GET('/page/{uint:id}', [HomeController::class, 'page'])->name('page');
+        // Динамик Page (slug-аар)
+        $this->GET('/page/{slug}', [HomeController::class, 'page'])->name('page');
 
-        // Динамик News
-        $this->GET('/news/{uint:id}', [HomeController::class, 'news'])->name('news');
+        // Динамик News (slug-аар)
+        $this->GET('/news/{slug}', [HomeController::class, 'news'])->name('news');
 
         // Контакт пэйж
         $this->GET('/contact', [HomeController::class, 'contact'])->name('contact');

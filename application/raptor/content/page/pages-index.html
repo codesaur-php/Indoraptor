@@ -6,15 +6,13 @@
         <i class="bi bi-book-half"></i> {{ 'pages'|text }}
     </h3>
     <div class="ms-auto">
-        {% if user.can('system_content_insert') %}
-            <a class="btn btn-outline-success text-uppercase shadow-sm" href="{{ 'page-insert'|link }}">
-                <i class="bi-plus-circle-dotted"></i> {{ 'new'|text }}
-            </a>
-        {% endif %}
+        <a class="btn btn-outline-primary text-uppercase shadow-sm" href="{{ 'pages-nav'|link }}">
+            <i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Навигац' : 'Nav' }}
+        </a>
     </div>
 </div>
 
-<!-- ========== ШҮҮЛТҮҮР ХЭСЭГ ========== -->
+<!-- ========== ШҮҮЛТҮҮР + ШИНЭ ТОВЧ ========== -->
 <style>
 .btn-filter {
     --bs-btn-color: var(--bs-emphasis-color);
@@ -33,7 +31,12 @@
 }
 </style>
 <div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
-    <button class="btn btn-sm btn-secondary text-uppercase" id="filter_action" type="button">
+    {% if user.can('system_content_insert') %}
+    <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm" href="{{ 'page-insert'|link }}?from=index">
+        <i class="bi-plus-circle-dotted"></i> {{ 'new'|text }}
+    </a>
+    {% endif %}
+    <button class="btn btn-sm btn-secondary text-uppercase ms-auto" id="filter_action" type="button">
         <i class="bi bi-funnel"></i> {{ 'filter'|text }}
     </button>
     {% for name,filter in filters %}
@@ -167,6 +170,13 @@
             const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
             const published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
 
+            /* Хүүхэдтэй хуудсуудыг олох (nav page) */
+            const parentIds = new Set();
+            data.list.forEach(page => {
+                const pid = data.infos[page.id]?.parent_id;
+                if (pid) parentIds.add(parseInt(pid));
+            });
+
             data.list.forEach(page => {
                 const id = page.id;
 
@@ -195,10 +205,15 @@
 
                 const published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
-                const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${page.id}"><i class="bi bi-book"></i></a>`];
-                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}"><i class="bi bi-eye"></i></a>`);
+                const buttons = [];
+                if (page.type === 'link' && page.link) {
+                    buttons.push(`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${page.link}" target="_blank"><i class="bi bi-link-45deg"></i></a>`);
+                } else if (page.type === 'content') {
+                    buttons.push(`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${page.slug}?from=index"><i class="bi bi-book"></i></a>`);
+                }
+                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}?from=index"><i class="bi bi-eye"></i></a>`);
                 if (canUpdate) {
-                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}"><i class="bi bi-pencil-square"></i></a>`);
+                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}?from=index"><i class="bi bi-pencil-square"></i></a>`);
                 }
                 if (canDelete) {
                     buttons.push(`<button class="deactivate-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);

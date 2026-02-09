@@ -123,7 +123,7 @@ class NewsController extends FileController
             // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new NewsModel($this->pdo))->getName();
             $select_pages =
-                'SELECT id, photo, title, code, type, category, published, published_at, date(created_at) as created_date ' .
+                'SELECT id, photo, title, slug, code, type, category, published, published_at, date(created_at) as created_date ' .
                 "FROM $table WHERE $where ORDER BY created_at desc";
             $news_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
@@ -335,6 +335,14 @@ class NewsController extends FileController
                     throw new \InvalidArgumentException('No update!');
                 }
 
+                // Description хоосон бол content-оос автоматаар үүсгэх
+                $desc = \trim($payload['description'] ?? '');
+                if ($desc === '' && !empty($payload['content'])) {
+                    $payload['description'] = $model->getExcerpt($payload['content']);
+                } else {
+                    $payload['description'] = $desc;
+                }
+
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
                 $updated = $model->updateById($id, $payload);
@@ -398,11 +406,11 @@ class NewsController extends FileController
      *
      * Permission: system_content_index
      *
-     * @param int $id Унших мэдээний ID дугаар
+     * @param string $slug Унших мэдээний slug
      * @return void
      * @throws \Exception Эрхгүй эсвэл бичлэг олдохгүй бол exception шидэнэ
      */
-    public function read(int $id)
+    public function read(string $slug)
     {
         try {
             $model = new NewsModel($this->pdo);
@@ -411,16 +419,17 @@ class NewsController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $record = $model->getRowWhere([
-                'id' => $id,
+                'slug' => $slug,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
+            $id = (int) $record['id'];
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-            
+
             $template = $this->twigTemplate(__DIR__ . '/news-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
@@ -434,14 +443,14 @@ class NewsController extends FileController
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $context = ['action' => 'read', 'record_id' => $id];
+            $context = ['action' => 'read', 'slug' => $slug];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{record_id} дугаартай мэдээг унших үед алдаа гарч зогслоо';
+                $message = '{slug} мэдээг унших үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record_id} дугаартай [{title}] мэдээг уншиж байна';
+                $message = '[{title}] {slug} мэдээг уншиж байна';
                 $context += $record + ['files' => $files];
             }
             $this->indolog($table ?? 'news', $level, $message, $context);

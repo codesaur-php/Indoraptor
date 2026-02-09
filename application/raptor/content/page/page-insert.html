@@ -1,97 +1,152 @@
-<!-- Хуудасны төрлүүдийн тодорхойлолт -->
-{% set types = {
-    'menu': { 'mn': 'Цэс' },
-    'important-menu': { 'mn': 'Чухал цэс' },
-    'mega-menu': { 'mn': 'Мега цэс' },
-    'special-page': { 'mn': 'Тусгай хуудас' },
-    'embed': { 'mn': 'Шигтгэсэн' }
-} %}
-<!-- Хуудасны ангиллын тодорхойлолт -->
+<!-- Page categories -->
 {% set categories = {
     'general': { 'mn': 'Ерөнхий' },
-    'featured': { 'mn': 'Онцолсон' }
+    'info': { 'mn': 'Мэдээллийн' },
+    'service': { 'mn': 'Үйлчилгээ' },
+    'legal': { 'mn': 'Хууль эрх зүй' },
+    'reference': { 'mn': 'Лавлагаа' }
 } %}
-<!-- Mongolian WYSIWYG Editor - текст editor -->
+<!-- Mongolian WYSIWYG Editor -->
 <link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
 <link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/moedit/moedit.js"></script>
 <script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
-<!-- Хуудасны толгой хэсэг -->
+<!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-success">
         <i class="bi bi-book"></i> {{ 'add-record'|text }} (pages)
+        <span id="mode-badge"></span>
     </h3>
     <div class="ms-auto">
         {% if user.can('system_content_insert') %}
-            <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
+            <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm" style="display:none">
                 <i class="bi bi-check-lg"></i> {{ 'save'|text }}
             </button>
         {% endif %}
-        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'pages'|link }}">
+        <a class="btn btn-sm btn-secondary shadow-sm back-link" href="{{ 'pages'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
         </a>
     </div>
 </div>
-<!-- Хуудас нэмэх форм -->
-<form class="needs-validation" id="page_insert" action="{{ 'page-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
-    <!-- Эхний мөр: Хэл, Төрөл, Ангилал сонгох талбарууд -->
-    <div class="row mt-3">
-        <!-- Хэл сонгох талбар -->
-        <div class="col-4">
-            <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
-            {% set first_code = localization.language|keys|first %}
-            {% set first_flag = first_code == 'en' ? 'us' : first_code %}
-            <div class="input-group">
-                <span class="input-group-text" id="lang_flag">
-                    <img src="https://flagcdn.com/20x15/{{ first_flag }}.png"
-                         srcset="https://flagcdn.com/40x30/{{ first_flag }}.png 2x"
-                         width="20" height="15" alt="{{ first_code }}">
-                </span>
-                <input class="form-control" name="code" type="text" value="{{ first_code|e }}" readonly>
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                <ul class="dropdown-menu dropdown-menu-end" id="lang_list">
-                    {% for code,language in localization.language %}
-                        {% set flag = code == 'en' ? 'us' : code %}
-                        <li class="dropdown-item" value="{{ code|e }}">
-                            <img src="https://flagcdn.com/16x12/{{ flag }}.png"
-                                 srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x"
-                                 width="16" height="12" alt="{{ code }}"
-                                 style="vertical-align:middle;margin-right:.35rem">{{ language['title']|e }}
-                        </li>
-                    {% endfor %}
-                </ul>
+
+<!-- ========== WIZARD: Хуудасны төрөл сонгох ========== -->
+<div id="page-wizard" class="mt-4">
+    <h5 class="text-center mb-4">
+        <i class="bi bi-magic"></i>
+        {{ localization.code == 'mn' ? 'Ямар хуудас үүсгэх вэ?' : 'What type of page do you want to create?' }}
+    </h5>
+    <div class="row g-4">
+        <!-- Навигац -->
+        <div class="col-md-4">
+            <div class="card h-100 border-primary shadow-sm">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-diagram-3 display-3 text-primary mb-3"></i>
+                    <h5 class="card-title">{{ localization.code == 'mn' ? 'Цэсний навигац' : 'Menu item' }}</h5>
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ localization.code == 'mn'
+                            ? 'Цэсний нэг зүйл. Дотроо хүүхэд хуудсуудыг (цэс навигац, агуулга, холбоос) агуулна. Өөрөө контент агуулахгүй.'
+                            : 'A single menu item. Contains child pages (menu, content, links). Does not hold content itself.' }}
+                        <br><br>
+                        <span class="fst-italic">{{ localization.code == 'mn' ? 'Жишээ: "Мэдээлэл", "Үйлчилгээ"' : 'Example: "Info", "Services"' }}</span>
+                    </p>
+                    <a href="?mode=nav" class="btn btn-primary mt-auto wizard-select">
+                        <i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Сонгох' : 'Select' }}
+                    </a>
+                </div>
             </div>
         </div>
-        <!-- Хуудасны төрөл сонгох талбар (dropdown) -->
-        <div class="col-4">
-            <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
-            <div class="input-group">
-                <input class="form-control" name="type" type="text" value="{{ types|keys|first|e }}" maxlength="32">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                <ul class="dropdown-menu dropdown-menu-end" id="type_list">
-                    {% for value,name in types %}
-                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                    {% endfor %}
-                </ul>
+        <!-- Агуулга -->
+        <div class="col-md-4">
+            <div class="card h-100 border-success shadow-sm">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-file-earmark-richtext display-3 text-success mb-3"></i>
+                    <h5 class="card-title">{{ localization.code == 'mn' ? 'Агуулга' : 'Content' }}</h5>
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ localization.code == 'mn'
+                            ? 'Контент бүхий хуудас. Текст, зураг, видео оруулах боломжтой. Навигацын дотор эсвэл дээд түвшинд байрлана.'
+                            : 'Page with rich content. Can be placed under a nav page or at the top level of the menu.' }}
+                        <br><br>
+                        <span class="fst-italic">{{ localization.code == 'mn' ? 'Жишээ: "Бидний тухай", үйлчилгээний мэдээлэллүүд, холбоо барих' : 'Example: "About Us", service info, contact' }}</span>
+                    </p>
+                    <a href="?mode=content" class="btn btn-success mt-auto wizard-select">
+                        <i class="bi bi-file-earmark-richtext"></i> {{ localization.code == 'mn' ? 'Сонгох' : 'Select' }}
+                    </a>
+                </div>
             </div>
         </div>
-        <!-- Хуудасны ангилал сонгох талбар (dropdown) -->
-        <div class="col-4">
-            <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
-            <div class="input-group">
-                <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
-                    {% for value,name in categories %}
-                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                    {% endfor %}
-                </ul>
+        <!-- Холбоос -->
+        <div class="col-md-4">
+            <div class="card h-100 border-warning shadow-sm">
+                <div class="card-body text-center d-flex flex-column">
+                    <i class="bi bi-link-45deg display-3 text-warning mb-3"></i>
+                    <h5 class="card-title">{{ localization.code == 'mn' ? 'Холбоос (hotlink)' : 'Link (hotlink)' }}</h5>
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ localization.code == 'mn'
+                            ? 'URL холбоос руу чиглүүлэх хуудас. Гадаад сайт эсвэл дотоод тусгай хуудас руу шилжүүлнэ. Навигацын дотор эсвэл дээд түвшинд байрлана.'
+                            : 'Redirects to a URL - external site or internal system page. Can be placed under a nav page or at the top level of the menu.' }}
+                        <br><br>
+                        <span class="fst-italic">{{ localization.code == 'mn' ? 'Жишээ: Facebook хуудас, /sitemap тусгай хуудас' : 'Example: Facebook page, /sitemap system page' }}</span>
+                    </p>
+                    <a href="?mode=link" class="btn btn-warning mt-auto wizard-select">
+                        <i class="bi bi-link-45deg"></i> {{ localization.code == 'mn' ? 'Сонгох' : 'Select' }}
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-    <!-- Хоёр дахь мөр: Эцэг хуудас, Байрлал -->
-    <div class="row mt-3">
-        <div class="col-8">
+</div>
+
+<!-- ========== INSERT FORM ========== -->
+<div id="page-form" style="display:none">
+    <form class="needs-validation" id="page_insert" action="{{ 'page-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="type" id="page_type" value="page">
+        <!-- Хэл, Ангилал, Байрлал -->
+        <div class="row mt-3">
+            <div class="col-5">
+                <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
+                {% set first_code = localization.language|keys|first %}
+                {% set first_flag = first_code == 'en' ? 'us' : first_code %}
+                <div class="input-group">
+                    <span class="input-group-text" id="lang_flag">
+                        <img src="https://flagcdn.com/20x15/{{ first_flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ first_flag }}.png 2x"
+                             width="20" height="15" alt="{{ first_code }}">
+                    </span>
+                    <input class="form-control" name="code" type="text" value="{{ first_code|e }}" readonly>
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                    <ul class="dropdown-menu dropdown-menu-end" id="lang_list">
+                        {% for code,language in localization.language %}
+                            {% set flag = code == 'en' ? 'us' : code %}
+                            <li class="dropdown-item" value="{{ code|e }}">
+                                <img src="https://flagcdn.com/16x12/{{ flag }}.png"
+                                     srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x"
+                                     width="16" height="12" alt="{{ code }}"
+                                     style="vertical-align:middle;margin-right:.35rem">{{ language['title']|e }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-4">
+                <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
+                <div class="input-group">
+                    <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                    <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                        {% for value,name in categories %}
+                            <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-3">
+                <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
+                <input class="form-control" name="position" value="100" placeholder="" type="number" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+        </div>
+        <!-- Эцэг хуудас -->
+        <div class="mt-3">
             <label class="form-label">{{ 'parent'|text }} <i class="bi bi-diagram-3"></i></label>
             <select class="form-select" name="parent_id">
                 <option value="0" selected>-</option>
@@ -100,90 +155,183 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-4">
-            <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
-            <input class="form-control" name="position" value="100" placeholder="" type="number" autocomplete="off">
+        <!-- Гарчиг -->
+        <div class="mt-3">
+            <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
+            <input class="form-control form-control-lg border-primary" name="title" required value="" maxlength="255" type="text" autocomplete="off">
             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
         </div>
-    </div>
-    <!-- Гарчиг -->
-    <div class="mt-3">
-        <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
-        <input class="form-control" name="title" required value="" maxlength="255" type="text" autocomplete="off">
-        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-    </div>
-    <!-- Тайлбар -->
-    <div class="mt-3">
-        <label class="form-label">{{ 'description'|text }} <i class="bi bi-text-paragraph"></i></label>
-        <textarea class="form-control" name="description" rows="2"></textarea>
-    </div>
-    <!-- Агуулга -->
-    <div class="mt-3">
-        <textarea name="content"></textarea>
-    </div>
-    <!-- Холбоос -->
-    <div class="mt-3">
-        <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-        <input class="form-control" name="link" type="url" value="" maxlength="255">
-    </div>
-    <!-- Хэрэв хэрэглэгч нийтлэх эрхтэй бол нийтлэх болон сэтгэгдэл авах тохиргоо харуулах -->
-    {% if user.can('system_content_publish') %}
-    <div class="rounded border border-success mt-3 p-3">
-        <div class="row">
-            <!-- Нийтлэх эсэх сонголт -->
-            <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" name="published" type="checkbox" role="switch">
-                    {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
+        <!-- Тайлбар (content горимд) -->
+        <div class="mt-3 content-fields">
+            <label class="form-label">{{ localization.code == 'mn' ? 'Товч тайлбар' : 'Description' }} <i class="bi bi-card-text"></i></label>
+            <input class="form-control form-control-sm" name="description" value="" maxlength="255" type="text" autocomplete="off" placeholder="{{ localization.code == 'mn' ? 'Хоосон үлдээвэл агуулгаас автоматаар үүсгэнэ' : 'Leave empty to auto-generate from content' }}">
+        </div>
+        <!-- Агуулга (content горимд) -->
+        <div class="mt-3 content-fields">
+            <textarea name="content"></textarea>
+        </div>
+        <!-- Холбоос (link горимд) -->
+        <div class="mt-3 link-fields">
+            <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
+            <input class="form-control" name="link" type="url" value="" maxlength="255">
+        </div>
+        <!-- Нийтлэх тохиргоо -->
+        {% if user.can('system_content_publish') %}
+        <div class="rounded border border-success mt-3 p-3">
+            <div class="row">
+                <div class="col-4">
+                    <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="published" type="checkbox" role="switch">
+                        {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
+                    </div>
                 </div>
-            </div>
-            <!-- Онцлох хуудас эсэх сонголт -->
-            <div class="col-4">
-                <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" name="is_featured" type="checkbox" role="switch">
-                    {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+                <div class="col-4 page-fields">
+                    <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="is_featured" type="checkbox" role="switch">
+                        {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+                    </div>
                 </div>
-            </div>
-            <!-- Сэтгэгдэл авах эсэх сонголт -->
-            <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" name="comment" type="checkbox" role="switch">
-                    {{ 'can-comment'|text }}
+                <div class="col-4 content-fields">
+                    <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="comment" type="checkbox" role="switch">
+                        {{ 'can-comment'|text }}
+                    </div>
                 </div>
             </div>
         </div>
+        {% endif %}
+    </form>
+    <!-- Доорх товчнууд -->
+    <div class="rounded p-2 mt-4 shadow">
+        {% if user.can('system_content_insert') %}
+            <button class="submit-insert btn btn-success text-uppercase shadow-sm">
+                <i class="bi bi-check2"></i> {{ 'save'|text }}
+            </button>
+        {% endif %}
+        <a class="btn btn-secondary text-uppercase shadow-sm back-to-wizard" href="{{ 'page-insert'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ localization.code == 'mn' ? 'Буцах' : 'Back' }}
+        </a>
     </div>
-    {% endif %}
-</form>
-<!-- Формын доорх үйлдлийн товчнууд -->
-<div class="rounded p-2 mt-4 shadow">
-    {% if user.can('system_content_insert') %}
-        <button class="submit-insert btn btn-success text-uppercase shadow-sm">
-            <i class="bi bi-check2"></i> {{ 'save'|text }}
-        </button>
-    {% endif %}
-    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'pages'|link }}">
-        <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
-    </a>
 </div>
-<script type="text/javascript">
-    /* Хуудасны төрөл сонгох үед editor-ийн горимыг өөрчлөх */
-    const content = document.querySelector('textarea[name="content"]');
-    const type = document.querySelector('input[name="type"]');
 
-    document.getElementById('type_list').addEventListener('click', function (e) {
-        if (e.target && e.target.nodeName === 'LI') {
-            type.value = e.target.getAttribute('value');
-            content._moedit?.toggleSource(type.value === 'embed');
-        }
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const parentId = urlParams.get('parent_id');
+    const fromPage = urlParams.get('from');
+
+    /* from param-аар буцах линкүүдийг зохицуулах */
+    if (fromPage === 'nav') {
+        document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages-nav'|link }}`; });
+    }
+
+    /* Wizard линкүүдэд from, code, parent_id дамжуулах */
+    const presetCodeParam = urlParams.get('code');
+    document.querySelectorAll('a.wizard-select').forEach(function (a) {
+        if (fromPage) a.href += '&from=' + fromPage;
+        if (presetCodeParam) a.href += '&code=' + presetCodeParam;
+        if (parentId) a.href += '&parent_id=' + parentId;
     });
 
-    /* Хэл сонгох event listener */
+    /* Wizard руу буцах линкэд from, code дамжуулах */
+    document.querySelectorAll('a.back-to-wizard').forEach(function (a) {
+        const params = [];
+        if (fromPage) params.push('from=' + fromPage);
+        if (presetCodeParam) params.push('code=' + presetCodeParam);
+        if (params.length) a.href += '?' + params.join('&');
+    });
+
+    const mode = urlParams.get('mode');
+    if (!mode || !['nav', 'link', 'content'].includes(mode)) return;
+
+    /* Wizard нуугдаж, форм харагдана */
+    document.getElementById('page-wizard').style.display = 'none';
+    document.getElementById('page-form').style.display = '';
+    document.querySelectorAll('.submit-insert').forEach(function (btn) { btn.style.display = ''; });
+
+    /* Type = mode шууд (nav, content, link) */
+    document.getElementById('page_type').value = mode;
+
+    /* Mode badge */
+    const badges = {
+        nav: { cls: 'bg-primary', icon: 'bi-diagram-3', mn: 'Навигац', en: 'Navigation' },
+        link: { cls: 'bg-warning text-dark', icon: 'bi-link-45deg', mn: 'Холбоос', en: 'Link' },
+        content: { cls: 'bg-success', icon: 'bi-file-earmark-richtext', mn: 'Агуулга', en: 'Content' }
+    };
+    const b = badges[mode];
+    const lang = document.documentElement.lang || 'mn';
+    document.getElementById('mode-badge').innerHTML =
+        `<span class="badge ${b.cls}"><i class="bi ${b.icon}"></i> ${lang === 'mn' ? b.mn : b.en}</span>`;
+
+    /* Эцэг хуудас URL-аас автоматаар сонгох + position тооцоолох */
+    const infosData = {{ infos|json_encode|raw }};
+    const positionInput = document.querySelector('input[name="position"]');
+    function calcNextPosition(pid) {
+        let maxPos = 0;
+        let hasSibling = false;
+        for (const key in infosData) {
+            if (String(infosData[key]['parent_id']) === String(pid)) {
+                const p = parseInt(infosData[key]['position']) || 0;
+                if (p > maxPos) maxPos = p;
+                hasSibling = true;
+            }
+        }
+        if (hasSibling) return maxPos + 10;
+        /* Анхны хүүхэд: эцгийн position + 10 */
+        const parentPos = parseInt(infosData[pid]?.['position']) || 0;
+        return parentPos + 10;
+    }
+    if (parentId) {
+        const parentSelect = document.querySelector('select[name="parent_id"]');
+        if (parentSelect) {
+            parentSelect.value = parentId;
+        }
+        if (positionInput) {
+            positionInput.value = calcNextPosition(parentId);
+        }
+    } else if (presetCodeParam && positionInput) {
+        /* Top-level: адил хэлийн top-level item-үүдийн max position + 100 */
+        let maxPos = 0;
+        let found = false;
+        for (const key in infosData) {
+            if (String(infosData[key]['parent_id']) === '0' && infosData[key]['code'] === presetCodeParam) {
+                const p = parseInt(infosData[key]['position']) || 0;
+                if (p > maxPos) maxPos = p;
+                found = true;
+            }
+        }
+        if (found) {
+            positionInput.value = maxPos + 100;
+        }
+    }
+
+    /* Талбаруудыг горимоос хамааруулж нуух */
+    if (mode !== 'content') {
+        document.querySelectorAll('.content-fields').forEach(function (el) { el.style.display = 'none'; });
+    }
+    if (mode !== 'link') {
+        document.querySelectorAll('.link-fields').forEach(function (el) { el.style.display = 'none'; });
+    }
+    if (mode === 'nav') {
+        document.querySelectorAll('.page-fields').forEach(function (el) { el.style.display = 'none'; });
+    }
+    if (mode === 'link') {
+        const linkInput = document.querySelector('input[name="link"]');
+        if (linkInput) linkInput.required = true;
+    }
+
+    /* Хэл сонгох */
     const langInput = document.querySelector('input[name="code"]');
     const langFlag = document.getElementById('lang_flag');
+    const presetCode = urlParams.get('code');
+    if (presetCode && langInput) {
+        langInput.value = presetCode;
+        const presetFlag = presetCode === 'en' ? 'us' : presetCode;
+        if (langFlag) langFlag.innerHTML = `<img src="https://flagcdn.com/20x15/${presetFlag}.png" srcset="https://flagcdn.com/40x30/${presetFlag}.png 2x" width="20" height="15" alt="${presetCode}">`;
+    }
     document.getElementById('lang_list').addEventListener('click', function (e) {
         const li = e.target.closest('li.dropdown-item');
         if (li) {
@@ -194,7 +342,7 @@
         }
     });
 
-    /* Хуудасны ангилал сонгох event listener */
+    /* Ангилал сонгох */
     const category = document.querySelector('input[name="category"]');
     document.getElementById('category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
@@ -202,9 +350,9 @@
         }
     });
 
-    /* DOM ачаалагдсаны дараа */
-    document.addEventListener('DOMContentLoaded', function () {
-        /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
+    /* moedit зөвхөн content горимд */
+    const content = document.querySelector('textarea[name="content"]');
+    if (mode === 'content' && content) {
         new moedit(content, {
             upload: {
                 url: `{{ 'files-upload'|link }}`,
@@ -212,85 +360,76 @@
                 maxFileSize: {{ max_file_size }}
             },
             titleSelector: 'input[name="title"]',
-            ai_helper: `{{ 'moedit-ai'|link }}`,
-            sourceMode: type.value === 'embed'
+            ai_helper: `{{ 'moedit-ai'|link }}`
         });
+    }
 
-        /* Форм илгээх функц */
-        const formInsert = document.querySelector('form#page_insert');
-        if (!formInsert) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-        } else {
-            /* Хадгалах товчнууд дээр дарахад форм илгээх */
-            const submitters = document.querySelectorAll('button.submit-insert');
-            submitters.forEach(function (btn) {
-                btn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    formInsert.requestSubmit();
-                });
-            });
+    /* Форм илгээх */
+    const formInsert = document.querySelector('form#page_insert');
+    if (!formInsert) {
+        return NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    }
 
-            /* Форм submit хийхэд */
-            formInsert.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                /* Формын баталгаажуулалт */
-                const _valid = this.checkValidity();
-                this.classList.add('was-validated');
-                if (!_valid) {
-                    event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
-                }
-
-                /* Товчнуудыг disable хийх (spinner харуулах) */
-                submitters.forEach(function (btn) { btn.growNstop(); });
-
-                /* FormData үүсгэж сервер рүү илгээх */
-                const data = new FormData(this);
-
-                /* Checkbox-уудыг normalize хийх (checked = 1, unchecked = 0) */
-                const publishedCheckbox = this.querySelector('input[name="published"]');
-                if (publishedCheckbox) {
-                    data.set('published', publishedCheckbox.checked ? '1' : '0');
-                }
-                const isFeaturedCheckbox = this.querySelector('input[name="is_featured"]');
-                if (isFeaturedCheckbox) {
-                    data.set('is_featured', isFeaturedCheckbox.checked ? '1' : '0');
-                }
-                const commentCheckbox = this.querySelector('input[name="comment"]');
-                if (commentCheckbox) {
-                    data.set('comment', commentCheckbox.checked ? '1' : '0');
-                }
-
-                /* Бүх файлуудын мэдээллийг JSON хэлбэрээр илгээх */
-                if (content._moedit) {
-                    data.append('files', JSON.stringify(content._moedit.getFiles()));
-                }
-
-                fetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'POST'
-                    }
-                ).then(res => {
-                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
-                    throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
-                    }
-
-                    /* Амжилттай бол хуудасны жагсаалт руу шилжих */
-                    window.location.href = `{{ 'pages'|link }}`;
-
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Page created');
-                }).catch(error => {
-                    /* Алдаа гарсан тохиолдолд */
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitters.forEach(function (btn) { btn.growNstop();});
-                });
-            });
-        }
+    const submitters = document.querySelectorAll('button.submit-insert');
+    submitters.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            formInsert.requestSubmit();
+        });
     });
+
+    formInsert.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const _valid = this.checkValidity();
+        this.classList.add('was-validated');
+        if (!_valid) {
+            event.stopPropagation();
+            return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+        }
+
+        submitters.forEach(function (btn) { btn.growNstop(); });
+
+        const data = new FormData(this);
+
+        const publishedCheckbox = this.querySelector('input[name="published"]');
+        if (publishedCheckbox) {
+            data.set('published', publishedCheckbox.checked ? '1' : '0');
+        }
+        const isFeaturedCheckbox = this.querySelector('input[name="is_featured"]');
+        if (isFeaturedCheckbox) {
+            data.set('is_featured', isFeaturedCheckbox.checked ? '1' : '0');
+        }
+        const commentCheckbox = this.querySelector('input[name="comment"]');
+        if (commentCheckbox) {
+            data.set('comment', commentCheckbox.checked ? '1' : '0');
+        }
+
+        if (content?._moedit) {
+            data.append('files', JSON.stringify(content._moedit.getFiles()));
+        }
+
+        fetch(
+            this.action,
+            {
+                body: data,
+                method: this.getAttribute('method') ?? 'POST'
+            }
+        ).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message ? response.message : 'Invalid response!');
+            }
+
+            window.location.href = fromPage === 'nav' ? `{{ 'pages-nav'|link }}` : `{{ 'pages'|link }}`;
+
+            NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Page created');
+        }).catch(error => {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            submitters.forEach(function (btn) { btn.growNstop(); });
+        });
+    });
+});
 </script>

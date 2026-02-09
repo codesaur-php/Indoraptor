@@ -353,7 +353,7 @@ User-Role хамаарал.
 | `/dashboard/news/list` | GET | `news-list` |
 | `/dashboard/news/insert` | GET+POST | `news-insert` |
 | `/dashboard/news/{uint:id}` | GET+PUT | `news-update` |
-| `/dashboard/news/read/{uint:id}` | GET | `news-read` |
+| `/dashboard/news/read/{slug}` | GET | `news-read` |
 | `/dashboard/news/view/{uint:id}` | GET | `news-view` |
 | `/dashboard/news/deactivate` | DELETE | `news-deactivate` |
 
@@ -406,7 +406,7 @@ HTML контентоос товч хураангуй гаргах.
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
-| `/dashboard/pages/read/{uint:id}` | GET | `page-read` |
+| `/dashboard/pages/read/{slug}` | GET | `page-read` |
 | `/dashboard/pages/view/{uint:id}` | GET | `page-view` |
 | `/dashboard/pages/deactivate` | DELETE | `page-deactivate` |
 
@@ -608,8 +608,8 @@ ExceptionHandler → MySQL → Container → Session → Localization → Settin
 | `/` | GET | `home` | Нүүр хуудас |
 | `/home` | GET | - | Нүүр alias |
 | `/language/{code}` | GET | `language` | Хэл солих |
-| `/page/{uint:id}` | GET | `page` | Хуудас үзэх |
-| `/news/{uint:id}` | GET | `news` | Мэдээ үзэх |
+| `/page/{slug}` | GET | `page` | Хуудас үзэх |
+| `/news/{slug}` | GET | `news` | Мэдээ үзэх |
 | `/contact` | GET | `contact` | Холбоо барих |
 
 ### HomeController
@@ -620,8 +620,8 @@ ExceptionHandler → MySQL → Container → Session → Localization → Settin
 | Метод | Тайлбар |
 |-------|---------|
 | `index()` | Нүүр хуудас (сүүлийн 20 мэдээ) |
-| `page(int $id)` | Хуудас үзүүлэх + файлууд + read_count |
-| `news(int $id)` | Мэдээ үзүүлэх + файлууд + read_count |
+| `page(string $slug)` | Хуудас үзүүлэх + файлууд + read_count + OG meta |
+| `news(string $slug)` | Мэдээ үзүүлэх + файлууд + read_count + OG meta |
 | `contact()` | Холбоо барих хуудас (link LIKE '%/contact') |
 | `language(string $code)` | Хэл солих + redirect |
 

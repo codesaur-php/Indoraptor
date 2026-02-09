@@ -220,7 +220,7 @@
                 const published = record.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
-                const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${record.id}"><i class="bi bi-book"></i></a>`];  /* Унших товч */
+                const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${record.slug}"><i class="bi bi-book"></i></a>`];  /* Унших товч */
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${record.id}"><i class="bi bi-eye"></i></a>`);          /* Харах товч */
 
                 /* Засах эрхтэй бол засах товч нэмэх */

@@ -90,6 +90,7 @@ class NewsModel extends Model
            (new Column('id', 'bigint'))->primary(),
            (new Column('slug', 'varchar', 255))->unique(),
             new Column('title', 'varchar', 255),
+            new Column('description', 'varchar', 255),
             new Column('content', 'mediumtext'),
             new Column('photo', 'varchar', 255),
             new Column('code', 'varchar', 2),
@@ -175,6 +176,14 @@ class NewsModel extends Model
             $record['slug'] = $this->generateSlug($record['title']);
         }
 
+        // Description хоосон бол content-оос автоматаар үүсгэх
+        $desc = \trim($record['description'] ?? '');
+        if ($desc === '' && !empty($record['content'])) {
+            $record['description'] = $this->getExcerpt($record['content']);
+        } else {
+            $record['description'] = $desc;
+        }
+
         return parent::insert($record);
     }
 
@@ -196,12 +205,12 @@ class NewsModel extends Model
             'ж'=>'j', 'з'=>'z', 'и'=>'i', 'й'=>'i', 'к'=>'k', 'л'=>'l', 'м'=>'m',
             'н'=>'n', 'о'=>'o', 'ө'=>'u', 'п'=>'p', 'р'=>'r', 'с'=>'s', 'т'=>'t',
             'у'=>'u', 'ү'=>'u', 'ф'=>'f', 'х'=>'kh', 'ц'=>'ts', 'ч'=>'ch', 'ш'=>'sh',
-            'щ'=>'sh', 'ъ'=>'', 'ы'=>'y', 'ь'=>'', 'э'=>'e', 'ю'=>'yu', 'я'=>'ya',
+            'щ'=>'sh', 'ъ'=>'i', 'ы'=>'y', 'ь'=>'i', 'э'=>'e', 'ю'=>'yu', 'я'=>'ya',
             'А'=>'A', 'Б'=>'B', 'В'=>'V', 'Г'=>'G', 'Д'=>'D', 'Е'=>'E', 'Ё'=>'Yo',
             'Ж'=>'J', 'З'=>'Z', 'И'=>'I', 'Й'=>'I', 'К'=>'K', 'Л'=>'L', 'М'=>'M',
             'Н'=>'N', 'О'=>'O', 'Ө'=>'U', 'П'=>'P', 'Р'=>'R', 'С'=>'S', 'Т'=>'T',
             'У'=>'U', 'Ү'=>'U', 'Ф'=>'F', 'Х'=>'Kh', 'Ц'=>'Ts', 'Ч'=>'Ch', 'Ш'=>'Sh',
-            'Щ'=>'Sh', 'Ъ'=>'', 'Ы'=>'Y', 'Ь'=>'', 'Э'=>'E', 'Ю'=>'Yu', 'Я'=>'Ya'
+            'Щ'=>'Sh', 'Ъ'=>'I', 'Ы'=>'Y', 'Ь'=>'I', 'Э'=>'E', 'Ю'=>'Yu', 'Я'=>'Ya'
         ];
         $slug = \strtr($title, $mongolian);
 

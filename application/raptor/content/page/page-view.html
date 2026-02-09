@@ -1,31 +1,41 @@
-<!-- Хуудасны төрлүүдийн тодорхойлолт -->
-{% set types = {
-    'menu': { 'mn': 'Цэс' },
-    'important-menu': { 'mn': 'Чухал цэс' },
-    'mega-menu': { 'mn': 'Мега цэс' },
-    'special-page': { 'mn': 'Тусгай хуудас' },
-    'embed': { 'mn': 'Шигтгэсэн' }
-} %}
-<!-- Хуудасны ангиллын тодорхойлолт -->
+<!-- Page categories -->
 {% set categories = {
     'general': { 'mn': 'Ерөнхий' },
-    'featured': { 'mn': 'Онцолсон' }
+    'info': { 'mn': 'Мэдээллийн' },
+    'service': { 'mn': 'Үйлчилгээ' },
+    'legal': { 'mn': 'Хууль эрх зүй' },
+    'reference': { 'mn': 'Лавлагаа' }
 } %}
-<!-- Mongolian WYSIWYG Editor - текст editor -->
+<!-- Mode detection -->
+{% set is_nav = record['type'] == 'nav' %}
+{% set is_link = record['type'] == 'link' %}
+{% set is_content = not is_nav and not is_link %}
+{% if is_content %}
+<!-- Mongolian WYSIWYG Editor -->
 <link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
 <link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/moedit/moedit.js"></script>
 <script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
+{% endif %}
+<!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
         <i class="bi bi-eye"></i> {{ record['title']|e }}
+        {% if is_nav %}
+            <span class="badge bg-primary"><i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Навигац' : 'Navigation' }}</span>
+        {% elseif is_link %}
+            <span class="badge bg-warning text-dark"><i class="bi bi-link-45deg"></i> {{ localization.code == 'mn' ? 'Холбоос' : 'Link' }}</span>
+        {% else %}
+            <span class="badge bg-success"><i class="bi bi-file-earmark-richtext"></i> {{ localization.code == 'mn' ? 'Агуулга' : 'Content' }}</span>
+        {% endif %}
     </h3>
     <div class="ms-auto">
-        <a class="btn btn-sm btn-info shadow-sm" href="{{ 'pages'|link }}">
+        <a class="btn btn-sm btn-info shadow-sm back-link" href="{{ 'pages'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
         </a>
     </div>
 </div>
+<!-- Хэл, Ангилал, Байрлал -->
 <div class="row mt-3">
     <div class="col-4">
         <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
@@ -37,25 +47,40 @@
         </span>
     </div>
     <div class="col-4">
-        <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
-        <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
-    </div>
-    <div class="col-4">
         <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
         <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
     </div>
+    <div class="col-4">
+        <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
+        <input class="form-control" readonly type="number" value="{{ record['position'] }}">
+    </div>
 </div>
+<!-- Гарчиг -->
 <div class="mt-3">
     <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
-    <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
+    <input class="form-control form-control-lg border-primary" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
+</div>
+{% if is_content %}
+<!-- Тайлбар -->
+<div class="mt-3">
+    <label class="form-label">{{ localization.code == 'mn' ? 'Товч тайлбар' : 'Description' }} <i class="bi bi-card-text"></i></label>
+    <input class="form-control form-control-sm" name="description" readonly value="{{ record['description']|e }}" type="text">
 </div>
 <!-- Агуулга -->
 <div class="mt-3">
     <textarea name="content" readonly>{{ record['content']|e }}</textarea>
 </div>
+{% endif %}
+{% if is_link %}
+<!-- Холбоос -->
+<div class="mt-3">
+    <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
+    <input class="form-control" name="link" readonly value="{{ record['link']|e }}" type="url">
+</div>
+{% endif %}
+<!-- Нийтлэх тохиргоо -->
 <div class="rounded border border-success mt-4 p-3">
     <div class="row">
-        <!-- Нийтлэх эсэх -->
         <div class="col-4">
             <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
             <div class="form-check form-switch">
@@ -63,7 +88,7 @@
                 {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
             </div>
         </div>
-        <!-- Онцлох хуудас эсэх -->
+        {% if not is_nav %}
         <div class="col-4">
             <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
             <div class="form-check form-switch">
@@ -71,7 +96,8 @@
                 {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
             </div>
         </div>
-        <!-- Сэтгэгдэл авах эсэх -->
+        {% endif %}
+        {% if is_content %}
         <div class="col-4">
             <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
             <div class="form-check form-switch">
@@ -79,6 +105,7 @@
                 {{ 'can-comment'|text }}
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 {% if user.can('system_logger') %}
@@ -96,18 +123,25 @@
 {% endif %}
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
+        const fromPage = new URLSearchParams(window.location.search).get('from');
+        if (fromPage === 'nav') {
+            document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages-nav'|link }}`; });
+        }
+        {% if is_content %}
         const content = document.querySelector('textarea[name="content"]');
-        new moedit(content, {
-            readonly: true,
-            titleSelector: 'input[name="title"]',
-            {% if record['type'] == 'embed' %}sourceMode: true,{% endif %}
-            {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
-            attachments: [
-                {% for file in files %}
-                JSON.parse(`{{ file|json_encode|e('js') }}`),
-                {% endfor %}
-            ]
-        });
+        if (content) {
+            new moedit(content, {
+                readonly: true,
+                titleSelector: 'input[name="title"]',
+                {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
+                attachments: [
+                    {% for file in files %}
+                    JSON.parse(`{{ file|json_encode|e('js') }}`),
+                    {% endfor %}
+                ]
+            });
+        }
+        {% endif %}
 
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {

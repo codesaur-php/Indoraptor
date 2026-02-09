@@ -165,7 +165,7 @@ indoraptor/
 
 Энэ фреймворкийг хөгжүүлэхэд [**Gerege Systems LLC**](https://gerege.com/) ивээн тэтгэж, компанийн үүсгэн байгуулагч **Ц.Эрдэнэбат** багш удирдан зааварлаж чиглүүлсэн билээ.
 
-This framework was developed with the sponsorship of [**Gerege Systems LLC**](https://gerege.com/) and under the guidance of **Ts.Erdenebat**, founder of Gerege Systems.
+This framework was developed with the sponsorship of [**Gerege Systems LLC**](https://gerege.com/) and under the guidance of **Erdenebat Ts**, founder of Gerege Systems.
 
 ---
 

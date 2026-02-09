@@ -10,12 +10,12 @@
        • <li> - нэг мэдээний блок
        • Зураг байгаа бол thumbnail хэлбэрээр
        • Огноо
-       • Гарчиг (title) → news/{id} линктэй
+       • Гарчиг (title) → news/{slug} линктэй
 
      UX:
        ✓ loop.index0 ашиглан odd/even background сүүдэрлэнэ
        ✓ Зураг байгаа үед responsive thumbnail
-       ✓ Link бүхэн Twig routing ашиглана → 'news'|link({id:...})
+       ✓ Link бүхэн Twig routing ашиглана → 'news'|link({slug:...})
 
      Анхаарах:
        • Photo field хоосон бол IMG блок render хийхгүй
@@ -29,7 +29,7 @@
         </h5>
         <ul>
             {% for news in recent %}
-                {% set href = 'news'|link({ id: news['id'] }) %}
+                {% set href = 'news'|link({ slug: news['slug'] }) %}
                 <li class="mt-2 mb-4 {{ loop.index0 is odd ? '' : 'bg-light' }}">
                     {% if news['photo'] is not empty and news['photo'] is not null %}
                         <div class="img-fluid img-thumbnail d-block">

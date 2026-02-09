@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [11.1.0] - 2026-02-09
+
+### Added
+- **Pages Navigation** (`/dashboard/pages/nav`) - хуудсуудын мод бүтэцтэй навигацийн удирдлага
+  - Хэл тус бүрээр карт харуулах
+  - Published/unpublished ялгаа: хөх гарчиг + ногоон check / eye-slash icon
+  - Хуудасны photo thumbnail харуулна
+- **"Системийн хуудас" ойлголтыг устгасан** - бүх нийтлэгдсэн хуудас навигацид харагдана
+- Insert form: automatic position calculation (parent position + 10 for first child, max sibling + 10 for subsequent, max top-level + 100 for same-language)
+- Page view: position field (language, category, position нэг мөрөнд)
+- **OG meta tags** for page and news: `og:title`, `og:description`, `og:image`, `og:type`, `og:site_name`, logo fallback
+- `<title>` tag: "Record Title | Site Title" format for content pages
+
+### Changed
+- `getNavigation()`: removed `(type='nav' OR parent_id>0)` filter, added `slug` field
+- `getFeaturedPages()`: added `slug` field
+- `getInfos()`: added `position` and `code` fields
+- Web page/news links use `slug` instead of `id` (`/page/{slug}`, `/news/{slug}`)
+
+---
+
 ## [11.0.0] - 2026-02-06
 
 Full CMS framework major release. Multi-DB support, DI Container, OpenAI integration, full documentation.
@@ -182,6 +203,7 @@ Initial release. REST API-based server framework.
 - `codesaur/dataobject` PDO ORM
 - MIT License
 
+[11.1.0]: https://github.com/codesaur-php/Indoraptor/compare/v11.0.0...v11.1.0
 [11.0.0]: https://github.com/codesaur-php/Indoraptor/compare/v10.0.0...v11.0.0
 [10.0.0]: https://github.com/codesaur-php/Indoraptor/compare/v9.0.0...v10.0.0
 [9.0.0]: https://github.com/codesaur-php/Indoraptor/compare/v8.0.0...v9.0.0

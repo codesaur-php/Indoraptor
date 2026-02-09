@@ -70,7 +70,7 @@ class ContentsRouter extends Router
          * 📰 NEWS - Мэдээлэл
          * ------------------------------ */
 
-        // Мэдээний жагсаалтын хуудас
+        // Мэдээний жагсаалтын хүснэгт
         $this->GET('/dashboard/news', [NewsController::class, 'index'])->name('news');
 
         // Мэдээний JSON list
@@ -83,7 +83,7 @@ class ContentsRouter extends Router
         $this->GET_PUT('/dashboard/news/{uint:id}', [NewsController::class, 'update'])->name('news-update');
 
         // Мэдээ унших (blog хэлбэрээр)
-        $this->GET('/dashboard/news/read/{uint:id}', [NewsController::class, 'read'])->name('news-read');
+        $this->GET('/dashboard/news/read/{slug}', [NewsController::class, 'read'])->name('news-read');
 
         // Мэдээг харах UI
         $this->GET('/dashboard/news/view/{uint:id}', [NewsController::class, 'view'])->name('news-view');
@@ -96,8 +96,11 @@ class ContentsRouter extends Router
          * 📄 PAGES - Хуудас
          * ------------------------------ */
 
-        // Хуудасны жагсаалтын UI
+        // Хуудасны жагсаалтын хүснэгт
         $this->GET('/dashboard/pages', [PagesController::class, 'index'])->name('pages');
+
+        // Хуудасны навигацийн мод бүтэц
+        $this->GET('/dashboard/pages/nav', [PagesController::class, 'nav'])->name('pages-nav');
 
         // Хуудасны жагсаалт JSON
         $this->GET('/dashboard/pages/list', [PagesController::class, 'list'])->name('pages-list');
@@ -109,7 +112,7 @@ class ContentsRouter extends Router
         $this->GET_PUT('/dashboard/pages/{uint:id}', [PagesController::class, 'update'])->name('page-update');
 
         // Хуудас унших (blog хэлбэрээр)
-        $this->GET('/dashboard/pages/read/{uint:id}', [PagesController::class, 'read'])->name('page-read');
+        $this->GET('/dashboard/pages/read/{slug}', [PagesController::class, 'read'])->name('page-read');
 
         // Хуудас харах
         $this->GET('/dashboard/pages/view/{uint:id}', [PagesController::class, 'view'])->name('page-view');

@@ -12,12 +12,16 @@ use codesaur\DataObject\Column;
  *
  * Хуудас нь мод бүтэцтэй (parent_id), олон хэлтэй бус (single-table),
  * SEO-friendly slug-тай контент юм. Тухайлбал:
- *  - Цэс (type=menu)
+ *  - Цэсний навигац (type=nav) - дотроо хүүхэд хуудсуудыг агуулах цэсний зүйл
+ *  - Агуулга (type=content) - контент бүхий хуудас
+ *  - Холбоос (type=link) - URL руу чиглүүлэх
+ *
+ * Бүх нийтлэгдсэн хуудас навигацид харагдана (type ялгаагүй).
  *  - Ерөнхий мэдээлэл (category=general)
  *  - Нийтлэл (published/draft)
  *
  * codesaur\DataObject\Model-оос өвлөсөн тул:
- *  - CRUD (insert, getById, updateById, deleteById)
+ *  - CRUD (insert, getRow, updateById, deleteById)
  *  - getRowWhere(), getRows() зэрэг query method-ууд
  *  - __initial() хүснэгт анх үүсгэх үед FK constraint нэмэх
  *
@@ -40,29 +44,29 @@ class PagesModel extends Model
         $this->setInstance($pdo);
 
         $this->setColumns([
-           (new Column('id', 'bigint'))->primary(),
-           (new Column('slug', 'varchar', 255))->unique(),
-            new Column('parent_id', 'bigint'),
-            new Column('title', 'varchar', 255),
-            new Column('description', 'text'),
-            new Column('content', 'mediumtext'),
-            new Column('photo', 'varchar', 255),
-            new Column('code', 'varchar', 2),
-           (new Column('type', 'varchar', 32))->default('menu'),
-           (new Column('category', 'varchar', 32))->default('general'),
-           (new Column('position', 'smallint'))->default(100),
-            new Column('link', 'varchar', 255),
-           (new Column('is_featured', 'tinyint'))->default(0),
-           (new Column('comment', 'tinyint'))->default(0),
-           (new Column('read_count', 'bigint'))->default(0),
-           (new Column('is_active', 'tinyint'))->default(1),
-           (new Column('published', 'tinyint'))->default(0),
-            new Column('published_at', 'datetime'),
-            new Column('published_by', 'bigint'),
-            new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint'),
-            new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint')
+       (new Column('id', 'bigint'))->primary(),
+       (new Column('slug', 'varchar', 255))->unique(),
+        new Column('parent_id', 'bigint'),
+        new Column('title', 'varchar', 255),
+        new Column('description', 'varchar', 255),
+        new Column('content', 'mediumtext'),
+        new Column('photo', 'varchar', 255),
+        new Column('code', 'varchar', 2),
+       (new Column('type', 'varchar', 32))->default('content'),
+       (new Column('category', 'varchar', 32))->default('general'),
+       (new Column('position', 'smallint'))->default(100),
+        new Column('link', 'varchar', 255),
+       (new Column('is_featured', 'tinyint'))->default(0),
+       (new Column('comment', 'tinyint'))->default(0),
+       (new Column('read_count', 'bigint'))->default(0),
+       (new Column('is_active', 'tinyint'))->default(1),
+       (new Column('published', 'tinyint'))->default(0),
+        new Column('published_at', 'datetime'),
+        new Column('published_by', 'bigint'),
+        new Column('created_at', 'datetime'),
+        new Column('created_by', 'bigint'),
+        new Column('updated_at', 'datetime'),
+        new Column('updated_by', 'bigint')
         ]);
 
         $this->setTable('pages');
@@ -124,6 +128,14 @@ class PagesModel extends Model
             $record['slug'] = $this->generateSlug($record['title']);
         }
 
+        // Description хоосон бол content-оос автоматаар үүсгэх
+        $desc = \trim($record['description'] ?? '');
+        if ($desc == '' && !empty($record['content'])) {
+            $record['description'] = $this->getExcerpt($record['content']);
+        } else {
+            $record['description'] = $desc;
+        }
+
         return parent::insert($record);
     }
 
@@ -147,12 +159,12 @@ class PagesModel extends Model
             'ж'=>'j', 'з'=>'z', 'и'=>'i', 'й'=>'i', 'к'=>'k', 'л'=>'l', 'м'=>'m',
             'н'=>'n', 'о'=>'o', 'ө'=>'u', 'п'=>'p', 'р'=>'r', 'с'=>'s', 'т'=>'t',
             'у'=>'u', 'ү'=>'u', 'ф'=>'f', 'х'=>'kh', 'ц'=>'ts', 'ч'=>'ch', 'ш'=>'sh',
-            'щ'=>'sh', 'ъ'=>'', 'ы'=>'y', 'ь'=>'', 'э'=>'e', 'ю'=>'yu', 'я'=>'ya',
+            'щ'=>'sh', 'ъ'=>'i', 'ы'=>'y', 'ь'=>'i', 'э'=>'e', 'ю'=>'yu', 'я'=>'ya',
             'А'=>'A', 'Б'=>'B', 'В'=>'V', 'Г'=>'G', 'Д'=>'D', 'Е'=>'E', 'Ё'=>'Yo',
             'Ж'=>'J', 'З'=>'Z', 'И'=>'I', 'Й'=>'I', 'К'=>'K', 'Л'=>'L', 'М'=>'M',
             'Н'=>'N', 'О'=>'O', 'Ө'=>'U', 'П'=>'P', 'Р'=>'R', 'С'=>'S', 'Т'=>'T',
             'У'=>'U', 'Ү'=>'U', 'Ф'=>'F', 'Х'=>'Kh', 'Ц'=>'Ts', 'Ч'=>'Ch', 'Ш'=>'Sh',
-            'Щ'=>'Sh', 'Ъ'=>'', 'Ы'=>'Y', 'Ь'=>'', 'Э'=>'E', 'Ю'=>'Yu', 'Я'=>'Ya'
+            'Щ'=>'Sh', 'Ъ'=>'I', 'Ы'=>'Y', 'Ь'=>'I', 'Э'=>'E', 'Ю'=>'Yu', 'Я'=>'Ya'
         ];
         $slug = \strtr($title, $mongolian);
 
@@ -185,6 +197,58 @@ class PagesModel extends Model
     public function getBySlug(string $slug): array|null
     {
         return $this->getRowWhere(['slug' => $slug]);
+    }
+
+    /**
+     * Хуудсуудыг parent_id-р мод бүтэцтэй навигаци болгон буцаана.
+     *
+     * Бүх нийтлэгдсэн, идэвхтэй хуудсуудаас навигацийн бүтэц буцаана.
+     * parent → child → submenu хэлбэрээр бүтэцлэнэ (type ялгаагүй).
+     *
+     * @param string $code Хэлний код (mn, en...)
+     * @return array Олон түвшний submenu бүтэцтэй навигацийн массив
+     */
+    public function getNavigation(string $code): array
+    {
+        $table = $this->getName();
+        $stmt = $this->pdo->prepare(
+            'SELECT id, parent_id, title, slug, type, link ' .
+            "FROM $table " .
+            "WHERE code=:code AND is_active=1 AND published=1 " .
+            'ORDER BY position, id'
+        );
+        $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
+        $pages = [];
+        if ($stmt->execute()) {
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $pages[$row['id']] = $row;
+            }
+        }
+        return $this->buildTree($pages);
+    }
+
+    /**
+     * Хуудсуудын жагсаалтаас parent_id дагаж олон түвшний мод бүтэц үүсгэх.
+     *
+     * Рекурсив байдлаар parent → children → submenu бүтэцлэнэ.
+     *
+     * @param array $pages    id => row бүтэцтэй хуудсуудын массив
+     * @param int   $parentId Эхлэх parent ID (0 = root)
+     * @return array Submenu бүтэцтэй навигацийн массив
+     */
+    public function buildTree(array $pages, int $parentId = 0): array
+    {
+        $tree = [];
+        foreach ($pages as $page) {
+            if ($page['parent_id'] == $parentId) {
+                $children = $this->buildTree($pages, $page['id']);
+                if ($children) {
+                    $page['submenu'] = $children;
+                }
+                $tree[$page['id']] = $page;
+            }
+        }
+        return $tree;
     }
 
     /**

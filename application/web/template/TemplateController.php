@@ -66,74 +66,32 @@ class TemplateController extends \Raptor\Controller
     /**
      * Вэб сайтын Main Menu-г олон түвшний бүтэцтэйгээр үүсгэнэ.
      *
-     * Энэ меню нь хоосон parent → child хэлбэрийн Page бүтэц дээр суурилдаг:
-     *
-     * - type != 'special-page'
-     * - published = 1
-     * - is_active = 1
+     * PagesModel::getNavigation() ашиглан parent → child бүтэцтэй
+     * навигацийн менюг буцаана.
      *
      * @param string $code Тухайн хэлний код (mn, en...)
      * @return array Бүтэцлэгдсэн меню (submenu дотор дахин хүүхэд элементтэй)
      */
     public function getMainMenu(string $code): array
     {
-        $pages = [];
-        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-        $pages_table = (new PagesModel($this->pdo))->getName();
-        $pages_query =
-            'SELECT id, parent_id, title, link ' .
-            "FROM $pages_table " .
-            "WHERE code=:code AND is_active=1 AND published=1 AND type!='special-page' " .
-            'ORDER BY position, id';
-        $stmt = $this->prepare($pages_query);
-        $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
-        if ($stmt->execute() && $stmt->rowCount() > 0) {
-            while ($row = $stmt->fetch()) {
-                $pages[$row['id']] = $row;
-            }
-        }
-
-        // Parent-child олон түвшний навигаци үүсгэнэ
-        return $this->buildMenu($pages);
-    }
-
-    /**
-     * Parent-child бүтэцтэй олон түвшний менюг рекурсив байдлаар үүсгэх.
-     *
-     * @param array $pages Page жагсаалт
-     * @param int   $parent_id Эхлэл ID (default: 0)
-     * @return array Submenu бүтэц
-     */
-    private function buildMenu(array $pages, int $parent_id = 0): array
-    {
-        $navigation = [];
-        foreach ($pages as $element) {
-            if ($element['parent_id'] == $parent_id) {
-                // Хүүхэд submenu байвал оноох
-                $children = $this->buildMenu($pages, $element['id']);
-                if ($children) {
-                    $element['submenu'] = $children;
-                }
-                $navigation[$element['id']] = $element;
-            }
-        }
-        return $navigation;
+        return (new PagesModel($this->pdo))->getNavigation($code);
     }
 
     /**
      * Онцлох хуудсуудыг авах (footer-ийн чухал холбоосууд).
      *
      * is_featured=1 гэж тэмдэглэгдсэн, нийтлэгдсэн хуудсуудыг буцаана.
+     * id, title, slug, link талбаруудыг авна.
      *
      * @param string $code Хэлний код
-     * @return array Footer-д харуулах онцлох хуудсуудын жагсаалт
+     * @return array Footer-д харуулах онцлох хуудсуудын жагсаалт (slug-аар холбоослож)
      */
     public function getFeaturedPages(string $code): array
     {
         $pages = [];
         $pages_table = (new PagesModel($this->pdo))->getName();
         $pages_query =
-            'SELECT id, title, link ' .
+            'SELECT id, title, slug, link ' .
             "FROM $pages_table " .
             'WHERE code=:code AND is_active=1 AND published=1 AND is_featured=1 ' .
             'ORDER BY position, id';

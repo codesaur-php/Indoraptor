@@ -1,0 +1,315 @@
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
+    <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
+        <i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Хуудасны навигац' : 'Pages Navigation' }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-outline-secondary text-uppercase shadow-sm" href="{{ 'pages'|link }}">
+            <i class="bi bi-table"></i> {{ 'pages'|text }}
+        </a>
+    </div>
+</div>
+
+<!-- ========== DELETE CONFIRM MODAL ========== -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <span id="deleteConfirmIcon"><i class="bi bi-exclamation-triangle text-danger" style="font-size:2.5rem"></i></span>
+                <p class="text-danger mt-3 mb-0" id="deleteConfirmText"></p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0">
+                <button type="button" class="btn btn-danger btn-sm" id="deleteConfirmBtn">
+                    <i class="bi bi-trash"></i> {{ 'delete'|text }}
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    {{ 'cancel'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== TREE VIEW ========== -->
+<div id="pages-tree-loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+<div id="pages-tree-error" class="alert alert-danger d-none" role="alert"></div>
+<div id="pages-tree" class="mt-2"></div>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    const treeContainer = document.getElementById('pages-tree');
+    const loadingEl = document.getElementById('pages-tree-loading');
+    const errorEl = document.getElementById('pages-tree-error');
+    const indexLink = `{{ 'pages'|link }}`;
+    const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
+    const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
+    const canInsert = {{ user.can('system_content_insert') ? 'true' : 'false' }};
+    const insertLink = `{{ 'page-insert'|link }}?from=nav`;
+    const lang = document.documentElement.lang || 'en';
+    const languages = {{ localization.language|json_encode|raw }};
+
+    fetch(`{{ 'pages-list'|link }}`).then(res => {
+        if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+        throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+    }).then(data => {
+        if (!data.list) {
+            throw new Error(data.message ?? 'Invalid response!');
+        }
+
+        loadingEl.classList.add('d-none');
+
+        const pages = data.list;
+        const infos = data.infos;
+
+        // Хэл тус бүрээр ялган бүлэглэх
+        const byLang = {};
+        pages.forEach(page => {
+            const code = page.code || 'unknown';
+            if (!byLang[code]) byLang[code] = [];
+            byLang[code].push(page);
+        });
+
+        // Хэл бүрийн tree тус тусдаа render (default хэл эхэнд)
+        // Бүх тохируулсан хэлүүдийг card-д харуулах (хоосон ч гэсэн)
+        Object.keys(languages).forEach(code => {
+            if (!byLang[code]) byLang[code] = [];
+        });
+
+        const defaultLang = '{{ localization.language|keys|first }}';
+        const langCodes = Object.keys(byLang).sort((a, b) => {
+            if (a === defaultLang) return -1;
+            if (b === defaultLang) return 1;
+            return 0;
+        });
+        let html = '';
+        for (const code of langCodes) {
+            const langPages = byLang[code];
+            langPages.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id - b.id);
+
+            // Хэлний flag, нэр
+            const flagCode = code === 'en' ? 'us' : code;
+            const langTitle = languages[code]?.title ?? code.toUpperCase();
+
+            // Tree бүтэц бэлдэх
+            const childrenMap = {};
+            const roots = [];
+            langPages.forEach(page => {
+                const parentId = infos[page.id]?.parent_id || 0;
+                if (!parentId || !infos[parentId]) {
+                    roots.push(page);
+                } else {
+                    if (!childrenMap[parentId]) childrenMap[parentId] = [];
+                    childrenMap[parentId].push(page);
+                }
+            });
+
+            html += `<div class="card mt-3">
+                <div class="card-header d-flex align-items-center bg-body-secondary">
+                    <img src="https://flagcdn.com/24x18/${flagCode}.png"
+                         srcset="https://flagcdn.com/48x36/${flagCode}.png 2x"
+                         width="24" height="18" alt="${code}" class="me-2">
+                    <h5 class="mb-0 fw-bold">${langTitle}</h5>
+                    <span class="badge bg-primary ms-2">${roots.length} root · ${langPages.length} total</span>
+                    <div class="ms-auto d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-secondary py-0 expand-all-btn" type="button" title="${lang === 'mn' ? 'Бүгдийг нээх' : 'Expand All'}">
+                            <i class="bi bi-arrows-expand"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary py-0 collapse-all-btn" type="button" title="${lang === 'mn' ? 'Бүгдийг хаах' : 'Collapse All'}">
+                            <i class="bi bi-arrows-collapse"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    ${renderTree(roots, childrenMap, 0, code)}
+                    ${canInsert ? `<div class="my-1 ms-4">
+                        <a class="btn btn-sm btn-outline-success py-0 px-2" href="${insertLink}&code=${code}" title="${lang === 'mn' ? 'Шинэ хуудас нэмэх' : 'Add new page'}">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                        <small class="text-muted ms-1">${lang === 'mn' ? 'шинэ' : 'new'}</small>
+                    </div>` : ''}
+                </div>
+            </div>`;
+        }
+
+        treeContainer.innerHTML = html;
+
+        // Chevron rotation on expand/collapse
+        treeContainer.querySelectorAll('.tree-toggle').forEach(toggle => {
+            const targetId = toggle.getAttribute('href').substring(1);
+            const collapseEl = document.getElementById(targetId);
+            if (collapseEl) {
+                collapseEl.addEventListener('show.bs.collapse', () => {
+                    toggle.querySelector('.tree-chevron').classList.replace('bi-chevron-right', 'bi-chevron-down');
+                });
+                collapseEl.addEventListener('hide.bs.collapse', () => {
+                    toggle.querySelector('.tree-chevron').classList.replace('bi-chevron-down', 'bi-chevron-right');
+                });
+            }
+        });
+
+        // Per-card Expand All / Collapse All
+        treeContainer.querySelectorAll('.expand-all-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const card = btn.closest('.card');
+                card.querySelectorAll('.collapse').forEach(el => {
+                    new bootstrap.Collapse(el, { toggle: false }).show();
+                });
+                card.querySelectorAll('.tree-chevron').forEach(icon => {
+                    icon.classList.replace('bi-chevron-right', 'bi-chevron-down');
+                });
+            });
+        });
+        treeContainer.querySelectorAll('.collapse-all-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const card = btn.closest('.card');
+                card.querySelectorAll('.collapse.show').forEach(el => {
+                    new bootstrap.Collapse(el, { toggle: false }).hide();
+                });
+                card.querySelectorAll('.tree-chevron').forEach(icon => {
+                    icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
+                });
+            });
+        });
+
+        // Delete buttons
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        const deleteText = document.getElementById('deleteConfirmText');
+        const deleteBtn = document.getElementById('deleteConfirmBtn');
+        const deleteIcon = document.getElementById('deleteConfirmIcon');
+        const defaultIcon = '<i class="bi bi-exclamation-triangle text-danger" style="font-size:2.5rem"></i>';
+        treeContainer.querySelectorAll('.deactivate-page').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const id = btn.value;
+                const title = btn.getAttribute('data-title');
+                const photo = btn.getAttribute('data-photo');
+                deleteIcon.innerHTML = photo
+                    ? `<img src="${photo}" style="max-height:64px;max-width:96px;object-fit:cover" class="rounded">`
+                    : defaultIcon;
+                deleteText.innerHTML = lang === 'mn'
+                    ? `Та <strong>${title}</strong> хуудсыг устгахдаа итгэлтэй байна уу?`
+                    : `Are you sure you want to delete <strong>${title}</strong>?`;
+                deleteBtn.onclick = function () {
+                    deleteBtn.disabled = true;
+                    fetch(
+                        `{{ 'page-deactivate'|link }}`,
+                        {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id, title })
+                        }
+                    ).then(res => res.json()).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? 'Invalid response!');
+                        }
+                        deleteModal.hide();
+                        btn.closest('.list-group-item').remove();
+                        NotifyTop('success', lang === 'mn' ? 'Амжилттай' : 'Success', response.message ?? `Page:${id} deleted`);
+                    }).catch(error => {
+                        NotifyTop('danger', lang === 'mn' ? 'Алдаа' : 'Error', error.message);
+                    }).finally(() => {
+                        deleteBtn.disabled = false;
+                    });
+                };
+                deleteModal.show();
+            });
+        });
+
+    }).catch(err => {
+        loadingEl.classList.add('d-none');
+        errorEl.classList.remove('d-none');
+        errorEl.textContent = err.message;
+    });
+
+    // Recursive render
+    function renderTree(items, childrenMap, depth, langCode) {
+        if (!items || items.length === 0) return '<div class="text-muted ps-3 small">-</div>';
+
+        let html = `<div class="list-group list-group-flush ms-${depth > 0 ? '3' : '0'}">`;
+        items.forEach(page => {
+            const id = page.id;
+            const children = childrenMap[id];
+            const hasChildren = children && children.length > 0;
+            const collapseId = `tree-node-${id}`;
+
+            // Type badge
+            let typeBadge = '';
+            if (page.type === 'link') {
+                typeBadge = `<span class="badge bg-warning text-dark">link</span>`;
+            } else if (page.type === 'content') {
+                typeBadge = `<span class="badge bg-success">content</span>`;
+            }
+            if (page.category && page.category !== 'general') {
+                typeBadge += ` <span class="badge bg-secondary">${page.category}</span>`;
+            }
+
+            // Published
+            const isPublished = page.published == 1;
+            const publishedIcon = isPublished
+                ? '<i class="bi bi-check-circle-fill text-success" title="Published"></i>'
+                : '<i class="bi bi-eye-slash text-muted" title="Unpublished"></i>';
+
+            // Actions
+            let actions = '';
+            if (page.type === 'link' && page.link) {
+                actions += `<a class="btn btn-sm btn-warning py-0 px-1" href="${page.link}" target="_blank" title="Link"><i class="bi bi-link-45deg"></i></a> `;
+            } else if (page.type === 'content') {
+                actions += `<a class="btn btn-sm btn-warning py-0 px-1" href="${indexLink}/read/${page.slug}?from=nav" title="Read"><i class="bi bi-book"></i></a> `;
+            }
+            actions += `<a class="btn btn-sm btn-info py-0 px-1" href="${indexLink}/view/${id}?from=nav" title="View"><i class="bi bi-eye"></i></a>`;
+            if (canUpdate) {
+                actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${indexLink}/${id}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
+            }
+            if (canDelete) {
+                actions += ` <button class="deactivate-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${page.title}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
+            }
+
+            // Toggle / leaf icon
+            const isExpandable = hasChildren || page.type === 'nav';
+            let toggleBtn = '';
+            if (isExpandable) {
+                toggleBtn = `<a class="text-decoration-none me-1 tree-toggle" data-bs-toggle="collapse" href="#${collapseId}" role="button" aria-expanded="false"><i class="bi bi-chevron-right tree-chevron"></i></a>`;
+            } else {
+                toggleBtn = `<i class="bi bi-file-earmark text-muted me-1"></i>`;
+            }
+
+            const nodeIcon = page.type === 'nav' ? '<i class="bi bi-folder text-warning me-1"></i>' : '';
+            const pagePhoto = page.photo ? `<img src="${page.photo}" style="max-height:24px;max-width:36px;object-fit:cover" class="rounded me-1">` : '';
+
+            html += `<div class="list-group-item list-group-item-action d-flex align-items-center py-2">
+                <div class="d-flex align-items-center flex-grow-1">
+                    ${toggleBtn}${nodeIcon}${pagePhoto}
+                    <span class="fw-medium me-2${isPublished ? ' text-primary' : ''}">${page.title}</span>
+                    ${typeBadge}
+                    <span class="ms-2">${publishedIcon}</span>
+                    <small class="text-muted ms-2">#${id}</small>
+                    ${page.position ? `<small class="text-muted ms-2"><i class="bi bi-arrow-down-up"></i> ${page.position}</small>` : ''}
+                </div>
+                <div class="ms-auto text-nowrap">${actions}</div>
+            </div>`;
+
+            if (hasChildren || page.type === 'nav') {
+                html += `<div class="collapse" id="${collapseId}">`;
+                if (hasChildren) {
+                    html += renderTree(children, childrenMap, depth + 1, langCode);
+                }
+                if (canInsert) {
+                    html += `<div class="py-1 ps-4 ms-3">
+                        <a class="btn btn-sm btn-outline-success py-0 px-2" href="${insertLink}&code=${langCode}&parent_id=${id}" title="${lang === 'mn' ? 'Хүүхэд нэмэх' : 'Add child'}">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                        <small class="text-muted ms-1">${lang === 'mn' ? 'хүүхэд нэмэх' : 'add child'}</small>
+                    </div>`;
+                }
+                html += `</div>`;
+            }
+        });
+        html += `</div>`;
+        return html;
+    }
+});
+</script>

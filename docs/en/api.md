@@ -353,7 +353,7 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `/dashboard/news/list` | GET | `news-list` |
 | `/dashboard/news/insert` | GET+POST | `news-insert` |
 | `/dashboard/news/{uint:id}` | GET+PUT | `news-update` |
-| `/dashboard/news/read/{uint:id}` | GET | `news-read` |
+| `/dashboard/news/read/{slug}` | GET | `news-read` |
 | `/dashboard/news/view/{uint:id}` | GET | `news-view` |
 | `/dashboard/news/deactivate` | DELETE | `news-deactivate` |
 
@@ -406,7 +406,7 @@ Extracts a plain-text excerpt from HTML content.
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
-| `/dashboard/pages/read/{uint:id}` | GET | `page-read` |
+| `/dashboard/pages/read/{slug}` | GET | `page-read` |
 | `/dashboard/pages/view/{uint:id}` | GET | `page-view` |
 | `/dashboard/pages/deactivate` | DELETE | `page-deactivate` |
 
@@ -608,8 +608,8 @@ ExceptionHandler → MySQL → Container → Session → Localization → Settin
 | `/` | GET | `home` | Home page |
 | `/home` | GET | - | Home alias |
 | `/language/{code}` | GET | `language` | Switch language |
-| `/page/{uint:id}` | GET | `page` | View page |
-| `/news/{uint:id}` | GET | `news` | View news |
+| `/page/{slug}` | GET | `page` | View page |
+| `/news/{slug}` | GET | `news` | View news |
 | `/contact` | GET | `contact` | Contact page |
 
 ### HomeController
@@ -620,8 +620,8 @@ ExceptionHandler → MySQL → Container → Session → Localization → Settin
 | Method | Description |
 |--------|-------------|
 | `index()` | Home page (latest 20 news) |
-| `page(int $id)` | Display page + files + read_count |
-| `news(int $id)` | Display news + files + read_count |
+| `page(string $slug)` | Display page + files + read_count + OG meta |
+| `news(string $slug)` | Display news + files + read_count + OG meta |
 | `contact()` | Contact page (link LIKE '%/contact') |
 | `language(string $code)` | Switch language + redirect |
 

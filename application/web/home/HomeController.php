@@ -40,7 +40,7 @@ class HomeController extends TemplateController
      * ------------------------------------------------------------
      * Logic:
      *   1) Хэлний кодыг авах
-     *   2) Сүүлийн мэдээнүүдээс 20-г татах (is_active=1 & published=1)
+     *   2) Сүүлийн мэдээнүүдээс 20-г татах (id, title, slug, photo, published_at)
      *   3) home.html template-ийг рендерлэнэ
      *   4) Web layer-т зориулсан лог үлдээх
      */
@@ -50,7 +50,7 @@ class HomeController extends TemplateController
         // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt_recent = $this->prepare(
-            "SELECT id, title, photo, published_at 
+            "SELECT id, title, slug, photo, published_at
              FROM $news_table
              WHERE is_active=1 AND published=1 AND code=:code
              ORDER BY published_at DESC
@@ -83,13 +83,12 @@ class HomeController extends TemplateController
      */
     public function contact()
     {
-        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
-            "SELECT id 
+            "SELECT slug
              FROM $pages_table
-             WHERE is_active=1 AND published=1 
-               AND code=:code 
+             WHERE is_active=1 AND published=1
+               AND code=:code
                AND link LIKE '%/contact'
              ORDER BY published_at DESC
              LIMIT 1"
@@ -97,37 +96,39 @@ class HomeController extends TemplateController
         $contact = $stmt->execute([':code' => $this->getLanguageCode()])
             ? $stmt->fetch()
             : [];
-        return $this->page($contact['id'] ?? -1);
+        return $this->page($contact['slug'] ?? '');
     }
 
     /**
      * ------------------------------------------------------------
-     * 📄  Хуудас үзүүлэх (/page/{id})
+     * 📄  Хуудас үзүүлэх (/page/{slug})
      * ------------------------------------------------------------
      * Процесс:
-     *   1) PagesModel → тухайн ID-тай хуудас татах
+     *   1) PagesModel → тухайн slug-тай хуудас татах
      *   2) Олдохгүй бол 404 Error
      *   3) FilesModel ашиглан хавсаргасан файлуудыг татах
      *   4) page.html template рүү дамжуулж рендерлэх
-     *   5) read_count-ыг нэмэгдүүлэх
-     *   6) Үйлдлийн лог үлдээх
+     *   5) OG meta (record_code, record_title, record_description, record_photo) дамжуулах
+     *   6) read_count-ыг нэмэгдүүлэх
+     *   7) Үйлдлийн лог үлдээх
      *
-     * @param int $id
+     * @param string $slug
      * @return void
      * @throws Error
      */
-    public function page(int $id)
+    public function page(string $slug)
     {
         $model = new PagesModel($this->pdo);
-        // Хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = $model->getName();
         $record = $model->getRowWhere([
-            'id' => $id,
+            'slug' => $slug,
             'is_active' => 1
         ]);
         if (empty($record)) {
             throw new \Error('Хуудас олдсонгүй', 404);
         }
+
+        $id = $record['id'];
 
         // Файлуудыг татах
         $files = new FilesModel($this->pdo);
@@ -137,7 +138,12 @@ class HomeController extends TemplateController
         ]);
 
         // Render page template
-        $this->template(__DIR__ . '/page.html', $record)->render();
+        $template = $this->template(__DIR__ . '/page.html', $record);
+        $template->set('record_code', $record['code'] ?? '');
+        $template->set('record_title', $record['title'] ?? '');
+        $template->set('record_description', $record['description'] ?? '');
+        $template->set('record_photo', $record['photo'] ?? '');
+        $template->render();
 
         // Read count нэмэгдүүлэх
         $read_count = ($record['read_count'] ?? 0) + 1;
@@ -147,39 +153,41 @@ class HomeController extends TemplateController
         $this->indolog(
             'web',
             LogLevel::NOTICE,
-            '[{server_request.code} : /page/{id}] {title} - хуудсыг уншиж байна',
-            ['action' => 'page', 'id' => $id, 'title' => $record['title']]
+            '[{server_request.code} : /page/{slug}] {title} - хуудсыг уншиж байна',
+            ['action' => 'page', 'id' => $id, 'slug' => $slug, 'title' => $record['title']]
         );
     }
 
     /**
      * ------------------------------------------------------------
-     * 📰  Мэдээ үзүүлэх (/news/{id})
+     * 📰  Мэдээ үзүүлэх (/news/{slug})
      * ------------------------------------------------------------
      * Процесс:
-     *   1) NewsModel → тухайн ID-тай мэдээ татах
+     *   1) NewsModel → тухайн slug-тай мэдээ татах
      *   2) Мэдээ байхгүй бол 404 Error
-     *   3) NewsModel ашиглан хавсаргасан файлуудыг татах
+     *   3) FilesModel ашиглан хавсаргасан файлуудыг татах
      *   4) news.html template рүү дамжуулж рендерлэх
-     *   5) read_count-ыг нэмэгдүүлэх
-     *   6) Үйлдлийн лог үлдээх
+     *   5) OG meta (record_code, record_title, record_description, record_photo) дамжуулах
+     *   6) read_count-ыг нэмэгдүүлэх
+     *   7) Үйлдлийн лог үлдээх
      *
-     * @param int $id
+     * @param string $slug
      * @return void
      * @throws Error
      */
-    public function news(int $id)
+    public function news(string $slug)
     {
         $model = new NewsModel($this->pdo);
-        // Хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = $model->getName();
         $record = $model->getRowWhere([
-            'id' => $id,
+            'slug' => $slug,
             'is_active' => 1
         ]);
         if (empty($record)) {
             throw new \Error('Мэдээ олдсонгүй', 404);
         }
+
+        $id = $record['id'];
 
         // Файлууд
         $files = new FilesModel($this->pdo);
@@ -189,7 +197,12 @@ class HomeController extends TemplateController
         ]);
 
         // Render template
-        $this->template(__DIR__ . '/news.html', $record)->render();
+        $template = $this->template(__DIR__ . '/news.html', $record);
+        $template->set('record_code', $record['code'] ?? '');
+        $template->set('record_title', $record['title'] ?? '');
+        $template->set('record_description', $record['description'] ?? '');
+        $template->set('record_photo', $record['photo'] ?? '');
+        $template->render();
 
         // Read count
         $read_count = ($record['read_count'] ?? 0) + 1;
@@ -199,8 +212,8 @@ class HomeController extends TemplateController
         $this->indolog(
             'web',
             LogLevel::NOTICE,
-            '[{server_request.code} : /news/{id}] {title} - мэдээг уншиж байна',
-            ['action' => 'news', 'id' => $id, 'title' => $record['title']]
+            '[{server_request.code} : /news/{slug}] {title} - мэдээг уншиж байна',
+            ['action' => 'news', 'id' => $id, 'slug' => $slug, 'title' => $record['title']]
         );
     }
 

@@ -125,7 +125,7 @@ class MenuModel extends LocalizedModel
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-book-half',
-                    'href' => "$path/dashboard/pages"
+                    'href' => "$path/dashboard/pages/nav"
                 ],
                 ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']]
             );

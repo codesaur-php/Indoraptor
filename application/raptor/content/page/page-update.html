@@ -1,24 +1,33 @@
-<!-- Хуудасны төрлүүдийн тодорхойлолт -->
-{% set types = {
-    'menu': { 'mn': 'Цэс' },
-    'important-menu': { 'mn': 'Чухал цэс' },
-    'mega-menu': { 'mn': 'Мега цэс' },
-    'special-page': { 'mn': 'Тусгай хуудас' },
-    'embed': { 'mn': 'Шигтгэсэн' }
-} %}
-<!-- Хуудасны ангиллын тодорхойлолт -->
+<!-- Page categories -->
 {% set categories = {
     'general': { 'mn': 'Ерөнхий' },
-    'featured': { 'mn': 'Онцолсон' }
+    'info': { 'mn': 'Мэдээллийн' },
+    'service': { 'mn': 'Үйлчилгээ' },
+    'legal': { 'mn': 'Хууль эрх зүй' },
+    'reference': { 'mn': 'Лавлагаа' }
 } %}
-<!-- Mongolian WYSIWYG Editor - текст editor -->
+<!-- Mode detection -->
+{% set is_nav = record['type'] == 'nav' %}
+{% set is_link = record['type'] == 'link' %}
+{% set is_content = not is_nav and not is_link %}
+{% if is_content %}
+<!-- Mongolian WYSIWYG Editor -->
 <link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
 <link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/moedit/moedit.js"></script>
 <script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
+{% endif %}
+<!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
+        {% if is_nav %}
+            <span class="badge bg-primary"><i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Навигац' : 'Navigation' }}</span>
+        {% elseif is_link %}
+            <span class="badge bg-warning text-dark"><i class="bi bi-link-45deg"></i> {{ localization.code == 'mn' ? 'Холбоос' : 'Link' }}</span>
+        {% else %}
+            <span class="badge bg-success"><i class="bi bi-file-earmark-richtext"></i> {{ localization.code == 'mn' ? 'Агуулга' : 'Content' }}</span>
+        {% endif %}
     </h3>
     <div class="ms-auto">
         {% if user.can('system_content_update') %}
@@ -26,14 +35,15 @@
                 <i class="bi bi-check-lg"></i> {{ 'save'|text }}
             </button>
         {% endif %}
-        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'pages'|link }}">
+        <a class="btn btn-sm btn-secondary shadow-sm back-link" href="{{ 'pages'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
         </a>
     </div>
 </div>
 <form class="needs-validation" id="page_update" action="{{ 'page-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
+    <!-- Хэл, Ангилал, Байрлал -->
     <div class="row mt-3">
-        <div class="col-4">
+        <div class="col-5">
             <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
             {% set selected_code = record['code'] %}
             {% set selected_flag = selected_code == 'en' ? 'us' : selected_code %}
@@ -59,18 +69,6 @@
             </div>
         </div>
         <div class="col-4">
-            <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
-            <div class="input-group">
-                <input class="form-control" name="type" type="text" value="{{ record['type']|e }}" maxlength="32">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                <ul class="dropdown-menu dropdown-menu-end" id="type_list">
-                    {% for value,name in types %}
-                    <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <div class="col-4">
             <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
             <div class="input-group">
                 <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
@@ -82,46 +80,51 @@
                 </ul>
             </div>
         </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col-8">
-            <label class="form-label">{{ 'parent'|text }} <i class="bi bi-diagram-3"></i></label>
-            <select class="form-select" name="parent_id">
-                <option value="0" selected>-</option>
-                {% for id,info in infos %}
-                <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-4">
+        <div class="col-3">
             <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
             <input class="form-control" name="position" value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
         </div>
     </div>
+    <!-- Эцэг хуудас -->
+    <div class="mt-3">
+        <label class="form-label">{{ 'parent'|text }} <i class="bi bi-diagram-3"></i></label>
+        <select class="form-select" name="parent_id">
+            <option value="0" selected>-</option>
+            {% for id,info in infos %}
+            <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <!-- Гарчиг -->
     <div class="mt-3">
         <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
-        <input class="form-control" name="title" value="{{ record['title']|e }}" maxlength="255" type="text" autocomplete="off">
+        <input class="form-control form-control-lg border-primary" name="title" value="{{ record['title']|e }}" maxlength="255" type="text" autocomplete="off">
         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
     </div>
+    {% if is_content %}
     <!-- Тайлбар -->
     <div class="mt-3">
-        <label class="form-label">{{ 'description'|text }} <i class="bi bi-text-paragraph"></i></label>
-        <textarea class="form-control" name="description" rows="2">{{ record['description']|e }}</textarea>
+        <label class="form-label">{{ localization.code == 'mn' ? 'Товч тайлбар' : 'Description' }} <i class="bi bi-card-text"></i></label>
+        <input class="form-control form-control-sm" name="description" value="{{ record['description']|e }}" maxlength="255" type="text" autocomplete="off" placeholder="{{ localization.code == 'mn' ? 'Хоосон үлдээвэл агуулгаас автоматаар үүсгэнэ' : 'Leave empty to auto-generate from content' }}">
     </div>
     <!-- Агуулга -->
     <div class="mt-3">
         <textarea name="content">{{ record['content']|e }}</textarea>
     </div>
+    {% endif %}
+    {% if is_link %}
     <!-- Холбоос -->
     <div class="mt-3">
         <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-        <input class="form-control" name="link" type="url" value="{{ record['link']|e }}" maxlength="255">
+        <input class="form-control" name="link" type="url" value="{{ record['link']|e }}" maxlength="255" required>
+        <div class="invalid-feedback">{{ localization.code == 'mn' ? 'Холбоос оруулна уу' : 'Please enter a URL' }}</div>
     </div>
+    {% endif %}
+    <!-- Нийтлэх тохиргоо -->
     {% if user.can('system_content_publish') %}
     <div class="rounded border border-success mt-3 p-3">
         <div class="row">
-            <!-- Нийтлэх эсэх сонголт -->
             <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
                 <div class="form-check form-switch">
@@ -129,7 +132,7 @@
                     {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
                 </div>
             </div>
-            <!-- Онцлох хуудас эсэх сонголт -->
+            {% if not is_nav %}
             <div class="col-4">
                 <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
                 <div class="form-check form-switch">
@@ -137,7 +140,8 @@
                     {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
                 </div>
             </div>
-            <!-- Сэтгэгдэл авах эсэх сонголт -->
+            {% endif %}
+            {% if is_content %}
             <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
                 <div class="form-check form-switch">
@@ -145,6 +149,7 @@
                     {{ 'can-comment'|text }}
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}
@@ -155,7 +160,7 @@
             <i class="bi bi-check2"></i> {{ 'save'|text }}
         </button>
     {% endif %}
-    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'pages'|link }}">
+    <a class="btn btn-secondary text-uppercase shadow-sm back-link" href="{{ 'pages'|link }}">
         <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
     </a>
 </div>
@@ -174,16 +179,8 @@
 {% endif %}
 <script type="text/javascript">
     const content = document.querySelector('textarea[name="content"]');
-    const type = document.querySelector('input[name="type"]');
 
-    document.getElementById('type_list').addEventListener('click', function (e) {
-        if (e.target && e.target.nodeName === 'LI') {
-            type.value = e.target.getAttribute('value');
-            content._moedit?.toggleSource(type.value === 'embed');
-        }
-    });
-
-    /* Хэл сонгох event listener */
+    /* Хэл сонгох */
     const langInput = document.querySelector('input[name="code"]');
     const langFlag = document.getElementById('lang_flag');
     document.getElementById('lang_list').addEventListener('click', function (e) {
@@ -196,6 +193,7 @@
         }
     });
 
+    /* Ангилал сонгох */
     const category = document.querySelector('input[name="category"]');
     document.getElementById('category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
@@ -204,24 +202,31 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
-        new moedit(content, {
-            upload: {
-                url: `{{ 'files-upload'|link }}`,
-                folder: 'pages/{{ record['id'] }}',
-                maxFileSize: {{ max_file_size }}
-            },
-            titleSelector: 'input[name="title"]',
-            ai_helper: `{{ 'moedit-ai'|link }}`,
-            {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
-            sourceMode: type.value === 'embed',
-            attachments: [
-                {% for file in files %}
-                JSON.parse(`{{ file|json_encode|e('js') }}`),
-                {% endfor %}
-            ]
-        });
+        const fromPage = new URLSearchParams(window.location.search).get('from');
+        if (fromPage === 'nav') {
+            document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages-nav'|link }}`; });
+        }
 
+        /* moedit (content горимд) */
+        if (content) {
+            new moedit(content, {
+                upload: {
+                    url: `{{ 'files-upload'|link }}`,
+                    folder: 'pages/{{ record['id'] }}',
+                    maxFileSize: {{ max_file_size }}
+                },
+                titleSelector: 'input[name="title"]',
+                ai_helper: `{{ 'moedit-ai'|link }}`,
+                {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
+                attachments: [
+                    {% for file in files %}
+                    JSON.parse(`{{ file|json_encode|e('js') }}`),
+                    {% endfor %}
+                ]
+            });
+        }
+
+        /* Форм илгээх */
         const formUpdate = document.querySelector('form#page_update');
         if (!formUpdate) {
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
@@ -251,12 +256,10 @@
 
                 const data = new FormData(this);
 
-                /* Бүх файлуудын мэдээллийг JSON хэлбэрээр илгээх */
-                if (content._moedit) {
+                if (content?._moedit) {
                     data.append('files', JSON.stringify(content._moedit.getFiles()));
                 }
 
-                /* Ensure switches are always sent as 1/0, even when unchecked */
                 const publishedSwitch = formUpdate.querySelector('input[name="published"]');
                 if (publishedSwitch) {
                     data.set('published', publishedSwitch.checked ? 1 : 0);
@@ -283,7 +286,7 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    window.location.href = `{{ 'pages'|link }}`;
+                    window.location.href = fromPage === 'nav' ? `{{ 'pages-nav'|link }}` : `{{ 'pages'|link }}`;
 
                     NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Page updated');
                 }).catch(error => {

@@ -25,7 +25,7 @@ class PagesController extends FileController
     use \Raptor\Template\DashboardTrait;
 
     /**
-     * Хуудасны жагсаалтын Dashboard хуудас.
+     * Хуудасны жагсаалтын хүснэгт Dashboard хуудас.
      *
      * - Шүүлтүүр: хэл (code), төрөл (type), ангилал (category), нийтлэгдсэн эсэх (published)
      * - pages-index.html template-д filter утгуудыг дамжуулна
@@ -81,6 +81,29 @@ class PagesController extends FileController
     }
 
     /**
+     * Хуудасны навигацийн мод бүтцийн Dashboard хуудас.
+     *
+     * - pages-list JSON endpoint-ийг дахин ашиглана (template-ээс fetch хийнэ)
+     * - Хуудсуудын parent_id шатлалыг tree view хэлбэрээр харуулна
+     *
+     * Permission: system_content_index
+     */
+    public function nav()
+    {
+        if (!$this->isUserCan('system_content_index')) {
+            $this->dashboardProhibited(null, 401)->render();
+            return;
+        }
+
+        $table = (new PagesModel($this->pdo))->getName();
+        $dashboard = $this->twigDashboard(__DIR__ . '/pages-nav.html');
+        $dashboard->set('title', $this->getLanguageCode() === 'mn' ? 'Хуудасны навигац' : 'Pages Navigation');
+        $dashboard->render();
+
+        $this->indolog($table, LogLevel::NOTICE, 'Хуудасны навигацийн модыг үзэж байна', ['action' => 'nav']);
+    }
+
+    /**
      * Хуудасны жагсаалтыг JSON хэлбэрээр буцаана.
      *
      * Query параметрүүдээр шүүлтүүр хийх боломжтой:
@@ -112,7 +135,7 @@ class PagesController extends FileController
             // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages =
-                'SELECT id, photo, title, code, type, category, position, link, published, published_at, is_active ' .
+                'SELECT id, photo, title, slug, code, type, category, position, link, published, published_at, is_active ' .
                 "FROM $table WHERE $where ORDER BY position, id";
             $pages_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
@@ -175,8 +198,17 @@ class PagesController extends FileController
                 }
 
                 // Model-д байхгүй талбаруудыг payload-оос салгах
-                $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
-                unset($payload['files']);
+                if (\array_key_exists('files', $payload)) {
+                    $files = \json_decode($payload['files'], true) ?: [];
+                    unset($payload['files']);
+                } else {
+                    $files = [];
+                }
+
+                // Type: nav, content, link
+                $payload['type'] = \in_array($payload['type'] ?? '', ['nav', 'content', 'link'])
+                    ? $payload['type']
+                    : 'content';
 
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
@@ -238,9 +270,9 @@ class PagesController extends FileController
      *
      * Permission: system_content_index
      *
-     * @param int $id Хуудасны ID
+     * @param string $slug Хуудасны slug
      */
-    public function read(int $id)
+    public function read(string $slug)
     {
         try {
             $model = new PagesModel($this->pdo);
@@ -249,12 +281,13 @@ class PagesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $record = $model->getRowWhere([
-                'id' => $id,
+                'slug' => $slug,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
+            $id = (int) $record['id'];
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
@@ -271,14 +304,14 @@ class PagesController extends FileController
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $context = ['action' => 'read', 'record_id' => $id];
+            $context = ['action' => 'read', 'slug' => $slug];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{record_id} дугаартай хуудсыг унших үед алдаа гарч зогслоо';
+                $message = '{slug} хуудсыг унших үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record_id} дугаартай [{title}] хуудсыг уншиж байна';
+                $message = '[{title}] {slug} хуудсыг уншиж байна';
                 $context += $record + ['files' => $files];
             }
             $this->indolog($table ?? 'pages', $level, $message, $context);
@@ -400,9 +433,13 @@ class PagesController extends FileController
                 }
 
                 // Model-д байхгүй болон аюултай талбаруудыг payload-оос салгах
-                $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
-                unset($payload['files']);
-                if (isset($payload['id'])) {
+                if (\array_key_exists('files', $payload)) {
+                    $files = \json_decode($payload['files'], true) ?: [];
+                    unset($payload['files']);
+                } else {
+                    $files = [];
+                }
+                if (\array_key_exists('id', $payload)) {
                     unset($payload['id']);
                 }
 
@@ -422,6 +459,19 @@ class PagesController extends FileController
                 if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
+
+                // Description хоосон бол content-оос автоматаар үүсгэх
+                $desc = \trim($payload['description'] ?? '');
+                if ($desc === '' && !empty($payload['content'])) {
+                    $payload['description'] = $model->getExcerpt($payload['content']);
+                } else {
+                    $payload['description'] = $desc;
+                }
+
+                // Type: update үед өөрчлөгдөхгүй
+                if (\array_key_exists('type', $payload)) {
+                    unset($payload['type']);
+                }  
 
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
@@ -543,14 +593,14 @@ class PagesController extends FileController
      *
      * @param string $table  Хүснэгтийн нэр
      * @param string $condition  Нэмэлт WHERE нөхцөл (хоосон бол бүгдийг авна)
-     * @return array  id => [id, parent_id, title, parent_titles] бүтэцтэй массив
+     * @return array  id => [id, parent_id, title, position, code, parent_titles] бүтэцтэй массив
      */
     private function getInfos(string $table, string $condition = ''): array
     {
         $pages = [];
         try {
             $select_pages =
-                'SELECT id, parent_id, title ' .
+                'SELECT id, parent_id, title, position, code ' .
                 "FROM $table WHERE is_active=1";
             $result = $this->query("$select_pages ORDER BY position, id")->fetchAll();
             foreach ($result as $record) {
