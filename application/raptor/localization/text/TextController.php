@@ -318,7 +318,7 @@ class TextController extends \Raptor\Controller
                     if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
-                            if ($record['localized'][$index][$key] != $value) {
+                            if ($record['localized'][$key][$index] != $value) {
                                 $updates[] = "{$index}_{$key}";
                             }
                         }

@@ -136,7 +136,7 @@ class SettingsController extends FileController
                     foreach ($value as $key => $v) {
                         $content[$key][$index] = $v;
 
-                        if (($current['localized'][$index][$key] ?? '') != $v) {
+                        if (($current['localized'][$key][$index] ?? '') != $v) {
                             $updates[] = "{$index}_{$key}";
                         }
                     }
@@ -177,6 +177,13 @@ class SettingsController extends FileController
                 $notice = $this->text('record-update-success');
 
             } else {
+
+                // Хэрэв localized content хоосон бол хэл тус бүрд хоосон бичлэг үүсгэнэ
+                if (empty($content)) {
+                    foreach (\array_keys($this->getLanguages()) as $code) {
+                        $content[$code] = [];
+                    }
+                }
 
                 if (!$model->insert(
                     $payload + ['created_by' => $this->getUserId()],

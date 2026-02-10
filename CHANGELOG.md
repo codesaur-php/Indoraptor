@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [11.1.1] - 2026-02-10
+
+### Fixed
+- **SettingsController** - Settings config save crash when no record exists (empty table)
+  - `LocalizedModel::insert()` requires non-empty content, but Config tab only sends non-localized fields
+  - Now populates empty localized content for each language before insert
+- **SettingsController** - Localized field change detection used swapped indices (`[$field][$code]` instead of `[$code][$field]`)
+- **TextController** - Same swapped localized indices bug in `update()` method
+
+---
+
 ## [11.1.0] - 2026-02-09
 
 ### Added
@@ -203,6 +214,7 @@ Initial release. REST API-based server framework.
 - `codesaur/dataobject` PDO ORM
 - MIT License
 
+[11.1.1]: https://github.com/codesaur-php/Indoraptor/compare/v11.1.0...v11.1.1
 [11.1.0]: https://github.com/codesaur-php/Indoraptor/compare/v11.0.0...v11.1.0
 [11.0.0]: https://github.com/codesaur-php/Indoraptor/compare/v10.0.0...v11.0.0
 [10.0.0]: https://github.com/codesaur-php/Indoraptor/compare/v9.0.0...v10.0.0
