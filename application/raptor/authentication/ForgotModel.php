@@ -49,7 +49,7 @@ class ForgotModel extends Model
             new Column('last_name', 'varchar', 255),
             new Column('email', 'varchar', 128),
             new Column('remote_addr', 'varchar', 46),  // IPv4/IPv6
-            new Column('code', 'varchar', 2),          // Баталгаажуулах 2 оронтой код
+            new Column('code', 'varchar', 2),
            (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('updated_at', 'datetime')
