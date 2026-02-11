@@ -14,7 +14,7 @@
 /nbproject/private/
 
 # Composer vendor - автоматаар татагддаг тул оруулахгүй
-vendor/
+/vendor/
 
 # Composer lock - фреймворк төслийн хувьд lock commit хийхгүй
 composer.lock
