@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [11.1.2] - 2026-02-12
+
+### Added
+- **moedit** - `attachFiles` option to enable/disable the Attach File button (`true` by default, `false` disables the button)
+
+### Fixed
+- **moedit** - Header image toolbar group responsive CSS selectors now require `.is-visible` class, preventing hidden elements from displaying incorrectly
+
+---
+
 ## [11.1.1] - 2026-02-10
 
 ### Fixed
@@ -214,6 +224,7 @@ Initial release. REST API-based server framework.
 - `codesaur/dataobject` PDO ORM
 - MIT License
 
+[11.1.2]: https://github.com/codesaur-php/Indoraptor/compare/v11.1.1...v11.1.2
 [11.1.1]: https://github.com/codesaur-php/Indoraptor/compare/v11.1.0...v11.1.1
 [11.1.0]: https://github.com/codesaur-php/Indoraptor/compare/v11.0.0...v11.1.0
 [11.0.0]: https://github.com/codesaur-php/Indoraptor/compare/v10.0.0...v11.0.0

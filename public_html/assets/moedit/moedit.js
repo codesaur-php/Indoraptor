@@ -329,6 +329,7 @@ Instructions:
       /* Preview options */
       titleSelector: null, /* Title input-ийн CSS selector, жнь: '#news_title' */
       /* Attachment options */
+      attachFiles: true, /* false бол Attach File товч disabled болно */
       attachments: [], /* Анхны файлууд [{id, path, name, size, type, mime_content_type, description, date}] */
       onAttachmentChange: null, /* function(attachments) - файл нэмэх/устгах/засах үед дуудагдана */
       /* Toolbar position - 'top' эсвэл 'right' (right бол desktop-д баруун талд, mobile-д дээр) */
@@ -408,6 +409,9 @@ Instructions:
     /* Header image идэвхжүүлэх */
     this._initHeaderImage();
 
+    /* Attach Files товчийг disabled болгох */
+    this._initAttachFiles();
+
     /* Source mode идэвхжүүлэх */
     if (this.opts.sourceMode) {
       this.toggleSource(true);
@@ -427,8 +431,8 @@ Instructions:
     /* Toolbar дахь headerImage товч болон separator харуулах */
     const headerImageGroup = this.toolbar.querySelector('.moedit-group-header-image');
     const headerImageSep = this.toolbar.querySelector('.moedit-sep-header-image');
-    if (headerImageGroup) headerImageGroup.style.display = '';
-    if (headerImageSep) headerImageSep.style.display = '';
+    if (headerImageGroup) { headerImageGroup.style.display = ''; headerImageGroup.classList.add('is-visible'); }
+    if (headerImageSep) { headerImageSep.style.display = ''; headerImageSep.classList.add('is-visible'); }
 
     /* Header image preview area */
     this.headerImageArea = this.root.querySelector('.moedit-header-image');
@@ -497,6 +501,21 @@ Instructions:
         this._attachments.push({ ...f, _isExisting: true });
       });
       this._renderAttachments();
+    }
+  }
+
+  /**
+   * Attach Files товчийг disabled болгох
+   * @private
+   */
+  _initAttachFiles() {
+    if (this.opts.attachFiles) return;
+
+    const btn = this.toolbar.querySelector('button[data-action="attachment"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.pointerEvents = 'none';
     }
   }
 

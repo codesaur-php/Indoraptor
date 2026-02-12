@@ -1187,16 +1187,16 @@
   }
 
   /* Header image товч - бүтэн өргөн, том */
-  .moedit.moedit-toolbar-right .moedit-group-header-image{
+  .moedit.moedit-toolbar-right .moedit-group-header-image.is-visible{
     display:flex !important;
     width:100%;
   }
-  .moedit.moedit-toolbar-right .moedit-group-header-image .moedit-btn{
+  .moedit.moedit-toolbar-right .moedit-group-header-image.is-visible .moedit-btn{
     width:100%;
     height:2.8125rem;
     font-size:1.125rem;
   }
-  .moedit.moedit-toolbar-right .moedit-sep-header-image{
+  .moedit.moedit-toolbar-right .moedit-sep-header-image.is-visible{
     display:block !important;
   }
   /* Readonly горимд header image group болон separator нуух */
