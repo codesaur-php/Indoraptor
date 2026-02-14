@@ -163,6 +163,16 @@ INDO_CONTENT_IMG_QUALITY=90
 
 - CMS-д зураг upload хийхэд GD extension ашиглан optimize хийнэ
 
+### Серверийн тохиргоо
+
+Apache болон Nginx серверийн жишээ тохиргоонууд [`docs/conf.example/`](../conf.example/) хавтаст байна:
+
+| Файл | Тайлбар |
+|------|---------|
+| `.env.example` | Орчны тохиргооны лавлагаа |
+| `.htaccess.example` | Apache URL rewrite болон HTTPS redirect |
+| `.nginx.conf.example` | Nginx серверийн блок (HTTP, HTTPS, PHP-FPM) |
+
 ---
 
 ## 4. Архитектур
@@ -244,9 +254,15 @@ indoraptor/
 │   ├── index.php                  # Entry point
 │   ├── .htaccess                  # Apache URL rewrite
 │   └── assets/                    # CSS, JS (dashboard, moedit, motable)
+├── docs/
+│   ├── conf.example/              # Серверийн тохиргооны жишээ
+│   │   ├── .env.example           # Орчны тохиргоо
+│   │   ├── .htaccess.example      # Apache rewrite дүрмүүд
+│   │   └── .nginx.conf.example    # Nginx серверийн тохиргоо
+│   ├── en/                        # Англи баримтжуулалт
+│   └── mn/                        # Монгол баримтжуулалт
 ├── logs/                          # Алдааны лог файлууд
 ├── private/                       # Хамгаалагдсан файлууд
-├── .env.example                   # Тохиргооны загвар
 ├── composer.json
 └── LICENSE
 ```

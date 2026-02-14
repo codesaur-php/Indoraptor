@@ -94,11 +94,11 @@ All `.env` configuration options explained:
 ### Environment & App
 
 ```env
-# Environment mode: development or production
-CODESAUR_APP_ENV=development
-
 # Application name
 CODESAUR_APP_NAME=indoraptor
+
+# Environment mode: development or production
+CODESAUR_APP_ENV=development
 
 # Timezone (optional)
 #CODESAUR_APP_TIME_ZONE=Asia/Ulaanbaatar
@@ -162,6 +162,16 @@ INDO_CONTENT_IMG_QUALITY=90
 ```
 
 - CMS image uploads are optimized using the GD extension
+
+### Server Configuration
+
+Example configuration files for Apache and Nginx are available in [`docs/conf.example/`](../conf.example/):
+
+| File | Description |
+|------|-------------|
+| `.env.example` | Environment variables reference |
+| `.htaccess.example` | Apache URL rewrite and HTTPS redirect |
+| `.nginx.conf.example` | Nginx server block (HTTP, HTTPS, PHP-FPM) |
 
 ---
 
@@ -244,9 +254,15 @@ indoraptor/
 │   ├── index.php                  # Entry point
 │   ├── .htaccess                  # Apache URL rewrite
 │   └── assets/                    # CSS, JS (dashboard, moedit, motable)
+├── docs/
+│   ├── conf.example/              # Server configuration examples
+│   │   ├── .env.example           # Environment variables
+│   │   ├── .htaccess.example      # Apache rewrite rules
+│   │   └── .nginx.conf.example    # Nginx server config
+│   ├── en/                        # English documentation
+│   └── mn/                        # Mongolian documentation
 ├── logs/                          # Error log files
 ├── private/                       # Protected files
-├── .env.example                   # Configuration template
 ├── composer.json
 └── LICENSE
 ```

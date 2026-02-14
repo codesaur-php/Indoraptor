@@ -6,7 +6,7 @@
 #    Apache (.htaccess) нь default тохиргоо юм.
 
 # ----------------------------------------------------------------------
-# HTTP (port 80) → HTTPS руу чиглүүлэх (хүсвэл)
+# HTTP (port 80) → HTTPS руу чиглүүлэх
 # ----------------------------------------------------------------------
 server {
     listen 80;
@@ -14,12 +14,8 @@ server {
 
     server_name example.com www.example.com;
 
-    # Хэрэв HTTPS ашиглах бол uncomment хийж ашиглана.
+    # Бүх HTTP хүсэлтийг HTTPS руу чиглүүлэх (production үед uncomment хийнэ)
     #return 301 https://example.com$request_uri;
-
-    # Хэрэв HTTPS force хийхгүй бол дараах root тохиргоог
-    # HTTPS сервер block дотор хуулж ашиглаж болно.
-    return 301 https://example.com$request_uri;
 }
 
 # ----------------------------------------------------------------------

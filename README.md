@@ -91,6 +91,8 @@ If you used `composer create-project`, the `.env` file is auto-created and `INDO
 cp .env.example .env
 ```
 
+Server configuration examples / Серверийн тохиргооны жишээ: [`docs/conf.example/`](docs/conf.example/)
+
 Гол тохиргоонууд / Key configuration:
 
 ```env
@@ -146,9 +148,12 @@ indoraptor/
 │   ├── index.php            # Entry point
 │   ├── .htaccess            # Apache URL rewrite
 │   └── assets/              # CSS, JS (dashboard, moedit, motable)
+├── docs/
+│   ├── conf.example/        # Server configuration examples
+│   ├── en/                  # English documentation
+│   └── mn/                  # Mongolian documentation
 ├── logs/                    # Error logs
 ├── private/                 # Protected files
-├── .env.example             # Environment configuration template
 ├── composer.json            # Dependencies
 └── LICENSE                  # MIT License
 ```
