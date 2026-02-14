@@ -39,7 +39,7 @@
 - ✔ **OpenAI** интеграци (moedit editor)
 - ✔ Зураг optimize хийх (GD)
 - ✔ PSR-3 лог систем
-- ✔ **Brevo / PHPMailer** и-мэйл илгээх
+- ✔ **Brevo** API и-мэйл илгээх
 
 ### codesaur экосистем
 
@@ -104,7 +104,7 @@ CODESAUR_APP_NAME=indoraptor
 #CODESAUR_APP_TIME_ZONE=Asia/Ulaanbaatar
 ```
 
-- `development` горимд алдааг дэлгэцэн дээр харуулна
+- `development` горимд алдааг дэлгэцэн дээр харуулахын зэрэгцээ `logs/code.log` файлд бичнэ
 - `production` горимд зөвхөн `logs/code.log` файлд бичнэ
 
 ### Өгөгдлийн сан
@@ -144,7 +144,7 @@ INDO_MAIL_FROM=noreply@codesaur.domain
 #INDO_MAIL_REPLY_TO=
 ```
 
-- Brevo (SendInBlue) API эсвэл PHPMailer ашиглан и-мэйл илгээнэ
+- Brevo (SendInBlue) API ашиглан и-мэйл илгээнэ
 
 ### OpenAI
 
@@ -436,8 +436,7 @@ $this->isUserCan('news_edit');
 
 **Классууд:** `Mailer`
 
-- Brevo (SendInBlue) API
-- PHPMailer fallback
+- Brevo (SendInBlue) API ашиглан и-мэйл илгээх
 - Template-based и-мэйл илгээх
 
 ### 6.13 Template (Dashboard UI)

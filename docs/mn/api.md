@@ -553,7 +553,7 @@ PSR-3 стандартын лог систем. Өгөгдлийн санд ха
 
 **Файл:** `application/raptor/mail/Mailer.php`
 
-И-мэйл илгээх. Brevo API → PHPMailer fallback.
+И-мэйл илгээх. Brevo (SendInBlue) API ашиглана.
 
 ---
 

@@ -39,7 +39,7 @@
 - ✔ **OpenAI** integration (moedit editor)
 - ✔ Image optimization (GD)
 - ✔ PSR-3 logging system
-- ✔ **Brevo / PHPMailer** email delivery
+- ✔ **Brevo** API email delivery
 
 ### codesaur Ecosystem
 
@@ -104,7 +104,7 @@ CODESAUR_APP_ENV=development
 #CODESAUR_APP_TIME_ZONE=Asia/Ulaanbaatar
 ```
 
-- In `development` mode, errors are displayed on screen
+- In `development` mode, errors are displayed on screen and written to `logs/code.log`
 - In `production` mode, errors are only written to `logs/code.log`
 
 ### Database
@@ -144,7 +144,7 @@ INDO_MAIL_FROM=noreply@codesaur.domain
 #INDO_MAIL_REPLY_TO=
 ```
 
-- Sends email via Brevo (SendInBlue) API or PHPMailer
+- Sends email via Brevo (SendInBlue) API
 
 ### OpenAI
 
@@ -436,8 +436,7 @@ $this->isUserCan('news_edit');
 
 **Classes:** `Mailer`
 
-- Brevo (SendInBlue) API
-- PHPMailer fallback
+- Brevo (SendInBlue) API email sending
 - Template-based email sending
 
 ### 6.13 Template (Dashboard UI)

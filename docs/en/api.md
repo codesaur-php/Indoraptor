@@ -553,7 +553,7 @@ Writes a log entry.
 
 **File:** `application/raptor/mail/Mailer.php`
 
-Sends email via Brevo API with PHPMailer fallback.
+Sends email via Brevo (SendInBlue) API.
 
 ---
 
