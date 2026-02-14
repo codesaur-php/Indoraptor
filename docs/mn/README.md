@@ -353,8 +353,8 @@ $this->use(new \Raptor\SQLiteConnectMiddleware());
 - Controller дотроос эрх шалгах:
 
 ```php
-// Хэрэглэгч "admin" дүртэй эсэх
-$this->isUser('admin');
+// Хэрэглэгч system байгууллага дээр "admin" дүртэй эсэх
+$this->isUser('system_admin');
 
 // Хэрэглэгч "news_edit" эрхтэй эсэх
 $this->isUserCan('news_edit');
@@ -678,8 +678,7 @@ class CategoriesModel extends LocalizedModel
 | `insert($record)` | Бичлэг нэмэх |
 | `updateById($id, $record)` | ID-р шинэчлэх |
 | `deleteById($id)` | ID-р устгах |
-| `getRowById($id)` | ID-р нэг мөр авах |
-| `getRowWhere($conditions)` | Нөхцөлөөр нэг мөр |
+| `getRowWhere($with_values)` | WHERE key=value хэлбэрийн нөхцөлөөр нэг мөр авах |
 | `getRows($options)` | Олон мөр авах |
 | `getName()` | Хүснэгтийн нэр авах |
 
@@ -733,6 +732,12 @@ class ProductsRouter extends \codesaur\Router\Router
         }
     }
 }
+```
+
+Дараа нь autoloader-г шинэчлэх:
+
+```bash
+composer dump-autoload
 ```
 
 3. Application дотор Router бүртгэх:

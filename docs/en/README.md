@@ -353,8 +353,8 @@ $this->use(new \Raptor\SQLiteConnectMiddleware());
 - Check permissions in controllers:
 
 ```php
-// Check if user has "admin" role
-$this->isUser('admin');
+// Check if user has "admin" role in system organization
+$this->isUser('system_admin');
 
 // Check if user has "news_edit" permission
 $this->isUserCan('news_edit');
@@ -678,8 +678,7 @@ class CategoriesModel extends LocalizedModel
 | `insert($record)` | Insert a record |
 | `updateById($id, $record)` | Update by ID |
 | `deleteById($id)` | Delete by ID |
-| `getRowById($id)` | Get single row by ID |
-| `getRowWhere($conditions)` | Get single row by conditions |
+| `getRowWhere($conditions)` | Get single row by WHERE key=value conditions |
 | `getRows($options)` | Get multiple rows |
 | `getName()` | Get table name |
 
@@ -733,6 +732,12 @@ class ProductsRouter extends \codesaur\Router\Router
         }
     }
 }
+```
+
+Then regenerate the autoloader:
+
+```bash
+composer dump-autoload
 ```
 
 3. Register the Router in your Application:
