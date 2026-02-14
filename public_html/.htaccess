@@ -1,66 +1,11 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    # ↑ Apache-ийн rewrite модуль идэвхтэй бол URL rewrite-ийг асаана.
+  RewriteEngine On
 
-    # ---------------------------------------------------------------
-    # 1. Base URL (шаардлагатай тохиолдолд ашиглана)
-    # ---------------------------------------------------------------
-    #RewriteBase /
-    # ↑ Site root директорт байрласан үед rewrite суурийг заана.
-    #   Хэрэв subfolder-д байрлавал: RewriteBase /subfolder/
-
-    # ---------------------------------------------------------------
-    # 2. Вебсайтыг subfolder руу албадан чиглүүлэх (жишээ код)
-    # ---------------------------------------------------------------
-    #RewriteCond %{HTTP_HOST} ^(www.)?example\.com$ [NC]
-    #RewriteRule ^(.*)$ subfolder/$1 [R=302,L]
-    # ↑ example.com → example.com/subfolder руу бүх хаягыг чиглүүлнэ.
-    #   NC = case-insensitive, 302 = түр чиглүүлэлт
-
-    # ---------------------------------------------------------------
-    # 3. HTTPS албадан ашиглах
-    # ---------------------------------------------------------------
-    RewriteCond %{HTTPS} off
-    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-    # ↑ "https://" биш бол автоматаар HTTPS руу чиглүүлнэ.
-
-    # ---------------------------------------------------------------
-    # 4. URL-ээс www-г зайлуулах
-    # ---------------------------------------------------------------
-    RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
-    RewriteRule ^(.*)$ https://%1%{REQUEST_URI} [R=301,QSA,NC,L]
-    # ↑ https://www.domain.com → https://domain.com
-    #   301 = байнгын redirect
-    #   QSA = Query string алдагдуулахгүй
-
-    # ---------------------------------------------------------------
-    # 5. Authorization header-г зөв дамжуулах
-    # ---------------------------------------------------------------
-    RewriteCond %{HTTP:Authorization} ^(.*)
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
-    # ↑ JWT, Bearer token, Basic Auth гэх мэт Authorization header
-    #   Apache-аар дамжихдаа алдагдах асуудлыг засна.
-
-    # ---------------------------------------------------------------
-    # 6. Файлыг rewrite хийх - actual файл/директори биш бол
-    # ---------------------------------------------------------------
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    # ↑ Хэрэглэгчийн хүссэн path файл/фолдер биш бол route-руу чиглүүлнэ.
-
-    # ---------------------------------------------------------------
-    # 7. Бүх хүсэлтийг index.php руу дамжуулах
-    # ---------------------------------------------------------------
-    RewriteRule ^(.*)$ index.php/$1 [L]
-    # ↑ Indoraptor-ийн routing системийг идэвхжүүлэх үндсэн rewrite.
-    #   Жишээ: /news/article → index.php/news/article
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.php [L]
 </IfModule>
 
-# ---------------------------------------------------------------
-# mod_rewrite байхгүй үед: Директори listing Disable
-# ---------------------------------------------------------------
 <IfModule !mod_rewrite.c>
-    Options -Indexes
-    # ↑ mod_rewrite байхгүй бол хавтасын файл жагсаалтыг (directory listing)
-    #   зогсооно. Аюулгүй байдлын хамгаалалт.
+  Options -Indexes
 </IfModule>

@@ -35,8 +35,8 @@
  *  тохиолдолд .nginx.conf.example жишээ тохиргооноос харж өөрийн 
  *  nginx тохиргоог зөв хийж Indoraptor-г ажиллуулах хэрэгтэй!
  *
- *  @see .nginx.conf.example nginx серверийн жишээ тохиргоо (root директорт байрлана)
- *  @see public_html/.htaccess Apache серверийн тохиргоо
+ *  @see docs/conf.example/.nginx.conf.example nginx серверийн жишээ тохиргоо
+ *  @see docs/conf.example/.htaccess.example Apache серверийн жишээ тохиргоо
  */
 
 use codesaur\Http\Message\ServerRequest;

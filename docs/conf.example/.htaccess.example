@@ -1,0 +1,37 @@
+# ======================================================================
+# Indoraptor - Apache .htaccess Configuration Example
+# ======================================================================
+# ⚠️ Энэ файл бол ЖИШЭЭ (example) тохиргоо.
+#    Apache сервер ашиглаж байгаа үед хэрэглэнэ.
+#    Өөрийн серверийн орчинд тохируулж засварлана уу.
+#    Nginx ашиглаж байгаа бол .nginx.conf.example файлыг харна уу.
+# ======================================================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # -- RewriteBase (зөвхөн subfolder install үед)
+  # Жишээ: https://domain.com/myapp/
+  #RewriteBase /myapp/
+
+  # -- Canonical redirect (хүсвэл): HTTPS + non-www
+  #RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  #RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+  #RewriteCond %{HTTPS} off
+  #RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  # -- Authorization header (хүсвэл): REST/Bearer/JWT
+  #RewriteCond %{HTTP:Authorization} .
+  #RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # -- Front Controller (бүх хүсэлтийг index.php руу төвлөрүүлнэ)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+  Options -Indexes
+  # ↑ mod_rewrite байхгүй бол хавтасын файл жагсаалтыг (directory listing)
+  #   зогсооно. Аюулгүй байдлын хамгаалалт.
+</IfModule>

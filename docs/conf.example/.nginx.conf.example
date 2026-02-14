@@ -1,0 +1,93 @@
+# ======================================================================
+# Indoraptor - Nginx Configuration Example
+# ======================================================================
+# ⚠️ Энэ файл бол ЖИШЭЭ (example) тохиргоо.
+#    Өөрийн серверийн орчинд тохируулж засварлана уу.
+#    Apache (.htaccess) нь default тохиргоо юм.
+
+# ----------------------------------------------------------------------
+# HTTP (port 80) → HTTPS руу чиглүүлэх (хүсвэл)
+# ----------------------------------------------------------------------
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name example.com www.example.com;
+
+    # Хэрэв HTTPS ашиглах бол uncomment хийж ашиглана.
+    #return 301 https://example.com$request_uri;
+
+    # Хэрэв HTTPS force хийхгүй бол дараах root тохиргоог
+    # HTTPS сервер block дотор хуулж ашиглаж болно.
+    return 301 https://example.com$request_uri;
+}
+
+# ----------------------------------------------------------------------
+# HTTPS үндсэн сервер (Indoraptor ажиллах хэсэг)
+# ----------------------------------------------------------------------
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name example.com;
+
+    # ------------------------------------------------------------------
+    # SSL тохиргоо (өөрийн certificate замыг тохируулна)
+    # ------------------------------------------------------------------
+    ssl_certificate     /etc/nginx/ssl/example.com.crt;
+    ssl_certificate_key /etc/nginx/ssl/example.com.key;
+
+    # ------------------------------------------------------------------
+    # Web root (Indoraptor/public_html директор)
+    # ------------------------------------------------------------------
+    root /path/to/Indoraptor/public_html;
+    index index.php;
+
+    # ------------------------------------------------------------------
+    # Front Controller (бүх хүсэлтийг index.php руу төвлөрүүлнэ)
+    # ------------------------------------------------------------------
+    location / {
+        # Static файл/хавтас байвал → шууд serve
+        # Байхгүй бол → index.php руу дамжуулна
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # ------------------------------------------------------------------
+    # PHP → PHP-FPM
+    # ------------------------------------------------------------------
+    location ~ \.php$ {
+        include fastcgi_params;
+
+        # PHP-FPM socket (өөрийн серверийн хувилбарт тохируулна)
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+        # Authorization header дамжуулах (REST/Bearer/JWT ашиглах үед)
+        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+
+        try_files $uri =404;
+    }
+
+    # ------------------------------------------------------------------
+    # Static resource caching (хүсвэл)
+    # ------------------------------------------------------------------
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|webp)$ {
+        expires max;
+        log_not_found off;
+    }
+
+    # ------------------------------------------------------------------
+    # Нууц файлуудыг хориглох (.env, .htaccess гэх мэт)
+    # ------------------------------------------------------------------
+    location ~ /\.(ht|env) {
+        deny all;
+    }
+
+    # ------------------------------------------------------------------
+    # Logs (өөрийн серверт тохируулна)
+    # ------------------------------------------------------------------
+    access_log /var/log/nginx/example.access.log;
+    error_log  /var/log/nginx/example.error.log;
+}

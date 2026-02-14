@@ -62,7 +62,7 @@
     },
     "scripts": {
         "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"file_exists('.env') || copy('docs/conf.example/.env.example', '.env');\"",
             "@php -r \"$envFile='.env';$secret=bin2hex(random_bytes(64));if(file_exists($envFile)){ $content=file_get_contents($envFile);if(preg_match('/^INDO_JWT_SECRET=.*/m',$content)){ $content=preg_replace('/^INDO_JWT_SECRET=.*/m','INDO_JWT_SECRET='.$secret,$content);} else { if(substr($content,-1)!==PHP_EOL)$content.=PHP_EOL;$content.='INDO_JWT_SECRET='.$secret.PHP_EOL;} file_put_contents($envFile,$content);} else { file_put_contents($envFile,'INDO_JWT_SECRET='.$secret.PHP_EOL);} echo '✅ INDO_JWT_SECRET generated: '.$secret.PHP_EOL;\""
         ]
     },
